@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.env*
+*.log
+*.tsbuildinfo
+test-results
+playwright-report
+SMBE-*.md
