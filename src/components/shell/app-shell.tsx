@@ -9,7 +9,7 @@ export type { NavKey, Crumb };
 
 export function AppShell({
   active,
-  breadcrumb,
+  breadcrumb = [],
   companyName,
   userName,
   isAuthenticated,
@@ -17,7 +17,7 @@ export function AppShell({
   children,
 }: {
   active: NavKey;
-  breadcrumb: Crumb[];
+  breadcrumb?: Crumb[];
   companyName?: string;
   userName?: string;
   isAuthenticated: boolean;
@@ -42,7 +42,7 @@ export function AppShell({
 
 function AppShellFrame({
   active,
-  breadcrumb,
+  breadcrumb = [],
   companyName,
   userName,
   isAuthenticated,
@@ -50,7 +50,7 @@ function AppShellFrame({
   children,
 }: {
   active: NavKey;
-  breadcrumb: Crumb[];
+  breadcrumb?: Crumb[];
   companyName?: string;
   userName?: string;
   isAuthenticated: boolean;

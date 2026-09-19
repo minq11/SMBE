@@ -1,10 +1,32 @@
+import { ReactNode } from "react";
 import { signIn } from "@/auth";
+import { GoogleLogo, KakaoLogo, NaverLogo } from "./provider-logos";
 
-const providers = [
-  { id: "naver", label: "네이버로 시작하기", className: "auth-provider-btn naver" },
-  { id: "kakao", label: "카카오로 시작하기", className: "auth-provider-btn kakao" },
-  { id: "google", label: "구글로 시작하기", className: "auth-provider-btn google" },
-] as const;
+const providers: ReadonlyArray<{
+  id: "naver" | "kakao" | "google";
+  label: string;
+  className: string;
+  icon: ReactNode;
+}> = [
+  {
+    id: "naver",
+    label: "네이버로 시작하기",
+    className: "auth-provider-btn naver",
+    icon: <NaverLogo />,
+  },
+  {
+    id: "kakao",
+    label: "카카오로 시작하기",
+    className: "auth-provider-btn kakao",
+    icon: <KakaoLogo />,
+  },
+  {
+    id: "google",
+    label: "구글로 시작하기",
+    className: "auth-provider-btn google",
+    icon: <GoogleLogo />,
+  },
+];
 
 export function ProviderButtons({ redirectTo }: { redirectTo: string }) {
   return (
@@ -18,7 +40,10 @@ export function ProviderButtons({ redirectTo }: { redirectTo: string }) {
           }}
         >
           <button type="submit" className={provider.className}>
-            {provider.label}
+            <span className="auth-provider-icon" aria-hidden="true">
+              {provider.icon}
+            </span>
+            <span>{provider.label}</span>
           </button>
         </form>
       ))}

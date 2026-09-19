@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   title: "SMBE · 안전관리, 쉽고 간편하게",
   description: "Safety must be easy. SMBE 관리자 홈 미리보기",
   robots: { index: false, follow: false },
+  icons: {
+    icon: [{ url: "/brand/logo.png", type: "image/png" }],
+    shortcut: "/brand/logo.png",
+    apple: "/brand/logo.png",
+  },
 };
 export default function RootLayout({
   children,

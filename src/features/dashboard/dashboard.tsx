@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   ArrowRight,
   ChevronRight,
@@ -82,7 +83,6 @@ export function Dashboard({
   return (
     <AppShell
       active="home"
-      breadcrumb={[{ label: "홈" }]}
       companyName={companyName}
       userName={userName}
       isAuthenticated={isAuthenticated}
@@ -105,11 +105,7 @@ function DashboardBody() {
       </section>
 
       <section className="action-grid" aria-label="빠른 시작">
-        <button
-          type="button"
-          className="action-card"
-          onClick={() => preview("구성원 초대")}
-        >
+        <Link href="/company/members" className="action-card">
           <span className="action-card-icon">
             <Users size={17} />
           </span>
@@ -118,7 +114,7 @@ function DashboardBody() {
           <span className="action-card-cta">
             시작하기 <ArrowRight size={14} />
           </span>
-        </button>
+        </Link>
         <button
           type="button"
           className="action-card action-card--primary"
