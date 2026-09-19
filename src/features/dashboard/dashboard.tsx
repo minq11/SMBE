@@ -1,12 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRight,
-  ChevronRight,
-  ClipboardList,
-  Users,
-} from "lucide-react";
+import { ArrowRight, ChevronRight, ClipboardList, Users } from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
 import { usePreview } from "@/components/shell/preview-dialog";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -18,12 +13,13 @@ type Task = {
   state: string;
 };
 
-type Job = {
+export type Job = {
+  href?: string;
   title: string;
   place: string;
   time: string;
   people: number;
-  status: "작업 중" | "예정";
+  status: string;
 };
 
 const PREVIEW_TASKS: Task[] = [
@@ -76,11 +72,17 @@ export function Dashboard({
   userName,
   isAuthenticated = false,
   isOperator = false,
+  jobs,
+  isManager = true,
+  openFindingCount = 0,
 }: {
   companyName?: string;
   userName?: string;
   isAuthenticated?: boolean;
   isOperator?: boolean;
+  jobs?: Job[];
+  isManager?: boolean;
+  openFindingCount?: number;
 }) {
   return (
     <AppShell
@@ -90,13 +92,29 @@ export function Dashboard({
       isAuthenticated={isAuthenticated}
       isOperator={isOperator}
     >
-      <DashboardBody />
+      <DashboardBody
+        jobs={jobs}
+        isAuthenticated={isAuthenticated}
+        isManager={isManager}
+        openFindingCount={openFindingCount}
+      />
     </AppShell>
   );
 }
 
-function DashboardBody() {
+function DashboardBody({
+  jobs,
+  isAuthenticated,
+  isManager,
+  openFindingCount,
+}: {
+  jobs?: Job[];
+  isAuthenticated: boolean;
+  isManager: boolean;
+  openFindingCount: number;
+}) {
   const preview = usePreview();
+  const displayedJobs = jobs ?? PREVIEW_JOBS;
 
   return (
     <>
@@ -108,79 +126,97 @@ function DashboardBody() {
       </section>
 
       <section className="action-grid" aria-label="빠른 시작">
-        <Link href="/company/members" className="action-card">
-          <span className="action-card-icon">
-            <Users size={17} />
-          </span>
-          <h2>구성원 초대하기</h2>
-          <p>관리자와 작업자를 초대 링크로 연결합니다.</p>
-          <span className="action-card-cta">
-            시작하기 <ArrowRight size={14} />
-          </span>
-        </Link>
-        <button
-          type="button"
+        {isManager && (
+          <Link href="/company/members" className="action-card">
+            <span className="action-card-icon">
+              <Users size={17} />
+            </span>
+            <h2>구성원 초대하기</h2>
+            <p>관리자와 작업자를 초대 링크로 연결합니다.</p>
+            <span className="action-card-cta">
+              시작하기 <ArrowRight size={14} />
+            </span>
+          </Link>
+        )}
+        <Link
+          href={isManager ? "/work-orders/new" : "/work-orders"}
           className="action-card action-card--primary"
-          onClick={() => preview("오늘의 작업 지시")}
         >
           <span className="action-card-icon">
             <ClipboardList size={17} />
           </span>
-          <h2>오늘의 작업 지시하기</h2>
-          <p>표준서가 없어도 업종 템플릿으로 바로 시작합니다.</p>
+          <h2>{isManager ? "오늘의 작업 지시하기" : "내 작업 확인하기"}</h2>
+          <p>
+            {isManager
+              ? "표준서 없이도 간이평가로 시작합니다."
+              : "배정된 작업의 위험요인과 대책을 확인하세요."}
+          </p>
           <span className="action-card-cta">
             시작하기 <ArrowRight size={14} />
           </span>
-        </button>
+        </Link>
       </section>
 
-      <section className="stack">
-        <SectionHeading title="오늘 처리할 일" count={PREVIEW_TASKS.length} />
-        <ul className="row-list" role="list">
-          {PREVIEW_TASKS.map(({ title, detail, count, state }) => (
-            <li key={title}>
-              <button
-                type="button"
-                className="row"
-                onClick={() => preview(title)}
-              >
-                <span className="row-main">
-                  <strong>{title}</strong>
-                  <small>{detail}</small>
-                </span>
-                <span className="row-meta">
-                  <span className="row-count">{count}</span>
-                  <span className="row-state">{state}</span>
-                </span>
-                <ChevronRight size={14} className="row-chev" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {isAuthenticated && isManager && openFindingCount > 0 && (
+        <section className="stack" aria-label="내 부적합 알림">
+          <SectionHeading
+            title="내가 처리할 안전조치"
+            count={openFindingCount}
+          />
+          <Link href="/inspections" className="row">
+            <span className="row-main">
+              <strong>부적합 조치 확인</strong>
+              <small>나에게 배정된 미조치 항목을 확인하세요.</small>
+            </span>
+            <span className="row-meta">
+              <span className="row-count">{openFindingCount}건</span>
+              <span className="row-state">조치 대기</span>
+            </span>
+            <ChevronRight size={14} className="row-chev" />
+          </Link>
+        </section>
+      )}
+      {!isAuthenticated && (
+        <section className="stack">
+          <SectionHeading title="오늘 처리할 일" count={PREVIEW_TASKS.length} />
+          <ul className="row-list" role="list">
+            {PREVIEW_TASKS.map(({ title, detail, count, state }) => (
+              <li key={title}>
+                <button
+                  type="button"
+                  className="row"
+                  onClick={() => preview(title)}
+                >
+                  <span className="row-main">
+                    <strong>{title}</strong>
+                    <small>{detail}</small>
+                  </span>
+                  <span className="row-meta">
+                    <span className="row-count">{count}</span>
+                    <span className="row-state">{state}</span>
+                  </span>
+                  <ChevronRight size={14} className="row-chev" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="stack">
         <SectionHeading
-          title="오늘의 작업"
-          count={PREVIEW_JOBS.length}
+          title={isAuthenticated ? "예정·진행 작업" : "오늘의 작업 (예시)"}
+          count={displayedJobs.length}
           action={
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => preview("작업지시 내역")}
-            >
+            <Link href="/work-orders" className="text-button">
               전체 보기 <ChevronRight size={13} />
-            </button>
+            </Link>
           }
         />
         <ul className="row-list" role="list">
-          {PREVIEW_JOBS.map(({ title, place, time, people, status }) => (
-            <li key={title}>
-              <button
-                type="button"
-                className="row"
-                onClick={() => preview(title)}
-              >
+          {displayedJobs.map(({ title, place, time, people, status, href }) => (
+            <li key={href ?? title}>
+              <Link href={href ?? "/work-orders"} className="row">
                 <span className="row-main">
                   <strong>{title}</strong>
                   <small>{place}</small>
@@ -197,10 +233,16 @@ function DashboardBody() {
                   </span>
                 </span>
                 <ChevronRight size={14} className="row-chev" />
-              </button>
+              </Link>
             </li>
           ))}
         </ul>
+        {isAuthenticated && !displayedJobs.length && (
+          <p className="hero-lead">
+            예정·진행 중인 작업이 없습니다. 작성 중인 지시서는 작업지시 메뉴에서
+            확인하세요.
+          </p>
+        )}
       </section>
     </>
   );

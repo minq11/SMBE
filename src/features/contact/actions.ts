@@ -13,8 +13,7 @@ export type ContactValues = {
 };
 
 export type ContactState =
-  | undefined
-  | { error?: string; ok?: boolean; values?: ContactValues };
+  undefined | { error?: string; ok?: boolean; values?: ContactValues };
 
 const TOPIC_VALUES = ["PRE_REGISTER", "QUESTION", "OTHER"] as const;
 type Topic = (typeof TOPIC_VALUES)[number];
@@ -60,6 +59,8 @@ export async function submitContactAction(
   _prev: ContactState,
   formData: FormData,
 ): Promise<ContactState> {
+  // Check before validation so spam receives no validation hints or email.
+  if (formData.get("website")) return { ok: true };
   // 폼 리렌더 시 입력값 복원용 스냅샷
   const submitted: ContactValues = {
     name: (formData.get("name") ?? "").toString(),
@@ -83,11 +84,6 @@ export async function submitContactAction(
       error: parsed.error.issues[0]?.message ?? "입력 값을 확인하세요",
       values: submitted,
     };
-  }
-
-  // 봇 필드에 값이 있으면 조용히 성공 응답 (스팸 봇에게 오류 힌트 주지 않기)
-  if (parsed.data.website && parsed.data.website.length > 0) {
-    return { ok: true };
   }
 
   const { name, email, company, topic, message } = parsed.data;

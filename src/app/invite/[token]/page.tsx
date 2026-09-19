@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { auth } from "@/auth";
 import { queryOne, withTransaction } from "@/server/db";
+import { acceptInvite } from "@/server/membership-mutations";
+import { revalidatePath } from "next/cache";
 import { PublicHeader } from "@/features/auth/public-header";
 
 export const metadata = { title: "회사 초대 · SMBE" };
@@ -46,10 +48,13 @@ async function loadActiveMembership(userId: string) {
 
 export default async function InvitePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ failed?: string }>;
 }) {
   const { token } = await params;
+  const { failed } = await searchParams;
   const session = await auth();
   const userId = session?.user?.id;
 
@@ -93,39 +98,44 @@ export default async function InvitePage({
     );
   }
 
-  // 통과 — 소속 처리
-  await withTransaction(async (client) => {
-    const { rows: userRows } = await client.query<{ display_name: string }>(
-      "SELECT display_name FROM users WHERE id = $1",
-      [userId],
-    );
-    const displayName = userRows[0]?.display_name ?? "회원";
+  async function acceptAction() {
+    "use server";
+    const current = await auth();
+    if (!current?.user?.id) redirect("/login");
+    try {
+      await withTransaction((client) =>
+        acceptInvite(client, token, current.user.id),
+      );
+    } catch {
+      // A fresh GET explains expired/used links without exposing DB errors.
+      redirect(`/invite/${encodeURIComponent(token)}?failed=1`);
+    }
+    revalidatePath("/");
+    revalidatePath("/company/members");
+    redirect("/");
+  }
 
-    await client.query(
-      `INSERT INTO company_members
-         (user_id, company_id, role, status, joined_via,
-          snapshot_display_name, approved_by, approved_at)
-       VALUES ($1, $2, $3::company_member_role, 'ACTIVE', 'INVITE_LINK',
-               $4, NULL, now())`,
-      [userId, invite.company_id, invite.target_role, displayName],
-    );
-
-    await client.query(
-      `UPDATE company_invitations
-          SET accepted_at = now(), accepted_by = $2
-        WHERE id = $1`,
-      [invite.id, userId],
-    );
-
-    await client.query(
-      `UPDATE companies
-          SET active_headcount = active_headcount + 1
-        WHERE id = $1`,
-      [invite.company_id],
-    );
-  });
-
-  redirect("/");
+  return (
+    <div className="auth-shell">
+      <PublicHeader />
+      <main className="auth-main">
+        <div className="pending-notice">
+          <h2>{invite.company_name} 회사 초대</h2>
+          <p>수락하면 이 회사의 구성원으로 가입합니다.</p>
+          {failed && (
+            <p role="alert">
+              초대를 수락하지 못했습니다. 다시 시도하거나 관리자에게 문의하세요.
+            </p>
+          )}
+          <form action={acceptAction}>
+            <button type="submit" className="btn-primary">
+              초대 수락하기
+            </button>
+          </form>
+        </div>
+      </main>
+    </div>
+  );
 }
 
 function InviteErrorFrame({

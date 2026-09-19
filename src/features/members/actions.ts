@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentSession, type MembershipRole } from "@/server/session";
 import { query, queryOne, withTransaction } from "@/server/db";
-import { isLastSupervisor } from "@/server/members";
+import { mutateMember } from "@/server/membership-mutations";
 import { inviteEmailTemplate, sendEmail } from "@/server/email";
 
 export type EmailStatus = "sent" | "failed" | "skipped" | "none";
@@ -46,11 +46,10 @@ async function requireManager(): Promise<{
   const session = await getCurrentSession();
   if (!session?.membership) throw new Error("소속된 회사가 없습니다.");
   const { user, membership } = session;
-  if (
-    membership.status !== "ACTIVE" ||
-    membership.role === "WORKER"
-  ) {
-    throw new Error("이 기능은 관리자(관리감독자·안전관리자)만 사용할 수 있습니다.");
+  if (membership.status !== "ACTIVE" || membership.role === "WORKER") {
+    throw new Error(
+      "이 기능은 관리자(관리감독자·안전관리자)만 사용할 수 있습니다.",
+    );
   }
   return {
     userId: user.id,
@@ -142,7 +141,14 @@ export async function createInviteAction(
          VALUES ($1, $2, $3, $4, $5::company_member_role, $6,
                  now() + interval '14 days')
          RETURNING expires_at`,
-        [ctx.companyId, ctx.userId, email, phone, parsed.data.target_role, token],
+        [
+          ctx.companyId,
+          ctx.userId,
+          email,
+          phone,
+          parsed.data.target_role,
+          token,
+        ],
       );
       insertedToken = token;
       expiresAt = rows[0]?.expires_at ? new Date(rows[0].expires_at) : null;
@@ -204,7 +210,9 @@ export async function createInviteAction(
 // 초대 링크 폐기
 // -----------------------------------------------------------------------------
 
-export async function revokeInviteAction(inviteId: string): Promise<ActionState> {
+export async function revokeInviteAction(
+  inviteId: string,
+): Promise<ActionState> {
   let ctx;
   try {
     ctx = await requireManager();
@@ -225,66 +233,38 @@ export async function revokeInviteAction(inviteId: string): Promise<ActionState>
 // 가입 승인 · 거부 (회사코드 직접 가입 대기 건)
 // -----------------------------------------------------------------------------
 
-export async function approvePendingAction(memberId: string): Promise<ActionState> {
+async function runMemberMutation(
+  memberId: string,
+  operation: "approve" | "reject" | "resign" | "role",
+  role?: string,
+): Promise<ActionState> {
+  if (!z.string().uuid().safeParse(memberId).success)
+    return { error: "잘못된 요청입니다." };
   let ctx;
   try {
     ctx = await requireManager();
   } catch (error) {
     return { error: (error as Error).message };
   }
-
-  const target = await queryOne<{ status: string }>(
-    "SELECT status FROM company_members WHERE id = $1 AND company_id = $2",
-    [memberId, ctx.companyId],
-  );
-  if (!target) return { error: "대상을 찾을 수 없습니다." };
-  if (target.status !== "JOIN_PENDING") {
-    return { error: "이미 처리된 요청입니다." };
-  }
-
-  await query(
-    `UPDATE company_members
-        SET status = 'ACTIVE',
-            approved_by = $2,
-            approved_at = now()
-      WHERE id = $1`,
-    [memberId, ctx.userId],
+  const result = await withTransaction((client) =>
+    mutateMember(client, ctx, memberId, operation, role),
   );
   revalidatePath("/company/members");
-  return { message: "가입을 승인했습니다." };
+  revalidatePath("/");
+  return result;
 }
 
-export async function rejectPendingAction(memberId: string): Promise<ActionState> {
-  let ctx;
-  try {
-    ctx = await requireManager();
-  } catch (error) {
-    return { error: (error as Error).message };
-  }
-
-  const target = await queryOne<{ status: string }>(
-    "SELECT status FROM company_members WHERE id = $1 AND company_id = $2",
-    [memberId, ctx.companyId],
-  );
-  if (!target) return { error: "대상을 찾을 수 없습니다." };
-  if (target.status !== "JOIN_PENDING") {
-    return { error: "이미 처리된 요청입니다." };
-  }
-
-  // 거부 = 소속 해제. 감사 로그를 위해 RESIGNED로 마감.
-  await query(
-    `UPDATE company_members
-        SET status = 'RESIGNED', left_at = now()
-      WHERE id = $1`,
-    [memberId],
-  );
-  revalidatePath("/company/members");
-  return { message: "가입을 거부했습니다." };
+export async function approvePendingAction(
+  memberId: string,
+): Promise<ActionState> {
+  return runMemberMutation(memberId, "approve");
 }
 
-// -----------------------------------------------------------------------------
-// 역할 변경
-// -----------------------------------------------------------------------------
+export async function rejectPendingAction(
+  memberId: string,
+): Promise<ActionState> {
+  return runMemberMutation(memberId, "reject");
+}
 
 const changeRoleSchema = z.object({
   member_id: z.string().uuid(),
@@ -295,110 +275,17 @@ export async function changeRoleAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  let ctx;
-  try {
-    ctx = await requireManager();
-  } catch (error) {
-    return { error: (error as Error).message };
-  }
-
   const parsed = changeRoleSchema.safeParse({
     member_id: formData.get("member_id"),
     role: formData.get("role"),
   });
-  if (!parsed.success) {
+  if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "잘못된 요청" };
-  }
-
-  const target = await queryOne<{ role: MembershipRole; user_id: string }>(
-    `SELECT role, user_id FROM company_members
-      WHERE id = $1 AND company_id = $2 AND status = 'ACTIVE' AND left_at IS NULL`,
-    [parsed.data.member_id, ctx.companyId],
-  );
-  if (!target) return { error: "대상을 찾을 수 없습니다." };
-  if (target.role === parsed.data.role) return { message: "변경 사항이 없습니다." };
-
-  const isSelf = target.user_id === ctx.userId;
-  const nextRole = parsed.data.role;
-
-  // 규칙 (SMBE 설계 §3, §4 역할 변경 규칙)
-  //  - 안전관리자 → 관리감독자 승격: 관리감독자만 가능 (본인 승격 불가)
-  //  - 관리감독자 → 안전관리자 강등: 본인만 가능
-  //  - 마지막 관리감독자는 역할 변경 차단
-  //  - WORKER ↔ MANAGER_SAFETY 변경은 관리자 그룹 누구나
-  if (nextRole === "MANAGER_SUPERVISOR") {
-    if (ctx.role !== "MANAGER_SUPERVISOR") {
-      return { error: "관리감독자 승격은 관리감독자만 할 수 있습니다." };
-    }
-    if (isSelf) {
-      return { error: "본인을 관리감독자로 승격할 수 없습니다." };
-    }
-  }
-  if (target.role === "MANAGER_SUPERVISOR" && nextRole !== "MANAGER_SUPERVISOR") {
-    if (!isSelf) {
-      return { error: "관리감독자 역할 변경은 본인만 할 수 있습니다." };
-    }
-    if (await isLastSupervisor(ctx.companyId, parsed.data.member_id)) {
-      return {
-        error:
-          "회사에 관리감독자가 1명뿐이라 역할을 변경할 수 없습니다. 먼저 다른 관리감독자를 지정하세요.",
-      };
-    }
-  }
-
-  await query(
-    `UPDATE company_members SET role = $2::company_member_role WHERE id = $1`,
-    [parsed.data.member_id, nextRole],
-  );
-  revalidatePath("/company/members");
-  return { message: "역할을 변경했습니다." };
+  return runMemberMutation(parsed.data.member_id, "role", parsed.data.role);
 }
 
-// -----------------------------------------------------------------------------
-// 퇴사 처리
-// -----------------------------------------------------------------------------
-
-export async function resignMemberAction(memberId: string): Promise<ActionState> {
-  let ctx;
-  try {
-    ctx = await requireManager();
-  } catch (error) {
-    return { error: (error as Error).message };
-  }
-
-  const target = await queryOne<{ role: MembershipRole; user_id: string }>(
-    `SELECT role, user_id FROM company_members
-      WHERE id = $1 AND company_id = $2 AND status = 'ACTIVE' AND left_at IS NULL`,
-    [memberId, ctx.companyId],
-  );
-  if (!target) return { error: "대상을 찾을 수 없습니다." };
-
-  if (
-    target.role === "MANAGER_SUPERVISOR" &&
-    (await isLastSupervisor(ctx.companyId, memberId))
-  ) {
-    return {
-      error:
-        "회사의 마지막 관리감독자는 퇴사시킬 수 없습니다. 먼저 다른 관리감독자를 지정하세요.",
-    };
-  }
-
-  await withTransaction(async (client) => {
-    await client.query(
-      `UPDATE company_members
-          SET status = 'RESIGNED', left_at = now()
-        WHERE id = $1`,
-      [memberId],
-    );
-    // 활성 인원 카운트 조정
-    await client.query(
-      `UPDATE companies
-          SET active_headcount = GREATEST(active_headcount - 1, 0)
-        WHERE id = $1`,
-      [ctx.companyId],
-    );
-  });
-
-  revalidatePath("/company/members");
-  return { message: "퇴사 처리했습니다." };
+export async function resignMemberAction(
+  memberId: string,
+): Promise<ActionState> {
+  return runMemberMutation(memberId, "resign");
 }

@@ -70,9 +70,16 @@ export function Topbar({
       </div>
 
       <div className="topbar-right">
-        <span className="topbar-tag" title="현재는 화면 미리보기 상태입니다">
+        <span
+          className="topbar-tag"
+          title={
+            isAuthenticated
+              ? "현재 개발 중인 서비스입니다"
+              : "현재는 화면 미리보기 상태입니다"
+          }
+        >
           <span className="topbar-tag-dot" />
-          화면 미리보기
+          {isAuthenticated ? "개발 중" : "화면 미리보기"}
         </span>
         <span className="topbar-divider" aria-hidden="true" />
         {isOperator && (
@@ -117,7 +124,10 @@ export function Topbar({
             <Link href="/login" className="logout-button">
               로그인
             </Link>
-            <Link href="/login" className="logout-button logout-button--primary">
+            <Link
+              href="/login"
+              className="logout-button logout-button--primary"
+            >
               무료로 시작
             </Link>
           </>

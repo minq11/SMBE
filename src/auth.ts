@@ -4,6 +4,7 @@ import Google from "next-auth/providers/google";
 import Naver from "next-auth/providers/naver";
 import Kakao from "next-auth/providers/kakao";
 import { queryOne, withTransaction } from "@/server/db";
+import { resolveIdentity } from "@/server/identity-mutations";
 
 declare module "next-auth" {
   interface Session {
@@ -34,8 +35,6 @@ function toProviderCode(providerId: string): ProviderCode | null {
   }
 }
 
-const UNIQUE_VIOLATION = "23505";
-
 async function resolveAppUserId(
   providerCode: ProviderCode,
   providerUserId: string,
@@ -49,42 +48,19 @@ async function resolveAppUserId(
   if (existing) return existing.user_id;
 
   return withTransaction(async (client) => {
-    let userId: string;
-    try {
-      const { rows } = await client.query<{ id: string }>(
-        "INSERT INTO users (display_name, email) VALUES ($1, $2) RETURNING id",
-        [displayName, email],
-      );
-      userId = rows[0].id;
-    } catch (error) {
-      const code = (error as { code?: string } | null)?.code;
-      // 다른 provider로 이미 가입된 이메일이면 자동 병합하지 않고 이메일 없이 새 계정으로 생성한다.
-      // 병합 규칙은 v5.5 확인사항.
-      if (email && code === UNIQUE_VIOLATION) {
-        const { rows } = await client.query<{ id: string }>(
-          "INSERT INTO users (display_name, email) VALUES ($1, NULL) RETURNING id",
-          [displayName],
-        );
-        userId = rows[0].id;
-      } else {
-        throw error;
-      }
-    }
-    await client.query(
-      "INSERT INTO user_identities (user_id, provider, provider_user_id) VALUES ($1, $2, $3)",
-      [userId, providerCode, providerUserId],
+    return resolveIdentity(
+      client,
+      providerCode,
+      providerUserId,
+      displayName,
+      email,
     );
-    return userId;
   });
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
-  providers: [
-    Google,
-    Naver,
-    Kakao,
-  ],
+  providers: [Google, Naver, Kakao],
   pages: {
     signIn: "/login",
   },

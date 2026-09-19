@@ -36,12 +36,27 @@ type NavEntry = {
 
 const NAV: ReadonlyArray<NavEntry> = [
   { key: "home", title: "홈", icon: Home, href: "/" },
-  { key: "orders", title: "작업지시", icon: ClipboardList },
+  {
+    key: "orders",
+    title: "작업지시",
+    icon: ClipboardList,
+    href: "/work-orders",
+  },
   { key: "standards", title: "작업표준서", icon: BookOpen },
   { key: "assessment", title: "위험성평가", icon: ShieldCheck },
-  { key: "inspection", title: "안전점검", icon: ClipboardCheck },
+  {
+    key: "inspection",
+    title: "안전점검",
+    icon: ClipboardCheck,
+    href: "/inspections",
+  },
   { key: "incident", title: "안전사고", icon: TriangleAlert },
-  { key: "company", title: "회사정보", icon: Building2, href: "/company/members" },
+  {
+    key: "company",
+    title: "회사정보",
+    icon: Building2,
+    href: "/company/members",
+  },
   { key: "billing", title: "이용·관리", icon: Settings2 },
 ];
 

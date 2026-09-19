@@ -1721,6 +1721,49 @@ button svg {
 }
 
 /* =========================================================================
+   16b. Loading logo (route transitions · Suspense fallback)
+   ========================================================================= */
+.loading-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px 20px;
+  color: var(--ink-3);
+}
+.loading-logo--fullscreen {
+  min-height: calc(100dvh - var(--banner-h));
+}
+.loading-logo-mark {
+  animation: logo-pulse 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 6px 18px rgba(233, 105, 53, 0.16));
+}
+.loading-logo-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--ink-3);
+}
+@keyframes logo-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-logo-mark {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* =========================================================================
    17. Reduced motion
    ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
@@ -2076,8 +2119,11 @@ button svg {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 20px;
-  min-height: 48px;
+  padding: 12px 18px;
+  min-height: 44px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  word-break: keep-all;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--surface);

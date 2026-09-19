@@ -13,7 +13,10 @@
     "lint": "eslint .",
     "check:connections": "tsx scripts/check-connections.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "test:e2e": "playwright test"
+    "db:reconcile-headcounts": "tsx scripts/reconcile-headcounts.ts",
+    "test:e2e": "playwright test",
+    "test:db": "tsx --test tests/database.test.ts",
+    "test:orders-ui": "node scripts/test-work-orders-ui.mjs"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
@@ -23,6 +26,7 @@
     "lucide-react": "^0.468.0",
     "next": "16.3.5",
     "next-auth": "^5.0.0-beta.32",
+    "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "resend": "^6.28.1",
@@ -32,11 +36,14 @@
   "devDependencies": {
     "@playwright/test": "^1.56.0",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "dotenv": "^17.0.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.5",
+    "pg": "^8.23.0",
     "prettier": "^3.9.8",
     "tsx": "^4.0.0",
     "typescript": "^5.9.3"

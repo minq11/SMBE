@@ -118,32 +118,3 @@ export async function listOpenInvites(
     [companyId],
   );
 }
-
-// 마지막 관리감독자인지 판정 (역할 변경/퇴사 차단용)
-export async function isLastSupervisor(
-  companyId: string,
-  memberId: string,
-): Promise<boolean> {
-  const row = await queryOne<{ is_last: boolean }>(
-    `SELECT (
-      $2::uuid = ANY (
-        ARRAY(
-          SELECT m.id FROM company_members m
-           WHERE m.company_id = $1
-             AND m.role = 'MANAGER_SUPERVISOR'
-             AND m.status = 'ACTIVE'
-             AND m.left_at IS NULL
-        )
-      )
-      AND (
-        SELECT COUNT(*) FROM company_members m
-         WHERE m.company_id = $1
-           AND m.role = 'MANAGER_SUPERVISOR'
-           AND m.status = 'ACTIVE'
-           AND m.left_at IS NULL
-      ) = 1
-    ) AS is_last`,
-    [companyId, memberId],
-  );
-  return row?.is_last ?? false;
-}

@@ -30,4 +30,9 @@ npm run db:migrate
     `company_invitations`
   - helper: `touch_updated_at()` 트리거 함수, 각 테이블의 `updated_at` 자동 갱신
 
-후속 페이즈(표준서·평가·지시서·PTW·점검·과금 등)는 새 파일로 추가합니다.
+- `0002_company_required_fields.sql` — 사업개시일·예상 연매출액 필수값.
+- `0003_work_orders.sql` — 간이평가, 작업지시·배정·발급 스냅샷·체크리스트·전달 기록·감사 로그.
+- `0004_inspections.sql` — 작업회차, TBM·작업 중 점검, 점검 결과, 부적합 및 조치완료.
+  - 작업지시·현장점검 범위 및 검증 방법: [work-orders.md](../docs/work-orders.md).
+
+후속 페이즈(표준서·PTW·사진·사후입력·수정이력·과금 등)는 새 파일로 추가합니다.

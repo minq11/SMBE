@@ -31,6 +31,7 @@ export async function sendEmail(input: {
   html: string;
   text: string;
   replyTo?: string;
+  idempotencyKey?: string;
 }): Promise<SendResult> {
   const client = getClient();
   const from = fromAddress();
@@ -42,14 +43,19 @@ export async function sendEmail(input: {
   }
 
   try {
-    const result = await client.emails.send({
-      from,
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      replyTo: input.replyTo,
-    });
+    const result = await client.emails.send(
+      {
+        from,
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        replyTo: input.replyTo,
+      },
+      input.idempotencyKey
+        ? { idempotencyKey: input.idempotencyKey }
+        : undefined,
+    );
     if (result.error) {
       return { status: "failed", error: result.error.message };
     }

@@ -1,0 +1,1042 @@
+import assert from "node:assert/strict";
+import { before, after, test } from "node:test";
+import { readFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { Pool } from "pg";
+import type { PoolClient } from "@neondatabase/serverless";
+import {
+  acceptInvite,
+  mutateMember,
+  refreshHeadcount,
+} from "../src/server/membership-mutations";
+import { resolveIdentity } from "../src/server/identity-mutations";
+import {
+  submitInspection,
+  resolveFinding,
+  inspectionOverview,
+  pendingFindings,
+  inspectionSessions,
+} from "../src/server/inspection-service";
+import {
+  sessionState,
+  type InspectionInput,
+  type SessionRow,
+} from "../src/features/inspections/model";
+import {
+  saveOrder,
+  requestAssessment,
+  approveAssessment,
+  approveAndIssueOrder,
+  issueOrder,
+  cancelOrder,
+  readOrder,
+} from "../src/server/work-order-service";
+import {
+  blankDraft,
+  effectiveStatus,
+  seoulToday,
+  validateIssue,
+  validateSchedule,
+  shiftMinutes,
+  type WorkDraft,
+} from "../src/features/work-orders/model";
+
+// Deliberately never reads DATABASE_URL or dotenv: tests cannot touch Neon.
+const schema = "regression_" + randomUUID().replaceAll("-", "");
+const pool = new Pool({
+  connectionString:
+    "postgresql://postgres:smbe-test-only@127.0.0.1:55439/smbe_regression",
+  options: `-c search_path=${schema},public`,
+});
+const setupPool = new Pool({
+  connectionString:
+    "postgresql://postgres:smbe-test-only@127.0.0.1:55439/smbe_regression",
+});
+async function transaction<T>(fn: (client: PoolClient) => Promise<T>) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client as unknown as PoolClient);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+before(async () => {
+  await setupPool.query("CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public");
+  await setupPool.query("CREATE EXTENSION IF NOT EXISTS citext SCHEMA public");
+  await pool.query(`CREATE SCHEMA ${schema}`);
+  for (const file of [
+    "0001_init.sql",
+    "0002_company_required_fields.sql",
+    "0003_work_orders.sql",
+    "0004_inspections.sql",
+  ]) {
+    await pool.query(
+      await readFile(new URL("../db/" + file, import.meta.url), "utf8"),
+    );
+  }
+});
+after(async () => {
+  await pool.query(`DROP SCHEMA ${schema} CASCADE`);
+  await pool.end();
+  await setupPool.end();
+});
+async function user() {
+  return (
+    await pool.query(
+      "INSERT INTO users (display_name) VALUES ('test') RETURNING id",
+    )
+  ).rows[0].id as string;
+}
+async function fixture() {
+  const userId = await user();
+  const companyId = (
+    await pool.query(
+      `INSERT INTO companies (name, business_type, business_start_date, company_code,
+       initial_employee_size_band, active_headcount, expected_annual_revenue_manwon, created_by)
+     VALUES ('test', 'test', '2026-01-01', $1, 'FROM_50', 99, 0, $2) RETURNING id`,
+      [randomUUID(), userId],
+    )
+  ).rows[0].id as string;
+  const memberId = await member(companyId, userId, "MANAGER_SUPERVISOR");
+  return { userId, companyId, memberId };
+}
+async function member(
+  companyId: string,
+  userId: string,
+  role = "WORKER",
+  status = "ACTIVE",
+) {
+  return (
+    await pool.query(
+      `INSERT INTO company_members (user_id, company_id, role, status, joined_via, snapshot_display_name)
+     VALUES ($1, $2, $3, $4, 'DIRECT_JOIN', 'test') RETURNING id`,
+      [userId, companyId, role, status],
+    )
+  ).rows[0].id as string;
+}
+async function invitation(
+  companyId: string,
+  inviter: string,
+  expires = "1 day",
+) {
+  const token = randomUUID();
+  await pool.query(
+    `INSERT INTO company_invitations (company_id, inviter_id, contact_email, target_role, token, expires_at)
+     VALUES ($1, $2, 'test@example.com', 'WORKER', $3, now() + $4::interval)`,
+    [companyId, inviter, token, expires],
+  );
+  return token;
+}
+test("simultaneous approval is single-use and repairs count; repeated resignation cannot decrement twice", async () => {
+  const actor = await fixture();
+  const id = await member(
+    actor.companyId,
+    await user(),
+    "WORKER",
+    "JOIN_PENDING",
+  );
+  const results = await Promise.all(
+    [1, 2].map(() => transaction((c) => mutateMember(c, actor, id, "approve"))),
+  );
+  assert.equal(results.filter((r) => r.message).length, 1);
+  assert.equal(
+    (
+      await pool.query("SELECT active_headcount FROM companies WHERE id=$1", [
+        actor.companyId,
+      ])
+    ).rows[0].active_headcount,
+    2,
+  );
+  const resigned = await Promise.all(
+    [1, 2].map(() => transaction((c) => mutateMember(c, actor, id, "resign"))),
+  );
+  assert.equal(resigned.filter((r) => r.message).length, 1);
+  assert.equal(
+    (
+      await pool.query("SELECT active_headcount FROM companies WHERE id=$1", [
+        actor.companyId,
+      ])
+    ).rows[0].active_headcount,
+    1,
+  );
+});
+test("approval and rejection competing for one request have exactly one winner", async () => {
+  const actor = await fixture();
+  const id = await member(
+    actor.companyId,
+    await user(),
+    "WORKER",
+    "JOIN_PENDING",
+  );
+  const results = await Promise.all([
+    transaction((c) => mutateMember(c, actor, id, "approve")),
+    transaction((c) => mutateMember(c, actor, id, "reject")),
+  ]);
+  assert.equal(results.filter((r) => r.message).length, 1);
+});
+test("two supervisors cannot concurrently demote or resign the last supervisor", async () => {
+  for (const op of ["role", "resign"] as const) {
+    const actor = await fixture();
+    const otherUser = await user();
+    const other = await member(
+      actor.companyId,
+      otherUser,
+      "MANAGER_SUPERVISOR",
+    );
+    const results = await Promise.all([
+      transaction((c) => mutateMember(c, actor, actor.memberId, op, "WORKER")),
+      transaction((c) =>
+        mutateMember(c, { ...actor, userId: otherUser }, other, op, "WORKER"),
+      ),
+    ]);
+    assert.equal(results.filter((r) => r.message).length, 1);
+    assert.equal(
+      (
+        await pool.query(
+          "SELECT count(*)::int AS n FROM company_members WHERE company_id=$1 AND role='MANAGER_SUPERVISOR' AND status='ACTIVE'",
+          [actor.companyId],
+        )
+      ).rows[0].n,
+      1,
+    );
+  }
+});
+test("stale manager and cross-company targets are rejected", async () => {
+  const actor = await fixture();
+  const outsider = await fixture();
+  assert.ok(
+    (
+      await transaction((c) =>
+        mutateMember(c, actor, outsider.memberId, "resign"),
+      )
+    ).error,
+  );
+  await pool.query("UPDATE company_members SET role='WORKER' WHERE id=$1", [
+    actor.memberId,
+  ]);
+  assert.ok(
+    (await transaction((c) => mutateMember(c, actor, actor.memberId, "resign")))
+      .error,
+  );
+});
+test("two users racing for one invite produce only one membership", async () => {
+  const actor = await fixture();
+  const token = await invitation(actor.companyId, actor.userId);
+  const ids = await Promise.all([user(), user()]);
+  const results = await Promise.allSettled(
+    ids.map((id) => transaction((c) => acceptInvite(c, token, id))),
+  );
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(
+    (
+      await pool.query("SELECT active_headcount FROM companies WHERE id=$1", [
+        actor.companyId,
+      ])
+    ).rows[0].active_headcount,
+    2,
+  );
+});
+test("expired invite and existing membership never consume invitation", async () => {
+  const actor = await fixture();
+  const token = await invitation(actor.companyId, actor.userId);
+  await assert.rejects(
+    transaction((c) => acceptInvite(c, token, actor.userId)),
+  );
+  const expired = await invitation(actor.companyId, actor.userId, "-1 day");
+  const id = await user();
+  await assert.rejects(transaction((c) => acceptInvite(c, expired, id)));
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM company_invitations WHERE token=ANY($1) AND accepted_at IS NOT NULL",
+        [[token, expired]],
+      )
+    ).rows[0].n,
+    0,
+  );
+});
+test("one user accepting two companies concurrently joins only one; losing token rolls back", async () => {
+  const a = await fixture(),
+    b = await fixture(),
+    id = await user();
+  const tokens = await Promise.all([
+    invitation(a.companyId, a.userId),
+    invitation(b.companyId, b.userId),
+  ]);
+  const results = await Promise.allSettled(
+    tokens.map((token) => transaction((c) => acceptInvite(c, token, id))),
+  );
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM company_invitations WHERE token=ANY($1) AND accepted_at IS NOT NULL",
+        [tokens],
+      )
+    ).rows[0].n,
+    1,
+  );
+});
+test("size-band boundaries use active memberships, retaining initial declared band", async () => {
+  const actor = await fixture();
+  let count = 1;
+  for (const [n, band] of [
+    [1, "UNDER_5"],
+    [4, "UNDER_5"],
+    [5, "FROM_5_TO_19"],
+    [19, "FROM_5_TO_19"],
+    [20, "FROM_20_TO_49"],
+    [49, "FROM_20_TO_49"],
+    [50, "FROM_50"],
+  ] as const) {
+    while (count < n) {
+      await member(actor.companyId, await user());
+      count++;
+    }
+    await transaction((c) => refreshHeadcount(c, actor.companyId));
+    const row = (
+      await pool.query("SELECT * FROM companies WHERE id=$1", [actor.companyId])
+    ).rows[0];
+    assert.equal(row.active_headcount, n);
+    assert.equal(row.current_employee_size_band, band);
+    assert.equal(row.initial_employee_size_band, "FROM_50");
+  }
+});
+test("OAuth duplicate email recovers transaction without merging; same-identity callbacks share one user", async () => {
+  const email = randomUUID() + "@example.com";
+  const first = await transaction((c) =>
+    resolveIdentity(c, "GOOGLE", randomUUID(), "test", email),
+  );
+  const providerId = randomUUID();
+  const ids = await Promise.all(
+    [1, 2].map(() =>
+      transaction((c) =>
+        resolveIdentity(c, "NAVER", providerId, "test", email),
+      ),
+    ),
+  );
+  assert.equal(ids[0], ids[1]);
+  assert.notEqual(ids[0], first);
+  assert.equal(
+    (await pool.query("SELECT email FROM users WHERE id=$1", [ids[0]])).rows[0]
+      .email,
+    null,
+  );
+});
+
+async function orderFixture(ptw = false) {
+  const actor = await fixture();
+  const worker = await user();
+  await member(actor.companyId, worker);
+  const d: WorkDraft = {
+    ...blankDraft(),
+    name: "테스트 작업",
+    method: "테스트 작업방법",
+    location: "테스트 장소",
+    startDate: seoulToday(new Date(Date.now() + 86400_000)),
+    endDate: seoulToday(new Date(Date.now() + 86400_000)),
+    criteria: "테스트 판단 기준",
+    participantIds: [worker],
+    assigneeIds: [worker],
+    ptwRequired: ptw,
+    safetyInfo: {
+      equipment: "테스트",
+      materials: "테스트",
+      environment: "테스트",
+      history: "테스트",
+    },
+    risks: [
+      {
+        hazard: "테스트 위험",
+        level: "LOW",
+        allowable: "yes",
+        measure: "테스트 대책",
+        responsibleId: worker,
+        dueDate: seoulToday(new Date(Date.now() + 86400_000)),
+      },
+    ],
+    tbm: ["테스트 TBM"],
+    during: ["테스트 작업 중"],
+  };
+  const id = randomUUID();
+  await transaction((c) => saveOrder(c, actor, id, 0, d));
+  return { actor, worker, d, id };
+}
+async function approvedOrder(ptw = false) {
+  const setup = await orderFixture(ptw);
+  await transaction((c) => requestAssessment(c, setup.actor, setup.id, 1));
+  const reviewer = await user();
+  await member(setup.actor.companyId, reviewer, "MANAGER_SAFETY");
+  await transaction((c) =>
+    approveAssessment(
+      c,
+      { ...setup.actor, userId: reviewer },
+      setup.id,
+      2,
+      false,
+    ),
+  );
+  return setup;
+}
+
+async function inspectionFixture() {
+  const setup = await orderFixture();
+  const start = new Date(Date.now() - 3600000);
+  const end = new Date(Date.now() + 3 * 3600000);
+  const time = (d: Date) =>
+    new Date(d.getTime() + 9 * 3600000).toISOString().slice(11, 16);
+  const d = {
+    ...setup.d,
+    startDate: seoulToday(start),
+    endDate: seoulToday(start),
+    startTime: time(start),
+    endTime: time(end),
+  };
+  await transaction((c) => saveOrder(c, setup.actor, setup.id, 1, d));
+  await transaction((c) => approveAndIssueOrder(c, setup.actor, setup.id, 2));
+  const session = (
+    await transaction((c) => inspectionSessions(c, setup.id))
+  )[0];
+  const checklist = (
+    await pool.query(
+      "SELECT id,category FROM work_order_checklist_items WHERE work_order_id=$1",
+      [setup.id],
+    )
+  ).rows;
+  const input = (category: "TBM" | "DURING_WORK" = "TBM"): InspectionInput => ({
+    id: randomUUID(),
+    orderId: setup.id,
+    sessionId: session.id,
+    category,
+    entryPath: "QR",
+    confirmed: true,
+    results: checklist
+      .filter((c) => c.category === category)
+      .map((c) => ({
+        itemId: c.id,
+        result: "PASS",
+        comment: "",
+        managerId: "",
+      })),
+  });
+  return {
+    ...setup,
+    session,
+    input,
+    workerActor: { ...setup.actor, userId: setup.worker },
+  };
+}
+
+test("inspection: during-work before TBM is allowed; all assignees and one patrol complete session", async () => {
+  const f = await inspectionFixture();
+  await transaction((c) =>
+    submitInspection(c, f.workerActor, f.input("DURING_WORK")),
+  );
+  let data = await transaction((c) => inspectionOverview(c, f.actor, f.id));
+  assert.equal(sessionState(data.current!).state, "OPEN");
+  assert.equal(sessionState(data.current!).missing.length, 1);
+  // A manager not assigned to the order participates, but cannot replace the worker.
+  await transaction((c) => submitInspection(c, f.actor, f.input()));
+  data = await transaction((c) => inspectionOverview(c, f.actor, f.id));
+  assert.equal(sessionState(data.current!).missing.length, 1);
+  await transaction((c) => submitInspection(c, f.workerActor, f.input()));
+  data = await transaction((c) => inspectionOverview(c, f.workerActor, f.id));
+  assert.equal(sessionState(data.current!).state, "OPEN");
+  assert.equal(
+    sessionState(
+      data.current!,
+      new Date(Date.parse(data.current!.ends_at) + 2 * 60 * 60 * 1000 + 1),
+    ).state,
+    "DONE",
+  );
+  assert.equal(data.records.length, 3);
+  await transaction((c) =>
+    submitInspection(c, f.workerActor, f.input("DURING_WORK")),
+  );
+  assert.equal(
+    (await transaction((c) => inspectionOverview(c, f.actor, f.id))).current!
+      .during_count,
+    2,
+  );
+});
+
+test("inspection: concurrent retries are idempotent; different TBM requests have one winner", async () => {
+  const f = await inspectionFixture();
+  const data = f.input();
+  const same = await Promise.all(
+    [1, 2].map(() =>
+      transaction((c) => submitInspection(c, f.workerActor, data)),
+    ),
+  );
+  assert.equal(same[0], same[1]);
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM inspections WHERE session_id=$1",
+        [f.session.id],
+      )
+    ).rows[0].n,
+    1,
+  );
+  await assert.rejects(
+    transaction((c) => submitInspection(c, f.workerActor, f.input())),
+    /이미/,
+  );
+  const g = await inspectionFixture();
+  const different = await Promise.allSettled(
+    [1, 2].map(() =>
+      transaction((c) => submitInspection(c, g.workerActor, g.input())),
+    ),
+  );
+  assert.equal(different.filter((r) => r.status === "fulfilled").length, 1);
+});
+
+test("inspection: tenant, unassigned, inactive and forged session/checklist are denied", async () => {
+  const f = await inspectionFixture();
+  const other = await inspectionFixture();
+  await assert.rejects(
+    transaction((c) => submitInspection(c, other.actor, f.input())),
+  );
+  const outsider = await user();
+  await member(f.actor.companyId, outsider);
+  await assert.rejects(
+    transaction((c) =>
+      submitInspection(c, { ...f.actor, userId: outsider }, f.input()),
+    ),
+  );
+  await assert.rejects(
+    transaction((c) =>
+      submitInspection(c, f.workerActor, {
+        ...f.input(),
+        sessionId: other.session.id,
+      }),
+    ),
+  );
+  await assert.rejects(
+    transaction((c) =>
+      submitInspection(c, f.workerActor, {
+        ...f.input(),
+        results: other.input().results,
+      }),
+    ),
+  );
+  const duplicates = f.input();
+  duplicates.results.push(duplicates.results[0]);
+  await assert.rejects(
+    transaction((c) => submitInspection(c, f.workerActor, duplicates)),
+  );
+  await pool.query(
+    "UPDATE company_members SET left_at=now() WHERE company_id=$1 AND user_id=$2",
+    [f.actor.companyId, f.worker],
+  );
+  await assert.rejects(
+    transaction((c) => submitInspection(c, f.workerActor, f.input())),
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM inspections WHERE session_id=$1",
+        [f.session.id],
+      )
+    ).rows[0].n,
+    0,
+  );
+});
+
+test("inspection: TBM requires confirmation and failed checks require active manager; no partial writes", async () => {
+  const f = await inspectionFixture();
+  await assert.rejects(
+    transaction((c) =>
+      submitInspection(c, f.workerActor, { ...f.input(), confirmed: false }),
+    ),
+    /확인/,
+  );
+  const data = f.input();
+  data.results[0].result = "FAIL";
+  await assert.rejects(
+    transaction((c) => submitInspection(c, f.workerActor, data)),
+    /관리자/,
+  );
+  data.results[0].managerId = f.worker;
+  await assert.rejects(
+    transaction((c) => submitInspection(c, f.workerActor, data)),
+    /관리자/,
+  );
+  data.results[0].managerId = f.actor.userId;
+  await transaction((c) => submitInspection(c, f.workerActor, data));
+  const overview = await transaction((c) =>
+    inspectionOverview(c, f.actor, f.id),
+  );
+  assert.equal(overview.openCount, 1);
+  assert.equal(overview.records[0].entry_path, "QR");
+  assert.equal(overview.records[0].inspector_id, f.worker);
+  assert.equal(
+    (await transaction((c) => pendingFindings(c, f.actor))).length,
+    1,
+  );
+});
+
+test("inspection: only designated active manager resolves; cancellation preserves open findings", async () => {
+  const f = await inspectionFixture();
+  const data = f.input();
+  data.results[0] = {
+    ...data.results[0],
+    result: "FAIL",
+    managerId: f.actor.userId,
+  };
+  await transaction((c) => submitInspection(c, f.workerActor, data));
+  const finding = (await transaction((c) => pendingFindings(c, f.actor)))[0];
+  const another = await user();
+  await member(f.actor.companyId, another, "MANAGER_SAFETY");
+  await assert.rejects(
+    transaction((c) =>
+      resolveFinding(
+        c,
+        { ...f.actor, userId: another },
+        finding.id,
+        "다른 관리자",
+      ),
+    ),
+    /지정/,
+  );
+  await assert.rejects(
+    transaction((c) => resolveFinding(c, f.workerActor, finding.id, "작업자")),
+  );
+  await assert.rejects(
+    transaction((c) => resolveFinding(c, f.actor, finding.id, "  ")),
+    /내용/,
+  );
+  const revision = (
+    await pool.query("SELECT revision FROM work_orders WHERE id=$1", [f.id])
+  ).rows[0].revision;
+  await transaction((c) =>
+    cancelOrder(c, f.actor, f.id, revision, "점검 후 취소"),
+  );
+  await assert.rejects(
+    transaction((c) =>
+      submitInspection(c, f.workerActor, f.input("DURING_WORK")),
+    ),
+    /유효/,
+  );
+  assert.equal(
+    (await transaction((c) => pendingFindings(c, f.actor))).length,
+    1,
+  );
+  await transaction((c) =>
+    resolveFinding(c, f.actor, finding.id, "가드 수리 및 정상 동작 확인"),
+  );
+  assert.equal(
+    (await transaction((c) => pendingFindings(c, f.actor))).length,
+    0,
+  );
+  await assert.rejects(
+    transaction((c) => resolveFinding(c, f.actor, finding.id, "덮어쓰기")),
+    /이미/,
+  );
+  assert.equal(
+    (await transaction((c) => inspectionOverview(c, f.actor, f.id))).openCount,
+    0,
+  );
+});
+
+test("inspection: scheduled/closed sessions reject input; next session independent of previous missing TBM", async () => {
+  const f = await inspectionFixture();
+  await pool.query(
+    "UPDATE work_sessions SET starts_at=now()+interval '4 hours',ends_at=now()+interval '8 hours' WHERE id=$1",
+    [f.session.id],
+  );
+  await assert.rejects(
+    transaction((c) => submitInspection(c, f.workerActor, f.input())),
+    /현재 회차/,
+  );
+  await pool.query(
+    "UPDATE work_sessions SET starts_at=now()-interval '8 hours',ends_at=now()-interval '4 hours' WHERE id=$1",
+    [f.session.id],
+  );
+  await assert.rejects(
+    transaction((c) => submitInspection(c, f.workerActor, f.input())),
+    /현재 회차/,
+  );
+  const g = await inspectionFixture();
+  await pool.query(
+    `INSERT INTO work_sessions(company_id,work_order_id,work_date,starts_at,ends_at,expected_assignees)
+    SELECT company_id,work_order_id,work_date-1,starts_at-interval '1 day',ends_at-interval '1 day',expected_assignees FROM work_sessions WHERE id=$1`,
+    [g.session.id],
+  );
+  await transaction((c) => submitInspection(c, g.workerActor, g.input()));
+  const overview = await transaction((c) =>
+    inspectionOverview(c, g.actor, g.id),
+  );
+  assert.equal(overview.sessions.length, 2);
+  assert.equal(sessionState(overview.sessions[1]).state, "MISSED");
+});
+
+test("inspection: previous resolved actions are shared on next TBM and old open findings remain actionable", async () => {
+  const f = await inspectionFixture();
+  const data = f.input();
+  data.results[0] = {
+    ...data.results[0],
+    result: "FAIL",
+    managerId: f.actor.userId,
+  };
+  await transaction((c) => submitInspection(c, f.workerActor, data));
+  const finding = (await transaction((c) => pendingFindings(c, f.actor)))[0];
+  await transaction((c) =>
+    resolveFinding(c, f.actor, finding.id, "차단 장치 교체"),
+  );
+  await pool.query(
+    "UPDATE work_sessions SET work_date=work_date-1,starts_at=starts_at-interval '1 day',ends_at=ends_at-interval '1 day' WHERE id=$1",
+    [f.session.id],
+  );
+  await pool.query("SELECT create_work_sessions($1)", [f.id]);
+  await pool.query("SELECT create_work_sessions($1)", [f.id]);
+  const overview = await transaction((c) =>
+    inspectionOverview(c, f.workerActor, f.id),
+  );
+  assert.equal(overview.sessions.length, 2);
+  assert.equal(overview.previousActions[0].resolution, "차단 장치 교체");
+  // Past result is outside FREE read window but its open safety action stays in inbox.
+  const g = await inspectionFixture();
+  const failed = g.input();
+  failed.results[0] = {
+    ...failed.results[0],
+    result: "FAIL",
+    managerId: g.actor.userId,
+  };
+  await transaction((c) => submitInspection(c, g.workerActor, failed));
+  await pool.query(
+    "UPDATE work_sessions SET work_date=work_date-9,starts_at=starts_at-interval '9 days',ends_at=ends_at-interval '9 days' WHERE id=$1",
+    [g.session.id],
+  );
+  const old = await transaction((c) => inspectionOverview(c, g.actor, g.id));
+  assert.equal(old.records.length, 0);
+  assert.equal(old.lockedSessions, 1);
+  assert.equal(old.openCount, 1);
+  const open = (await transaction((c) => pendingFindings(c, g.actor)))[0];
+  await transaction((c) =>
+    resolveFinding(c, g.actor, open.id, "늦은 조치 완료"),
+  );
+});
+
+test("session state: overnight Korean start date, exact window boundaries, missing and completion independent of findings", () => {
+  const session: SessionRow = {
+    id: randomUUID(),
+    work_date: "2026-09-19",
+    starts_at: "2026-09-19T22:00:00+09:00",
+    ends_at: "2026-09-20T06:00:00+09:00",
+    expected_assignees: [{ userId: "worker", name: "작업자" }],
+    tbm_users: [],
+    during_count: 0,
+  };
+  assert.equal(
+    sessionState(session, new Date("2026-09-19T19:59:59+09:00")).state,
+    "SCHEDULED",
+  );
+  assert.equal(
+    sessionState(session, new Date("2026-09-19T20:00:00+09:00")).open,
+    true,
+  );
+  assert.equal(
+    sessionState(session, new Date("2026-09-20T00:30:00+09:00")).open,
+    true,
+  );
+  assert.equal(
+    sessionState(session, new Date("2026-09-20T08:00:00+09:00")).open,
+    true,
+  );
+  assert.equal(
+    sessionState(session, new Date("2026-09-20T08:00:01+09:00")).state,
+    "MISSED",
+  );
+  assert.equal(
+    sessionState(
+      { ...session, tbm_users: ["worker"], during_count: 1 },
+      new Date("2026-09-20T09:00:00+09:00"),
+    ).state,
+    "DONE",
+  );
+});
+test("work order: approval required; repeated concurrent issue is atomic and preserves snapshots", async () => {
+  const { actor, id, worker } = await orderFixture();
+  await assert.rejects(
+    transaction((c) => issueOrder(c, actor, id, 1)),
+    /승인/,
+  );
+  await transaction((c) => requestAssessment(c, actor, id, 1));
+  await assert.rejects(
+    transaction((c) => approveAssessment(c, actor, id, 2, false)),
+    /다른 관리자/,
+  );
+  await transaction((c) => approveAssessment(c, actor, id, 2, true));
+  const results = await Promise.allSettled(
+    [1, 2].map(() => transaction((c) => issueOrder(c, actor, id, 3))),
+  );
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  const order = await transaction((c) =>
+    readOrder(c, { ...actor, userId: worker }, id),
+  );
+  assert.equal(order.issue_version, 1);
+  assert.equal(order.status, "ISSUED");
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM work_order_snapshots WHERE work_order_id=$1",
+        [id],
+      )
+    ).rows[0].n,
+    2,
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM work_order_checklist_items WHERE work_order_id=$1",
+        [id],
+      )
+    ).rows[0].n,
+    2,
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM work_order_outputs WHERE work_order_id=$1",
+        [id],
+      )
+    ).rows[0].n,
+    1,
+  );
+  await pool.query(
+    "UPDATE risk_assessment_items SET hazard='changed source' WHERE assessment_id=$1",
+    [order.risk_assessment_id],
+  );
+  const snapshot = (
+    await pool.query(
+      "SELECT payload FROM work_order_snapshots WHERE work_order_id=$1 AND snapshot_kind='RISK_ASSESSMENT'",
+      [id],
+    )
+  ).rows[0].payload;
+  assert.equal(snapshot.items[0].hazard, "테스트 위험");
+  assert.equal(
+    snapshot.items[0].planned_completion_date,
+    seoulToday(new Date(Date.now() + 86400_000)),
+  );
+  assert.equal(snapshot.items[0].responsible_name, "test");
+});
+test("work order: explicit approve-and-issue permits self approval and records it once", async () => {
+  const { actor, id } = await orderFixture();
+  const results = await Promise.allSettled(
+    [1, 2].map(() => transaction((c) => approveAndIssueOrder(c, actor, id, 1))),
+  );
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  const row = await transaction((c) => readOrder(c, actor, id));
+  assert.equal(row.assessment_status, "APPROVED");
+  assert.equal(row.status, "ISSUED");
+  assert.equal(row.approved_by, actor.userId);
+  const audit = (
+    await pool.query(
+      "SELECT is_self_approval FROM audit_logs WHERE target_id=$1 AND action='APPROVE_ASSESSMENT'",
+      [id],
+    )
+  ).rows;
+  assert.equal(audit.length, 1);
+  assert.equal(audit[0].is_self_approval, true);
+});
+
+test("work order: failed combined issue rolls back newly created approval and snapshots", async () => {
+  const { actor, id, d } = await orderFixture();
+  await transaction((c) =>
+    saveOrder(c, actor, id, 1, {
+      ...d,
+      startDate: "2020-01-01",
+      endDate: "2020-01-01",
+    }),
+  );
+  await assert.rejects(
+    transaction((c) => approveAndIssueOrder(c, actor, id, 2)),
+    /종료/,
+  );
+  const row = await transaction((c) => readOrder(c, actor, id));
+  assert.equal(row.status, "DRAFT");
+  assert.equal(row.risk_assessment_id, null);
+  assert.equal(row.revision, 2);
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM risk_assessments WHERE company_id=$1",
+        [actor.companyId],
+      )
+    ).rows[0].n,
+    0,
+  );
+});
+
+test("work order: stale edits are rejected and editing invalidates approval without deleting past assessment", async () => {
+  const { actor, id, d } = await approvedOrder();
+  await assert.rejects(
+    transaction((c) => saveOrder(c, actor, id, 1, d)),
+    /변경/,
+  );
+  await transaction((c) =>
+    saveOrder(c, actor, id, 3, { ...d, method: "변경" }),
+  );
+  const order = await transaction((c) => readOrder(c, actor, id));
+  assert.equal(order.risk_assessment_id, null);
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM risk_assessments WHERE company_id=$1 AND status='APPROVED'",
+        [actor.companyId],
+      )
+    ).rows[0].n,
+    1,
+  );
+  await assert.rejects(
+    transaction((c) => issueOrder(c, actor, id, 4)),
+    /승인/,
+  );
+});
+test("work order: tenant boundary, worker permissions and assignment scope", async () => {
+  const { actor, id, d, worker } = await approvedOrder();
+  const outsider = await fixture();
+  await assert.rejects(transaction((c) => readOrder(c, outsider, id)));
+  await assert.rejects(
+    transaction((c) => readOrder(c, { ...actor, userId: worker }, id)),
+  );
+  await assert.rejects(
+    transaction((c) =>
+      saveOrder(c, { ...actor, userId: worker }, randomUUID(), 0, d),
+    ),
+  );
+  await assert.rejects(
+    transaction((c) =>
+      saveOrder(c, actor, randomUUID(), 0, {
+        ...d,
+        assigneeIds: [outsider.userId],
+      }),
+    ),
+  );
+  await transaction((c) => issueOrder(c, actor, id, 3));
+  const unassigned = await user();
+  await member(actor.companyId, unassigned);
+  await assert.rejects(
+    transaction((c) => readOrder(c, { ...actor, userId: unassigned }, id)),
+  );
+  await transaction((c) => readOrder(c, { ...actor, userId: worker }, id));
+});
+test("work order: PTW cannot be bypassed; departed assignees block issue", async () => {
+  const setup = await approvedOrder(true);
+  await assert.rejects(
+    transaction((c) => issueOrder(c, setup.actor, setup.id, 3)),
+    /PTW/,
+  );
+  await assert.rejects(
+    transaction((c) =>
+      saveOrder(c, setup.actor, setup.id, 3, {
+        ...setup.d,
+        ptwRequired: false,
+      }),
+    ),
+    /PTW/,
+  );
+  const normal = await approvedOrder();
+  await pool.query(
+    "UPDATE company_members SET status='RESIGNED',left_at=now() WHERE user_id=$1",
+    [normal.worker],
+  );
+  await assert.rejects(
+    transaction((c) => issueOrder(c, normal.actor, normal.id, 3)),
+    /활성 구성원/,
+  );
+});
+test("work order: cancellation requires reason, preserves records, and blocks later mutation", async () => {
+  const { actor, id, d } = await approvedOrder();
+  await transaction((c) => issueOrder(c, actor, id, 3));
+  await assert.rejects(transaction((c) => cancelOrder(c, actor, id, 4, "")));
+  await transaction((c) => cancelOrder(c, actor, id, 4, "테스트 취소"));
+  assert.equal(
+    (await transaction((c) => readOrder(c, actor, id))).status,
+    "CANCELED",
+  );
+  await assert.rejects(transaction((c) => saveOrder(c, actor, id, 5, d)));
+  await assert.rejects(transaction((c) => issueOrder(c, actor, id, 5)));
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM work_order_snapshots WHERE work_order_id=$1",
+        [id],
+      )
+    ).rows[0].n,
+    2,
+  );
+});
+test("work order: old free records deny direct access, Pro allows access", async () => {
+  const { actor, id } = await approvedOrder();
+  await transaction((c) => issueOrder(c, actor, id, 3));
+  await pool.query(
+    `UPDATE work_orders SET draft_data=jsonb_set(jsonb_set(draft_data,'{startDate}','"2020-01-01"'),'{endDate}','"2020-01-01"') WHERE id=$1`,
+    [id],
+  );
+  await assert.rejects(
+    transaction((c) => readOrder(c, actor, id)),
+    /최근 1주일/,
+  );
+  await pool.query(
+    "UPDATE companies SET pro_state='PRO_VOLUNTARY' WHERE id=$1",
+    [actor.companyId],
+  );
+  assert.equal(
+    (await transaction((c) => readOrder(c, actor, id))).status,
+    "COMPLETED",
+  );
+});
+test("work order: input, overnight 16h limit and Korea session window boundaries", () => {
+  assert.equal(shiftMinutes("20:00", "08:00"), 720);
+  assert.equal(shiftMinutes("00:00", "00:00"), 0);
+  const valid = {
+    ...blankDraft(),
+    startDate: "2026-09-19",
+    endDate: "2026-09-19",
+    startTime: "08:00",
+    endTime: "00:00",
+    location: "test",
+    assigneeIds: [randomUUID()],
+  };
+  assert.doesNotThrow(() => validateSchedule(valid));
+  assert.throws(
+    () => validateSchedule({ ...valid, endTime: "00:01" }),
+    /16시간/,
+  );
+  assert.throws(
+    () => validateSchedule({ ...valid, startDate: "2026-02-30" }),
+    /작업기간/,
+  );
+  const draft = blankDraft();
+  assert.throws(() => validateIssue(draft));
+  const schedule = {
+    startDate: "2026-09-19",
+    endDate: "2026-09-19",
+    startTime: "20:00",
+    endTime: "08:00",
+  };
+  assert.equal(
+    effectiveStatus("ISSUED", schedule, new Date("2026-09-19T17:59:59+09:00")),
+    "ISSUED",
+  );
+  assert.equal(
+    effectiveStatus("ISSUED", schedule, new Date("2026-09-19T18:00:00+09:00")),
+    "IN_PROGRESS",
+  );
+  assert.equal(
+    effectiveStatus("ISSUED", schedule, new Date("2026-09-20T09:59:59+09:00")),
+    "IN_PROGRESS",
+  );
+  assert.equal(
+    effectiveStatus("ISSUED", schedule, new Date("2026-09-20T10:00:01+09:00")),
+    "COMPLETED",
+  );
+});
