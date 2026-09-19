@@ -6,6 +6,7 @@ import "@fontsource/noto-sans-kr/700.css";
 import "@fontsource/noto-sans-kr/800.css";
 import "@fontsource/noto-sans-kr/900.css";
 import "./globals.css";
+import { PreviewBanner } from "@/components/preview-banner";
 export const metadata: Metadata = {
   title: "SMBE · 안전관리, 쉽고 간편하게",
   description: "Safety must be easy. SMBE 관리자 홈 미리보기",
@@ -21,7 +22,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <PreviewBanner />
+        {children}
+      </body>
     </html>
   );
 }
