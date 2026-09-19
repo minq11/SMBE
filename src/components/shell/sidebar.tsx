@@ -1,0 +1,115 @@
+"use client";
+
+import Link from "next/link";
+import {
+  BookOpen,
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
+  ClipboardList,
+  HelpCircle,
+  Home,
+  Settings2,
+  ShieldCheck,
+  TriangleAlert,
+  type LucideIcon,
+} from "lucide-react";
+import { usePreview } from "./preview-dialog";
+
+export type NavKey =
+  | "home"
+  | "orders"
+  | "standards"
+  | "assessment"
+  | "inspection"
+  | "incident"
+  | "company"
+  | "billing";
+
+const NAV: ReadonlyArray<{ key: NavKey; title: string; icon: LucideIcon }> = [
+  { key: "home", title: "홈", icon: Home },
+  { key: "orders", title: "작업지시", icon: ClipboardList },
+  { key: "standards", title: "작업표준서", icon: BookOpen },
+  { key: "assessment", title: "위험성평가", icon: ShieldCheck },
+  { key: "inspection", title: "안전점검", icon: ClipboardCheck },
+  { key: "incident", title: "안전사고", icon: TriangleAlert },
+  { key: "company", title: "회사정보", icon: Building2 },
+  { key: "billing", title: "이용·관리", icon: Settings2 },
+];
+
+export function Sidebar({
+  active,
+  companyName,
+  tier = "무료",
+  isOpen,
+  onClose,
+}: {
+  active: NavKey;
+  companyName?: string;
+  tier?: "무료" | "Pro";
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const preview = usePreview();
+
+  return (
+    <aside className={`sidebar${isOpen ? " is-open" : ""}`}>
+      <Link href="/" className="brand" aria-label="SMBE 홈">
+        <svg
+          className="brand-logo"
+          viewBox="320 170 1430 400"
+          role="img"
+          aria-label="SMBE 로고"
+        >
+          <image href="/brand/smbe-original.png" width="2073" height="758" />
+        </svg>
+      </Link>
+
+      <button
+        type="button"
+        className="workspace-picker"
+        onClick={() => preview("회사 선택")}
+      >
+        <span className="workspace-icon">
+          <Building2 size={16} />
+        </span>
+        <span className="workspace-copy">
+          <strong>{companyName ?? "우리 회사"}</strong>
+          <small>{tier}티어</small>
+        </span>
+        <ChevronDown size={14} />
+      </button>
+
+      <nav aria-label="주 메뉴" className="nav">
+        {NAV.map(({ key, title, icon: Icon }) => {
+          const isActive = key === active;
+          return (
+            <button
+              key={key}
+              type="button"
+              className={`nav-item${isActive ? " is-active" : ""}`}
+              aria-current={isActive ? "page" : undefined}
+              onClick={() => (isActive ? onClose() : preview(title))}
+            >
+              <Icon size={17} />
+              <span>{title}</span>
+              {!isActive && <ChevronRight size={13} />}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="sidebar-foot">
+        <button
+          type="button"
+          className="sidebar-support"
+          onClick={() => preview("도움말")}
+        >
+          <HelpCircle size={15} />
+          도움말
+        </button>
+      </div>
+    </aside>
+  );
+}

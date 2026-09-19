@@ -1,8 +1,33 @@
 # 데이터베이스
 
-Neon PostgreSQL을 사용합니다. 현재는 `SELECT 1` 연결 확인만 구현합니다.
-업무 기능이 연결되지 않은 단계이므로 회사·사용자·평가 테이블이나 가짜 데이터는 생성하지 않습니다.
+Neon PostgreSQL을 사용합니다. 이 폴더의 `*.sql` 파일이 버전 관리되는 마이그레이션이며,
+`scripts/migrate.ts` 러너가 순차 적용하고 `schema_migrations` 테이블에 기록합니다.
 
-업무 구현 시작 시 버전 관리되는 SQL 마이그레이션을 이 폴더에 추가합니다.
-앱 시작이나 이미지 빌드 시 자동으로 DDL을 실행하지 않습니다.
-운영 데이터를 받기 전 개발과 운영 접속 정보를 분리합니다.
+앱 시작·이미지 빌드 시 자동 DDL 실행은 하지 않습니다. 명시적으로 커맨드를 돌려야 반영됩니다.
+
+## 파일 규칙
+
+- 이름: `NNNN_설명.sql` (예: `0001_init.sql`) — 사전순 = 실행 순.
+- 한 파일 = 하나의 논리 변경 묶음. 러너가 파일 전체를 하나의 트랜잭션으로 실행합니다.
+- 이미 적용된 파일은 다시 실행하지 않습니다. **적용된 SQL은 사후 수정하지 말고 새 파일로 후속 변경**하세요.
+
+## 실행
+
+```powershell
+# .env.local의 DATABASE_URL이 채워져 있어야 함
+npm run db:migrate
+```
+
+첫 실행 시 `schema_migrations` 테이블을 자동 생성합니다. 각 파일은 트랜잭션으로 실행되므로
+중간 실패 시 롤백됩니다.
+
+## 현재 페이즈
+
+- `0001_init.sql` — Phase 1: 계정·회사·소속·장소·초대 (`docs/SMBE-schema-v5.5.md` §2, §3, §4-1).
+  - enum: `user_status`, `oauth_provider`, `employee_size_band`, `company_pro_state`,
+    `company_member_role`, `company_member_status`, `company_join_via`
+  - table: `users`, `user_identities`, `companies`, `company_members`, `work_locations`,
+    `company_invitations`
+  - helper: `touch_updated_at()` 트리거 함수, 각 테이블의 `updated_at` 자동 갱신
+
+후속 페이즈(표준서·평가·지시서·PTW·점검·과금 등)는 새 파일로 추가합니다.
