@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getCurrentSession } from "@/server/session";
+import { isCurrentUserOperator } from "@/server/operator";
 import {
   getCompanyOverview,
   listMembers,
@@ -30,11 +31,12 @@ export default async function CompanyMembersPage() {
   }
 
   const companyId = session.membership.company_id;
-  const [overview, members, openInvites, origin] = await Promise.all([
+  const [overview, members, openInvites, origin, isOperator] = await Promise.all([
     getCompanyOverview(companyId),
     listMembers(companyId),
     listOpenInvites(companyId),
     currentOrigin(),
+    isCurrentUserOperator(),
   ]);
 
   if (!overview) redirect("/onboarding");
@@ -49,6 +51,7 @@ export default async function CompanyMembersPage() {
       companyName={session.membership.company_name}
       userName={session.user.displayName ?? undefined}
       isAuthenticated={true}
+      isOperator={isOperator}
     >
       <PageHeader
         title="인원관리"

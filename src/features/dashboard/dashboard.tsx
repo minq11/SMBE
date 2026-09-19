@@ -75,10 +75,12 @@ export function Dashboard({
   companyName,
   userName,
   isAuthenticated = false,
+  isOperator = false,
 }: {
   companyName?: string;
   userName?: string;
   isAuthenticated?: boolean;
+  isOperator?: boolean;
 }) {
   return (
     <AppShell
@@ -86,6 +88,7 @@ export function Dashboard({
       companyName={companyName}
       userName={userName}
       isAuthenticated={isAuthenticated}
+      isOperator={isOperator}
     >
       <DashboardBody />
     </AppShell>

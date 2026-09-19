@@ -13,6 +13,7 @@ export function AppShell({
   companyName,
   userName,
   isAuthenticated,
+  isOperator = false,
   tier,
   children,
 }: {
@@ -21,6 +22,7 @@ export function AppShell({
   companyName?: string;
   userName?: string;
   isAuthenticated: boolean;
+  isOperator?: boolean;
   tier?: "무료" | "Pro";
   children: ReactNode;
 }) {
@@ -32,6 +34,7 @@ export function AppShell({
         companyName={companyName}
         userName={userName}
         isAuthenticated={isAuthenticated}
+        isOperator={isOperator}
         tier={tier}
       >
         {children}
@@ -46,6 +49,7 @@ function AppShellFrame({
   companyName,
   userName,
   isAuthenticated,
+  isOperator,
   tier,
   children,
 }: {
@@ -54,6 +58,7 @@ function AppShellFrame({
   companyName?: string;
   userName?: string;
   isAuthenticated: boolean;
+  isOperator?: boolean;
   tier?: "무료" | "Pro";
   children: ReactNode;
 }) {
@@ -85,6 +90,7 @@ function AppShellFrame({
           breadcrumb={breadcrumb}
           userName={userName}
           isAuthenticated={isAuthenticated}
+          isOperator={Boolean(isOperator)}
           onOpenMobileMenu={() => setMobileOpen(true)}
           mobileOpen={mobileOpen}
         />

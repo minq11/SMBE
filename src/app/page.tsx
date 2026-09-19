@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { getCurrentSession } from "@/server/session";
+import { isCurrentUserOperator } from "@/server/operator";
 
 export default async function Home() {
   await connection();
@@ -12,11 +13,14 @@ export default async function Home() {
     redirect("/onboarding");
   }
 
+  const isOperator = session ? await isCurrentUserOperator() : false;
+
   return (
     <Dashboard
       companyName={session?.membership?.company_name}
       userName={session?.user.displayName ?? undefined}
       isAuthenticated={Boolean(session)}
+      isOperator={isOperator}
     />
   );
 }

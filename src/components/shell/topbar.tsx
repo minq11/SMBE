@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronDown, Menu } from "lucide-react";
+import { Bell, ChevronDown, Menu, Wrench } from "lucide-react";
 import { logoutAction } from "@/features/auth/logout-action";
 import { AppIcon } from "@/components/brand/app-icon";
 import { usePreview } from "./preview-dialog";
@@ -15,12 +15,14 @@ export function Topbar({
   breadcrumb,
   userName,
   isAuthenticated,
+  isOperator,
   onOpenMobileMenu,
   mobileOpen,
 }: {
   breadcrumb: Crumb[];
   userName?: string;
   isAuthenticated: boolean;
+  isOperator: boolean;
   onOpenMobileMenu: () => void;
   mobileOpen: boolean;
 }) {
@@ -73,6 +75,16 @@ export function Topbar({
           화면 미리보기
         </span>
         <span className="topbar-divider" aria-hidden="true" />
+        {isOperator && (
+          <Link
+            href="/admin"
+            className="icon-button topbar-operator-link"
+            aria-label="운영자 백오피스"
+            title="SMBE 운영자 백오피스"
+          >
+            <Wrench size={17} />
+          </Link>
+        )}
         <button
           type="button"
           className="icon-button"
