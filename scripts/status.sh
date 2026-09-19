@@ -2,7 +2,8 @@
 # 컨테이너 상태 + 최근 로그 요약. 실서비스 응답까지 훑는다.
 
 set -euo pipefail
-REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &> /dev/null && pwd)"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+REPO_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")/.." &> /dev/null && pwd)"
 cd "$REPO_DIR"
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; RESET=$'\033[0m'
