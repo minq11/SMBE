@@ -2,103 +2,34 @@ import "server-only";
 
 import { z } from "zod";
 import { query, queryOne, withTransaction } from "@/server/db";
+import {
+  ASSESSMENT_KIND_LABEL,
+  VALIDITY_MONTHS,
+  type AssessmentKind,
+  type AssessmentStatus,
+  type RiskAssessmentSummary,
+  type RiskItem,
+  type SafetyInfo,
+  type StandardChecklistItem,
+  type StandardDetail,
+  type StandardListRow,
+  type StandardStatus,
+  type StandardStep,
+} from "@/features/standards/constants";
 
-// -----------------------------------------------------------------------------
-// Types
-// -----------------------------------------------------------------------------
-
-export type StandardStatus = "DRAFT" | "APPROVED" | "ARCHIVED";
-export type AssessmentKind = "FIRST" | "PERIODIC" | "AD_HOC" | "CONTINUOUS";
-export type AssessmentStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
-
-export const ASSESSMENT_KIND_LABEL: Record<AssessmentKind, string> = {
-  FIRST: "최초평가",
-  PERIODIC: "정기평가",
-  AD_HOC: "수시평가",
-  CONTINUOUS: "상시평가",
-};
-
-// 산안법 시행규칙: 최초 3년, 정기 1년, 수시는 사유 발생 시. 상시는 상시.
-const VALIDITY_MONTHS: Record<AssessmentKind, number | null> = {
-  FIRST: 36,
-  PERIODIC: 12,
-  AD_HOC: 12, // 수시평가도 이후 정기 사이클 유지
-  CONTINUOUS: null, // 만료 개념 없음
-};
-
-export type StandardListRow = {
-  standard_id: string;
-  name: string;
-  status: StandardStatus;
-  ptw_required: boolean;
-  updated_at: string;
-  latest_approved_performed_on: string | null;
-  latest_approved_kind: AssessmentKind | null;
-  approved_assessment_count: number;
-  usable: boolean;
-  valid_until: string | null; // 현재 승인 평가의 유효기간 만료일 (계산값)
-};
-
-export type StandardStep = { order_no: number; step_text: string };
-export type StandardChecklistItem = {
-  category: "TBM" | "DURING_WORK";
-  order_no: number;
-  text: string;
-};
-
-export type RiskAssessmentSummary = {
-  assessment_id: string;
-  kind: AssessmentKind;
-  performed_on: string;
-  status: AssessmentStatus;
-  approved_at: string | null;
-  approved_by_name: string | null;
-  is_current: boolean; // 지시서 발급 시 사용될 최신 승인 평가인지
-  valid_until: string | null;
-  expired: boolean;
-};
-
-export type RiskItem = {
-  order_no: number;
-  hazard: string;
-  initial_risk_level: "HIGH" | "MID" | "LOW";
-  initial_allowable: boolean;
-  reduction_measure: string;
-  responsible_user_id: string | null;
-  planned_completion_date: string | null;
-};
-
-export type StandardDetail = {
-  standard_id: string;
-  name: string;
-  status: StandardStatus;
-  ptw_required: boolean;
-  created_at: string;
-  updated_at: string;
-  archived_at: string | null;
-  steps: StandardStep[];
-  checklist_tbm: string[];
-  checklist_during: string[];
-  assessments: RiskAssessmentSummary[];
-  current_assessment: {
-    assessment_id: string;
-    kind: AssessmentKind;
-    performed_on: string;
-    criteria: string;
-    work_method: string;
-    safety_info: SafetyInfo;
-    risks: RiskItem[];
-    participant_names: string[];
-    valid_until: string | null;
-    expired: boolean;
-  } | null;
-};
-
-export type SafetyInfo = {
-  equipment: string;
-  materials: string;
-  environment: string;
-  history: string;
+// 공용 상수·타입 재 export (서버 모듈이 진입점인 기존 소비자들 호환용)
+export {
+  ASSESSMENT_KIND_LABEL,
+  type AssessmentKind,
+  type AssessmentStatus,
+  type RiskAssessmentSummary,
+  type RiskItem,
+  type SafetyInfo,
+  type StandardChecklistItem,
+  type StandardDetail,
+  type StandardListRow,
+  type StandardStatus,
+  type StandardStep,
 };
 
 // -----------------------------------------------------------------------------
@@ -806,5 +737,5 @@ export async function archiveStandard(input: {
   });
 }
 
-// Export utility for other modules
-export { VALIDITY_MONTHS, computeValidUntil };
+// Export utility for other server modules
+export { computeValidUntil };

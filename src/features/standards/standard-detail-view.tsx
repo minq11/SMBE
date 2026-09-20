@@ -11,8 +11,10 @@ import {
   Plus,
   ShieldCheck,
 } from "lucide-react";
-import type { StandardDetail } from "@/server/standards-service";
-import { ASSESSMENT_KIND_LABEL } from "@/server/standards-service";
+import {
+  ASSESSMENT_KIND_LABEL,
+  type StandardDetail,
+} from "@/features/standards/constants";
 import { archiveStandardAction } from "./actions";
 
 const RISK_LABEL = { HIGH: "상", MID: "중", LOW: "하" } as const;

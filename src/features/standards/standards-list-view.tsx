@@ -9,7 +9,7 @@ import {
   FileText,
   Plus,
 } from "lucide-react";
-import type { StandardListRow } from "@/server/standards-service";
+import type { StandardListRow } from "@/features/standards/constants";
 
 type Tab = "all" | "active" | "draft" | "archived";
 
