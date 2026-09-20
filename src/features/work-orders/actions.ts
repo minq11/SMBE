@@ -64,8 +64,64 @@ export async function saveOrderAction(
     return safeError(error);
   }
   refresh(id);
+  // 임시저장 후엔 목록·상세로 튕기지 않고 편집 페이지에 머무름 (계속 작성 가능)
+  redirect("/work-orders/" + id + "/edit");
+}
+/**
+ * 체크리스트·검토 단계에서 "지금 발급하기" 를 누르면 실행되는 액션.
+ * 저장 → 평가 승인 요청 → 본인 승인·발급 → 링크 전달을 순차로 수행한다.
+ * 각 단계에서 revision 이 증가하므로 매번 최신 값을 조회해서 다음 단계에 전달한다.
+ */
+export async function saveAndIssueAction(
+  _prev: WorkActionState,
+  form: FormData,
+): Promise<WorkActionState> {
+  let id: string;
+  try {
+    const target = targetSchema.parse({
+      id: form.get("id"),
+      revision: form.get("revision"),
+    });
+    const raw = form.get("payload");
+    if (typeof raw !== "string" || raw.length > 250000)
+      throw new WorkOrderError("입력 데이터가 너무 큽니다.");
+    const context = await actor();
+    id = target.id;
+
+    // 1) save (own tx)
+    await withTransaction((client) =>
+      saveOrder(client, context, id, target.revision, JSON.parse(raw)),
+    );
+
+    // 2) request → approveIssue (own tx, revision 이 매 단계 증가)
+    await withTransaction(async (client) => {
+      let cur = await client.query<{ revision: number }>(
+        "SELECT revision FROM work_orders WHERE id = $1 AND company_id = $2",
+        [id, context.companyId],
+      );
+      if (!cur.rows[0]) throw new WorkOrderError("지시서를 찾을 수 없습니다.");
+      await requestAssessment(client, context, id, cur.rows[0].revision);
+
+      cur = await client.query<{ revision: number }>(
+        "SELECT revision FROM work_orders WHERE id = $1 AND company_id = $2",
+        [id, context.companyId],
+      );
+      await approveAndIssueOrder(client, context, id, cur.rows[0]!.revision);
+    });
+
+    // 3) 링크 전달 (실패해도 발급 자체는 성공한 상태라 무시)
+    try {
+      await deliverOrder(context, id);
+    } catch {
+      /* ignore delivery failure */
+    }
+  } catch (error) {
+    return safeError(error);
+  }
+  refresh(id);
   redirect("/work-orders/" + id);
 }
+
 export async function orderCommandAction(
   _prev: WorkActionState,
   form: FormData,

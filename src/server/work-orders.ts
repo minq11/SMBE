@@ -1,7 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "./session";
-import { withTransaction } from "./db";
+import { query, withTransaction } from "./db";
 import {
   memberAccess,
   membersForOrder,
@@ -11,6 +11,26 @@ import {
 import type { OrderStatus } from "../features/work-orders/model";
 import { inspectionSessions } from "./inspection-service";
 import { sessionState } from "../features/inspections/model";
+
+/**
+ * 회사에 등록된 작업 장소를 자동완성용으로 반환.
+ * 지금은 회사 장소관리 화면(C-02)이 아직 없어서 대체로 빈 배열.
+ * 있을 경우 지시서 폼의 <datalist> 로 노출되어 사용자가 선택·수정할 수 있다.
+ */
+export type LocationSuggestion = { id: string; label: string };
+export async function listLocationSuggestions(
+  companyId: string,
+): Promise<LocationSuggestion[]> {
+  const rows = await query<{ id: string; name: string; path_cache: string | null }>(
+    `SELECT id, name, path_cache
+       FROM work_locations
+      WHERE company_id = $1 AND disabled_at IS NULL
+      ORDER BY sort_no, name
+      LIMIT 500`,
+    [companyId],
+  );
+  return rows.map((r) => ({ id: r.id, label: r.path_cache || r.name }));
+}
 
 export async function workSession(path = "/work-orders", manager = false) {
   const session = await getCurrentSession();

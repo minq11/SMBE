@@ -4,11 +4,14 @@ import {
   useActionState,
   useId,
   useState,
+  useTransition,
   type ReactElement,
 } from "react";
 import Link from "next/link";
-import { CheckCircle2, FileText, Plus, ShieldCheck } from "lucide-react";
-import { saveOrderAction } from "./actions";
+import { CheckCircle2, FileText, Plus, Send, ShieldCheck } from "lucide-react";
+import { HelpTip } from "@/components/ui/help-tip";
+import { PtwHelp } from "@/features/standards/ptw-help";
+import { saveOrderAction, saveAndIssueAction } from "./actions";
 import { shiftMinutes, type WorkDraft, type MemberOption } from "./model";
 
 export type StandardPickerOption = {
@@ -86,6 +89,8 @@ function mergeStandardIntoDraft(
   };
 }
 
+export type LocationOption = { id: string; label: string };
+
 export function WorkOrderForm({
   id,
   revision,
@@ -93,6 +98,7 @@ export function WorkOrderForm({
   members,
   standards = [],
   initialStandardId = null,
+  locations = [],
 }: {
   id: string;
   revision: number;
@@ -100,6 +106,7 @@ export function WorkOrderForm({
   members: MemberOption[];
   standards?: StandardPickerOption[];
   initialStandardId?: string | null;
+  locations?: LocationOption[];
 }) {
   const [data, setData] = useState<WorkDraft>(() => {
     if (initialStandardId) {
@@ -114,8 +121,36 @@ export function WorkOrderForm({
     return { ...initial, standardId: initial.standardId ?? null };
   });
   const [standardId, setStandardId] = useState<string | null>(initialStandardId);
+  // 명시적 "간이 위험성평가로 대체" 선택 여부. false = 아직 방식 미선택 (idle).
+  const [simpleOverride, setSimpleOverride] = useState<boolean>(
+    () => Boolean(initial?.name) && !initialStandardId,
+  );
+  const mode: "idle" | "standard" | "simple" = standardId
+    ? "standard"
+    : simpleOverride
+      ? "simple"
+      : "idle";
   const [step, setStep] = useState(0);
   const [state, action, pending] = useActionState(saveOrderAction, undefined);
+  const [issuePending, startIssue] = useTransition();
+  const [issueError, setIssueError] = useState<string | null>(null);
+  const submitIssue = () => {
+    if (
+      !confirm(
+        "지금 발급하시겠어요? 저장 → 위험성평가 승인(본인) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다.",
+      )
+    )
+      return;
+    setIssueError(null);
+    const form = new FormData();
+    form.set("id", id);
+    form.set("revision", String(revision));
+    form.set("payload", JSON.stringify(data));
+    startIssue(async () => {
+      const result = await saveAndIssueAction(undefined, form);
+      if (result?.error) setIssueError(result.error);
+    });
+  };
   const set = <K extends keyof WorkDraft>(key: K, value: WorkDraft[K]) =>
     setData((d) => ({ ...d, [key]: value }));
   const toggle = (key: "participantIds" | "assigneeIds", id: string) =>
@@ -133,9 +168,16 @@ export function WorkOrderForm({
       standardId: nextId,
     }));
     setStandardId(nextId);
+    setSimpleOverride(false);
   };
-  const clearStandard = () => {
+  const chooseSimple = () => {
     setStandardId(null);
+    setData((d) => ({ ...d, standardId: null }));
+    setSimpleOverride(true);
+  };
+  const resetChoice = () => {
+    setStandardId(null);
+    setSimpleOverride(false);
     setData((d) => ({ ...d, standardId: null }));
   };
   const minutes = shiftMinutes(data.startTime, data.endTime);
@@ -171,13 +213,14 @@ export function WorkOrderForm({
           {step === 0 && (
             <>
               <section className="wo-std-picker">
-                <h2>이 지시서의 표준서</h2>
+                <h2>이 지시서의 위험성평가</h2>
                 {standards.length > 0 ? (
                   <>
                     <p className="wo-muted">
-                      표준서를 선택하면 작업방법·체크리스트·위험성평가가 자동
-                      으로 딸려갑니다. 표준서가 없는 신규·1회성 작업은 아래
-                      &lsquo;간이 위험성평가로 대체&rsquo; 를 선택하세요.
+                      표준서를 선택하면 그 표준서의 승인된 위험성평가·작업방법·
+                      체크리스트가 자동으로 딸려갑니다. 등록된 표준서가 없는
+                      1회성 작업만 예외적으로 &lsquo;간이 위험성평가로 대체&rsquo;
+                      를 사용하세요.
                     </p>
                     <ul className="wo-std-list" role="list">
                       {standards.map((s) => {
@@ -208,111 +251,133 @@ export function WorkOrderForm({
                         );
                       })}
                     </ul>
-                    <div className="wo-std-picker-actions">
-                      <Link
-                        href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
-                        className="ghost-button"
-                        prefetch={false}
-                      >
-                        <Plus size={13} /> 새 표준서 만들기
-                      </Link>
-                      <button
-                        type="button"
-                        className={`ghost-button wo-std-exception${standardId === null ? " is-on" : ""}`}
-                        onClick={clearStandard}
-                      >
-                        <FileText size={13} /> 간이 위험성평가로 대체 (예외)
-                      </button>
-                    </div>
-                    {standardId !== null && pickedStandard && (
-                      <p className="wo-std-note">
-                        <ShieldCheck size={13} /> 선택한 표준서{" "}
-                        <strong>{pickedStandard.name}</strong> 의 현재 사용 중
-                        위험성평가가 아래 폼에 채워졌습니다. 필요하면 개별 항목을
-                        수정할 수 있고, 발급 시 표준서 스냅샷이 함께 저장됩니다.
-                      </p>
-                    )}
-                    {standardId === null && (
-                      <p className="wo-std-note wo-std-note--warn">
-                        <FileText size={13} /> 간이 위험성평가로 대체 중입니다.
-                        같은 작업이 반복될 예정이면 나중에 표준서로 등록해 재사용
-                        하세요.
-                      </p>
-                    )}
                   </>
                 ) : (
-                  <>
-                    <p className="wo-muted">
-                      등록된 표준서가 없습니다. 표준서를 먼저 등록하면 이후
-                      지시서에서 재사용할 수 있습니다. 지금은 간이 위험성평가로
-                      진행할 수 있습니다.
-                    </p>
-                    <div className="wo-std-picker-actions">
-                      <Link
-                        href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
-                        className="primary-button"
-                        prefetch={false}
-                      >
-                        <Plus size={14} /> 표준서 먼저 만들기
-                      </Link>
-                      <span className="wo-std-note wo-std-note--warn">
-                        <FileText size={13} /> 이번 지시서는 간이 위험성평가로
-                        대체합니다 (예외 경로).
-                      </span>
-                    </div>
-                  </>
+                  <p className="wo-muted">
+                    등록된 표준서가 없습니다. 반복 작업이면 표준서를 먼저
+                    만드는 걸 권장합니다. 1회성이면 간이 위험성평가로 대체하고
+                    계속 진행할 수 있습니다.
+                  </p>
+                )}
+                <div className="wo-std-picker-actions">
+                  <Link
+                    href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
+                    className={
+                      standards.length === 0
+                        ? "primary-button"
+                        : "ghost-button"
+                    }
+                    prefetch={false}
+                  >
+                    <Plus size={13} /> 새 표준서 만들기
+                  </Link>
+                  <button
+                    type="button"
+                    className={`ghost-button wo-std-exception${mode === "simple" ? " is-on" : ""}`}
+                    onClick={chooseSimple}
+                    aria-pressed={mode === "simple"}
+                  >
+                    <FileText size={13} /> 간이 위험성평가로 대체 (예외)
+                  </button>
+                  {mode !== "idle" && (
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={resetChoice}
+                    >
+                      다시 선택
+                    </button>
+                  )}
+                </div>
+                {mode === "standard" && pickedStandard && (
+                  <p className="wo-std-note">
+                    <ShieldCheck size={13} /> 선택한 표준서{" "}
+                    <strong>{pickedStandard.name}</strong> 의 현재 사용 중
+                    위험성평가가 아래 폼에 채워졌습니다. 필요하면 개별 항목을
+                    수정할 수 있고, 발급 시 표준서 스냅샷이 함께 저장됩니다.
+                  </p>
+                )}
+                {mode === "simple" && (
+                  <p className="wo-std-note wo-std-note--warn">
+                    <FileText size={13} /> 간이 위험성평가로 대체 중입니다.
+                    같은 작업이 반복될 예정이면 이번 지시서 발급 후 표준서로
+                    등록해 재사용하세요.
+                  </p>
+                )}
+                {mode === "idle" && (
+                  <p className="wo-std-note wo-std-note--warn">
+                    <FileText size={13} /> 위에서 표준서를 선택하거나 &lsquo;간이
+                    위험성평가로 대체&rsquo; 를 눌러야 작업 정보를 입력할 수
+                    있습니다.
+                  </p>
                 )}
               </section>
 
-              <h2>
-                {pickedStandard
-                  ? "작업 정보 (표준서 값 채워짐)"
-                  : "간이 위험성평가로 작업 시작"}
-              </h2>
-              <p className="wo-muted">
-                간이평가도 위험요인·대책·참여자 기록과 승인이 필요합니다.
-                표준서에서 시작한 경우 아래 값은 미리 채워져 있으며 필요 시
-                수정할 수 있습니다.
-              </p>
-              <Field label="작업명">
-                <input
-                  value={data.name}
-                  maxLength={120}
-                  onChange={(e) => set("name", e.target.value)}
-                />
-              </Field>
-              <Field label="작업 단계·방법">
-                <textarea
-                  rows={6}
-                  value={data.method}
-                  maxLength={4000}
-                  onChange={(e) => set("method", e.target.value)}
-                  placeholder="실제 작업 순서와 방법을 작성하세요."
-                />
-              </Field>
-              <Field label="조 이름 (선택)">
-                <input
-                  value={data.groupLabel}
-                  maxLength={40}
-                  onChange={(e) => set("groupLabel", e.target.value)}
-                  placeholder="주간조 / 야간조"
-                />
-              </Field>
-              <Field label="PTW(위험작업허가) 필요 여부">
-                <select
-                  value={data.ptwRequired ? "yes" : "no"}
-                  onChange={(e) => set("ptwRequired", e.target.value === "yes")}
-                >
-                  <option value="no">불필요</option>
-                  <option value="yes">필요</option>
-                </select>
-              </Field>
-              {data.ptwRequired && (
-                <p className="wo-notice">
-                  PTW가 필요한 작업은 임시저장만 가능합니다. 허가 기능 구현
-                  전에는 발급이 차단됩니다. 필요로 저장한 뒤에는 불필요로 내릴
-                  수 없습니다.
-                </p>
+              {mode === "idle" ? null : (
+                <>
+                  <h2>
+                    {mode === "standard"
+                      ? "작업 정보 (표준서 값 채워짐)"
+                      : "간이 위험성평가 작업 정보"}
+                  </h2>
+                  <p className="wo-muted">
+                    {mode === "standard"
+                      ? "표준서에서 가져온 값이 채워져 있습니다. 이번 작업에 맞게 수정할 수 있고, 발급 시 원본 표준서 스냅샷은 그대로 함께 저장됩니다."
+                      : "간이평가도 위험요인·대책·참여자 기록과 승인이 필요합니다. 다음 단계에서 위험요인·대책·참여자를 입력합니다."}
+                  </p>
+                </>
+              )}
+              {mode !== "idle" && (
+                <>
+                  <Field label="작업명">
+                    <input
+                      value={data.name}
+                      maxLength={120}
+                      onChange={(e) => set("name", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="작업 단계·방법">
+                    <textarea
+                      rows={6}
+                      value={data.method}
+                      maxLength={4000}
+                      onChange={(e) => set("method", e.target.value)}
+                      placeholder="실제 작업 순서와 방법을 작성하세요."
+                    />
+                  </Field>
+                  <Field label="조 이름 (선택)">
+                    <input
+                      value={data.groupLabel}
+                      maxLength={40}
+                      onChange={(e) => set("groupLabel", e.target.value)}
+                      placeholder="주간조 / 야간조"
+                    />
+                  </Field>
+                  <div className="wo-field">
+                    <span className="wo-field-label">
+                      PTW(위험작업허가) 필요 여부
+                      <HelpTip title="위험작업허가 (PTW)">
+                        <PtwHelp />
+                      </HelpTip>
+                    </span>
+                    <select
+                      value={data.ptwRequired ? "yes" : "no"}
+                      onChange={(e) =>
+                        set("ptwRequired", e.target.value === "yes")
+                      }
+                    >
+                      <option value="no">불필요</option>
+                      <option value="yes">필요</option>
+                    </select>
+                  </div>
+                  {data.ptwRequired && (
+                    <p className="wo-notice">
+                      PTW가 필요한 작업은 임시저장만 가능합니다. 허가 기능
+                      구현 전에는 발급이 차단됩니다. 필요로 저장한 뒤에는
+                      불필요로 내릴 수 없습니다.
+                    </p>
+                  )}
+                </>
               )}
             </>
           )}
@@ -551,9 +616,22 @@ export function WorkOrderForm({
                   value={data.location}
                   maxLength={200}
                   onChange={(e) => set("location", e.target.value)}
-                  placeholder="장소를 직접 입력해도 됩니다."
+                  placeholder={
+                    locations.length > 0
+                      ? "회사 등록 장소 중 선택하거나 직접 입력"
+                      : "직접 입력 (회사 장소관리는 준비 중)"
+                  }
+                  list={locations.length > 0 ? "wo-location-list" : undefined}
+                  autoComplete="off"
                 />
               </Field>
+              {locations.length > 0 && (
+                <datalist id="wo-location-list">
+                  {locations.map((l) => (
+                    <option key={l.id} value={l.label} />
+                  ))}
+                </datalist>
+              )}
               <fieldset className="wo-people">
                 <legend>작업자 배정 ({data.assigneeIds.length}명)</legend>
                 {members.map((m) => (
@@ -644,6 +722,28 @@ export function WorkOrderForm({
                 취소 후 복사해 재발급하세요. TBM·작업 중 점검 결과 입력은 아직
                 제공하지 않습니다.
               </p>
+              {issueError && (
+                <p role="alert" className="form-error">
+                  {issueError}
+                </p>
+              )}
+              <div className="wo-issue-cta">
+                <button
+                  type="button"
+                  className="btn-primary wo-issue-button"
+                  onClick={submitIssue}
+                  disabled={
+                    issuePending || pending || data.ptwRequired
+                  }
+                >
+                  <Send size={14} />
+                  {issuePending ? "발급 중..." : "지금 발급하기"}
+                </button>
+                <p className="wo-muted">
+                  저장 → 평가 승인(본인) → 지시서 발급 → 배정 인원 이메일 전송을
+                  한 번에 처리합니다. PTW 필요 작업은 발급이 차단됩니다.
+                </p>
+              </div>
             </>
           )}
           <div className="wo-actions">
@@ -665,7 +765,11 @@ export function WorkOrderForm({
                 다음
               </button>
             )}
-            <button type="submit" className="btn-primary" disabled={pending}>
+            <button
+              type="submit"
+              className="btn-secondary"
+              disabled={pending || issuePending}
+            >
               {pending ? "저장 중…" : "임시저장"}
             </button>
           </div>

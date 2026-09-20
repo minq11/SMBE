@@ -1,7 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { workSession, orderMembers, orderDetail } from "@/server/work-orders";
+import {
+  workSession,
+  orderMembers,
+  orderDetail,
+  listLocationSuggestions,
+} from "@/server/work-orders";
 import {
   getStandardForPrefill,
   listUsableStandards,
@@ -21,7 +26,10 @@ export default async function NewOrderPage({
 }) {
   const { session, actor } = await workSession("/work-orders/new", true);
   const { copy, standard: standardParam } = await searchParams;
-  const members = await orderMembers(actor);
+  const [members, locations] = await Promise.all([
+    orderMembers(actor),
+    listLocationSuggestions(actor.companyId),
+  ]);
 
   let initial = blankDraft();
   if (copy) {
@@ -114,6 +122,7 @@ export default async function NewOrderPage({
         members={members}
         standards={standards}
         initialStandardId={initialStandardId}
+        locations={locations}
       />
     </OrderShell>
   );

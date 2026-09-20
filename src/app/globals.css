@@ -3286,6 +3286,29 @@ button svg {
   color: var(--ink);
 }
 
+.wo-issue-cta {
+  margin-top: 20px;
+  padding: 18px 20px;
+  background: var(--brand-softer);
+  border: 1px solid var(--brand-soft);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.wo-issue-button {
+  min-height: 44px;
+  padding: 12px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.wo-issue-cta .wo-muted {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .wo-standard-chip {
   display: inline-flex;
   align-items: center;
@@ -3567,6 +3590,128 @@ button svg {
   background: var(--warn-soft);
   border-color: rgba(185, 140, 59, 0.24);
   color: var(--warn);
+}
+
+/* =========================================================================
+   12k. Help tip (물음표 팝오버)
+   ========================================================================= */
+.help-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.help-tip-button {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-3);
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
+}
+.help-tip-button:hover,
+.help-tip-button[aria-expanded="true"] {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-softer);
+}
+.help-tip-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  width: 320px;
+  max-width: min(320px, calc(100vw - 40px));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(30, 36, 41, 0.14);
+  padding: 14px 16px;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.7;
+  font-weight: 400;
+}
+.help-tip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.help-tip-head strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.help-tip-close {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--ink-3);
+}
+.help-tip-close:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.help-tip-body p {
+  margin-bottom: 8px;
+}
+.help-tip-body p:last-child {
+  margin-bottom: 0;
+}
+.help-tip-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.help-tip-body li {
+  position: relative;
+  padding-left: 12px;
+}
+.help-tip-body li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+.help-tip-note {
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-3);
+  font-size: 11px;
+}
+@media (max-width: 720px) {
+  .help-tip-panel {
+    width: 280px;
+    left: auto;
+    right: 0;
+  }
+}
+/* work-order form: label wrapper for HelpTip */
+.wo-field-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 6px;
 }
 
 /* =========================================================================

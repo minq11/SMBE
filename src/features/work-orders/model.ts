@@ -130,14 +130,15 @@ export function validateIssue(d: WorkDraft) {
     );
 }
 export function blankDraft(): WorkDraft {
+  const today = seoulToday();
   return {
     standardId: null,
     name: "",
     groupLabel: "",
     method: "",
     location: "",
-    startDate: "",
-    endDate: "",
+    startDate: today,
+    endDate: today,
     startTime: "09:00",
     endTime: "17:00",
     ptwRequired: false,

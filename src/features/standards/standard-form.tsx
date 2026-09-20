@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
+import { HelpTip } from "@/components/ui/help-tip";
+import { PtwHelp } from "./ptw-help";
 import { createStandardAction, type StandardActionState } from "./actions";
 
 type Risk = {
@@ -222,6 +224,9 @@ export function StandardForm({
             onChange={(e) => setField("ptw_required", e.target.checked)}
           />
           <span>이 작업은 위험작업허가(PTW)가 필요합니다</span>
+          <HelpTip title="위험작업허가 (PTW)">
+            <PtwHelp />
+          </HelpTip>
         </label>
       </section>
 
