@@ -20,10 +20,13 @@ import { PageHeader } from "@/components/ui/page-header";
 
 export default async function EditOrderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ issue_error?: string }>;
 }) {
   const { id } = await params;
+  const { issue_error: issueError } = await searchParams;
   if (!z.string().uuid().safeParse(id).success) notFound();
   const { session, actor } = await workSession(
     "/work-orders/" + id + "/edit",
@@ -84,6 +87,16 @@ export default async function EditOrderPage({
         title="작업지시 편집"
         description="저장하면 기존 평가 승인 연결이 해제되며 다시 검토·승인해야 합니다."
       />
+      {issueError && (
+        <div className="wo-issue-error-banner" role="alert">
+          <strong>발급이 완료되지 않았습니다</strong>
+          <p>{issueError}</p>
+          <p className="wo-muted">
+            초안은 저장되어 있으니 위 오류를 해결한 뒤 4단계에서 다시 발급을
+            시도하세요. 임시저장으로도 계속 이어서 작성할 수 있습니다.
+          </p>
+        </div>
+      )}
       <WorkOrderForm
         id={id}
         revision={detail.order.revision}

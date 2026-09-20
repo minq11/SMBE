@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { joinCompanyAction, type FormState } from "./actions";
 
 export function JoinForm({ defaultDisplayName }: { defaultDisplayName: string }) {
@@ -52,7 +52,7 @@ export function JoinForm({ defaultDisplayName }: { defaultDisplayName: string })
 
       <div className="form-actions">
         <Link href="/onboarding" className="btn-secondary">
-          이전
+          <ArrowLeft size={14} /> 이전
         </Link>
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "요청 중..." : "가입 요청"}

@@ -8,7 +8,16 @@ import {
   type ReactElement,
 } from "react";
 import Link from "next/link";
-import { CheckCircle2, FileText, Plus, Send, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  FileText,
+  Plus,
+  Save,
+  Send,
+  ShieldCheck,
+} from "lucide-react";
 import { HelpTip } from "@/components/ui/help-tip";
 import { PtwHelp } from "@/features/standards/ptw-help";
 import { saveOrderAction, saveAndIssueAction } from "./actions";
@@ -529,6 +538,7 @@ export function WorkOrderForm({
                   ])
                 }
               >
+                <Plus size={14} />
                 위험요인 추가
               </button>
               <h3>사전조사한 안전보건정보</h3>
@@ -713,6 +723,7 @@ export function WorkOrderForm({
                     disabled={data[key].length >= 50}
                     onClick={() => set(key, [...data[key], ""])}
                   >
+                    <Plus size={14} />
                     항목 추가
                   </button>
                 </fieldset>
@@ -753,6 +764,7 @@ export function WorkOrderForm({
                 className="btn-secondary"
                 onClick={() => setStep(step - 1)}
               >
+                <ArrowLeft size={14} />
                 이전
               </button>
             )}
@@ -763,6 +775,7 @@ export function WorkOrderForm({
                 onClick={() => setStep(step + 1)}
               >
                 다음
+                <ArrowRight size={14} />
               </button>
             )}
             <button
@@ -770,6 +783,7 @@ export function WorkOrderForm({
               className="btn-secondary"
               disabled={pending || issuePending}
             >
+              <Save size={14} />
               {pending ? "저장 중…" : "임시저장"}
             </button>
           </div>

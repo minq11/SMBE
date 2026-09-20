@@ -52,6 +52,7 @@ export function CompaniesView({
           onChange={(e) => setQ(e.target.value)}
         />
         <button type="submit" className="ghost-button" disabled={pending}>
+          <Search size={14} />
           {pending ? "검색 중..." : "검색"}
         </button>
       </form>

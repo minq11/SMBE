@@ -65,18 +65,30 @@ export function Sidebar({
   companyName,
   tier = "무료",
   isOpen,
+  isMobile = false,
   onClose,
 }: {
   active: NavKey;
   companyName?: string;
   tier?: "무료" | "Pro";
   isOpen: boolean;
+  isMobile?: boolean;
   onClose: () => void;
 }) {
   const preview = usePreview();
 
   return (
-    <aside className={`sidebar${isOpen ? " is-open" : ""}`}>
+    <aside
+      id="mobile-navigation"
+      className={`sidebar${isOpen ? " is-open" : ""}`}
+      inert={isMobile && !isOpen}
+      role={isMobile && isOpen ? "dialog" : undefined}
+      aria-modal={isMobile && isOpen ? true : undefined}
+      aria-label="주 메뉴"
+    >
+      <button type="button" className="sidebar-close" onClick={onClose}>
+        메뉴 닫기 ×
+      </button>
       <Link href="/" className="brand" aria-label="SMBE 홈">
         <svg
           className="brand-logo"
@@ -91,7 +103,10 @@ export function Sidebar({
       <button
         type="button"
         className="workspace-picker"
-        onClick={() => preview("회사 선택")}
+        onClick={() => {
+          onClose();
+          preview("회사 선택");
+        }}
       >
         <span className="workspace-icon">
           <Building2 size={16} />
@@ -133,7 +148,10 @@ export function Sidebar({
               type="button"
               className={className}
               aria-current={isActive ? "page" : undefined}
-              onClick={() => (isActive ? onClose() : preview(title))}
+              onClick={() => {
+                onClose();
+                if (!isActive) preview(title);
+              }}
             >
               {content}
             </button>
@@ -145,7 +163,10 @@ export function Sidebar({
         <button
           type="button"
           className="sidebar-support"
-          onClick={() => preview("도움말")}
+          onClick={() => {
+            onClose();
+            preview("도움말");
+          }}
         >
           <HelpCircle size={15} />
           도움말

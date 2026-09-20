@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
+import { ArrowLeft, Copy, Pencil } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { workSession, orderDetail, orderMembers } from "@/server/work-orders";
@@ -141,14 +142,14 @@ export default async function OrderDetailPage({
           actions={
             <div className="wo-actions wo-no-print">
               <Link className="btn-secondary" href="/work-orders">
-                목록
+                <ArrowLeft size={14} /> 목록
               </Link>
               {isManager && order.status === "DRAFT" && (
                 <Link
                   className="btn-secondary"
                   href={"/work-orders/" + id + "/edit"}
                 >
-                  편집
+                  <Pencil size={14} /> 편집
                 </Link>
               )}
               {isManager && (
@@ -156,7 +157,7 @@ export default async function OrderDetailPage({
                   className="btn-secondary"
                   href={"/work-orders/new?copy=" + id}
                 >
-                  복사
+                  <Copy size={14} /> 복사
                 </Link>
               )}
               {isManager && qr && <PrintButton />}

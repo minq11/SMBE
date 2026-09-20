@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { pendingFindings } from "@/server/inspection-service";
@@ -20,7 +21,7 @@ export default async function InspectionsPage() {
       />
       <p>
         <Link className="btn-primary" href="/work-orders">
-          작업 선택 · TBM 및 작업 중 점검
+          <Search size={14} /> 작업 선택 · TBM 및 작업 중 점검
         </Link>
       </p>
       {isManager && (

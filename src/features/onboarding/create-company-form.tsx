@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createCompanyAction, type FormState } from "./actions";
 
 const bands = [
@@ -119,7 +119,7 @@ export function CreateCompanyForm({
 
       <div className="form-actions">
         <Link href="/onboarding" className="btn-secondary">
-          이전
+          <ArrowLeft size={14} /> 이전
         </Link>
         <button type="submit" className="btn-primary" disabled={pending}>
           {pending ? "생성 중..." : "회사 만들기"}

@@ -1,6 +1,6 @@
 // Generate an isolated browser-test build. The production DB adapter is never
 // changed: only the temporary copy connects to disposable local PostgreSQL.
-import { cp, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -40,15 +40,14 @@ const run = (args) =>
     stdio: "inherit",
   });
 try {
-  await setupPool.query("CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public");
+  await setupPool.query(
+    "CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public",
+  );
   await setupPool.query("CREATE EXTENSION IF NOT EXISTS citext SCHEMA public");
   await pool.query("CREATE SCHEMA " + schema);
-  for (const migration of [
-    "0001_init.sql",
-    "0002_company_required_fields.sql",
-    "0003_work_orders.sql",
-    "0004_inspections.sql",
-  ]) {
+  for (const migration of (await readdir(join(source, "db")))
+    .filter((name) => /^\d{4}_.+\.sql$/.test(name))
+    .sort()) {
     await pool.query(await readFile(join(source, "db", migration), "utf8"));
   }
   const omitted = new Set([
@@ -92,9 +91,14 @@ try {
     "--",
     "playwright",
     "test",
-    "tests/work-orders.spec.ts",
-    "tests/inspections.spec.ts",
-    "tests/preview.spec.ts",
+    ...(process.argv.length > 2
+      ? process.argv.slice(2)
+      : [
+          "tests/work-orders.spec.ts",
+          "tests/inspections.spec.ts",
+          "tests/preview.spec.ts",
+          "tests/mobile-layout.spec.ts",
+        ]),
     "--workers=1",
   ]);
 } finally {

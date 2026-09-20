@@ -1,5 +1,6 @@
 "use client";
 import { useActionState, useRef, useState, useEffect } from "react";
+import { CheckCircle2, Save } from "lucide-react";
 import { submitInspectionAction, resolveFindingAction } from "./actions";
 import { RESULT_LABEL, type InspectionInput } from "./model";
 
@@ -81,7 +82,7 @@ export function InspectionForm({
               dialog.current?.close();
             }}
           >
-            조치 내용 확인
+            <CheckCircle2 size={14} /> 조치 내용 확인
           </button>
         </dialog>
       )}
@@ -164,6 +165,7 @@ export function InspectionForm({
           className="btn-primary"
           disabled={pending || !reviewed || checklist.length === 0}
         >
+          <Save size={14} />
           {pending
             ? "저장 중…"
             : category === "TBM"
@@ -199,6 +201,7 @@ export function FindingResolution({ id }: { id: string }) {
       )}
       {state?.message && <p role="status">{state.message}</p>}
       <button className="btn-primary" disabled={pending}>
+        <CheckCircle2 size={14} />
         {pending ? "저장 중…" : "조치완료"}
       </button>
     </form>

@@ -1,7 +1,29 @@
 "use client";
 import { useActionState, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
+import {
+  Ban,
+  CheckCircle2,
+  Eye,
+  Link2,
+  Mail,
+  Printer,
+  Send,
+  type LucideIcon,
+} from "lucide-react";
 import { orderCommandAction } from "./actions";
+
+const COMMAND_ICON: Record<
+  "request" | "approve" | "approveIssue" | "issue" | "cancel" | "send",
+  LucideIcon
+> = {
+  request: Eye,
+  approve: CheckCircle2,
+  approveIssue: Send,
+  issue: Send,
+  cancel: Ban,
+  send: Mail,
+};
 
 export function OrderCommand({
   id,
@@ -42,6 +64,10 @@ export function OrderCommand({
         type="submit"
         disabled={pending}
       >
+        {(() => {
+          const Icon = COMMAND_ICON[command];
+          return <Icon size={14} />;
+        })()}
         {pending ? "처리 중…" : label}
       </button>
       {state?.error && (
@@ -64,6 +90,7 @@ export function PrintButton() {
       className="btn-primary wo-no-print"
       onClick={() => window.print()}
     >
+      <Printer size={14} />
       지시서 인쇄 / PDF 저장
     </button>
   );
@@ -93,6 +120,7 @@ export function CopyLinkButton({ url }: { url: string }) {
   return (
     <form action={action}>
       <button className="btn-secondary" disabled={pending}>
+        <Link2 size={14} />
         작업 링크 복사
       </button>
       {state && <p role="status">{state}</p>}

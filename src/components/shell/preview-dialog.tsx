@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Search, X } from "lucide-react";
+import { CheckCircle2, Search, X } from "lucide-react";
 
 type OpenPreview = (title: string) => void;
 
@@ -58,7 +58,7 @@ export function PreviewDialogProvider({ children }: { children: ReactNode }) {
           데이터는 저장·변경되지 않습니다.
         </p>
         <button className="primary-button" onClick={close}>
-          확인했어요
+          <CheckCircle2 size={14} /> 확인했어요
         </button>
       </dialog>
     </PreviewCtx.Provider>

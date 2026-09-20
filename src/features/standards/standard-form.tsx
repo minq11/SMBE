@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
 import { HelpTip } from "@/components/ui/help-tip";
 import { PtwHelp } from "./ptw-help";
 import { createStandardAction, type StandardActionState } from "./actions";
@@ -502,7 +502,7 @@ export function StandardForm({
           href={returnHref ?? "/standards"}
           className="ghost-button"
         >
-          취소
+          <X size={13} /> 취소
         </Link>
         <button type="submit" className="primary-button" disabled={pending}>
           <Save size={14} />

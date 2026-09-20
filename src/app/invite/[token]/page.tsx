@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { Check, Home } from "lucide-react";
 import { auth } from "@/auth";
 import { queryOne, withTransaction } from "@/server/db";
 import { acceptInvite } from "@/server/membership-mutations";
@@ -129,7 +129,7 @@ export default async function InvitePage({
           )}
           <form action={acceptAction}>
             <button type="submit" className="btn-primary">
-              초대 수락하기
+              <Check size={14} /> 초대 수락하기
             </button>
           </form>
         </div>
@@ -154,7 +154,7 @@ function InviteErrorFrame({
           <p>{message}</p>
           <p style={{ marginTop: 20 }}>
             <Link href="/" className="btn-primary">
-              홈으로 <ArrowRight size={14} />
+              <Home size={14} /> 홈으로
             </Link>
           </p>
         </div>

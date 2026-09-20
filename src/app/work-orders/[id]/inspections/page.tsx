@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withTransaction } from "@/server/db";
@@ -71,7 +72,7 @@ export default async function InspectionPage({
         description={data.order.name}
         actions={
           <Link className="btn-secondary" href={"/work-orders/" + id}>
-            작업지시 보기
+            <FileText size={14} /> 작업지시 보기
           </Link>
         }
       />

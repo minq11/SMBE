@@ -76,7 +76,11 @@ export async function saveAndIssueAction(
   _prev: WorkActionState,
   form: FormData,
 ): Promise<WorkActionState> {
-  let id: string;
+  let id = "";
+  let saved = false;
+  let issued = false;
+  let errorMessage: string | null = null;
+
   try {
     const target = targetSchema.parse({
       id: form.get("id"),
@@ -92,6 +96,7 @@ export async function saveAndIssueAction(
     await withTransaction((client) =>
       saveOrder(client, context, id, target.revision, JSON.parse(raw)),
     );
+    saved = true;
 
     // 2) request → approveIssue (own tx, revision 이 매 단계 증가)
     await withTransaction(async (client) => {
@@ -108,18 +113,39 @@ export async function saveAndIssueAction(
       );
       await approveAndIssueOrder(client, context, id, cur.rows[0]!.revision);
     });
+    issued = true;
 
-    // 3) 링크 전달 (실패해도 발급 자체는 성공한 상태라 무시)
+    // 3) 링크 전달 (실패해도 발급 자체는 성공)
     try {
       await deliverOrder(context, id);
     } catch {
       /* ignore delivery failure */
     }
   } catch (error) {
-    return safeError(error);
+    errorMessage =
+      error instanceof WorkOrderError
+        ? error.message
+        : "처리하지 못했습니다. 새로고침 후 다시 시도하세요.";
   }
-  refresh(id);
-  redirect("/work-orders/" + id);
+
+  if (issued) {
+    refresh(id);
+    redirect("/work-orders/" + id);
+  }
+  // 저장은 성공했으나 이후 단계(승인·발급)에서 실패한 경우:
+  // 브라우저는 여전히 /new (revision=0) 라 재시도 시 "이미 저장된 요청" 에 갇힘.
+  // → 편집 페이지로 리다이렉트해 정상 revision 으로 재시도 가능하게 만들고
+  //   상단 배너로 오류를 안내한다.
+  if (saved && id) {
+    refresh(id);
+    redirect(
+      "/work-orders/" +
+        id +
+        "/edit?issue_error=" +
+        encodeURIComponent(errorMessage ?? "발급 중 오류가 발생했습니다."),
+    );
+  }
+  return { error: errorMessage ?? "알 수 없는 오류" };
 }
 
 export async function orderCommandAction(

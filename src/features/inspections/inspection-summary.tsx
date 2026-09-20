@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckCircle2, Search } from "lucide-react";
 import { sessionState, SESSION_LABEL, type SessionRow } from "./model";
 
 export function InspectionSummary({
@@ -45,14 +46,14 @@ export function InspectionSummary({
                 className="btn-primary"
                 href={root + "?type=TBM&via=" + path}
               >
-                TBM 확인하기
+                <CheckCircle2 size={14} /> TBM 확인하기
               </Link>
             )}
             <Link
               className="btn-secondary"
               href={root + "?type=DURING_WORK&via=" + path}
             >
-              작업 중 점검하기
+              <Search size={14} /> 작업 중 점검하기
             </Link>
           </div>
         </>

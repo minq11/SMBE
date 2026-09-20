@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft, ArrowRight, Plus, Search } from "lucide-react";
 import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
@@ -30,7 +31,7 @@ export default async function WorkOrdersPage({
         actions={
           result.isManager && (
             <Link className="btn-primary" href="/work-orders/new">
-              작업 지시하기
+              <Plus size={14} /> 작업 지시하기
             </Link>
           )
         }
@@ -56,7 +57,9 @@ export default async function WorkOrdersPage({
           <span>작업명 검색</span>
           <input name="q" defaultValue={q} maxLength={120} />
         </label>
-        <button className="btn-secondary">검색</button>
+        <button className="btn-secondary">
+          <Search size={14} /> 검색
+        </button>
       </form>
       {result.locked > 0 && (
         <p className="wo-notice">
@@ -117,13 +120,13 @@ export default async function WorkOrdersPage({
       <nav className="wo-actions" aria-label="페이지 이동">
         {page > 1 && (
           <Link className="btn-secondary" href={href(page - 1)}>
-            이전
+            <ArrowLeft size={14} /> 이전
           </Link>
         )}
         <span>{page}페이지</span>
         {result.hasMore && (
           <Link className="btn-secondary" href={href(page + 1)}>
-            다음
+            다음 <ArrowRight size={14} />
           </Link>
         )}
       </nav>

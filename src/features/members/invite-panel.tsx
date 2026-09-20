@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { Check, Copy, Link2, X } from "lucide-react";
+import { Check, ChevronDown, Copy, Link2, UserPlus, X } from "lucide-react";
 import type { MembershipRole } from "@/server/session";
 import type { OpenInviteRow } from "@/server/members";
 import { createInviteAction, revokeInviteAction, type ActionState } from "./actions";
@@ -63,7 +63,15 @@ export function InvitePanel({
           className="ghost-button"
           onClick={() => setOpen((v) => !v)}
         >
-          {open ? "접기" : "초대하기"}
+          {open ? (
+            <>
+              <ChevronDown size={14} /> 접기
+            </>
+          ) : (
+            <>
+              <UserPlus size={14} /> 초대하기
+            </>
+          )}
         </button>
       </header>
 
@@ -106,6 +114,7 @@ export function InvitePanel({
           {state?.error && <div className="form-error">{state.error}</div>}
           <div className="invite-form-actions">
             <button type="submit" className="primary-button" disabled={pending}>
+              <UserPlus size={14} />
               {pending ? "발송 중..." : "초대하기"}
             </button>
           </div>

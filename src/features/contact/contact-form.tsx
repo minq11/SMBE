@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Mail } from "lucide-react";
+import { ArrowRight, Check, Mail, X } from "lucide-react";
 import { submitContactAction, type ContactState } from "./actions";
 
 export function ContactForm() {
@@ -142,7 +142,7 @@ export function ContactForm() {
 
       <div className="form-actions">
         <Link href="/" className="btn-secondary">
-          취소
+          <X size={14} /> 취소
         </Link>
         <button type="submit" className="btn-primary" disabled={pending}>
           <Mail size={14} />

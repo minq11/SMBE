@@ -34,6 +34,8 @@ export function Topbar({
         <button
           type="button"
           className="icon-button topbar-mobile"
+          id="mobile-menu-button"
+          aria-controls="mobile-navigation"
           aria-label="메뉴 열기"
           aria-expanded={mobileOpen}
           onClick={onOpenMobileMenu}
