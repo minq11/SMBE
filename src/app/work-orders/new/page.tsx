@@ -2,18 +2,27 @@ import { randomUUID } from "node:crypto";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { workSession, orderMembers, orderDetail } from "@/server/work-orders";
+import {
+  getStandardForPrefill,
+  listUsableStandards,
+} from "@/server/standards-service";
 import { WorkOrderError, blankDraft } from "@/features/work-orders/model";
-import { WorkOrderForm } from "@/features/work-orders/work-order-form";
+import {
+  WorkOrderForm,
+  type StandardPickerOption,
+} from "@/features/work-orders/work-order-form";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
+
 export default async function NewOrderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ copy?: string }>;
+  searchParams: Promise<{ copy?: string; standard?: string }>;
 }) {
   const { session, actor } = await workSession("/work-orders/new", true);
-  const { copy } = await searchParams;
+  const { copy, standard: standardParam } = await searchParams;
   const members = await orderMembers(actor);
+
   let initial = blankDraft();
   if (copy) {
     if (!z.string().uuid().safeParse(copy).success) notFound();
@@ -40,17 +49,62 @@ export default async function NewOrderPage({
       throw error;
     }
   }
+
+  const usable = await listUsableStandards(actor.companyId);
+  const activeMemberIds = new Set(members.map((m) => m.user_id));
+
+  const standards: StandardPickerOption[] = await Promise.all(
+    usable.map(async (s) => {
+      const prefill = await getStandardForPrefill(actor.companyId, s.standard_id);
+      return {
+        id: s.standard_id,
+        name: s.name,
+        ptw_required: s.ptw_required,
+        prefill: prefill
+          ? {
+              name: prefill.name,
+              ptw_required: prefill.ptw_required,
+              method: prefill.work_method,
+              tbm: prefill.checklist_tbm,
+              during: prefill.checklist_during,
+              criteria: prefill.criteria,
+              safetyInfo: prefill.safety_info,
+              risks: prefill.risks.map((r) => ({
+                hazard: r.hazard,
+                level: r.initial_risk_level,
+                allowable: r.initial_allowable ? "yes" : "no",
+                measure: r.reduction_measure,
+                responsibleId:
+                  r.responsible_user_id &&
+                  activeMemberIds.has(r.responsible_user_id)
+                    ? r.responsible_user_id
+                    : "",
+                dueDate: r.planned_completion_date ?? "",
+              })),
+              participantIds: prefill.participant_ids.filter((id) =>
+                activeMemberIds.has(id),
+              ),
+            }
+          : null,
+      };
+    }),
+  );
+
+  const initialStandardId =
+    standardParam &&
+    z.string().uuid().safeParse(standardParam).success &&
+    standards.some((s) => s.id === standardParam)
+      ? standardParam
+      : null;
+
   return (
-    <OrderShell
-      session={session}
-      title={copy ? "작업지시 복사" : "새 작업지시"}
-    >
+    <OrderShell session={session} title={copy ? "작업지시 복사" : "새 작업지시"}>
       <PageHeader
         title={copy ? "작업지시 복사" : "새 작업지시"}
         description={
           copy
             ? "작업일과 승인·발급 정보는 초기화됩니다. 평가일·위험요인·참여자와 배정 인원을 다시 확인하세요."
-            : "작업 정보부터 입력하고, 언제든 임시저장하세요."
+            : "표준서에서 시작하는 것을 권장합니다. 표준서가 없으면 간이 위험성평가로 대체할 수 있습니다."
         }
       />
       <WorkOrderForm
@@ -58,6 +112,8 @@ export default async function NewOrderPage({
         revision={0}
         initial={initial}
         members={members}
+        standards={standards}
+        initialStandardId={initialStandardId}
       />
     </OrderShell>
   );

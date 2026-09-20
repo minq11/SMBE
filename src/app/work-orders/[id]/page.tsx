@@ -101,6 +101,18 @@ export default async function OrderDetailPage({
     | undefined;
   const method = detail.snapshots.find((s) => s.snapshot_kind === "WORK_METHOD")
     ?.payload.method;
+  const standardMeta = detail.snapshots.find(
+    (s) => s.snapshot_kind === "STANDARD_META",
+  )?.payload as
+    | {
+        standard_id: string;
+        standard_name: string;
+        ptw_required: boolean;
+        standard_updated_at: string;
+      }
+    | undefined;
+  const linkedStandardId = standardMeta?.standard_id ?? d.standardId ?? null;
+  const linkedStandardName = standardMeta?.standard_name ?? null;
   const risks =
     riskSnapshot?.items.map((r) => ({
       hazard: r.hazard,
@@ -158,6 +170,26 @@ export default async function OrderDetailPage({
           기준시각 <PrintTimestamp initial={new Date().toISOString()} />{" "}
           (한국시간)
         </p>
+        {linkedStandardId && (
+          <p className="wo-standard-chip">
+            표준서 기반
+            {linkedStandardName ? (
+              <>
+                {" · "}
+                <Link href={"/standards/" + linkedStandardId}>
+                  {linkedStandardName}
+                </Link>
+              </>
+            ) : (
+              <>
+                {" · "}
+                <Link href={"/standards/" + linkedStandardId}>
+                  표준서 열기
+                </Link>
+              </>
+            )}
+          </p>
+        )}
         <div className="wo-statuses">
           <div>
             <small>작업 일정</small>

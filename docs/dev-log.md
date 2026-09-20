@@ -1,5 +1,153 @@
 # SMBE 개발일지
 
+## 2026-09-20 지시서 ↔ 표준서 정식 링크
+
+**해결한 이슈**: 이전까지 지시서에서 표준서를 선택해도 폼 pre-fill 만 되고 저장 시 표준서 참조가 남지 않던 문제. 이제 지시서·평가·스냅샷 세 곳에서 표준서를 정식으로 링크한다.
+
+**변경**
+- 마이그레이션 `db/0007_work_order_standard_link.sql`: `work_orders.standard_id uuid REFERENCES standards(id)` 컬럼 + 인덱스
+- `features/work-orders/model.ts` `draftSchema`: `standardId` (nullable, optional, default null) 추가
+- `server/work-order-service.ts`:
+  - `resolveStandardLink()` 헬퍼 신설 — 지정된 표준서가 자기 회사의 승인된 문서인지 검증
+  - `saveOrder` — INSERT/UPDATE 시 `standard_id` 함께 저장 (검증 실패 시 오류)
+  - `requestAssessment` — 표준서 기반이면 `risk_assessments.is_simple=false, standard_id=X` 로 마킹, 간이평가면 `is_simple=true, standard_id=NULL`
+  - `issueOrder` — 표준서 기반 지시서면 `work_order_snapshots` 에 `STANDARD_META` payload 삽입 (`standard_id, standard_name, ptw_required, standard_updated_at, captured_at`)
+- `features/work-orders/work-order-form.tsx`: 표준서 선택·해제 시 `data.standardId` 를 함께 갱신
+- `app/work-orders/[id]/page.tsx`: 상세 헤더에 "표준서 기반 · {표준서명}" 링크 배지 (발급 후엔 STANDARD_META 스냅샷, 초안이면 draft_data.standardId 기준)
+
+**감사·심사 대응**
+- 발급된 지시서는 STANDARD_META 스냅샷으로 "당시 표준서명 / PTW 여부 / 표준서 최신 수정 시각 / 스냅샷 시각" 을 불변 기록
+- 표준서가 이후 편집·폐기돼도 지시서 발급 당시 정보는 보존
+- 감사 로그(audit_logs) 와 결합하면 "표준서 X 를 언제 사용해 어떤 지시서를 발급했는가" 완전 추적 가능
+
+**남은 한계**
+- 표준서 기반 지시서에서 폼 값을 수정해도 그 수정본이 `risk_assessments` 회차로 별도 등록되지는 않음 (같은 표준서·다른 지시서의 평가는 각자 record 로 저장되지만 표준서의 회차 이력에는 자동 편입 안 됨). 필요 시 후속으로 "지시서에서 발생한 평가를 표준서 회차로 승격" 흐름 추가.
+- 표준서 폐기 시 이미 발급된 지시서의 STANDARD_META 스냅샷은 살아 있지만, 그 표준서 상세 페이지 접근 링크는 여전히 열림 (폐기된 상세 페이지에서 이력만 표시).
+
+---
+
+## 2026-09-20 표준서 모델 재정의 — flat mutable + 위험성평가 회차 이력
+
+**결정**: 표준서와 위험성평가의 DB 관계를 다시 짰다. **표준서는 개정 개념 없이 수정 가능한 단일 문서**, **위험성평가만 회차별 이력으로 축적**한다. 표준서:위험성평가 = **1:N**.
+
+### 법적 근거
+
+- **표준서(작업표준서)** — 산안법상 필수 문서가 아님. 사업장 자율 관리 문서. 인정 심사에서도 표준서 개정 이력이 심사 항목이 아님. 따라서 무거운 버전 관리 요건이 없음.
+- **위험성평가** — 산안법 제36조 · 시행규칙 제37조. **법정 문서**, 실시 이력 3년 보존 의무. 최초/정기/수시/상시 각 회차가 독립 문서로 남아야 함.
+
+두 문서 성격이 다르므로 스키마도 다르게 취급.
+
+### 스키마 변경 (마이그레이션 `db/0006_standards_flat.sql`)
+
+**폐기**:
+- `standard_versions` 테이블 통째로 삭제
+- `standards.current_version_id` 컬럼 삭제
+- `standard_steps.version_id`, `standard_checklist_items.version_id` 삭제
+- `risk_assessments.standard_version_id` 삭제
+
+**추가**:
+- `standards.ptw_required` (버전에서 표준서 직접으로 이관)
+- `standard_steps.standard_id` (직접 참조), UNIQUE (standard_id, order_no)
+- `standard_checklist_items.standard_id` (직접 참조), UNIQUE (standard_id, category, order_no)
+- `risk_assessments.standard_id` (nullable — NULL 은 간이평가/예외 경로)
+- 인덱스 `risk_assessments_standard_performed_idx` (표준서별 최신 승인 평가 조회 가속)
+
+**백필**: 기존 데이터의 `standard_versions` → `standards` flat 이전 후 구 컬럼·테이블 정리.
+
+### 최종 관계
+
+```
+standards                       ← mutable, 단일 문서
+  id, name, ptw_required, status (DRAFT/APPROVED/ARCHIVED)
+  ─ 편집 이력은 audit_logs (before/after) 로 소명
+
+standard_steps          ─ standard_id FK
+standard_checklist_items ─ standard_id FK
+
+risk_assessments               ← 회차별 이력, 시계열 축적
+  id, standard_id (nullable), assessment_kind (FIRST/PERIODIC/AD_HOC/CONTINUOUS)
+  performed_on, status (APPROVED/…)
+  ─ 한 표준서에 여러 행 축적
+
+work_orders
+  standard_id      ← 어떤 표준서 기반인지
+  risk_assessment_id ← 발급 시 사용한 특정 회차의 스냅샷 소스
+```
+
+### 서비스·UI 변경
+
+**서버 (`src/server/standards-service.ts`)** — 완전 재작성:
+- `createStandardWithFirstAssessment` — 표준서 + 최초평가를 한 트랜잭션에서 생성 (self-approve)
+- `updateStandardMutable` — 표준서 필드·단계·체크리스트 수정, before/after 를 `audit_logs` 에 기록
+- `addAssessmentRound` — 기존 표준서에 새 위험성평가 회차 추가 (정기·수시·상시)
+- `getStandardDetail` — `current_assessment` (최신 승인 평가) + `assessments[]` (전체 회차 이력) 반환
+- `computeValidUntil` — 회차 유형별 유효기간 계산 (최초 3년 · 정기·수시 12개월 · 상시 만료 없음)
+- `listUsableStandards` — 지시서 발급 시 선택 가능한 표준서 = 승인 상태 + 유효 평가 있음
+
+**서버 액션 (`src/features/standards/actions.ts`)**:
+- `createStandardAction` — 신규 (변경: `initialStandardSchema` 로 nested `first_assessment`)
+- `updateStandardAction` — 편집 (신규)
+- `addAssessmentAction` — 평가 회차 추가 (신규)
+- `archiveStandardAction` — 폐기
+
+**UI**:
+- `/standards` — 목록. 표준서별 최근 평가일·회차 수·사용 가능 여부 표시
+- `/standards/new` — 표준서 + 최초평가를 한 폼에서 생성 (기존, `performed_on` 필드 추가)
+- `/standards/[id]` — 상세. 현재 평가·전체 회차 이력·유효기간 배지·**수정**·**평가 회차 추가** CTA. 만료 시 상단 경고 배너.
+- `/standards/[id]/edit` — 표준서 필드만 수정 (신규)
+- `/standards/[id]/assessments/new` — 새 위험성평가 회차 등록 (신규). 이전 회차의 방법·기준·사전조사 값을 seed 로 재사용해 입력 부담 완화. 평가 유형(정기/수시/상시/최초) 선택 UI.
+
+**지시서 폼 (`work-order-form.tsx`, `/work-orders/new/page.tsx`)**:
+- `StandardPickerOption` 에서 `version_id`, `version_no` 필드 제거 → `id` 만 사용
+- 표준서 선택 시 현재 승인 평가를 자동 pre-fill (변경 없음, 내부 조회 로직만 flat 참조로 바뀜)
+
+### 실무 시나리오
+
+**표준서 수정** — 관리자가 편집 화면에서 텍스트 수정 → 즉시 반영. 변경 이력은 `audit_logs`. 기존 발급된 지시서는 발급 당시 스냅샷을 이미 갖고 있어 영향 없음.
+
+**정기평가 사이클** — 매년 표준서 상세 화면에서 "평가 회차 추가" → 유형 "정기평가" 선택 → 실시일·판단기준·위험요인·참여자 입력. 새 회차가 승인되어 지시서 발급 스냅샷 소스로 승격.
+
+**수시평가** — 시설·물질·인력 변경, 사고 발생 시 표준서 그대로 두고 회차만 추가 (유형 "수시평가").
+
+**만료 알림** — 표준서 상세에 유효기간 만료 시 상단 경고 배너, 지시서 발급 진입 불가.
+
+### 확인된 한계 · 후속
+
+- 표준서 수정 이력은 `audit_logs` before/after 로만 남음. UI 로 diff 조회는 향후 감사 로그 화면 개발 시 함께.
+- 평가 회차 삭제·수정은 미지원 (법정 이력 보존). 실수 시 새 회차로 덮음.
+- 표준서 폐기 시 그 표준서의 평가 이력은 남지만 새 지시서 발급 대상에서 제외.
+- 표준서를 활성화하려면 최소 1개의 유효 승인 평가 필요.
+
+---
+
+## 2026-09-20 요금 정책 전환 — 인원 한도 폐지
+
+**결정**: 기존 "무료 인원 한도(기본 10명) 초과 시 회사 전체 Pro 자동 전환·전체 인원 과금" 규칙을 폐지한다. 앞으로는 **인원 수와 무관하게 텍스트 기반 기능은 무료로 누구나 사용**, **Pro 는 부가 기능이 필요한 회사가 자발적으로 전환**하는 프리미엄 모델로 전환한다.
+
+**근거**
+- 무료 사용자의 실 인프라 부담(Neon 스토리지·Resend 발송·Lightsail 고정요금)이 매우 낮아 규모 상관없이 무료 제공이 지속 가능하다고 판단.
+- 초기 도입 마찰 제거가 매출보다 우선. 인원 제한은 진입 장벽이지 매출 메커니즘이 아님. 실 매출은 Pro 전용 기능에서 발생.
+- 아직 `pro_state` 자동 전환·일일 사용량 스냅샷·과금 로직을 코드로 구현하지 않은 상태라 방향 전환에 코드 부담이 없다.
+
+**Pro 전용으로 유지되는 기능** (매출 원천)
+- 문자(SMS) 알림 (무료는 메일만)
+- 표준서·점검·안전사고 사진 첨부
+- 점검 모니터링 대시보드
+- 점검 결과 보고서(PDF/인쇄) 출력
+- 모바일 관리 업무 (모바일에서 표준서 열람·지시서/PTW 생성·기록 조회 등, 무료 모바일은 현장 기능만)
+- 지난 기록 전체 조회 (무료는 최근 1주일, 이전은 건수만 표시)
+
+**설계 문서·코드 변경 사항**
+- `docs/SMBE-design-v5.4.md` 요금제 표에서 "한도 초과 시 자동 Pro 전환" 항목 향후 개정 예정. 우선 dev-log 로 결정 기록.
+- DB: `companies.pro_state` `PRO_MANDATORY` 값은 스키마에 남기되 코드 경로에서 사용하지 않음. `free_limit` 컬럼은 유지하되 자동 강제 트리거로 쓰지 않고, 운영자가 특정 회사에 프리미엄 안내 여부를 조절하는 참고값으로만 사용.
+- 인원관리 화면의 "한도 초과" 경고 배지 제거 → Pro 부가 기능 소프트 안내로 대체.
+- 이용·관리(B-01) 화면 신설: 현재 요금제 상태, Pro 전용 기능 카탈로그, 가격 안내, 문의 CTA. 결제 자체는 미구현 상태로 문의 폼(/contact)에 연결.
+
+**엔터프라이즈(100인+) 대응**
+- "규모가 크면 자연스레 문자 알림·모바일 관리·다중 사업장 요구가 커짐 → 그 시점에 Pro 전환하며 개별 협의" 흐름으로 흡수. 인원 강제 트리거 없이 필요 기능이 트리거가 된다.
+
+---
+
 ## 2026-09-19 작업지시 1차 구현
 
 - W-01 목록·검색·상태 탭·페이지 이동, W-02 네 단계 작성/임시저장/복사, W-03 상세·평가 검토·발급·취소, W-05 QR/인쇄·링크 전달 구현.

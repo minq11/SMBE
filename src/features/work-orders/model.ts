@@ -14,6 +14,7 @@ export const riskSchema = z.object({
   dueDate: z.string().max(10),
 });
 export const draftSchema = z.object({
+  standardId: z.string().uuid().nullable().optional().default(null),
   name: z.string().trim().min(1, "작업명을 입력하세요.").max(120),
   groupLabel: z.string().max(40),
   method: text,
@@ -130,6 +131,7 @@ export function validateIssue(d: WorkDraft) {
 }
 export function blankDraft(): WorkDraft {
   return {
+    standardId: null,
     name: "",
     groupLabel: "",
     method: "",

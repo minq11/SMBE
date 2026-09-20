@@ -42,7 +42,7 @@ const NAV: ReadonlyArray<NavEntry> = [
     icon: ClipboardList,
     href: "/work-orders",
   },
-  { key: "standards", title: "작업표준서", icon: BookOpen },
+  { key: "standards", title: "작업표준서", icon: BookOpen, href: "/standards" },
   { key: "assessment", title: "위험성평가", icon: ShieldCheck },
   {
     key: "inspection",
@@ -57,7 +57,7 @@ const NAV: ReadonlyArray<NavEntry> = [
     icon: Building2,
     href: "/company/members",
   },
-  { key: "billing", title: "이용·관리", icon: Settings2 },
+  { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
 ];
 
 export function Sidebar({

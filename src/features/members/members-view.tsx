@@ -110,25 +110,12 @@ export function MembersView({
 }
 
 function MetaStrip({ overview }: { overview: CompanyOverview }) {
-  const tierLabel =
-    overview.pro_state === "FREE" ? "무료티어" : "Pro티어";
-  const overLimit = overview.active_count > overview.free_limit;
+  const tierLabel = overview.pro_state === "FREE" ? "무료티어" : "Pro티어";
   return (
     <dl className="meta-strip">
       <div>
         <dt>현재 인원</dt>
-        <dd>
-          {overview.active_count}
-          {overLimit && (
-            <span className="meta-strip-tag meta-strip-tag--warn">
-              한도 초과
-            </span>
-          )}
-        </dd>
-      </div>
-      <div>
-        <dt>무료 한도</dt>
-        <dd>{overview.free_limit}명</dd>
+        <dd>{overview.active_count}</dd>
       </div>
       <div>
         <dt>요금제</dt>

@@ -7,8 +7,38 @@ import {
   type ReactElement,
 } from "react";
 import Link from "next/link";
+import { CheckCircle2, FileText, Plus, ShieldCheck } from "lucide-react";
 import { saveOrderAction } from "./actions";
 import { shiftMinutes, type WorkDraft, type MemberOption } from "./model";
+
+export type StandardPickerOption = {
+  id: string;
+  name: string;
+  ptw_required: boolean;
+  prefill: {
+    name: string;
+    ptw_required: boolean;
+    method: string;
+    tbm: string[];
+    during: string[];
+    criteria: string;
+    safetyInfo: {
+      equipment: string;
+      materials: string;
+      environment: string;
+      history: string;
+    };
+    risks: Array<{
+      hazard: string;
+      level: "HIGH" | "MID" | "LOW";
+      allowable: "yes" | "no";
+      measure: string;
+      responsibleId: string;
+      dueDate: string;
+    }>;
+    participantIds: string[];
+  } | null;
+};
 
 function Field({
   label,
@@ -25,18 +55,65 @@ function Field({
     </div>
   );
 }
+function mergeStandardIntoDraft(
+  base: WorkDraft,
+  prefill: NonNullable<StandardPickerOption["prefill"]>,
+): WorkDraft {
+  return {
+    ...base,
+    name: prefill.name || base.name,
+    method: prefill.method || base.method,
+    ptwRequired: prefill.ptw_required,
+    criteria: prefill.criteria,
+    safetyInfo: prefill.safetyInfo,
+    risks:
+      prefill.risks.length > 0
+        ? prefill.risks.map((r) => ({
+            hazard: r.hazard,
+            level: r.level,
+            allowable: r.allowable,
+            measure: r.measure,
+            responsibleId: r.responsibleId,
+            dueDate: r.dueDate,
+          }))
+        : base.risks,
+    participantIds:
+      prefill.participantIds.length > 0
+        ? [...new Set(prefill.participantIds)]
+        : base.participantIds,
+    tbm: prefill.tbm.length > 0 ? prefill.tbm : base.tbm,
+    during: prefill.during.length > 0 ? prefill.during : base.during,
+  };
+}
+
 export function WorkOrderForm({
   id,
   revision,
   initial,
   members,
+  standards = [],
+  initialStandardId = null,
 }: {
   id: string;
   revision: number;
   initial: WorkDraft;
   members: MemberOption[];
+  standards?: StandardPickerOption[];
+  initialStandardId?: string | null;
 }) {
-  const [data, setData] = useState(initial);
+  const [data, setData] = useState<WorkDraft>(() => {
+    if (initialStandardId) {
+      const s = standards.find((x) => x.id === initialStandardId);
+      if (s?.prefill) {
+        return {
+          ...mergeStandardIntoDraft(initial, s.prefill),
+          standardId: initialStandardId,
+        };
+      }
+    }
+    return { ...initial, standardId: initial.standardId ?? null };
+  });
+  const [standardId, setStandardId] = useState<string | null>(initialStandardId);
   const [step, setStep] = useState(0);
   const [state, action, pending] = useActionState(saveOrderAction, undefined);
   const set = <K extends keyof WorkDraft>(key: K, value: WorkDraft[K]) =>
@@ -48,7 +125,22 @@ export function WorkOrderForm({
         ? data[key].filter((x) => x !== id)
         : [...data[key], id],
     );
+  const applyStandard = (nextId: string) => {
+    const s = standards.find((x) => x.id === nextId);
+    if (!s?.prefill) return;
+    setData((d) => ({
+      ...mergeStandardIntoDraft(d, s.prefill!),
+      standardId: nextId,
+    }));
+    setStandardId(nextId);
+  };
+  const clearStandard = () => {
+    setStandardId(null);
+    setData((d) => ({ ...d, standardId: null }));
+  };
   const minutes = shiftMinutes(data.startTime, data.endTime);
+  const pickedStandard =
+    standardId != null ? standards.find((s) => s.id === standardId) : null;
   return (
     <form action={action} className="wo-editor">
       <input type="hidden" name="id" value={id} />
@@ -78,10 +170,109 @@ export function WorkOrderForm({
           )}
           {step === 0 && (
             <>
-              <h2>표준서 없이 작업 시작</h2>
+              <section className="wo-std-picker">
+                <h2>이 지시서의 표준서</h2>
+                {standards.length > 0 ? (
+                  <>
+                    <p className="wo-muted">
+                      표준서를 선택하면 작업방법·체크리스트·위험성평가가 자동
+                      으로 딸려갑니다. 표준서가 없는 신규·1회성 작업은 아래
+                      &lsquo;간이 위험성평가로 대체&rsquo; 를 선택하세요.
+                    </p>
+                    <ul className="wo-std-list" role="list">
+                      {standards.map((s) => {
+                        const active = standardId === s.id;
+                        return (
+                          <li key={s.id}>
+                            <button
+                              type="button"
+                              className={`wo-std-option${active ? " is-active" : ""}`}
+                              onClick={() => applyStandard(s.id)}
+                            >
+                              <span className="wo-std-option-icon">
+                                {active ? (
+                                  <CheckCircle2 size={16} />
+                                ) : (
+                                  <ShieldCheck size={16} />
+                                )}
+                              </span>
+                              <span className="wo-std-option-copy">
+                                <strong>{s.name}</strong>
+                                <small>
+                                  현재 승인 평가 포함
+                                  {s.ptw_required ? " · PTW 필요" : ""}
+                                </small>
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <div className="wo-std-picker-actions">
+                      <Link
+                        href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
+                        className="ghost-button"
+                        prefetch={false}
+                      >
+                        <Plus size={13} /> 새 표준서 만들기
+                      </Link>
+                      <button
+                        type="button"
+                        className={`ghost-button wo-std-exception${standardId === null ? " is-on" : ""}`}
+                        onClick={clearStandard}
+                      >
+                        <FileText size={13} /> 간이 위험성평가로 대체 (예외)
+                      </button>
+                    </div>
+                    {standardId !== null && pickedStandard && (
+                      <p className="wo-std-note">
+                        <ShieldCheck size={13} /> 선택한 표준서{" "}
+                        <strong>{pickedStandard.name}</strong> 의 현재 사용 중
+                        위험성평가가 아래 폼에 채워졌습니다. 필요하면 개별 항목을
+                        수정할 수 있고, 발급 시 표준서 스냅샷이 함께 저장됩니다.
+                      </p>
+                    )}
+                    {standardId === null && (
+                      <p className="wo-std-note wo-std-note--warn">
+                        <FileText size={13} /> 간이 위험성평가로 대체 중입니다.
+                        같은 작업이 반복될 예정이면 나중에 표준서로 등록해 재사용
+                        하세요.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="wo-muted">
+                      등록된 표준서가 없습니다. 표준서를 먼저 등록하면 이후
+                      지시서에서 재사용할 수 있습니다. 지금은 간이 위험성평가로
+                      진행할 수 있습니다.
+                    </p>
+                    <div className="wo-std-picker-actions">
+                      <Link
+                        href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
+                        className="primary-button"
+                        prefetch={false}
+                      >
+                        <Plus size={14} /> 표준서 먼저 만들기
+                      </Link>
+                      <span className="wo-std-note wo-std-note--warn">
+                        <FileText size={13} /> 이번 지시서는 간이 위험성평가로
+                        대체합니다 (예외 경로).
+                      </span>
+                    </div>
+                  </>
+                )}
+              </section>
+
+              <h2>
+                {pickedStandard
+                  ? "작업 정보 (표준서 값 채워짐)"
+                  : "간이 위험성평가로 작업 시작"}
+              </h2>
               <p className="wo-muted">
-                간이평가도 위험요인·대책·참여자 기록과 승인이 필요합니다. 표준서
-                연계와 검토된 업종별 템플릿은 다음 단계에서 제공됩니다.
+                간이평가도 위험요인·대책·참여자 기록과 승인이 필요합니다.
+                표준서에서 시작한 경우 아래 값은 미리 채워져 있으며 필요 시
+                수정할 수 있습니다.
               </p>
               <Field label="작업명">
                 <input
