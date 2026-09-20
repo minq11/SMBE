@@ -21,6 +21,8 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { InspectionSummary } from "@/features/inspections/inspection-summary";
 import { sessionState } from "@/features/inspections/model";
+import { withTransaction } from "@/server/db";
+import { readPermit } from "@/server/ptw-service";
 
 const ACTIONS: Record<string, string> = {
   CREATE: "초안 생성",
@@ -68,6 +70,7 @@ export default async function OrderDetailPage({
   });
   const { order, isManager } = detail;
   const d = order.draft_data;
+  const permit = await withTransaction((c) => readPermit(c, actor, id));
   const issued = Boolean(order.issued_at);
   const active = ["ISSUED", "IN_PROGRESS"].includes(order.status);
   const url = workOrderOrigin() + "/work-orders/" + id;
@@ -184,9 +187,7 @@ export default async function OrderDetailPage({
             ) : (
               <>
                 {" · "}
-                <Link href={"/standards/" + linkedStandardId}>
-                  표준서 열기
-                </Link>
+                <Link href={"/standards/" + linkedStandardId}>표준서 열기</Link>
               </>
             )}
           </p>
@@ -199,7 +200,19 @@ export default async function OrderDetailPage({
           <div>
             <small>PTW</small>
             <strong>
-              {d.ptwRequired ? "필요 · 허가 기능 준비 중" : "불필요"}
+              {d.ptwRequired ? (
+                <Link href={"/work-orders/" + id + "/permit"}>
+                  필요 ·{" "}
+                  {permit?.status === "APPROVED" ? "승인" : "허가 상태 확인"}
+                  {permit?.self_approval ? " · 자가 승인 건" : ""}
+                </Link>
+              ) : isManager && actor.userId === order.created_by ? (
+                <Link href={"/work-orders/" + id + "/permit"}>
+                  불필요 · 추가 허가 신청
+                </Link>
+              ) : (
+                "불필요"
+              )}
             </strong>
           </div>
           <div>
@@ -393,7 +406,7 @@ export default async function OrderDetailPage({
                 />
               </>
             )}
-            {order.assessment_status === "APPROVED" && (
+            {order.assessment_status === "APPROVED" && !d.ptwRequired && (
               <OrderCommand
                 id={id}
                 revision={order.revision}
@@ -403,7 +416,12 @@ export default async function OrderDetailPage({
               />
             )}
             {d.ptwRequired && (
-              <p className="wo-notice">PTW 필요 작업은 발급할 수 없습니다.</p>
+              <p className="wo-notice">
+                <Link href={"/work-orders/" + id + "/permit"}>
+                  위험성평가 검토 및 PTW 신청
+                </Link>{" "}
+                · 허가 승인 시 지시서가 자동 발급됩니다.
+              </p>
             )}
           </section>
         )}

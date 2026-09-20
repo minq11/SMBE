@@ -51,11 +51,11 @@ export async function deliverOrder(actor: Actor, orderId: string) {
         ? await sendEmail({
             to: item.link_target,
             subject: "[SMBE] 작업지시가 발급되었습니다",
-            html: `<p>작업지시가 발급되었습니다. 로그인 후 배정된 작업 내용을 확인하세요.</p><p><a href="${url}">작업지시 확인</a></p><p>TBM·작업 중 점검 입력 기능은 준비 중입니다.</p>`,
+            html: `<p>작업지시가 발급되었습니다. 로그인 후 배정된 작업 내용을 확인하세요.</p><p><a href="${url}">작업지시 확인</a></p><p>작업지시에서 TBM·작업 중 점검을 입력할 수 있습니다.</p>`,
             text:
               "로그인 후 작업지시를 확인하세요: " +
               url +
-              "\nTBM·작업 중 점검 입력 기능은 준비 중입니다.",
+              "\n작업지시에서 TBM·작업 중 점검을 입력할 수 있습니다.",
             idempotencyKey: "work-order-" + item.id,
           })
         : { status: "skipped" as const };

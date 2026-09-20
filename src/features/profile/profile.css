@@ -1,0 +1,115 @@
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.account-panel {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.account-panel h2 {
+  font-size: 18px;
+  margin: 0 0 20px;
+}
+.account-panel p {
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+.account-panel dl {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+.account-panel dt,
+.account-muted {
+  color: var(--ink-3);
+}
+.account-panel dd {
+  margin: 0;
+}
+.account-muted {
+  font-size: 13px;
+  font-weight: 400;
+}
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.account-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.account-form input:not([type="checkbox"]):not([type="hidden"]) {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  padding: 10px 12px;
+}
+.account-form button {
+  align-self: flex-start;
+  min-height: 44px;
+}
+.account-form .account-confirm {
+  flex-direction: row;
+  align-items: flex-start;
+  line-height: 1.8;
+  font-weight: 400;
+}
+.account-confirm input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 3px;
+  accent-color: var(--brand);
+}
+.account-error {
+  color: #a22e17;
+}
+.account-notice {
+  padding: 16px;
+  border-left: 3px solid var(--brand);
+  background: var(--brand-softer);
+  line-height: 1.8;
+}
+.account-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.account-history li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+@media (max-width: 700px) {
+  .account-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .account-panel {
+    padding: 20px 16px;
+  }
+  .account-form input:not([type="checkbox"]):not([type="hidden"]) {
+    font-size: 16px;
+  }
+}

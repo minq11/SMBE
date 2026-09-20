@@ -21,11 +21,14 @@ export default async function OnboardingPage() {
             <div className="pending-notice">
               <h2>가입 승인 대기 중</h2>
               <p>
-                <strong>{session.membership.company_name}</strong>의 관리감독자가
+                <strong>{session.membership.company_name}</strong>의
+                관리감독자가
                 <br />
                 가입을 승인하면 홈으로 이동합니다.
               </p>
               <p style={{ marginTop: 16 }}>
+                <Link href="/my-page">내 정보 · 가입 신청 관리</Link>
+                {" · "}
                 <SignOutButton />
               </p>
             </div>
@@ -54,7 +57,10 @@ export default async function OnboardingPage() {
                 <Building2 size={14} /> 회사 만들기
               </span>
               <h3>우리 회사를 새로 등록</h3>
-              <p>회사명·업종·인원규모를 입력하면 바로 사용할 수 있어요. 생성자는 관리감독자 권한을 갖습니다.</p>
+              <p>
+                회사명·업종·인원규모를 입력하면 바로 사용할 수 있어요. 생성자는
+                관리감독자 권한을 갖습니다.
+              </p>
               <span className="arrow">
                 시작하기 <ArrowRight size={14} />
               </span>
@@ -64,13 +70,18 @@ export default async function OnboardingPage() {
                 <KeyRound size={14} /> 회사코드로 참여
               </span>
               <h3>이미 있는 회사에 참여</h3>
-              <p>회사 관리자가 알려준 회사코드를 입력하세요. 관리자가 승인한 뒤 소속으로 등록됩니다.</p>
+              <p>
+                회사 관리자가 알려준 회사코드를 입력하세요. 관리자가 승인한 뒤
+                소속으로 등록됩니다.
+              </p>
               <span className="arrow">
                 코드 입력 <ArrowRight size={14} />
               </span>
             </Link>
           </div>
           <div className="form-note" style={{ textAlign: "center" }}>
+            <Link href="/my-page">내 정보</Link>
+            {" · "}
             <SignOutButton />
           </div>
         </div>

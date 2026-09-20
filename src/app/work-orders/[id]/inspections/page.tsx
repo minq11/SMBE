@@ -5,6 +5,7 @@ import { z } from "zod";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { inspectionOverview } from "@/server/inspection-service";
+import { readPermit } from "@/server/ptw-service";
 import { WorkOrderError } from "@/features/work-orders/model";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
@@ -52,6 +53,9 @@ export default async function InspectionPage({
     throw error;
   });
   if (!data.order.issued_at) notFound();
+  const permit = data.order.ptw_required
+    ? await withTransaction((c) => readPermit(c, actor, id))
+    : null;
   const canInput =
     data.current &&
     data.order.status !== "CANCELED" &&
@@ -79,6 +83,14 @@ export default async function InspectionPage({
       {query.saved === "1" && (
         <p role="status" className="wo-notice">
           점검 기록을 저장했습니다.
+        </p>
+      )}
+      {data.order.ptw_required && (
+        <p className="wo-notice">
+          <Link href={"/work-orders/" + id + "/permit"}>
+            PTW:{" "}
+            {permit?.status === "APPROVED" ? "승인" : "미승인 · 현재 상태 확인"}
+          </Link>
         </p>
       )}
       <InspectionSummary

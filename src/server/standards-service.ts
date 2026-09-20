@@ -59,8 +59,15 @@ const safetyInfoSchema = z.object({
 export const standardEditSchema = z.object({
   name: z.string().trim().min(1, "표준서명을 입력하세요.").max(120),
   ptw_required: z.boolean(),
+  // 편집 시 기존 스텝은 id 를 보존해 첨부 사진 target_id 가 유지된다.
+  // 신규 스텝은 id 없이 { text } 만 보내면 서버가 새 uuid 부여.
   steps: z
-    .array(z.string().trim().min(1).max(500))
+    .array(
+      z.object({
+        id: z.string().uuid().optional(),
+        text: z.string().trim().min(1).max(500),
+      }),
+    )
     .min(1, "작업 단계를 하나 이상 입력하세요.")
     .max(30),
   checklist_tbm: z
@@ -219,7 +226,7 @@ export async function getStandardDetail(
   if (!std) return null;
 
   const steps = await query<StandardStep>(
-    `SELECT order_no, step_text FROM standard_steps
+    `SELECT id, order_no, step_text FROM standard_steps
       WHERE standard_id = $1 ORDER BY order_no`,
     [standardId],
   );
@@ -281,7 +288,7 @@ export async function getStandardDetail(
       [currentApproved.assessment_id],
     );
     const items = await query<RiskItem>(
-      `SELECT order_no, hazard, initial_risk_level, initial_allowable,
+      `SELECT id, order_no, hazard, initial_risk_level, initial_allowable,
               reduction_measure, responsible_user_id,
               planned_completion_date::text AS planned_completion_date
          FROM risk_assessment_items
@@ -566,10 +573,11 @@ export async function updateStandardMutable(input: {
     );
     if (before.rows.length === 0) throw new Error("표준서를 찾을 수 없습니다.");
     const beforeSteps = await client.query<{
+      id: string;
       order_no: number;
       step_text: string;
     }>(
-      `SELECT order_no, step_text FROM standard_steps
+      `SELECT id, order_no, step_text FROM standard_steps
         WHERE standard_id = $1 ORDER BY order_no`,
       [standardId],
     );
@@ -587,20 +595,47 @@ export async function updateStandardMutable(input: {
       `UPDATE standards SET name = $2, ptw_required = $3 WHERE id = $1`,
       [standardId, payload.name, payload.ptw_required],
     );
-    await client.query(`DELETE FROM standard_steps WHERE standard_id = $1`, [
-      standardId,
-    ]);
+    // 스텝: 첨부 사진 target_id 로 사용되는 id 를 보존.
+    // 클라이언트가 보낸 id 목록에 없는 기존 스텝만 DELETE, 나머지는 UPDATE, 신규는 INSERT.
+    const incomingIds = new Set(
+      payload.steps.map((s) => s.id).filter((v): v is string => Boolean(v)),
+    );
+    const toDelete = beforeSteps.rows
+      .map((r) => r.id)
+      .filter((id) => !incomingIds.has(id));
+    if (toDelete.length > 0) {
+      await client.query(
+        `DELETE FROM standard_steps WHERE id = ANY($1::uuid[])`,
+        [toDelete],
+      );
+    }
+    // UNIQUE (standard_id, order_no) 충돌 방지 위해 남은 스텝의 order_no 를 임시로 음수로 밀고
+    // 새 order_no 로 다시 세팅. (한 트랜잭션 내 두 패스)
+    await client.query(
+      `UPDATE standard_steps SET order_no = -order_no WHERE standard_id = $1`,
+      [standardId],
+    );
+    for (let i = 0; i < payload.steps.length; i++) {
+      const s = payload.steps[i];
+      if (s.id) {
+        await client.query(
+          `UPDATE standard_steps SET order_no = $2, step_text = $3
+            WHERE id = $1 AND standard_id = $4`,
+          [s.id, i + 1, s.text, standardId],
+        );
+      } else {
+        await client.query(
+          `INSERT INTO standard_steps (standard_id, order_no, step_text)
+           VALUES ($1, $2, $3)`,
+          [standardId, i + 1, s.text],
+        );
+      }
+    }
+    // 체크리스트는 첨부 사진 대상 아님 → 기존대로 wipe + insert.
     await client.query(
       `DELETE FROM standard_checklist_items WHERE standard_id = $1`,
       [standardId],
     );
-    for (let i = 0; i < payload.steps.length; i++) {
-      await client.query(
-        `INSERT INTO standard_steps (standard_id, order_no, step_text)
-         VALUES ($1, $2, $3)`,
-        [standardId, i + 1, payload.steps[i]],
-      );
-    }
     for (let i = 0; i < payload.checklist_tbm.length; i++) {
       await client.query(
         `INSERT INTO standard_checklist_items

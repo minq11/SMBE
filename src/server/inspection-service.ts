@@ -25,7 +25,11 @@ export async function inspectionSessions(
 ): Promise<SessionRow[]> {
   return (
     await client.query<SessionRow>(
-      `SELECT s.id,s.work_date::text,s.starts_at::text,s.ends_at::text,s.expected_assignees,
+      `SELECT s.id,s.work_date::text,s.starts_at::text,s.ends_at::text,
+    coalesce((SELECT jsonb_agg(person ORDER BY ord) FROM jsonb_array_elements(s.expected_assignees) WITH ORDINALITY AS p(person,ord)
+      WHERE NOT EXISTS (SELECT 1 FROM work_order_assignments a WHERE a.work_order_id=s.work_order_id
+        AND a.user_id=(person->>'userId')::uuid AND a.status='UNASSIGNED' AND a.unassigned_at<=s.ends_at+interval '2 hours'
+        AND NOT EXISTS(SELECT 1 FROM inspections i WHERE i.session_id=s.id AND i.inspector_id=a.user_id AND i.category='TBM'))),'[]'::jsonb) AS expected_assignees,
     coalesce((SELECT array_agg(i.inspector_id::text) FROM inspections i WHERE i.session_id=s.id AND i.category='TBM'),ARRAY[]::text[]) AS tbm_users,
     (SELECT count(*)::int FROM inspections i WHERE i.session_id=s.id AND i.category='DURING_WORK') AS during_count
     FROM work_sessions s WHERE s.work_order_id=$1 ORDER BY s.work_date DESC`,

@@ -98,6 +98,8 @@ try {
           "tests/inspections.spec.ts",
           "tests/preview.spec.ts",
           "tests/mobile-layout.spec.ts",
+          "tests/profile.spec.ts",
+          "tests/ptw.spec.ts",
         ]),
     "--workers=1",
   ]);

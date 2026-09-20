@@ -38,7 +38,8 @@ export type StandardListRow = {
   valid_until: string | null;
 };
 
-export type StandardStep = { order_no: number; step_text: string };
+// id 는 첨부 사진의 target_id 로 사용. 표준서 수정 시 서버가 id 를 보존.
+export type StandardStep = { id: string; order_no: number; step_text: string };
 
 export type StandardChecklistItem = {
   category: "TBM" | "DURING_WORK";
@@ -59,6 +60,7 @@ export type RiskAssessmentSummary = {
 };
 
 export type RiskItem = {
+  id: string;
   order_no: number;
   hazard: string;
   initial_risk_level: "HIGH" | "MID" | "LOW";

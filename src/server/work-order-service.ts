@@ -47,12 +47,9 @@ export async function resolveStandardLink(
       WHERE id = $1 AND company_id = $2`,
     [standardId, companyId],
   );
-  if (rows.length === 0)
-    throw new WorkOrderError("표준서를 찾을 수 없습니다.");
+  if (rows.length === 0) throw new WorkOrderError("표준서를 찾을 수 없습니다.");
   if (rows[0].status !== "APPROVED")
-    throw new WorkOrderError(
-      "폐기된 표준서는 지시서에 사용할 수 없습니다.",
-    );
+    throw new WorkOrderError("폐기된 표준서는 지시서에 사용할 수 없습니다.");
   return rows[0].id;
 }
 
@@ -350,12 +347,20 @@ export async function issueOrder(
   revision: number,
 ) {
   const row = await writable(client, actor, id, revision);
-  if (row.status !== "DRAFT")
+  if (!["DRAFT", "ISSUE_PENDING"].includes(row.status))
     throw new WorkOrderError("이미 발급되었거나 취소된 지시서입니다.");
   if (row.assessment_status !== "APPROVED")
     throw new WorkOrderError("위험성평가 승인 후 발급할 수 있습니다.");
   const d = row.draft_data;
-  validateIssue(d);
+  if (d.ptwRequired) {
+    const permit = await client.query(
+      "SELECT id FROM work_permits WHERE work_order_id=$1 AND company_id=$2 AND status='APPROVED'",
+      [id, actor.companyId],
+    );
+    if (!permit.rows.length)
+      throw new WorkOrderError("PTW 승인 후 발급할 수 있습니다.");
+  }
+  validateIssue({ ...d, ptwRequired: false });
   if (effectiveStatus("ISSUED", d) === "COMPLETED")
     throw new WorkOrderError(
       "작업기간이 이미 종료되었습니다. 일정을 변경하세요.",
@@ -490,4 +495,8 @@ export async function cancelOrder(
     [id, reason.trim(), actor.userId],
   );
   await auditOrder(client, actor, id, "CANCEL", { previousStatus: row.status });
+  await client.query(
+    "UPDATE work_permits SET status='INVALID',revision=revision+1,updated_at=now() WHERE work_order_id=$1 AND status IN ('PENDING','APPROVED')",
+    [id],
+  );
 }

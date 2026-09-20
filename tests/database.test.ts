@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import { before, after, test } from "node:test";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import {
+  updateOwnProfile,
+  leaveOwnCompany,
+} from "../src/server/profile-service";
 import { randomUUID } from "node:crypto";
+import {
+  requestPermit,
+  decidePermit,
+  addLocation,
+} from "../src/server/ptw-service";
 import { Pool } from "pg";
 import type { PoolClient } from "@neondatabase/serverless";
 import {
@@ -67,15 +76,14 @@ async function transaction<T>(fn: (client: PoolClient) => Promise<T>) {
   }
 }
 before(async () => {
-  await setupPool.query("CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public");
+  await setupPool.query(
+    "CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public",
+  );
   await setupPool.query("CREATE EXTENSION IF NOT EXISTS citext SCHEMA public");
   await pool.query(`CREATE SCHEMA ${schema}`);
-  for (const file of [
-    "0001_init.sql",
-    "0002_company_required_fields.sql",
-    "0003_work_orders.sql",
-    "0004_inspections.sql",
-  ]) {
+  for (const file of (await readdir(new URL("../db/", import.meta.url)))
+    .filter((f) => /^\d{4}_.+\.sql$/.test(f))
+    .sort()) {
     await pool.query(
       await readFile(new URL("../db/" + file, import.meta.url), "utf8"),
     );
@@ -133,6 +141,121 @@ async function invitation(
   );
   return token;
 }
+test("profile: validation, stale write protection and audit privacy", async () => {
+  const id = await user();
+  const version = (
+    await pool.query("SELECT updated_at::text AS v FROM users WHERE id=$1", [
+      id,
+    ])
+  ).rows[0].v;
+  const input = { displayName: "새 이름", phone: "010-1234-5678", version };
+  await transaction((c) => updateOwnProfile(c, id, input));
+  await assert.rejects(
+    transaction((c) => updateOwnProfile(c, id, input)),
+    /다른 화면/,
+  );
+  await assert.rejects(
+    transaction((c) => updateOwnProfile(c, id, { ...input, phone: "invalid" })),
+    /전화번호/,
+  );
+  const audit = (
+    await pool.query(
+      "SELECT after_json FROM audit_logs WHERE actor_id=$1 AND action='UPDATE_PROFILE'",
+      [id],
+    )
+  ).rows[0].after_json;
+  assert.deepEqual(audit, { fields: ["display_name", "phone"] });
+});
+
+test("profile: concurrent supervisor exits retain one; cross-user exit forbidden; pending cancellation idempotent", async () => {
+  const f = await fixture(),
+    second = await user();
+  const secondMember = await member(f.companyId, second, "MANAGER_SUPERVISOR");
+  await assert.rejects(
+    transaction((c) => leaveOwnCompany(c, second, f.memberId)),
+    /본인의 소속/,
+  );
+  const results = await Promise.allSettled([
+    transaction((c) => leaveOwnCompany(c, f.userId, f.memberId)),
+    transaction((c) => leaveOwnCompany(c, second, secondMember)),
+  ]);
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  const pending = await user(),
+    pendingMember = await member(
+      f.companyId,
+      pending,
+      "WORKER",
+      "JOIN_PENDING",
+    );
+  await transaction((c) => leaveOwnCompany(c, pending, pendingMember));
+  await transaction((c) => leaveOwnCompany(c, pending, pendingMember));
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int n FROM audit_logs WHERE actor_id=$1 AND action='SELF_RESIGN'",
+        [pending],
+      )
+    ).rows[0].n,
+    1,
+  );
+});
+
+test("profile: exit unassigns work without modifying snapshots or completed TBM", async () => {
+  for (const submitted of [false, true]) {
+    const f = await inspectionFixture();
+    if (submitted)
+      await transaction((c) => submitInspection(c, f.workerActor, f.input()));
+    const membership = (
+      await pool.query("SELECT id FROM company_members WHERE user_id=$1", [
+        f.worker,
+      ])
+    ).rows[0].id;
+    await transaction((c) => leaveOwnCompany(c, f.worker, membership));
+    assert.equal(
+      (
+        await pool.query(
+          "SELECT status FROM work_order_assignments WHERE work_order_id=$1 AND user_id=$2",
+          [f.id, f.worker],
+        )
+      ).rows[0].status,
+      "UNASSIGNED",
+    );
+    assert.equal(
+      (
+        await pool.query(
+          "SELECT expected_assignees FROM work_sessions WHERE id=$1",
+          [f.session.id],
+        )
+      ).rows[0].expected_assignees.length,
+      1,
+    );
+    const sessions = await transaction((c) => inspectionSessions(c, f.id));
+    assert.equal(sessions[0].expected_assignees.length, submitted ? 1 : 0);
+    assert.equal(sessions[0].tbm_users.length, submitted ? 1 : 0);
+    await assert.rejects(
+      transaction((c) =>
+        submitInspection(c, f.workerActor, f.input("DURING_WORK")),
+      ),
+    );
+  }
+});
+
+test("profile: assigned unresolved finding prevents departure", async () => {
+  const f = await inspectionFixture();
+  await member(f.actor.companyId, await user(), "MANAGER_SUPERVISOR");
+  const input = f.input();
+  input.results[0] = {
+    ...input.results[0],
+    result: "FAIL",
+    managerId: f.actor.userId,
+  };
+  await transaction((c) => submitInspection(c, f.workerActor, input));
+  await assert.rejects(
+    transaction((c) => leaveOwnCompany(c, f.actor.userId, f.actor.memberId)),
+    /미조치 부적합/,
+  );
+});
+
 test("simultaneous approval is single-use and repairs count; repeated resignation cannot decrement twice", async () => {
   const actor = await fixture();
   const id = await member(
@@ -927,6 +1050,208 @@ test("work order: tenant boundary, worker permissions and assignment scope", asy
     transaction((c) => readOrder(c, { ...actor, userId: unassigned }, id)),
   );
   await transaction((c) => readOrder(c, { ...actor, userId: worker }, id));
+});
+test("PTW: explicit self approval issues once and cancellation invalidates permit", async () => {
+  const f = await orderFixture(true);
+  const locationId = await transaction((c) =>
+    addLocation(c, f.actor, "허가 테스트 장소"),
+  );
+  const input = {
+    locationId,
+    approverId: f.actor.userId,
+    responsibleId: f.actor.userId,
+    equipment: "용접기",
+    notes: "",
+    hotWork: true,
+    fireWatcherId: f.worker,
+    contacts: [{ name: "비상", phone: "01012345678" }],
+  };
+  await assert.rejects(
+    transaction((c) => requestPermit(c, f.actor, f.id, 1, input, false)),
+    /자가 승인/,
+  );
+  await transaction((c) => requestPermit(c, f.actor, f.id, 1, input, true));
+  const p = (
+    await pool.query("SELECT * FROM work_permits WHERE work_order_id=$1", [
+      f.id,
+    ])
+  ).rows[0];
+  assert.equal(p.status, "APPROVED");
+  assert.equal(p.self_approval, true);
+  const o = await transaction((c) => readOrder(c, f.actor, f.id));
+  assert.equal(o.status, "ISSUED");
+  await assert.rejects(
+    transaction((c) => decidePermit(c, f.actor, f.id, p.revision, "approve")),
+  );
+  await transaction((c) => cancelOrder(c, f.actor, f.id, o.revision, "취소"));
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT status FROM work_permits WHERE work_order_id=$1",
+        [f.id],
+      )
+    ).rows[0].status,
+    "INVALID",
+  );
+});
+test("PTW: assigned approval, locking, rejection and request history", async () => {
+  const f = await orderFixture(true),
+    reviewer = await user();
+  await member(f.actor.companyId, reviewer, "MANAGER_SAFETY");
+  const locationId = await transaction((c) => addLocation(c, f.actor, "장소"));
+  const input = {
+    locationId,
+    approverId: reviewer,
+    responsibleId: f.actor.userId,
+    equipment: "설비",
+    notes: "",
+    hotWork: false,
+    fireWatcherId: "",
+    contacts: [{ name: "비상", phone: "01012345678" }],
+  };
+  await transaction((c) => requestPermit(c, f.actor, f.id, 1, input, false));
+  let o = await transaction((c) => readOrder(c, f.actor, f.id));
+  assert.equal(o.status, "ISSUE_PENDING");
+  await assert.rejects(
+    transaction((c) => saveOrder(c, f.actor, f.id, o.revision, f.d)),
+  );
+  await assert.rejects(
+    transaction((c) => decidePermit(c, f.actor, f.id, 1, "approve")),
+    /담당자/,
+  );
+  const reviewerActor = { ...f.actor, userId: reviewer };
+  await assert.rejects(
+    transaction((c) => decidePermit(c, reviewerActor, f.id, 1, "reject", "")),
+    /반려 사유/,
+  );
+  await transaction((c) =>
+    decidePermit(c, reviewerActor, f.id, 1, "reject", "내용 보완"),
+  );
+  o = await transaction((c) => readOrder(c, f.actor, f.id));
+  assert.equal(o.status, "DRAFT");
+  await transaction((c) =>
+    requestPermit(c, f.actor, f.id, o.revision, input, false),
+  );
+  const p = (
+    await pool.query(
+      "SELECT revision FROM work_permits WHERE work_order_id=$1",
+      [f.id],
+    )
+  ).rows[0];
+  const results = await Promise.allSettled(
+    [1, 2].map(() =>
+      transaction((c) =>
+        decidePermit(c, reviewerActor, f.id, p.revision, "approve"),
+      ),
+    ),
+  );
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int n FROM work_permit_events WHERE permit_id=(SELECT id FROM work_permits WHERE work_order_id=$1)",
+        [f.id],
+      )
+    ).rows[0].n,
+    4,
+  );
+});
+test("PTW: tenant targets and expired approval rejected, withdrawal returns draft", async () => {
+  const f = await orderFixture(true),
+    foreign = await fixture(),
+    reviewer = await user();
+  await member(f.actor.companyId, reviewer, "MANAGER_SAFETY");
+  const locationId = await transaction((c) =>
+    addLocation(c, foreign, "외부 장소"),
+  );
+  const input = {
+    locationId,
+    approverId: reviewer,
+    responsibleId: f.actor.userId,
+    equipment: "설비",
+    notes: "",
+    hotWork: false,
+    fireWatcherId: "",
+    contacts: [{ name: "비상", phone: "01012345678" }],
+  };
+  await assert.rejects(
+    transaction((c) => requestPermit(c, f.actor, f.id, 1, input, false)),
+    /장소/,
+  );
+  input.locationId = await transaction((c) =>
+    addLocation(c, f.actor, "내 장소"),
+  );
+  await transaction((c) => requestPermit(c, f.actor, f.id, 1, input, false));
+  await pool.query(
+    "UPDATE work_orders SET draft_data=jsonb_set(draft_data,'{startDate}',to_jsonb(((now() AT TIME ZONE 'Asia/Seoul')::date-1)::text)) WHERE id=$1",
+    [f.id],
+  );
+  await assert.rejects(
+    transaction((c) =>
+      decidePermit(c, { ...f.actor, userId: reviewer }, f.id, 1, "approve"),
+    ),
+    /시작일/,
+  );
+  await transaction((c) => decidePermit(c, f.actor, f.id, 1, "withdraw"));
+  assert.equal(
+    (await transaction((c) => readOrder(c, f.actor, f.id))).status,
+    "DRAFT",
+  );
+});
+test("PTW: post-issue request does not block inspections and reassign revokes old approver", async () => {
+  const f = await inspectionFixture(),
+    reviewer = await user(),
+    replacement = await user();
+  await member(f.actor.companyId, reviewer, "MANAGER_SAFETY");
+  await member(f.actor.companyId, replacement, "MANAGER_SAFETY");
+  const locationId = await transaction((c) =>
+    addLocation(c, f.actor, "테스트 장소"),
+  );
+  const order = await transaction((c) => readOrder(c, f.actor, f.id));
+  const input = {
+    locationId,
+    approverId: reviewer,
+    responsibleId: f.actor.userId,
+    equipment: "설비",
+    notes: "",
+    hotWork: false,
+    fireWatcherId: "",
+    contacts: [{ name: "비상", phone: "01012345678" }],
+  };
+  await transaction((c) =>
+    requestPermit(c, f.actor, f.id, order.revision, input, false),
+  );
+  await transaction((c) => submitInspection(c, f.workerActor, f.input()));
+  await transaction((c) =>
+    decidePermit(c, f.actor, f.id, 1, "reassign", replacement),
+  );
+  await assert.rejects(
+    transaction((c) =>
+      decidePermit(c, { ...f.actor, userId: reviewer }, f.id, 2, "approve"),
+    ),
+    /담당자/,
+  );
+  await transaction((c) =>
+    decidePermit(c, { ...f.actor, userId: replacement }, f.id, 2, "approve"),
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int n FROM work_sessions WHERE work_order_id=$1",
+        [f.id],
+      )
+    ).rows[0].n,
+    1,
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int n FROM inspections WHERE session_id=$1",
+        [f.session.id],
+      )
+    ).rows[0].n,
+    1,
+  );
 });
 test("work order: PTW cannot be bypassed; departed assignees block issue", async () => {
   const setup = await approvedOrder(true);

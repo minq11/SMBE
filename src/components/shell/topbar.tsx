@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bell, ChevronDown, Menu, Wrench } from "lucide-react";
 import { logoutAction } from "@/features/auth/logout-action";
 import { AppIcon } from "@/components/brand/app-icon";
+import { BackButton } from "./back-button";
 import { usePreview } from "./preview-dialog";
 
 export type Crumb = {
@@ -31,6 +32,7 @@ export function Topbar({
   return (
     <header className="topbar">
       <div className="topbar-left">
+        <BackButton />
         <button
           type="button"
           className="icon-button topbar-mobile"
@@ -104,17 +106,17 @@ export function Topbar({
         </button>
         {isAuthenticated ? (
           <>
-            <button
-              type="button"
+            <Link
+              href="/my-page"
               className="profile"
-              onClick={() => preview("내 정보")}
+              aria-label="내 정보 · 마이페이지"
             >
               <span className="avatar" aria-hidden="true">
                 {(userName ?? "관").slice(0, 1)}
               </span>
               <span className="profile-name">{userName ?? "관리자"}</span>
               <ChevronDown size={13} />
-            </button>
+            </Link>
             <form action={logoutAction} className="logout-form">
               <button type="submit" className="logout-button">
                 로그아웃

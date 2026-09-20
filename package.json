@@ -16,13 +16,16 @@
     "db:reconcile-headcounts": "tsx scripts/reconcile-headcounts.ts",
     "test:e2e": "playwright test",
     "test:db": "tsx --test tests/database.test.ts",
+    "test:attachments": "node --conditions=react-server --import tsx --test tests/attachments.test.ts",
     "test:orders-ui": "node scripts/test-work-orders-ui.mjs"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
     "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.1136.0",
     "@fontsource/noto-sans-kr": "^5.3.0",
     "@neondatabase/serverless": "^1.0.2",
+    "browser-image-compression": "^2.0.2",
     "lucide-react": "^0.468.0",
     "next": "16.3.5",
     "next-auth": "^5.0.0-beta.32",

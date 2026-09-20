@@ -129,7 +129,9 @@ export function WorkOrderForm({
     }
     return { ...initial, standardId: initial.standardId ?? null };
   });
-  const [standardId, setStandardId] = useState<string | null>(initialStandardId);
+  const [standardId, setStandardId] = useState<string | null>(
+    initialStandardId,
+  );
   // 명시적 "간이 위험성평가로 대체" 선택 여부. false = 아직 방식 미선택 (idle).
   const [simpleOverride, setSimpleOverride] = useState<boolean>(
     () => Boolean(initial?.name) && !initialStandardId,
@@ -228,8 +230,8 @@ export function WorkOrderForm({
                     <p className="wo-muted">
                       표준서를 선택하면 그 표준서의 승인된 위험성평가·작업방법·
                       체크리스트가 자동으로 딸려갑니다. 등록된 표준서가 없는
-                      1회성 작업만 예외적으로 &lsquo;간이 위험성평가로 대체&rsquo;
-                      를 사용하세요.
+                      1회성 작업만 예외적으로 &lsquo;간이 위험성평가로
+                      대체&rsquo; 를 사용하세요.
                     </p>
                     <ul className="wo-std-list" role="list">
                       {standards.map((s) => {
@@ -263,18 +265,16 @@ export function WorkOrderForm({
                   </>
                 ) : (
                   <p className="wo-muted">
-                    등록된 표준서가 없습니다. 반복 작업이면 표준서를 먼저
-                    만드는 걸 권장합니다. 1회성이면 간이 위험성평가로 대체하고
-                    계속 진행할 수 있습니다.
+                    등록된 표준서가 없습니다. 반복 작업이면 표준서를 먼저 만드는
+                    걸 권장합니다. 1회성이면 간이 위험성평가로 대체하고 계속
+                    진행할 수 있습니다.
                   </p>
                 )}
                 <div className="wo-std-picker-actions">
                   <Link
                     href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
                     className={
-                      standards.length === 0
-                        ? "primary-button"
-                        : "ghost-button"
+                      standards.length === 0 ? "primary-button" : "ghost-button"
                     }
                     prefetch={false}
                   >
@@ -308,16 +308,16 @@ export function WorkOrderForm({
                 )}
                 {mode === "simple" && (
                   <p className="wo-std-note wo-std-note--warn">
-                    <FileText size={13} /> 간이 위험성평가로 대체 중입니다.
-                    같은 작업이 반복될 예정이면 이번 지시서 발급 후 표준서로
-                    등록해 재사용하세요.
+                    <FileText size={13} /> 간이 위험성평가로 대체 중입니다. 같은
+                    작업이 반복될 예정이면 이번 지시서 발급 후 표준서로 등록해
+                    재사용하세요.
                   </p>
                 )}
                 {mode === "idle" && (
                   <p className="wo-std-note wo-std-note--warn">
-                    <FileText size={13} /> 위에서 표준서를 선택하거나 &lsquo;간이
-                    위험성평가로 대체&rsquo; 를 눌러야 작업 정보를 입력할 수
-                    있습니다.
+                    <FileText size={13} /> 위에서 표준서를 선택하거나
+                    &lsquo;간이 위험성평가로 대체&rsquo; 를 눌러야 작업 정보를
+                    입력할 수 있습니다.
                   </p>
                 )}
               </section>
@@ -381,8 +381,8 @@ export function WorkOrderForm({
                   </div>
                   {data.ptwRequired && (
                     <p className="wo-notice">
-                      PTW가 필요한 작업은 임시저장만 가능합니다. 허가 기능
-                      구현 전에는 발급이 차단됩니다. 필요로 저장한 뒤에는
+                      PTW가 필요한 작업은 저장 후 지시서 상세에서 허가를
+                      신청하세요. 승인되면 자동 발급됩니다. 필요로 저장한 뒤에는
                       불필요로 내릴 수 없습니다.
                     </p>
                   )}
@@ -743,16 +743,14 @@ export function WorkOrderForm({
                   type="button"
                   className="btn-primary wo-issue-button"
                   onClick={submitIssue}
-                  disabled={
-                    issuePending || pending || data.ptwRequired
-                  }
+                  disabled={issuePending || pending || data.ptwRequired}
                 >
                   <Send size={14} />
                   {issuePending ? "발급 중..." : "지금 발급하기"}
                 </button>
                 <p className="wo-muted">
                   저장 → 평가 승인(본인) → 지시서 발급 → 배정 인원 이메일 전송을
-                  한 번에 처리합니다. PTW 필요 작업은 발급이 차단됩니다.
+                  한 번에 처리합니다. PTW 필요 작업은 저장 후 허가를 신청하세요.
                 </p>
               </div>
             </>

@@ -15,12 +15,32 @@ import {
   ASSESSMENT_KIND_LABEL,
   type StandardDetail,
 } from "@/features/standards/constants";
+import {
+  AttachmentList,
+  type AttachmentItem,
+} from "@/features/attachments/attachment-list";
+import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
 import { archiveStandardAction } from "./actions";
+
+export type AttachmentMap = Record<string, AttachmentItem[]>;
 
 const RISK_LABEL = { HIGH: "상", MID: "중", LOW: "하" } as const;
 
-export function StandardDetailView({ detail }: { detail: StandardDetail }) {
+export function StandardDetailView({
+  detail,
+  isPro = false,
+  stepAttachments = {},
+  riskBefore = {},
+  riskAfter = {},
+}: {
+  detail: StandardDetail;
+  isPro?: boolean;
+  stepAttachments?: AttachmentMap;
+  riskBefore?: AttachmentMap;
+  riskAfter?: AttachmentMap;
+}) {
   const [pending, startTransition] = useTransition();
+  const invalidatePath = `/standards/${detail.standard_id}`;
 
   const onArchive = () => {
     if (
@@ -137,13 +157,37 @@ export function StandardDetailView({ detail }: { detail: StandardDetail }) {
       <section className="std-detail-section">
         <h2>작업 단계</h2>
         {detail.steps.length > 0 ? (
-          <ol className="std-detail-list">
+          <ol className="std-detail-list std-detail-list--with-attach">
             {detail.steps.map((s) => (
-              <li key={s.order_no}>{s.step_text}</li>
+              <li key={s.id}>
+                <div className="std-detail-step-text">{s.step_text}</div>
+                {(stepAttachments[s.id]?.length ?? 0) > 0 && (
+                  <AttachmentList
+                    items={stepAttachments[s.id] ?? []}
+                    invalidatePath={invalidatePath}
+                    canDelete={isPro}
+                    emptyLabel=""
+                    compact
+                  />
+                )}
+                {isPro && (
+                  <AttachmentUploader
+                    targetType="standard_step"
+                    targetId={s.id}
+                    invalidatePath={invalidatePath}
+                    label="이 단계 사진 추가"
+                  />
+                )}
+              </li>
             ))}
           </ol>
         ) : (
           <p className="std-form-note">등록된 단계가 없습니다.</p>
+        )}
+        {!isPro && detail.steps.length > 0 && (
+          <p className="attach-uploader-hint">
+            Pro 요금제에서 작업 단계별 사진을 첨부할 수 있습니다.
+          </p>
         )}
       </section>
 
@@ -200,7 +244,7 @@ export function StandardDetailView({ detail }: { detail: StandardDetail }) {
             <span className="std-detail-sublabel">위험요인 · 감소대책</span>
             <ol>
               {current.risks.map((r) => (
-                <li key={r.order_no} className="std-detail-risk">
+                <li key={r.id} className="std-detail-risk">
                   <p className="std-detail-risk-head">
                     <strong>{r.hazard}</strong>
                     <span
@@ -215,9 +259,32 @@ export function StandardDetailView({ detail }: { detail: StandardDetail }) {
                   <p className="std-detail-risk-measure">
                     → {r.reduction_measure}
                   </p>
+                  <div className="std-risk-attach">
+                    <RiskAttach
+                      title="조치 전"
+                      items={riskBefore[r.id] ?? []}
+                      targetId={r.id}
+                      targetType="risk_item_before"
+                      isPro={isPro}
+                      invalidatePath={invalidatePath}
+                    />
+                    <RiskAttach
+                      title="조치 후"
+                      items={riskAfter[r.id] ?? []}
+                      targetId={r.id}
+                      targetType="risk_item_after"
+                      isPro={isPro}
+                      invalidatePath={invalidatePath}
+                    />
+                  </div>
                 </li>
               ))}
             </ol>
+            {!isPro && (
+              <p className="attach-uploader-hint">
+                Pro 요금제에서 조치 전·후 사진을 첨부할 수 있습니다.
+              </p>
+            )}
           </div>
           {current.participant_names.length > 0 && (
             <p className="std-detail-participants">
@@ -281,5 +348,43 @@ export function StandardDetailView({ detail }: { detail: StandardDetail }) {
         )}
       </section>
     </>
+  );
+}
+
+function RiskAttach({
+  title,
+  items,
+  targetId,
+  targetType,
+  isPro,
+  invalidatePath,
+}: {
+  title: string;
+  items: AttachmentItem[];
+  targetId: string;
+  targetType: "risk_item_before" | "risk_item_after";
+  isPro: boolean;
+  invalidatePath: string;
+}) {
+  if (!isPro && items.length === 0) return null;
+  return (
+    <div className="std-risk-attach-col">
+      <span className="std-risk-attach-title">{title}</span>
+      <AttachmentList
+        items={items}
+        invalidatePath={invalidatePath}
+        canDelete={isPro}
+        emptyLabel="없음"
+        compact
+      />
+      {isPro && (
+        <AttachmentUploader
+          targetType={targetType}
+          targetId={targetId}
+          invalidatePath={invalidatePath}
+          label="사진 추가"
+        />
+      )}
+    </div>
   );
 }

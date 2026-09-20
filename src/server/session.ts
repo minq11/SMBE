@@ -2,10 +2,7 @@ import "server-only";
 import { auth } from "@/auth";
 import { queryOne } from "@/server/db";
 
-export type MembershipRole =
-  | "MANAGER_SUPERVISOR"
-  | "MANAGER_SAFETY"
-  | "WORKER";
+export type MembershipRole = "MANAGER_SUPERVISOR" | "MANAGER_SAFETY" | "WORKER";
 
 export type MembershipStatus = "JOIN_PENDING" | "ACTIVE" | "RESIGNED";
 
@@ -32,6 +29,12 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
 
+  const user = await queryOne<{ display_name: string; email: string | null }>(
+    "SELECT display_name,email FROM users WHERE id=$1 AND status='ACTIVE'",
+    [session.user.id],
+  );
+  if (!user) return null;
+
   const membership = await queryOne<ActiveMembership>(
     `SELECT m.id AS member_id,
             m.company_id,
@@ -42,6 +45,7 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
        JOIN companies c ON c.id = m.company_id
       WHERE m.user_id = $1
         AND m.left_at IS NULL
+        AND c.withdrawn_at IS NULL
       LIMIT 1`,
     [session.user.id],
   );
@@ -49,8 +53,8 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
   return {
     user: {
       id: session.user.id,
-      displayName: session.user.name ?? null,
-      email: session.user.email ?? null,
+      displayName: user.display_name,
+      email: user.email,
     },
     membership,
   };

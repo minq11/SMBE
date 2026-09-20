@@ -5,23 +5,36 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { HelpTip } from "@/components/ui/help-tip";
 import { PtwHelp } from "./ptw-help";
+import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
+import { AttachmentList, type AttachmentItem } from "@/features/attachments/attachment-list";
 import { updateStandardAction, type StandardActionState } from "./actions";
+
+type StepDraft = { id?: string; text: string };
 
 type Draft = {
   name: string;
   ptw_required: boolean;
-  steps: string[];
+  steps: StepDraft[];
   checklist_tbm: string[];
   checklist_during: string[];
 };
 
+export type StandardEditInitial = Draft;
+
+export type StepAttachmentMap = Record<string, AttachmentItem[]>;
+
 export function StandardEditForm({
   standardId,
   initial,
+  isPro,
+  stepAttachments = {},
 }: {
   standardId: string;
   initial: Draft;
+  isPro: boolean;
+  stepAttachments?: StepAttachmentMap;
 }) {
+  const invalidatePath = `/standards/${standardId}/edit`;
   const [draft, setDraft] = useState<Draft>(initial);
   const [state, formAction, pending] = useActionState<
     StandardActionState,
@@ -31,8 +44,15 @@ export function StandardEditForm({
   const setField = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
 
-  const updateList = (
-    key: "steps" | "checklist_tbm" | "checklist_during",
+  const updateStepText = (idx: number, value: string) =>
+    setDraft((d) => {
+      const next = [...d.steps];
+      next[idx] = { ...next[idx], text: value };
+      return { ...d, steps: next };
+    });
+
+  const updateChecklist = (
+    key: "checklist_tbm" | "checklist_during",
     idx: number,
     value: string,
   ) =>
@@ -42,11 +62,20 @@ export function StandardEditForm({
       return { ...d, [key]: next };
     });
 
-  const addItem = (key: "steps" | "checklist_tbm" | "checklist_during") =>
+  const addStep = () =>
+    setDraft((d) => ({ ...d, steps: [...d.steps, { text: "" }] }));
+
+  const addChecklist = (key: "checklist_tbm" | "checklist_during") =>
     setDraft((d) => ({ ...d, [key]: [...d[key], ""] }));
 
-  const removeItem = (
-    key: "steps" | "checklist_tbm" | "checklist_during",
+  const removeStep = (idx: number) =>
+    setDraft((d) => {
+      if (d.steps.length <= 1) return d;
+      return { ...d, steps: d.steps.filter((_, i) => i !== idx) };
+    });
+
+  const removeChecklist = (
+    key: "checklist_tbm" | "checklist_during",
     idx: number,
   ) =>
     setDraft((d) => {
@@ -59,7 +88,9 @@ export function StandardEditForm({
     const cleaned = {
       name: draft.name.trim(),
       ptw_required: draft.ptw_required,
-      steps: draft.steps.map((s) => s.trim()).filter(Boolean),
+      steps: draft.steps
+        .map((s) => ({ id: s.id, text: s.text.trim() }))
+        .filter((s) => s.text.length > 0),
       checklist_tbm: draft.checklist_tbm.map((s) => s.trim()).filter(Boolean),
       checklist_during: draft.checklist_during
         .map((s) => s.trim())
@@ -116,33 +147,61 @@ export function StandardEditForm({
       <section className="std-form-section">
         <h2>작업 단계</h2>
         <div className="form-field">
-          <ol className="std-list">
+          <ol className="std-list std-list--with-attach">
             {draft.steps.map((s, i) => (
-              <li key={i}>
-                <span className="std-list-number">{i + 1}</span>
-                <input
-                  type="text"
-                  value={s}
-                  onChange={(e) => updateList("steps", i, e.target.value)}
-                  maxLength={500}
-                  placeholder={`${i + 1}단계`}
-                />
-                <button
-                  type="button"
-                  className="icon-button std-list-remove"
-                  onClick={() => removeItem("steps", i)}
-                  aria-label="이 단계 삭제"
-                  disabled={draft.steps.length <= 1}
-                >
-                  <Trash2 size={14} />
-                </button>
+              <li key={s.id ?? `new-${i}`}>
+                <div className="std-list-row">
+                  <span className="std-list-number">{i + 1}</span>
+                  <input
+                    type="text"
+                    value={s.text}
+                    onChange={(e) => updateStepText(i, e.target.value)}
+                    maxLength={500}
+                    placeholder={`${i + 1}단계`}
+                  />
+                  <button
+                    type="button"
+                    className="icon-button std-list-remove"
+                    onClick={() => removeStep(i)}
+                    aria-label="이 단계 삭제"
+                    disabled={draft.steps.length <= 1}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                {s.id ? (
+                  <div className="std-step-attach">
+                    <AttachmentList
+                      items={stepAttachments[s.id] ?? []}
+                      invalidatePath={invalidatePath}
+                      emptyLabel=""
+                      compact
+                    />
+                    {isPro ? (
+                      <AttachmentUploader
+                        targetType="standard_step"
+                        targetId={s.id}
+                        invalidatePath={invalidatePath}
+                        label="단계 사진 추가"
+                      />
+                    ) : (
+                      <p className="attach-uploader-hint">
+                        Pro 요금제에서 작업 단계 사진을 첨부할 수 있습니다.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="attach-uploader-hint">
+                    저장 후 이 단계에 사진을 첨부할 수 있습니다.
+                  </p>
+                )}
               </li>
             ))}
           </ol>
           <button
             type="button"
             className="ghost-button std-add-button"
-            onClick={() => addItem("steps")}
+            onClick={addStep}
           >
             <Plus size={13} /> 단계 추가
           </button>
@@ -154,16 +213,16 @@ export function StandardEditForm({
         <ChecklistBlock
           title="작업 전 (TBM)"
           items={draft.checklist_tbm}
-          onChange={(i, v) => updateList("checklist_tbm", i, v)}
-          onAdd={() => addItem("checklist_tbm")}
-          onRemove={(i) => removeItem("checklist_tbm", i)}
+          onChange={(i, v) => updateChecklist("checklist_tbm", i, v)}
+          onAdd={() => addChecklist("checklist_tbm")}
+          onRemove={(i) => removeChecklist("checklist_tbm", i)}
         />
         <ChecklistBlock
           title="작업 중 (순회점검)"
           items={draft.checklist_during}
-          onChange={(i, v) => updateList("checklist_during", i, v)}
-          onAdd={() => addItem("checklist_during")}
-          onRemove={(i) => removeItem("checklist_during", i)}
+          onChange={(i, v) => updateChecklist("checklist_during", i, v)}
+          onAdd={() => addChecklist("checklist_during")}
+          onRemove={(i) => removeChecklist("checklist_during", i)}
         />
       </section>
 

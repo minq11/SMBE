@@ -11,6 +11,7 @@ import {
   HelpCircle,
   Home,
   Settings2,
+  UserRound,
   ShieldCheck,
   TriangleAlert,
   type LucideIcon,
@@ -25,7 +26,10 @@ export type NavKey =
   | "inspection"
   | "incident"
   | "company"
-  | "billing";
+  | "billing"
+  | "profile"
+  | "permits"
+  | "locations";
 
 type NavEntry = {
   key: NavKey;
@@ -58,6 +62,19 @@ const NAV: ReadonlyArray<NavEntry> = [
     href: "/company/members",
   },
   { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
+  { key: "profile", title: "내 정보", icon: UserRound, href: "/my-page" },
+  {
+    key: "permits",
+    title: "위험작업허가",
+    icon: ShieldCheck,
+    href: "/permits",
+  },
+  {
+    key: "locations",
+    title: "장소관리",
+    icon: Building2,
+    href: "/company/locations",
+  },
 ];
 
 export function Sidebar({

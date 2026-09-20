@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import { LogOut, Building2, Users } from "lucide-react";
 import { AppIcon } from "@/components/brand/app-icon";
+import { BackButton } from "./back-button";
 import { logoutAction } from "@/features/auth/logout-action";
 
 export type AdminNavKey = "companies" | "users";
@@ -18,6 +19,7 @@ export function AdminShell({
   return (
     <div className="admin-shell">
       <header className="admin-topbar">
+        <BackButton hideOn={["/admin"]} />
         <Link href="/admin" className="admin-brand" aria-label="SMBE 운영자">
           <AppIcon size={22} />
           <span>

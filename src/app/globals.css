@@ -346,6 +346,13 @@ button svg {
 .icon-button.topbar-mobile {
   display: none;
 }
+.icon-button.topbar-back {
+  flex-shrink: 0;
+  color: var(--ink-2);
+}
+.icon-button.topbar-back:hover {
+  color: var(--ink);
+}
 .topbar-brand {
   display: none;
   align-items: center;
@@ -4589,3 +4596,165 @@ body.sidebar-lock {
   display: flex;
   justify-content: center;
 }
+
+
+/* =========================================================================
+   19. Attachments (S3 사진 업로더 · 목록 · 라이트박스)
+   ========================================================================= */
+.attach-uploader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.attach-uploader-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: var(--surface);
+  align-self: flex-start;
+  transition: border-color 0.12s, color 0.12s;
+}
+.attach-uploader-cta:hover {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+.attach-uploader-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink-4);
+}
+.attach-uploader-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #b83a12;
+}
+.attach-empty {
+  font-size: 12px;
+  color: var(--ink-4);
+  padding: 6px 0;
+}
+.attach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+.attach-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 6px;
+}
+.attach-cell {
+  position: relative;
+  aspect-ratio: 1;
+}
+.attach-thumb {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  display: block;
+  position: relative;
+}
+.attach-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.attach-thumb-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--ink-4);
+}
+.attach-thumb-icon {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  padding: 3px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  display: flex;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.attach-thumb:hover .attach-thumb-icon {
+  opacity: 1;
+}
+.attach-thumb-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(184, 58, 18, 0.9);
+  color: white;
+  display: flex;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.12s;
+  opacity: 0;
+}
+.attach-cell:hover .attach-thumb-delete {
+  opacity: 1;
+}
+@media (hover: none) {
+  .attach-thumb-icon,
+  .attach-thumb-delete { opacity: 1; }
+}
+.attach-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(20, 22, 26, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.attach-lightbox img {
+  max-width: 100%;
+  max-height: calc(100dvh - 96px);
+  object-fit: contain;
+  border-radius: 6px;
+}
+.attach-lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

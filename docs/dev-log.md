@@ -1,5 +1,49 @@
 # SMBE 개발일지
 
+## 2026-09-21 S3 권한 보완 · PTW · 장소 등록
+
+- 기존 미커밋 마이페이지·사진첨부·뒤로가기 변경을 보존하고 후속 구현.
+- S3 첨부: 삭제·업로드 확인·조회에서 관리자/회사/대상 재검증, 무료 전환 후 기존 첨부 조회 허용. 미구현 사고 대상은 거부. HeadObject 실제 크기·MIME 검증, 클라이언트 신고 크기 무시, 삭제 상태를 READY로 되살리지 않도록 조건부 UPDATE. 확장자는 업로드 MIME 기준. 외부 DB/S3를 사용하지 않는 회귀 테스트 5개 통과. 실제 브라우저→S3 전체 업로드 E2E 및 EXIF 검증은 아직 미실시.
+- `/company/locations`: 관리자용 단일 목록 장소 등록·조회. 동일 이름 중복 방지, 다른 회사 장소 선택 차단. 사용자가 PTW와 함께 장소 등록·선택 구현을 승인함. 계층 편집·이름 변경·비활성화는 후속.
+- `/work-orders/[id]/permit`: 지시서 작성자만 신청. 장소·설비·특이사항·책임자·화기작업/화재감시자·다중 비상연락처 입력. 저장한 지시서 상세에서 신청하는 방식. 신청 시 위험성평가 명시 검토·승인, PTW 대기 동안 초안 수정 잠금.
+- 지정 관리자 승인·반려(사유 필수), 신청자 철회·승인자 변경, 명시적 ‘신청&승인’과 자가 승인 태그. 시작일 경과 후 승인 차단, 기간 만료·지시서 취소 시 만료/무효 표시. 승인과 지시서 자동 발급은 단일 트랜잭션으로 처리하며 동시 중복 승인을 차단.
+- `/permits`: 내 승인 대기/전체 허가, 기간·신청자·상태·자가 승인 필터, 시작일 순 정렬, 오늘/기한 경과 표시, 건별 독립 트랜잭션 일괄 승인(성공/미처리 개수 표시, 최대 100건). 목록 표시 최대 200건.
+- 발급 후 추가 PTW 신청 지원: 지시서 장소는 유지, 허가 대기 중 기존 점검 입력은 차단하지 않음. TBM에 허가 상태 링크 표시, 지시서 출력에 자가 승인 표시. 발급 후 일정·인원 변경은 이번 범위 밖.
+- 신청·승인자 변경·철회 이메일 연결, 전송 결과 표시 및 실패 시 직접 링크 전달 안내. 문자·푸시·자동 재시도 큐는 미구현. 실제 수신 이메일 발송 검증은 하지 않음. 오래된 작업지시 메일의 ‘TBM 준비 중’ 문구 수정.
+- 검증: 타입·lint·격리 프로덕션 빌드, DB 회귀 34개, 첨부 회귀 5개 통과. PTW PC/모바일 2개 및 기존 모바일 회귀 1개 통과(데스크톱 중복 모바일 검사는 1개 skip). 이전 프로필 브라우저 2개도 통과. 승인자 변경 SQL 타입 충돌을 추가 테스트로 발견·수정했고, 발급 후 PTW 추가 시 점검 유지도 검증.
+- Neon에 추가 전용 `0009_ptw.sql` 적용 완료(`work_permits`, `work_permit_events` 신설). 기존 업무 행 수정/삭제 없음. 운영 앱 배포·Git 커밋/푸시는 하지 않음.
+- 로컬 Docker 갱신 및 health 200 확인. 재검증: `npm run test:attachments`, `npm run test:db`, `npm run test:orders-ui -- tests/ptw.spec.ts tests/mobile-layout.spec.ts`.
+
+---
+
+## 2026-09-20 S3 첨부 파일 · 위험성평가 사진 (Pro)
+
+- S3 (ap-northeast-2, `smbe-prd`) 를 첨부 저장소로 도입. 브라우저 → presigned PUT URL 로 직접 업로드해 앱 서버 대역폭·응답을 태우지 않음. IAM 정책은 `smbe-attachments/*` 에 대한 `PutObject`/`GetObject`/`DeleteObject` 로 최소화.
+- `attachments` 테이블 신설 (마이그레이션 `0008_attachments.sql`). 다목적 target_type: `standard_step`·`risk_item_before`·`risk_item_after`·`work_order`·`inspection_finding`·`incident`. status `PENDING → READY → DELETED` 로 업로드 반쯤 실패 상태를 구분, PENDING 은 후속 배치로 정리 가능.
+- 스토리지 키 규칙: `{companyId}/{targetType}/{targetId}/{uuid}.{ext}`. FK 안 걸고 앱단에서 target 소유권 검증 (`verifyTargetOwnership`) 해 cross-tenant 오염 방지.
+- 서버 헬퍼 `src/server/attachments.ts` — 승인 → presign → confirm(HeadObject 검증) → list → signed GET → soft delete. Pro 게이트: `standard_step`·`risk_item_*` 은 회사 `pro_state !== 'FREE'` 인 경우만 업로드 허용, Free 는 기존 사진 열람만.
+- 클라이언트: `browser-image-compression` (~30KB, Web Worker) 로 업로드 전 1600px · 품질 0.85 · 최대 1MB 자동 압축. 원본 유지 옵션 준비되어 있으며 첫 릴리스는 압축 기본값만. iOS Safari 카메라 즉시 촬영 (`capture="environment"`) 지원, 다중 파일 순차 진행률 표시.
+- 배선 지점: `/standards/[id]` 상세와 `/standards/[id]/edit` 편집에서 작업 단계 각각에 사진 첨부, 현재 사용 중 위험성평가의 위험요인마다 조치 전·후 사진 슬롯 노출. 상세는 Pro 안내 문구, 편집은 업로더 자체를 Pro 조건부.
+- 표준서 저장 로직 리팩터: `standard_steps.id` 를 클라이언트에서 보내고 서버가 diff-based 로 UPDATE/INSERT/DELETE. UNIQUE `(standard_id, order_no)` 충돌은 두 패스 (`order_no` 음수화 후 재부여) 로 회피. 이로써 스텝 첨부 사진의 `target_id` 가 편집을 넘어 유지됨.
+- `.env` 규약: AWS SDK 표준 이름 (`AWS_REGION`·`AWS_ACCESS_KEY_ID`·`AWS_SECRET_ACCESS_KEY`) + `S3_BUCKET`. `AWS_SESSION_TOKEN` 은 SSO/STS 임시 크리덴셜 전용, 장기 IAM 키만 쓰는 지금은 비워둠.
+- 검증: 크리덴셜·CORS·IAM 스모크 (`node scripts/smoke-s3.mjs`) 전 단계 통과, 타입·lint·마이그레이션 apply 정상, 로컬 Docker 재빌드 완료. E2E 첨부 테스트는 별도 후속.
+- 한계 · 후속: 사진 EXIF 제거는 압축 라이브러리 기본 동작 (JPEG 재인코딩 시 자동), 명시 검증은 미포함. 지시서 상세·안전점검 부적합·사고 등록으로의 첨부 배선은 인프라 준비 완료·UI 배선만 남음. 조회 signed URL 은 그리드 초기 렌더 시 배치 발급 (URL TTL 5분).
+
+---
+
+## 2026-09-20 내 정보·마이페이지 (B-04)
+
+- 진행 중이던 뒤로가기 버튼 변경을 보존하고, 설계서·메뉴 레이아웃 B-04를 기준으로 `/my-page` 구현. 상단 프로필과 사이드바 ‘내 정보’, 회사 연결·가입 승인 대기 화면에서 진입.
+- 로그인 연결·이메일 조회, 이름·전화번호 수정, 현재 회사·역할·승인 상태, 최근 50건 소속 이력, 로그아웃 제공. 로그인 이메일 변경·계정 삭제·회사 탈퇴(B-05)는 포함하지 않음.
+- 수정 대상은 서버 세션에서 결정. 동시 수정 충돌 방지, 입력 검증, 실시간 DB 기반 이름 표시. 기존 업무 이름 스냅샷 유지, 감사 로그에 이름·전화번호 원문 미기록.
+- 본인 퇴사 및 가입 신청 취소 지원. 회사 잠금 아래 마지막 관리감독자 보호·소속 해제·활성 인원 재계산·진행 작업 배정 해제·감사 기록을 원자 처리. 반복 요청은 중복 처리하지 않음.
+- 퇴사 후 계정과 이전 회사의 업무·점검 원본은 보존. 아직 TBM을 하지 않은 퇴사자는 진행/예정 회차의 기대 인원에서 제외하되 원본 스냅샷·이미 제출한 TBM은 유지. 관리자는 마이페이지에서 최근 7일 소속 해제 알림 확인(이메일/푸시 발송 아님).
+- 미결정 정책의 보수적 기본값: 담당 미조치 부적합이 있으면 조치 완료 전 퇴사 차단. 별도 인계 기능은 미구현.
+- 검증: 타입·lint·프로덕션 빌드 통과, 독립 로컬 PostgreSQL DB 회귀 테스트 30개 통과, 데스크톱/모바일 브라우저 테스트 2개 통과(연속 정보 저장, 소속 해제·이력, 마지막 관리자 보호, 비로그인 차단, 320px 가로 넘침). 운영 DB 스키마 변경 없음.
+- 재검증: `npm run test:db`, `npm run test:orders-ui -- tests/profile.spec.ts` (55439 포트의 일회성 테스트 PostgreSQL 필요).
+
+---
+
 ## 2026-09-20 모바일 화면 점검·보완
 
 - 320px 홈에서 작업명 폭이 시간·인원 정보에 밀려 좁아지던 문제를 해결: 제목/장소와 시간/인원/상태를 두 행으로 분리.

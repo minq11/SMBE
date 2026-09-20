@@ -3,7 +3,12 @@ import { AppShell } from "@/components/shell/app-shell";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
 import { getStandardDetail } from "@/server/standards-service";
-import { StandardDetailView } from "@/features/standards/standard-detail-view";
+import { listAttachments } from "@/server/attachments";
+import { query } from "@/server/db";
+import {
+  StandardDetailView,
+  type AttachmentMap,
+} from "@/features/standards/standard-detail-view";
 
 export const metadata = { title: "표준서 상세 · SMBE" };
 
@@ -20,9 +25,34 @@ export default async function StandardDetailPage({
   if (session.membership.role === "WORKER") redirect("/");
 
   const { id } = await params;
-  const detail = await getStandardDetail(session.membership.company_id, id);
+  const actor = {
+    companyId: session.membership.company_id,
+    userId: session.user.id,
+  };
+  const [detail, isOperator, proRow] = await Promise.all([
+    getStandardDetail(session.membership.company_id, id),
+    isCurrentUserOperator(),
+    query<{ pro_state: string }>(
+      "SELECT pro_state FROM companies WHERE id = $1",
+      [session.membership.company_id],
+    ),
+  ]);
   if (!detail) notFound();
-  const isOperator = await isCurrentUserOperator();
+  const isPro = (proRow[0]?.pro_state ?? "FREE") !== "FREE";
+
+  // 스텝 + 위험요인(before/after) 첨부 배치 조회
+  const stepAttachments: AttachmentMap = {};
+  for (const s of detail.steps) {
+    stepAttachments[s.id] = await listAttachments(actor, "standard_step", s.id);
+  }
+  const riskBefore: AttachmentMap = {};
+  const riskAfter: AttachmentMap = {};
+  if (detail.current_assessment) {
+    for (const r of detail.current_assessment.risks) {
+      riskBefore[r.id] = await listAttachments(actor, "risk_item_before", r.id);
+      riskAfter[r.id] = await listAttachments(actor, "risk_item_after", r.id);
+    }
+  }
 
   return (
     <AppShell
@@ -36,7 +66,13 @@ export default async function StandardDetailPage({
       isAuthenticated={true}
       isOperator={isOperator}
     >
-      <StandardDetailView detail={detail} />
+      <StandardDetailView
+        detail={detail}
+        isPro={isPro}
+        stepAttachments={stepAttachments}
+        riskBefore={riskBefore}
+        riskAfter={riskAfter}
+      />
     </AppShell>
   );
 }
