@@ -15,6 +15,7 @@ import { PermitRequestForm, PermitCommand } from "@/features/ptw/forms";
 import "@/features/profile/profile.css";
 import "@/features/ptw/ptw.css";
 import { permitStatus, PERMIT_LABEL } from "@/features/ptw/model";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function PermitPage({
   params,
 }: {
@@ -48,7 +49,7 @@ export default async function PermitPage({
     : [];
   return (
     <OrderShell session={session} title="위험작업허가">
-      <h1>위험작업허가</h1>
+      <PageHeader title="위험작업허가" />
       <Link href={"/work-orders/" + id}>{order.name} · 지시서 보기</Link>
       <p>
         {order.draft_data.startDate} ~ {order.draft_data.endDate} ·{" "}

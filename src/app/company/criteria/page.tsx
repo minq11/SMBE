@@ -5,6 +5,7 @@ import { readRiskCriteria } from "@/server/company-settings";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { RiskCriteriaForm } from "@/features/company/criteria-form";
 import "@/features/profile/profile.css";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const metadata = { title: "위험성 판단 기준 · SMBE" };
 
@@ -17,7 +18,7 @@ export default async function CriteriaPage() {
 
   return (
     <OrderShell session={session} title="위험성 판단 기준" active="criteria">
-      <h1>위험성 수준 판단 기준</h1>
+      <PageHeader title="위험성 수준 판단 기준" />
       <section className="account-panel">
         <p className="wo-muted">
           위험요인의 위험성을 상·중·하 중 무엇으로 볼지, 어디까지를 허용 가능한

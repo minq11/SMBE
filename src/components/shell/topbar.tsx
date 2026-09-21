@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Bell, ChevronDown, Menu, Wrench } from "lucide-react";
 import { logoutAction } from "@/features/auth/logout-action";
 import { AppIcon } from "@/components/brand/app-icon";
-import { BackButton } from "./back-button";
 import { usePreview } from "./preview-dialog";
 
 export type Crumb = {
@@ -32,7 +31,6 @@ export function Topbar({
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <BackButton />
         <button
           type="button"
           className="icon-button topbar-mobile"

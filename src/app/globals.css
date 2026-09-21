@@ -365,13 +365,6 @@ button svg {
 .icon-button.topbar-mobile {
   display: none;
 }
-.icon-button.topbar-back {
-  flex-shrink: 0;
-  color: var(--ink-2);
-}
-.icon-button.topbar-back:hover {
-  color: var(--ink);
-}
 .topbar-brand {
   display: none;
   align-items: center;
@@ -509,6 +502,25 @@ button svg {
   align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
+}
+.page-header-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.page-header-text {
+  min-width: 0;
+}
+/* 아이콘 버튼의 좌측 패딩만큼 당겨, 제목은 본문과 같은 세로선에서 시작한다. */
+.icon-button.back-button {
+  flex-shrink: 0;
+  margin-left: -7px;
+  margin-top: 2px;
+  color: var(--ink-2);
+}
+.icon-button.back-button:hover {
+  color: var(--ink);
 }
 .page-header-copy h1 {
   font-size: 24px;

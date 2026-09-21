@@ -2,12 +2,13 @@ import { workSession, listLocationSuggestions } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { LocationForm } from "@/features/ptw/forms";
 import "@/features/profile/profile.css";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function LocationsPage() {
   const { session, actor } = await workSession("/company/locations", true);
   const locations = await listLocationSuggestions(actor.companyId);
   return (
     <OrderShell session={session} title="장소관리" active="locations">
-      <h1>작업 장소관리</h1>
+      <PageHeader title="작업 장소관리" />
       <section className="account-panel">
         <h2>장소 등록</h2>
         <LocationForm />

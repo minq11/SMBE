@@ -3,7 +3,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 /**
- * 상단바 좌측 뒤로가기 버튼.
+ * 페이지 제목 왼쪽에 붙는 뒤로가기 버튼 (PageHeader 안에서 쓰인다).
  * 히스토리가 있으면 브라우저 back, 없으면(딥링크 콜드 로딩) 경로에서 마지막
  * 세그먼트를 제거한 상위 경로로 이동. 최상위(hideOn 목록) 에선 렌더 안 함.
  */
@@ -25,7 +25,7 @@ export function BackButton({ hideOn = ["/"] }: { hideOn?: string[] }) {
   return (
     <button
       type="button"
-      className="icon-button topbar-back"
+      className="icon-button back-button"
       aria-label="뒤로 가기"
       onClick={goBack}
     >

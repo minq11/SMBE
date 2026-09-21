@@ -7,6 +7,7 @@ import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
 import { seoulToday, type WorkDraft } from "@/features/work-orders/model";
 import "@/features/profile/profile.css";
 import "@/features/ptw/ptw.css";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function PermitsPage({
   searchParams,
 }: {
@@ -53,7 +54,7 @@ export default async function PermitsPage({
     .slice(0, 200);
   return (
     <OrderShell session={session} title="위험작업허가">
-      <h1>위험작업허가</h1>
+      <PageHeader title="위험작업허가" />
       <nav>
         <Link href="/permits">내 승인 대기</Link> ·{" "}
         <Link href="/permits?tab=all">전체 허가</Link> ·{" "}
