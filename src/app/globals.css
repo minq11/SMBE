@@ -259,6 +259,22 @@ button svg {
   flex-direction: column;
   gap: 2px;
 }
+.nav-group-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 600;
+}
+.nav-group-children {
+  margin-left: 20px;
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+}
 .nav-item {
   display: flex;
   align-items: center;
@@ -4757,4 +4773,3 @@ body.sidebar-lock {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-

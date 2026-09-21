@@ -108,6 +108,33 @@ test("own profile saves, membership exit preserves history, last supervisor prot
     ).toBe(1);
     await login(manager);
     await page.goto("/my-page");
+    await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
+    const navigation = page.getByRole("navigation", {
+      name: "주 메뉴",
+      exact: true,
+    });
+    const companyGroup = navigation.getByRole("group", { name: "회사정보" });
+    await expect(
+      companyGroup.getByRole("link", { name: "인원관리" }),
+    ).toBeVisible();
+    await expect(
+      companyGroup.getByRole("link", { name: "장소관리" }),
+    ).toBeVisible();
+    await expect(
+      companyGroup.getByRole("link", { name: "이용·관리" }),
+    ).toBeVisible();
+    await expect(navigation.locator('a[href="/my-page"]')).toHaveCount(0);
+    await companyGroup.getByRole("link", { name: "장소관리" }).click();
+    await expect(page).toHaveURL(/\/company\/locations$/);
+    await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
+    await expect(
+      page
+        .getByRole("group", { name: "회사정보" })
+        .getByRole("link", { name: "장소관리" }),
+    ).toHaveAttribute("aria-current", "page");
+    await page.keyboard.press("Escape");
+    await page.getByRole("link", { name: "내 정보 · 마이페이지" }).click();
+    await expect(page).toHaveURL(/\/my-page$/);
     await expect(
       page.getByRole("button", { name: "본인 퇴사 처리" }),
     ).toBeDisabled();

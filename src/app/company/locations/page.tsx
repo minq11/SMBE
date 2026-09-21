@@ -6,7 +6,7 @@ export default async function LocationsPage() {
   const { session, actor } = await workSession("/company/locations", true);
   const locations = await listLocationSuggestions(actor.companyId);
   return (
-    <OrderShell session={session} title="장소관리">
+    <OrderShell session={session} title="장소관리" active="locations">
       <h1>작업 장소관리</h1>
       <section className="account-panel">
         <h2>장소 등록</h2>

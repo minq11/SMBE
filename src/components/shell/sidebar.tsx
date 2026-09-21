@@ -11,7 +11,6 @@ import {
   HelpCircle,
   Home,
   Settings2,
-  UserRound,
   ShieldCheck,
   TriangleAlert,
   type LucideIcon,
@@ -36,6 +35,7 @@ type NavEntry = {
   title: string;
   icon: LucideIcon;
   href?: string;
+  children?: ReadonlyArray<NavEntry>;
 };
 
 const NAV: ReadonlyArray<NavEntry> = [
@@ -59,21 +59,27 @@ const NAV: ReadonlyArray<NavEntry> = [
     key: "company",
     title: "회사정보",
     icon: Building2,
-    href: "/company/members",
+    children: [
+      {
+        key: "company",
+        title: "인원관리",
+        icon: Building2,
+        href: "/company/members",
+      },
+      {
+        key: "locations",
+        title: "장소관리",
+        icon: Building2,
+        href: "/company/locations",
+      },
+      { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
+    ],
   },
-  { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
-  { key: "profile", title: "내 정보", icon: UserRound, href: "/my-page" },
   {
     key: "permits",
     title: "위험작업허가",
     icon: ShieldCheck,
     href: "/permits",
-  },
-  {
-    key: "locations",
-    title: "장소관리",
-    icon: Building2,
-    href: "/company/locations",
   },
 ];
 
@@ -136,7 +142,35 @@ export function Sidebar({
       </button>
 
       <nav aria-label="주 메뉴" className="nav">
-        {NAV.map(({ key, title, icon: Icon, href }) => {
+        {NAV.map(({ key, title, icon: Icon, href, children }) => {
+          if (children) {
+            return (
+              <div
+                key={key}
+                role="group"
+                aria-label={title}
+                className="nav-group"
+              >
+                <div className="nav-group-label">
+                  <Icon size={17} />
+                  <span>{title}</span>
+                </div>
+                <div className="nav-group-children">
+                  {children.map((child) => (
+                    <Link
+                      key={child.key}
+                      href={child.href!}
+                      className={`nav-item${child.key === active ? " is-active" : ""}`}
+                      aria-current={child.key === active ? "page" : undefined}
+                      onClick={onClose}
+                    >
+                      <span>{child.title}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          }
           const isActive = key === active;
           const className = `nav-item${isActive ? " is-active" : ""}`;
           const content = (

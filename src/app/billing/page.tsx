@@ -27,7 +27,11 @@ export default async function BillingPage() {
   return (
     <AppShell
       active="billing"
-      breadcrumb={[{ label: "이용·관리" }, { label: "요금제" }]}
+      breadcrumb={[
+        { label: "회사정보", href: "/company/members" },
+        { label: "이용·관리" },
+        { label: "요금제" },
+      ]}
       companyName={session.membership.company_name}
       userName={session.user.displayName ?? undefined}
       isAuthenticated={true}
