@@ -19,6 +19,7 @@ import {
   SESSION_LABEL,
   RESULT_LABEL,
   entryPath,
+  orderSessionsForDisplay,
 } from "@/features/inspections/model";
 
 const at = (value: string) =>
@@ -28,7 +29,12 @@ export default async function InspectionPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ type?: string; via?: string; saved?: string }>;
+  searchParams: Promise<{
+    type?: string;
+    via?: string;
+    saved?: string;
+    session?: string;
+  }>;
 }) {
   const { id } = await params;
   const query = await searchParams;
@@ -40,11 +46,14 @@ export default async function InspectionPage({
         ? "DURING_WORK"
         : null;
   const path = entryPath(query.via);
+  const queryString =
+    (kind ? "type=" + kind + "&via=" + path.toLowerCase() : "") +
+    (query.session ? (kind ? "&" : "") + "session=" + query.session : "");
   const { session, actor } = await workSession(
     "/work-orders/" +
       id +
       "/inspections" +
-      (kind ? "?type=" + kind + "&via=" + path.toLowerCase() : ""),
+      (queryString ? "?" + queryString : ""),
   );
   const data = await withTransaction((client) =>
     inspectionOverview(client, actor, id),
@@ -56,13 +65,21 @@ export default async function InspectionPage({
   const permit = data.order.ptw_required
     ? await withTransaction((c) => readPermit(c, actor, id))
     : null;
+  const target =
+    (query.session
+      ? data.sessions.find((s) => s.id === query.session)
+      : null) ?? data.current;
+  const targetState = target ? sessionState(target, new Date(data.now)) : null;
+  const targetAssigned = target
+    ? target.expected_assignees.some((a) => a.userId === actor.userId)
+    : false;
   const canInput =
-    data.current &&
+    !!target &&
+    !!targetState?.canInput &&
     data.order.status !== "CANCELED" &&
-    (data.isManager ||
-      data.current.expected_assignees.some((a) => a.userId === actor.userId));
+    (data.isManager || targetAssigned);
   const alreadyTBM =
-    kind === "TBM" && data.current?.tbm_users.includes(actor.userId);
+    kind === "TBM" && target?.tbm_users.includes(actor.userId);
   return (
     <OrderShell session={session} title="현장 점검">
       <PageHeader
@@ -122,20 +139,31 @@ export default async function InspectionPage({
           )}
           <h2>{kind === "TBM" ? "TBM 체크리스트" : "작업 중 체크리스트"}</h2>
           <p>
-            작업일자 {data.current!.work_date} · {at(data.current!.starts_at)} ~{" "}
-            {at(data.current!.ends_at)} (한국시간)
+            작업일자 {target!.work_date} · {at(target!.starts_at)} ~{" "}
+            {at(target!.ends_at)} (한국시간)
+            {targetState?.state === "PAST" && " · 지난 회차 입력"}
           </p>
           <InspectionForm
-            key={data.current!.id + kind}
+            key={target!.id + kind}
             orderId={id}
-            sessionId={data.current!.id}
+            sessionId={target!.id}
             category={kind}
             path={path}
             checklist={data.checklist.filter((c) => c.category === kind)}
             managers={data.managers}
-            previousActions={kind === "TBM" ? data.previousActions : []}
+            previousActions={
+              // 이전 회차 조치 팝업은 오늘 회차에서만 노출. 지난 회차 사후 입력에는 방해가 된다.
+              target!.id === data.current?.id && kind === "TBM"
+                ? data.previousActions
+                : []
+            }
           />
         </section>
+      )}
+      {kind && target && !canInput && targetState?.state === "FUTURE" && (
+        <p className="wo-notice">
+          아직 시작하지 않은 회차입니다. 작업일이 되면 입력할 수 있습니다.
+        </p>
       )}
       {alreadyTBM && (
         <p role="status">
@@ -153,8 +181,18 @@ export default async function InspectionPage({
           <p>무료 이용의 과거 열람 제한 회차: {data.lockedSessions}건</p>
         )}
         <div className="inspection-sessions">
-          {data.sessions.map((s) => {
+          {orderSessionsForDisplay(data.sessions, new Date(data.now)).map((s) => {
             const state = sessionState(s, new Date(data.now));
+            const mineTBM = s.tbm_users.includes(actor.userId);
+            const rowAssigned = s.expected_assignees.some(
+              (a) => a.userId === actor.userId,
+            );
+            const showActions =
+              state.canInput &&
+              data.order.status !== "CANCELED" &&
+              (data.isManager || rowAssigned);
+            const sessionQ =
+              "&session=" + s.id + "&via=" + path.toLowerCase();
             return (
               <details key={s.id} open={s.id === data.current?.id}>
                 <summary>
@@ -171,6 +209,34 @@ export default async function InspectionPage({
                   TBM 미확인:{" "}
                   {state.missing.map((a) => a.name).join(", ") || "없음"}
                 </p>
+                {showActions && (
+                  <div className="wo-actions">
+                    {!mineTBM && (
+                      <Link
+                        className="btn-primary"
+                        href={
+                          "/work-orders/" +
+                          id +
+                          "/inspections?type=TBM" +
+                          sessionQ
+                        }
+                      >
+                        TBM 확인
+                      </Link>
+                    )}
+                    <Link
+                      className="btn-secondary"
+                      href={
+                        "/work-orders/" +
+                        id +
+                        "/inspections?type=DURING_WORK" +
+                        sessionQ
+                      }
+                    >
+                      작업 중 점검
+                    </Link>
+                  </div>
+                )}
               </details>
             );
           })}

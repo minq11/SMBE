@@ -570,7 +570,7 @@ test("inspection: during-work before TBM is allowed; all assignees and one patro
     submitInspection(c, f.workerActor, f.input("DURING_WORK")),
   );
   let data = await transaction((c) => inspectionOverview(c, f.actor, f.id));
-  assert.equal(sessionState(data.current!).state, "OPEN");
+  assert.equal(sessionState(data.current!).state, "TODAY");
   assert.equal(sessionState(data.current!).missing.length, 1);
   // A manager not assigned to the order participates, but cannot replace the worker.
   await transaction((c) => submitInspection(c, f.actor, f.input()));
@@ -578,14 +578,8 @@ test("inspection: during-work before TBM is allowed; all assignees and one patro
   assert.equal(sessionState(data.current!).missing.length, 1);
   await transaction((c) => submitInspection(c, f.workerActor, f.input()));
   data = await transaction((c) => inspectionOverview(c, f.workerActor, f.id));
-  assert.equal(sessionState(data.current!).state, "OPEN");
-  assert.equal(
-    sessionState(
-      data.current!,
-      new Date(Date.parse(data.current!.ends_at) + 2 * 60 * 60 * 1000 + 1),
-    ).state,
-    "DONE",
-  );
+  assert.equal(sessionState(data.current!).state, "TODAY");
+  assert.equal(sessionState(data.current!).done, true);
   assert.equal(data.records.length, 3);
   await transaction((c) =>
     submitInspection(c, f.workerActor, f.input("DURING_WORK")),
@@ -799,24 +793,25 @@ test("inspection: only designated active manager resolves; cancellation preserve
   );
 });
 
-test("inspection: scheduled/closed sessions reject input; next session independent of previous missing TBM", async () => {
+test("inspection: future sessions reject input; past sessions allow late entry; next session independent of previous missing TBM", async () => {
+  // Future work_date: the only remaining gate. Past + today are open on purpose,
+  // so an unpracticed user can still confirm TBM they missed earlier in the day.
   const f = await inspectionFixture();
   await pool.query(
-    "UPDATE work_sessions SET starts_at=now()+interval '4 hours',ends_at=now()+interval '8 hours' WHERE id=$1",
+    "UPDATE work_sessions SET work_date=(now() AT TIME ZONE 'Asia/Seoul')::date+1,starts_at=now()+interval '1 day',ends_at=now()+interval '1 day 4 hours' WHERE id=$1",
     [f.session.id],
   );
   await assert.rejects(
     transaction((c) => submitInspection(c, f.workerActor, f.input())),
-    /현재 회차/,
+    /아직 시작하지 않은/,
   );
+  // Past work_date: still accepted (late entry).
   await pool.query(
-    "UPDATE work_sessions SET starts_at=now()-interval '8 hours',ends_at=now()-interval '4 hours' WHERE id=$1",
+    "UPDATE work_sessions SET work_date=(now() AT TIME ZONE 'Asia/Seoul')::date-1,starts_at=now()-interval '1 day',ends_at=now()-interval '20 hours' WHERE id=$1",
     [f.session.id],
   );
-  await assert.rejects(
-    transaction((c) => submitInspection(c, f.workerActor, f.input())),
-    /현재 회차/,
-  );
+  await transaction((c) => submitInspection(c, f.workerActor, f.input()));
+
   const g = await inspectionFixture();
   await pool.query(
     `INSERT INTO work_sessions(company_id,work_order_id,work_date,starts_at,ends_at,expected_assignees)
@@ -828,7 +823,7 @@ test("inspection: scheduled/closed sessions reject input; next session independe
     inspectionOverview(c, g.actor, g.id),
   );
   assert.equal(overview.sessions.length, 2);
-  assert.equal(sessionState(overview.sessions[1]).state, "MISSED");
+  assert.equal(sessionState(overview.sessions[1]).state, "PAST");
 });
 
 test("inspection: previous resolved actions are shared on next TBM and old open findings remain actionable", async () => {
@@ -878,7 +873,7 @@ test("inspection: previous resolved actions are shared on next TBM and old open 
   );
 });
 
-test("session state: overnight Korean start date, exact window boundaries, missing and completion independent of findings", () => {
+test("session state: derives from work_date vs today KST; only FUTURE blocks input; done is independent", () => {
   const session: SessionRow = {
     id: randomUUID(),
     work_date: "2026-09-19",
@@ -888,32 +883,37 @@ test("session state: overnight Korean start date, exact window boundaries, missi
     tbm_users: [],
     during_count: 0,
   };
+  // Day before the work_date: FUTURE, input closed.
+  const beforeDay = sessionState(
+    session,
+    new Date("2026-09-18T23:59:59+09:00"),
+  );
+  assert.equal(beforeDay.state, "FUTURE");
+  assert.equal(beforeDay.canInput, false);
+  // On the work_date (KST), anytime: TODAY, input open.
   assert.equal(
-    sessionState(session, new Date("2026-09-19T19:59:59+09:00")).state,
-    "SCHEDULED",
+    sessionState(session, new Date("2026-09-19T00:00:00+09:00")).state,
+    "TODAY",
   );
   assert.equal(
-    sessionState(session, new Date("2026-09-19T20:00:00+09:00")).open,
+    sessionState(session, new Date("2026-09-19T23:59:59+09:00")).canInput,
     true,
   );
-  assert.equal(
-    sessionState(session, new Date("2026-09-20T00:30:00+09:00")).open,
-    true,
+  // After the work_date: PAST, still allowed for late entry.
+  const afterDay = sessionState(
+    session,
+    new Date("2026-09-20T00:00:00+09:00"),
   );
-  assert.equal(
-    sessionState(session, new Date("2026-09-20T08:00:00+09:00")).open,
-    true,
-  );
-  assert.equal(
-    sessionState(session, new Date("2026-09-20T08:00:01+09:00")).state,
-    "MISSED",
-  );
+  assert.equal(afterDay.state, "PAST");
+  assert.equal(afterDay.canInput, true);
+  // done is decoupled from state and driven by TBM + at least one patrol.
+  assert.equal(afterDay.done, false);
   assert.equal(
     sessionState(
       { ...session, tbm_users: ["worker"], during_count: 1 },
       new Date("2026-09-20T09:00:00+09:00"),
-    ).state,
-    "DONE",
+    ).done,
+    true,
   );
 });
 test("work order: approval required; repeated concurrent issue is atomic and preserves snapshots", async () => {

@@ -52,6 +52,29 @@ TBM·안전점검을 본격적으로 만들기 전에, 그동안 바꾼 설계�
 
 ---
 
+## 2026-09-21 점검 회차 판정 단순화 — 작업일자만 기준
+
+- 지금까지 회차 입력 가능 판정은 "시작 2시간 전 ~ 종료 2시간 후" 시간대 창이었다. 도입기 사용자에게 이 창은 너무 촘촘했다. 회차 시간을 놓치면 TBM을 아예 못 찍는 상황이 반복돼 정착이 어려웠다. 게이트를 **작업일자(KST) 하나**로 재정의한다.
+- 상태 값도 다시 짰다. `DONE/OPEN/SCHEDULED/MISSED` 4단계 대신 `FUTURE/TODAY/PAST` 3단계 + `done` 불리언. 상태는 라벨이고 게이트는 `canInput = state !== "FUTURE"` 하나. 오늘·지난 회차는 QR/링크/웹 어디로 들어와도 입력 가능하다.
+- **감사 증빙은 실제 저장 시각(`submitted_at`)이 대신한다.** 지연 입력 배지는 넣지 않았다 — 처음엔 남길지 물었으나 사용자가 "단순함 우선"으로 결정. `submitted_at`이 회차 종료 시각과 얼마나 벌어졌는지는 필요할 때 조회에서 계산할 수 있다.
+- 미래 회차는 목록에 표시하되 액션 버튼을 숨긴다. 아직 시작 안 한 회차의 TBM을 미리 찍는 건 의미가 없기 때문. 목록에서만 보여 전체 일정을 공유하는 효과는 유지.
+- 오늘 회차가 없는 상태(예: 첫 작업일이 아직 시작 안 함, 또는 모든 회차 지남)에도 화면이 죽지 않는다. `data.current`가 null이면 요약 패널은 안내 문구를 노출하고 목록에서 지난 회차를 이어 입력하도록 유도한다.
+- 서버 게이트도 함께 완화: `submitInspection`에서 `!sessionState(session, now).open` → `!sessionState(session, now).canInput`. 이제 미래 회차만 거절하며 에러 문구도 "아직 시작하지 않은 회차입니다"로 명확해졌다. `readOrder`의 `currentSession`, `inspectionOverview`의 `current` 모두 `state === "TODAY"`로 다시 정의.
+- 이전 회차 부적합 조치 팝업은 **오늘 회차에서만** 노출한다. 지난 회차를 뒤늦게 입력할 때 팝업이 뜨면 흐름이 어지러워지고 문맥이 다르다. `target.id === data.current?.id`일 때만 `previousActions`를 폼에 넘긴다.
+- UI:
+  - `/w` — 헤더 아래 회차 목록. 오늘은 강조, 지난은 클릭 가능, 미래는 목록에만 노출. 각 카드에 TBM/작업 중 버튼. `?session=<id>&type=TBM|DURING_WORK`로 진입해 폼을 편다.
+  - `/work-orders/[id]/inspections` — 기존 요약 패널 유지(오늘 회차 요약), `?session=<id>` 파라미터로 지난 회차 진입 가능. 회차 목록의 각 `<details>` 안에 액션 버튼 추가.
+  - 회차 정렬은 `orderSessionsForDisplay` 헬퍼로 두 화면이 동일 규칙: 오늘 → 지난(최근순) → 미래(가까운 순). SQL 은 그대로 `work_date DESC` 로 두고 표시만 다시 정렬한다.
+  - `.link-session-list` CSS 신설: 카드형 리스트, 상태별 배지 색상 분기.
+- 설계 문서 갱신:
+  - `SMBE-design-v5.4.md` 10장(안전점검) 회차 판정 부분과 14-5 회차 상태표를 새 3단계로 다시 씀.
+  - `SMBE-schema-v5.5.md` 9-2 `work_sessions` 표에서 `session_open_at`/`session_close_at` 계산 컬럼 제거, `starts_at`/`ends_at`은 표시용임을 명시. 계산 상태표 재작성.
+  - `SMBE-menu-layout-v5.4.md` M-02 문구 갱신(오늘/지난/미래 목록, 미래만 잠금).
+  - `docs/work-orders.md` TBM 문단 갱신.
+- 검증: lint·typecheck 통과, DB 회귀 36건 통과(회차 상태 테스트를 새 개념으로 다시 씀 — "future rejects, past allows", "state derives from work_date"), 첨부 회귀 8건 통과, orders-ui Playwright 17건 통과(desktop-mobile 중복 skip 1건). 프로덕션 빌드는 `/_global-error` 프리렌더 이슈가 로컬 환경(Next 16.3.5 + Windows/Docker)에서 재현되나 master 커밋에서도 동일하게 발생하는 환경 문제로 이번 변경과 무관. 마이그레이션 변경 없음.
+
+---
+
 ## 2026-09-21 위험성 판단 기준을 회사 설정으로
 
 - 위험성 수준 판단 기준(상·중·하의 정의와 허용 가능 경계)을 **회사 설정으로 올렸다.** 지금까지는 평가할 때마다 직접 타이핑했는데, 같은 회사인데 표준서마다 기준이 다르게 적힐 수 있었고 감사에서 "귀사의 판단 기준은 무엇입니까"에 한 문서로 답할 수 없었다.

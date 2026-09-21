@@ -185,7 +185,8 @@ export async function orderDetail(actor: Actor, id: string) {
       history,
       snapshots,
       checklist,
-      currentSession: sessions.find((s) => sessionState(s, now).open) ?? null,
+      currentSession:
+        sessions.find((s) => sessionState(s, now).state === "TODAY") ?? null,
       inspectionNow: now.toISOString(),
       openFindings: findingCounts[0].count,
       isManager: access.role !== "WORKER",
