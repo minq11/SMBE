@@ -13,6 +13,13 @@ import { S3_BUCKET, s3 } from "./s3-client";
 
 export type Actor = { companyId: string; userId: string };
 
+/**
+ * 링크로 들어온 작업자. 토큰이 가리키는 작업지시 하나로 범위가 좁혀지고,
+ * 소속 회사를 통해 요금제를 확인하는 경로는 로그인 사용자와 같다.
+ * 설계 배경: docs/worker-access.md
+ */
+export type ScopedActor = Actor & { linkWorkOrderId?: string };
+
 export const TARGET_TYPES = [
   "standard_step",
   "risk_item_before",
@@ -44,7 +51,7 @@ export class AttachmentError extends Error {}
 
 /** 회사 멤버십 + Pro 여부 조회. RBAC 게이트. */
 async function verifyActor(
-  actor: Actor,
+  actor: ScopedActor,
   target: AttachmentTarget,
   upload = true,
 ): Promise<{ role: string; pro: boolean }> {
@@ -59,21 +66,28 @@ async function verifyActor(
   const row = rows[0];
   if (!row) throw new AttachmentError("권한이 없습니다.");
   const pro = row.pro_state !== "FREE";
-  // 사진 첨부 가능 여부는 요금제만 가른다. 작업자도 Pro 회사면 첨부할 수 있다.
+  // 사진 첨부 가능 여부는 요금제만 가른다. 작업자도 유료 회사면 첨부할 수 있다.
   if (upload && !pro)
-    throw new AttachmentError("사진 첨부는 Pro 요금제에서 이용할 수 있습니다.");
-  if (row.role === "WORKER" && !WORKER_TARGETS.has(target))
+    throw new AttachmentError("사진 첨부는 유료 요금제에서 이용할 수 있습니다.");
+  // 링크 방문자는 회사에서 어떤 역할이든 현장 작업자 권한으로만 다룬다.
+  // 토큰은 배정 하나를 여는 열쇠이지 관리자 자격을 옮겨 오지 않는다.
+  const role = actor.linkWorkOrderId ? "WORKER" : row.role;
+  if (role === "WORKER" && !WORKER_TARGETS.has(target))
     throw new AttachmentError(
       "작업자는 작업지시와 점검 부적합에만 첨부할 수 있습니다.",
     );
-  return { role: row.role, pro };
+  return { role, pro };
 }
 
 /**
  * 작업자는 본인이 올린 첨부만 확정·삭제할 수 있다.
  * 관리자는 현장 기록을 정리해야 하므로 회사 내 첨부를 다룰 수 있다.
  */
-function assertOwnAttachment(actor: Actor, role: string, uploadedBy: string) {
+function assertOwnAttachment(
+  actor: ScopedActor,
+  role: string,
+  uploadedBy: string,
+) {
   if (role === "WORKER" && uploadedBy !== actor.userId)
     throw new AttachmentError("본인이 올린 첨부만 처리할 수 있습니다.");
 }
@@ -83,7 +97,7 @@ function assertOwnAttachment(actor: Actor, role: string, uploadedBy: string) {
  * (composite FK 를 attachments 에 걸 수 없어 앱단에서 강제)
  */
 async function verifyTargetOwnership(
-  actor: Actor,
+  actor: ScopedActor,
   target: AttachmentTarget,
   targetId: string,
 ) {
@@ -126,6 +140,35 @@ async function verifyTargetOwnership(
   );
   if (!rows[0])
     throw new AttachmentError("대상을 찾을 수 없거나 접근 권한이 없습니다.");
+  await assertLinkScope(actor, target, targetId);
+}
+
+/**
+ * 같은 회사라는 것만으로는 링크 방문자에게 충분하지 않다. 토큰이 가리키는
+ * 작업지시(와 그 지시서에서 나온 부적합)에만 붙일 수 있어야 한다.
+ */
+async function assertLinkScope(
+  actor: ScopedActor,
+  target: AttachmentTarget,
+  targetId: string,
+) {
+  const scope = actor.linkWorkOrderId;
+  if (!scope) return;
+  if (target === "work_order" && targetId !== scope)
+    throw new AttachmentError("이 링크로 열 수 있는 작업지시가 아닙니다.");
+  if (target === "inspection_finding") {
+    const rows = await query<{ ok: boolean }>(
+      `SELECT true AS ok
+         FROM inspection_findings f
+         JOIN inspection_results r ON r.id = f.result_id
+         JOIN inspections i ON i.id = r.inspection_id
+         JOIN work_sessions ws ON ws.id = i.session_id
+        WHERE f.id = $1 AND ws.work_order_id = $2 LIMIT 1`,
+      [targetId, scope],
+    );
+    if (!rows[0])
+      throw new AttachmentError("이 링크로 열 수 있는 작업지시가 아닙니다.");
+  }
 }
 
 const presignSchema = z.object({
@@ -147,7 +190,7 @@ const presignSchema = z.object({
  * 브라우저는 URL 로 직접 S3 업로드 후 confirmUpload 호출.
  */
 export async function presignUpload(
-  actor: Actor,
+  actor: ScopedActor,
   input: z.infer<typeof presignSchema>,
 ): Promise<{ attachmentId: string; uploadUrl: string; storageKey: string }> {
   const parsed = presignSchema.parse(input);
@@ -204,7 +247,7 @@ export async function presignUpload(
  * width/height 는 클라이언트에서 미리 계산해 넘길 수 있음 (optional).
  */
 export async function confirmUpload(
-  actor: Actor,
+  actor: ScopedActor,
   attachmentId: string,
   meta?: { width?: number; height?: number; sizeBytes?: number },
 ): Promise<void> {
@@ -274,7 +317,7 @@ export type AttachmentSummary = {
 
 /** target 하나에 붙은 READY 첨부 목록. presigned GET URL 은 별도 호출. */
 export async function listAttachments(
-  actor: Actor,
+  actor: ScopedActor,
   target: AttachmentTarget,
   targetId: string,
 ): Promise<AttachmentSummary[]> {
@@ -309,7 +352,7 @@ export async function listAttachments(
 
 /** 조회용 signed GET URL 발급. 짧은 TTL (5분). */
 export async function presignRead(
-  actor: Actor,
+  actor: ScopedActor,
   attachmentId: string,
 ): Promise<string> {
   const rows = await query<{
@@ -339,7 +382,7 @@ export async function presignRead(
  * S3 삭제 실패해도 DB 는 DELETED 로 마킹 (버킷 lifecycle 로 결국 정리).
  */
 export async function deleteAttachment(
-  actor: Actor,
+  actor: ScopedActor,
   attachmentId: string,
 ): Promise<void> {
   const rows = await query<{

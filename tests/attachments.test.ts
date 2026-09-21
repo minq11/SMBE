@@ -14,7 +14,12 @@ const actor = {
   companyId: "11111111-1111-4111-8111-111111111111",
   userId: "22222222-2222-4222-8222-222222222222",
 };
+const ORDER = "44444444-4444-4444-8444-444444444444";
+const OTHER = "55555555-5555-4555-8555-555555555555";
+/** 토큰 링크로 들어온 작업자. 범위가 작업지시 하나로 좁혀진다. */
+const linkVisitor = { ...actor, linkWorkOrderId: ORDER };
 let role = "MANAGER_SUPERVISOR",
+  linkScope = true,
   pro = "ACTIVE",
   status = "PENDING",
   targetType = "standard_step",
@@ -22,6 +27,7 @@ let role = "MANAGER_SUPERVISOR",
 let writes: unknown[][] = [];
 beforeEach(() => {
   role = "MANAGER_SUPERVISOR";
+  linkScope = true;
   pro = "ACTIVE";
   status = "PENDING";
   targetType = "standard_step";
@@ -31,6 +37,8 @@ beforeEach(() => {
     query: async (sql: string, params: unknown[]) => {
       if (sql.includes("FROM company_members"))
         return { rows: [{ role, pro_state: pro }] };
+      if (sql.includes("ws.work_order_id = $2"))
+        return { rows: linkScope ? [{ ok: true }] : [] };
       if (sql.includes("SELECT true AS ok")) return { rows: [{ ok: true }] };
       if (sql.includes("SELECT storage_key"))
         return {
@@ -93,7 +101,7 @@ test("Free blocks uploads whatever the role", async () => {
   pro = "FREE";
   role = "WORKER";
   targetType = "work_order";
-  await assert.rejects(confirmUpload(actor, actor.userId), /Pro/);
+  await assert.rejects(confirmUpload(actor, actor.userId), /유료/);
   assert.equal(writes.length, 0);
 });
 test("Free managers can list existing photos but cannot upload", async () => {
@@ -110,7 +118,48 @@ test("Free managers can list existing photos but cannot upload", async () => {
       mimeType: "image/png",
       sizeBytes: 100,
     }),
-    /Pro/,
+    /유료/,
+  );
+});
+test("link visitor stays inside the work order the token opens", async () => {
+  role = "WORKER";
+  assert.deepEqual(await listAttachments(linkVisitor, "work_order", ORDER), []);
+  await assert.rejects(
+    listAttachments(linkVisitor, "work_order", OTHER),
+    /이 링크로/,
+  );
+});
+test("link visitor carries no manager rights into the company", async () => {
+  role = "MANAGER_SUPERVISOR";
+  await assert.rejects(
+    listAttachments(linkVisitor, "standard_step", OTHER),
+    /작업자/,
+  );
+});
+test("link visitor reaches only findings raised on that work order", async () => {
+  role = "WORKER";
+  assert.deepEqual(
+    await listAttachments(linkVisitor, "inspection_finding", OTHER),
+    [],
+  );
+  linkScope = false;
+  await assert.rejects(
+    listAttachments(linkVisitor, "inspection_finding", OTHER),
+    /이 링크로/,
+  );
+});
+test("a Free company blocks the link visitor's upload too", async () => {
+  pro = "FREE";
+  role = "WORKER";
+  await assert.rejects(
+    presignUpload(linkVisitor, {
+      targetType: "work_order",
+      targetId: ORDER,
+      filename: "a.png",
+      mimeType: "image/png",
+      sizeBytes: 100,
+    }),
+    /유료/,
   );
 });
 test("unimplemented incident targets are rejected", async () => {

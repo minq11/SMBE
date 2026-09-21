@@ -1,7 +1,10 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { cookies } from "next/headers";
 import { getCurrentSession } from "@/server/session";
+import { withTransaction } from "@/server/db";
+import { LINK_COOKIE, resolveAccessToken } from "@/server/worker-access";
 import {
   AttachmentError,
   TARGET_TYPES,
@@ -12,11 +15,28 @@ import {
   type AttachmentTarget,
 } from "@/server/attachments";
 
+/**
+ * 첨부도 점검과 같은 두 경로를 받는다 — 로그인 사용자와 링크 방문자.
+ * 링크에는 작업자와 작업지시가 들어 있으므로 서버가 소속 회사를 따라가
+ * 요금제를 확인할 수 있다. 사진을 가장 많이 찍는 사람이 현장 작업자이고
+ * 그 사람의 주 진입로가 링크라, 여기를 막으면 유료 기능이 닿지 않는다.
+ * 범위는 토큰이 가리키는 작업지시 하나로 좁혀진다 (server/attachments.ts).
+ */
 async function actor() {
   const s = await getCurrentSession();
-  if (!s?.membership || s.membership.status !== "ACTIVE")
-    throw new AttachmentError("로그인이 필요합니다.");
-  return { companyId: s.membership.company_id, userId: s.user.id };
+  if (s?.membership && s.membership.status === "ACTIVE")
+    return { companyId: s.membership.company_id, userId: s.user.id };
+
+  const token = (await cookies()).get(LINK_COOKIE)?.value;
+  const grant = token
+    ? await withTransaction((c) => resolveAccessToken(c, token))
+    : null;
+  if (!grant) throw new AttachmentError("로그인이 필요합니다.");
+  return {
+    companyId: grant.worker.companyId,
+    userId: grant.worker.userId,
+    linkWorkOrderId: grant.workOrderId,
+  };
 }
 
 function safeError(error: unknown): string {
