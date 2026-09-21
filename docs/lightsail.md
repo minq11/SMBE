@@ -52,10 +52,31 @@ health는 프로세스 상태이고 ready는 Neon과 S3 상태입니다. Docker 
 
 ## 4. 업데이트와 운영
 
+운영 이미지는 GitHub Actions 가 만들어 GHCR 에 올립니다. 서버는 받아서 실행만 합니다.
+
 ```sh
-git pull --ff-only
-docker compose up -d --build
-docker compose ps
+smbe-deploy          # git pull + 이미지 pull + 재기동 + 헬스체크
+```
+
+**서버에서 `next build` 를 돌리지 않습니다.** 2GB 인스턴스에서 빌드 피크가 가용 메모리를
+넘기면 커널이 멎어 SSH 입력조차 받지 않습니다(2026-09-21 실제 발생). 스왑은 그때 서버가
+죽는 대신 느려지게 하는 안전망이지 해결책이 아닙니다.
+
+최초 1회, 서버가 GHCR 에서 이미지를 받으려면 로그인이 필요합니다. 저장소가 비공개이므로
+패키지도 비공개입니다.
+
+```sh
+# GitHub → Settings → Developer settings → Personal access tokens (classic)
+# 권한: read:packages 만
+echo <PAT> | docker login ghcr.io -u <깃허브아이디> --password-stdin
+```
+
+스왑(2GB)은 그대로 켜 두세요. 마이그레이션 컨테이너와 런타임 여유에 쓰입니다.
+
+CI 가 막혀 이미지를 못 받는 비상 상황에서만 서버 빌드를 씁니다.
+
+```sh
+smbe-deploy --local-build
 ```
 
 `db/` 에 새 마이그레이션이 포함된 배포라면 스키마를 먼저 적용합니다. 서버 호스트에는 Node 를

@@ -115,7 +115,8 @@ docker compose logs --tail=100 app proxy
 
 | 작업                      | 명령                                                                                         |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
-| 빌드·실행                 | `docker compose up -d --build`                                                               |
+| 배포 (CI 이미지 받기)     | `smbe-deploy` · 수동은 `docker compose pull app && docker compose up -d`                     |
+| 서버 직접 빌드 (비상용)   | `smbe-deploy --local-build` — 스왑 필수                                                      |
 | DB 마이그레이션 적용      | `docker compose --profile tools run --rm migrate`                                            |
 | 배포 + 마이그레이션       | `./scripts/deploy.sh --migrate`                                                              |
 | 상태                      | `docker compose ps`                                                                          |

@@ -2,10 +2,15 @@
 # SMBE 서버 배포 스크립트 (Lightsail Ubuntu 용)
 #
 # 사용법:
-#   ./scripts/deploy.sh                      기본 (git pull + rebuild + healthcheck)
+#   ./scripts/deploy.sh                      기본 (git pull + CI 이미지 pull + 재기동 + 헬스체크)
 #   ./scripts/deploy.sh --no-pull            git pull 생략 (env 만 바꾸고 재기동할 때)
 #   ./scripts/deploy.sh --logs               배포 후 앱 로그 tail 시작
 #   ./scripts/deploy.sh --migrate            DB 마이그레이션 적용 후 배포
+#   ./scripts/deploy.sh --local-build        CI 이미지 대신 서버에서 직접 빌드 (비상용)
+#
+# 기본은 GitHub Actions 가 만들어 GHCR 에 올린 이미지를 받아 씁니다.
+# 서버에서 next build 를 돌리면 2GB 메모리가 바닥나 서버 전체가 멎습니다.
+# --local-build 는 CI 가 막혔을 때만 쓰고, 반드시 스왑이 켜져 있어야 합니다.
 #
 # 마이그레이션은 기본으로 실행하지 않습니다 (db/README.md 규칙: 명시적 실행).
 # db/ 에 새 .sql 이 추가된 배포에서만 --migrate 를 붙이세요.
@@ -38,16 +43,18 @@ die()  { echo "${RED}✗ $1${RESET}" >&2; exit 1; }
 PULL=1
 TAIL_LOGS=0
 MIGRATE=0
+LOCAL_BUILD=0
 for arg in "$@"; do
   case "$arg" in
-    --no-pull) PULL=0 ;;
-    --logs)    TAIL_LOGS=1 ;;
-    --migrate) MIGRATE=1 ;;
+    --no-pull)     PULL=0 ;;
+    --logs)        TAIL_LOGS=1 ;;
+    --migrate)     MIGRATE=1 ;;
+    --local-build) LOCAL_BUILD=1 ;;
     -h|--help)
       grep -E '^# ' "$0" | sed 's/^# //'
       exit 0
       ;;
-    *) die "알 수 없는 옵션: $arg (--no-pull, --logs, --migrate, --help 만 지원)" ;;
+    *) die "알 수 없는 옵션: $arg (--no-pull, --logs, --migrate, --local-build, --help 만 지원)" ;;
   esac
 done
 
@@ -97,9 +104,30 @@ else
   warn "마이그레이션 생략 (필요하면 --migrate)"
 fi
 
-# ---- 3. 빌드 + 재기동 -----------------------------------------------------
-step "이미지 빌드 + 컨테이너 재기동"
-docker compose up -d --build
+# ---- 3. 이미지 확보 + 재기동 ----------------------------------------------
+if [ "$LOCAL_BUILD" -eq 1 ]; then
+  step "서버에서 직접 빌드 + 재기동 (비상용)"
+  if ! swapon --show | grep -q .; then
+    warn "스왑이 꺼져 있습니다. 빌드 중 메모리가 바닥나면 서버가 멎습니다."
+    warn "중단하려면 지금 Ctrl+C. 10초 후 계속합니다."
+    sleep 10
+  fi
+  docker compose up -d --build
+else
+  step "CI 이미지 받기 (GHCR)"
+  if ! docker compose pull app; then
+    echo
+    warn "이미지를 받지 못했습니다. 확인할 것:"
+    warn "  1) GitHub Actions 의 Verify 워크플로가 성공했는지 (실패하면 이미지가 안 올라갑니다)"
+    warn "  2) 서버가 GHCR 에 로그인돼 있는지: docker login ghcr.io"
+    warn "정말 급하면 스왑을 켠 상태에서 --local-build 로 서버 빌드가 가능합니다."
+    die "이미지 pull 실패."
+  fi
+  ok "이미지 최신"
+
+  step "컨테이너 재기동"
+  docker compose up -d
+fi
 
 # ---- 4. 헬스체크 대기 -----------------------------------------------------
 step "헬스체크 대기 (최대 120초)"

@@ -1,6 +1,9 @@
 name: smbe-server
 services:
   app:
+    # 평소에는 CI 가 만들어 올린 이미지를 받아 쓴다 (docker compose pull).
+    # build 를 함께 두어 서버에서 직접 빌드하는 길도 남긴다 (deploy.sh --local-build).
+    image: ${SMBE_IMAGE:-ghcr.io/minq11/smbe:latest}
     build:
       context: .
       target: runner
