@@ -35,4 +35,12 @@ npm run db:migrate
 - `0004_inspections.sql` — 작업회차, TBM·작업 중 점검, 점검 결과, 부적합 및 조치완료.
   - 작업지시·현장점검 범위 및 검증 방법: [work-orders.md](../docs/work-orders.md).
 
+- `0005_standards.sql` — 작업표준서 마스터·버전·작업단계·체크리스트.
+- `0006_standards_flat.sql` — 표준서 모델 재정의: 단일 문서 + 위험성평가 회차 이력.
+- `0007_work_order_standard_link.sql` — 지시서 ↔ 표준서 정식 링크, 발급 시 표준서 스냅샷.
+- `0008_attachments.sql` — S3 기반 다목적 첨부 (`company_id` 접두사로 테넌트 격리).
+- `0009_ptw.sql` — 작업허가(PTW)와 승인 이벤트 이력.
+- `0010_work_order_access_tokens.sql` — 작업지시 링크 접근 토큰 (배정별 1개, 해시 저장, 열람 기록).
+  - 설계 배경과 보안 경계: [worker-access.md](../docs/worker-access.md).
+
 후속 페이즈(표준서·PTW·사진·사후입력·수정이력·과금 등)는 새 파일로 추가합니다.
