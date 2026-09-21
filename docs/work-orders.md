@@ -77,6 +77,12 @@ APP_URL에 실제 접속 주소, RESEND_API_KEY와 EMAIL_FROM에 발송 설정�
 50명을 넘으면 상세의 **미전달 링크 다시 보내기**로 나머지를 전달한다.
 독립적인 메일 재시도 스케줄러와 SMS는 아직 없다.
 
+현재 전달 링크는 `/work-orders/<id>?via=link`로 **로그인이 필요하다.**
+작업자가 로그인 없이 진입하는 토큰 링크는 `db/0010_work_order_access_tokens.sql`과
+`src/server/worker-access.ts`에 토대만 들어가 있고, 화면과 발송 전환은 아직이다.
+전달 채널은 요금제로 가른다 — **Free는 메일, Pro는 메일+문자.** 토큰 자체는 채널과 무관하다.
+설계와 보안 경계: [worker-access.md](worker-access.md).
+
 ## 이번 범위에 없는 항목
 
 - PTW 신청·승인: 필요로 설정한 지시서는 저장할 수 있지만 발급을 차단
