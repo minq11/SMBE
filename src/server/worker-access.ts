@@ -9,7 +9,8 @@ import { WorkOrderError } from "../features/work-orders/model";
 /**
  * 작업지시 링크 접근 토큰.
  *
- * 토큰은 work_order_outputs 행(작업지시 × 발급회차 × 작업자)에 1:1로 붙는 임의 문자열이다.
+ * 토큰은 work_order_access_grants 행(작업지시 × 발급회차 × 작업자)에 1:1로 붙는 임의 문자열이다.
+ * 발송 기록(work_order_outputs)과 분리돼 있다 — 채널이 여럿이어도 링크는 하나여야 한다.
  * 토큰 안에는 아무 정보도 담지 않는다 — 이름·소속을 담으면 문자·로그·브라우저 히스토리에
  * 평문으로 남고, 발급 후 폐기할 수 없게 된다. 토큰은 포인터일 뿐이고 실제 정보는 DB에 있다.
  *
@@ -23,7 +24,7 @@ const TOKEN_PATTERN = /^[A-Za-z0-9_-]{22}$/;
 
 export type WorkOrderLinkGrant = {
   readonly kind: "work-order-link";
-  readonly outputId: string;
+  readonly grantId: string;
   readonly workOrderId: string;
   readonly issueVersion: number;
   /** 기존 서비스에 그대로 흘러들지 않도록 한 겹 감싼다. linkActor()로만 꺼낸다. */
@@ -58,36 +59,54 @@ export function workerLinkUrl(token: string): string {
  */
 export async function issueAccessToken(
   client: PoolClient,
-  outputId: string,
+  target: { workOrderId: string; issueVersion: number; userId: string },
   expiresAt: Date,
 ): Promise<string> {
   if (!(expiresAt.getTime() > Date.now()))
     throw new WorkOrderError("만료 시각은 현재보다 뒤여야 합니다.");
 
   const token = randomBytes(TOKEN_BYTES).toString("base64url");
-  const { rowCount } = await client.query(
-    `UPDATE work_order_outputs
-     SET access_token_hash=$2, token_issued_at=now(), token_expires_at=$3,
-         token_revoked_at=NULL
-     WHERE id=$1`,
-    [outputId, hashToken(token), expiresAt.toISOString()],
+  // 재발급은 같은 행을 덮어쓴다. 이전 토큰은 해시가 바뀌는 순간 죽는다.
+  // 열람 기록은 발급 이력이 아니라 이 회차의 사실이므로 함께 초기화한다.
+  await client.query(
+    `INSERT INTO work_order_access_grants
+       (work_order_id, issue_version, user_id, access_token_hash, token_expires_at)
+     VALUES ($1,$2,$3,$4,$5)
+     ON CONFLICT (work_order_id, issue_version, user_id) DO UPDATE
+       SET access_token_hash=EXCLUDED.access_token_hash,
+           token_issued_at=now(),
+           token_expires_at=EXCLUDED.token_expires_at,
+           token_revoked_at=NULL,
+           first_opened_at=NULL,
+           last_opened_at=NULL,
+           open_count=0,
+           last_open_ip=NULL,
+           last_open_agent=NULL`,
+    [
+      target.workOrderId,
+      target.issueVersion,
+      target.userId,
+      hashToken(token),
+      expiresAt.toISOString(),
+    ],
   );
-  if (!rowCount) throw new WorkOrderError("전달 기록을 찾을 수 없습니다.");
   return token;
 }
 
 export async function revokeAccessToken(
   client: PoolClient,
-  outputId: string,
+  target: { workOrderId: string; issueVersion: number; userId: string },
 ): Promise<void> {
   await client.query(
-    "UPDATE work_order_outputs SET token_revoked_at=now() WHERE id=$1 AND token_revoked_at IS NULL",
-    [outputId],
+    `UPDATE work_order_access_grants SET token_revoked_at=now()
+      WHERE work_order_id=$1 AND issue_version=$2 AND user_id=$3
+        AND token_revoked_at IS NULL`,
+    [target.workOrderId, target.issueVersion, target.userId],
   );
 }
 
 type GrantRow = {
-  output_id: string;
+  grant_id: string;
   work_order_id: string;
   issue_version: number;
   company_id: string;
@@ -111,19 +130,19 @@ export async function resolveAccessToken(
   if (!TOKEN_PATTERN.test(token)) return null;
 
   const row = await queryOne<GrantRow>(
-    `SELECT o.id AS output_id, o.work_order_id, o.issue_version,
+    `SELECT g.id AS grant_id, g.work_order_id, g.issue_version,
             w.company_id, u.id AS user_id, u.display_name,
-            o.token_expires_at::text AS expires_at
-     FROM work_order_outputs o
-     JOIN work_orders w ON w.id = o.work_order_id
-     JOIN users u ON u.id = o.user_id
+            g.token_expires_at::text AS expires_at
+     FROM work_order_access_grants g
+     JOIN work_orders w ON w.id = g.work_order_id
+     JOIN users u ON u.id = g.user_id
      JOIN company_members m
-       ON m.user_id = o.user_id AND m.company_id = w.company_id
+       ON m.user_id = g.user_id AND m.company_id = w.company_id
       AND m.status = 'ACTIVE' AND m.left_at IS NULL
-     WHERE o.access_token_hash = $1
-       AND o.token_revoked_at IS NULL
-       AND o.token_expires_at > now()
-       AND o.issue_version = w.issue_version
+     WHERE g.access_token_hash = $1
+       AND g.token_revoked_at IS NULL
+       AND g.token_expires_at > now()
+       AND g.issue_version = w.issue_version
        AND w.status IN ('ISSUED','IN_PROGRESS')
        AND w.canceled_at IS NULL`,
     [hashToken(token)],
@@ -132,7 +151,7 @@ export async function resolveAccessToken(
 
   return {
     kind: "work-order-link",
-    outputId: row.output_id,
+    grantId: row.grant_id,
     workOrderId: row.work_order_id,
     issueVersion: row.issue_version,
     worker: {
@@ -153,13 +172,13 @@ export async function recordLinkOpen(
   meta: { ip?: string | null; userAgent?: string | null },
 ): Promise<void> {
   await query(
-    `UPDATE work_order_outputs
+    `UPDATE work_order_access_grants
      SET open_count = open_count + 1,
          first_opened_at = COALESCE(first_opened_at, now()),
          last_opened_at = now(),
          last_open_ip = $2,
          last_open_agent = LEFT($3, 300)
      WHERE id = $1`,
-    [grant.outputId, meta.ip ?? null, meta.userAgent ?? null],
+    [grant.grantId, meta.ip ?? null, meta.userAgent ?? null],
   );
 }

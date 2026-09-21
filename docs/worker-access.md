@@ -4,15 +4,15 @@
 하는 구조다. 현장 작업자는 교체가 잦고 기기도 제각각이라 "설치·로그인 후 사용"을 전제하면
 도입 자체가 막힌다. 그래서 **설치와 로그인을 전제하지 않는 것**을 기본값으로 둔다.
 
-관련 코드: `src/server/worker-access.ts`, `db/0010_work_order_access_tokens.sql`
+관련 코드: `src/server/worker-access.ts`, `db/0011_work_order_access_grants.sql`
 
 ## 동선
 
 ```
 작업지시 발급
-  → work_order_outputs 행 생성 (작업지시 × 발급회차 × 작업자)
+  → work_order_access_grants 행 생성 (작업지시 × 발급회차 × 작업자)
   → 행마다 토큰 발급 (배정별 1개)
-  → 메일(Free) · 메일+문자(Pro) 로 https://smbe.net/w/<토큰> 전달
+  → 메일(Free) · 메일+알림톡(Pro) 로 https://smbe.net/w/<토큰> 전달
   → 작업자가 링크 탭
   → 서버가 토큰으로 행 조회 → 이름 표시 → 확인
   → inspections.entry_path = 'LINK' 로 기록
@@ -36,8 +36,16 @@ JWT처럼 이름·소속을 토큰에 서명해 넣는 방식을 쓰지 않는�
 ### 배정별 1개, 공용 링크 없음
 
 작업지시당 공용 링크 하나를 쓰면 "누가 TBM을 확인했는가"가 기록되지 않는다. 안전관리에서
-이 기록이 증빙의 본체이므로 공용 링크는 선택지가 아니다. `work_order_outputs`가 이미
-`UNIQUE(work_order_id, issue_version, user_id)`라 행 자체가 배정 단위이며, 토큰을 여기 1:1로 붙인다.
+이 기록이 증빙의 본체이므로 공용 링크는 선택지가 아니다. `work_order_access_grants`가
+`UNIQUE(work_order_id, issue_version, user_id)`로 배정 단위를 강제하고, 토큰을 여기 1:1로 붙인다.
+
+### 발송 기록과 분리한다
+
+토큰은 **접근 권한**이고 `work_order_outputs`는 **발송 기록**이다. Pro는 같은 작업자에게 메일과
+알림톡을 모두 보내므로 발송 기록은 채널별로 행이 나뉘지만, 토큰은 채널 수만큼 복제되면 안 된다.
+메일로 가든 알림톡으로 가든 같은 링크여야 열람 집계가 하나로 모이기 때문이다.
+
+0010은 토큰을 outputs 에 붙였다가 0011에서 분리했다. 채널이 하나라고 가정한 설계였다.
 
 ### 원문 대신 해시를 저장한다
 
@@ -70,7 +78,7 @@ https://smbe.net/w/   19바이트
 | ----------------------------------------- | -------------------------------- |
 | `token_revoked_at IS NULL`                | 오발송·작업자 교체 시 즉시 차단  |
 | `token_expires_at > now()`                | 무기한 유효한 링크를 남기지 않음 |
-| `o.issue_version = w.issue_version`       | **재발급하면 옛 링크가 죽는다**  |
+| `g.issue_version = w.issue_version`       | **재발급하면 옛 링크가 죽는다**  |
 | 작업지시가 `ISSUED`/`IN_PROGRESS`, 미취소 | 끝났거나 취소된 작업에 접근 불가 |
 | 작업자가 회사 활성 구성원                 | 퇴사·탈퇴 시 자동 차단           |
 
