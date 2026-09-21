@@ -23,11 +23,13 @@ export const TARGET_TYPES = [
 ] as const;
 export type AttachmentTarget = (typeof TARGET_TYPES)[number];
 
-/** Pro 전용 대상. Free 회사는 업로드 금지. */
-const PRO_ONLY: ReadonlySet<AttachmentTarget> = new Set([
-  "standard_step",
-  "risk_item_before",
-  "risk_item_after",
+/**
+ * 작업자가 다룰 수 있는 대상. 표준서·위험성평가는 관리자가 쓰는 문서라 제외한다.
+ * 역할은 "첨부할 수 있는가"가 아니라 "어떤 문서에 붙이는가"만 가른다.
+ */
+const WORKER_TARGETS: ReadonlySet<AttachmentTarget> = new Set([
+  "work_order",
+  "inspection_finding",
 ]);
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB (클라이언트 압축 후 여유 있게)
@@ -56,14 +58,24 @@ async function verifyActor(
   );
   const row = rows[0];
   if (!row) throw new AttachmentError("권한이 없습니다.");
-  if (row.role === "WORKER")
-    throw new AttachmentError("관리자만 첨부할 수 있습니다.");
   const pro = row.pro_state !== "FREE";
-  if (upload && PRO_ONLY.has(target) && !pro)
+  // 사진 첨부 가능 여부는 요금제만 가른다. 작업자도 Pro 회사면 첨부할 수 있다.
+  if (upload && !pro)
+    throw new AttachmentError("사진 첨부는 Pro 요금제에서 이용할 수 있습니다.");
+  if (row.role === "WORKER" && !WORKER_TARGETS.has(target))
     throw new AttachmentError(
-      "위험성평가 · 표준서 사진 첨부는 Pro 요금제에서 이용할 수 있습니다.",
+      "작업자는 작업지시와 점검 부적합에만 첨부할 수 있습니다.",
     );
   return { role: row.role, pro };
+}
+
+/**
+ * 작업자는 본인이 올린 첨부만 확정·삭제할 수 있다.
+ * 관리자는 현장 기록을 정리해야 하므로 회사 내 첨부를 다룰 수 있다.
+ */
+function assertOwnAttachment(actor: Actor, role: string, uploadedBy: string) {
+  if (role === "WORKER" && uploadedBy !== actor.userId)
+    throw new AttachmentError("본인이 올린 첨부만 처리할 수 있습니다.");
 }
 
 /**
@@ -204,14 +216,16 @@ export async function confirmUpload(
     target_id: string;
     mime_type: string;
     size_bytes: string;
+    uploaded_by: string;
   }>(
-    `SELECT storage_key, company_id, status, target_type, target_id, mime_type, size_bytes FROM attachments WHERE id = $1`,
+    `SELECT storage_key, company_id, status, target_type, target_id, mime_type, size_bytes, uploaded_by FROM attachments WHERE id = $1`,
     [attachmentId],
   );
   const row = rows[0];
   if (!row || row.company_id !== actor.companyId)
     throw new AttachmentError("첨부를 찾을 수 없습니다.");
-  await verifyActor(actor, row.target_type);
+  const { role } = await verifyActor(actor, row.target_type);
+  assertOwnAttachment(actor, role, row.uploaded_by);
   await verifyTargetOwnership(actor, row.target_type, row.target_id);
   if (row.status === "READY") return; // idempotent
   if (row.status !== "PENDING")
@@ -333,15 +347,17 @@ export async function deleteAttachment(
     company_id: string;
     target_type: AttachmentTarget;
     target_id: string;
+    uploaded_by: string;
   }>(
-    `SELECT storage_key, company_id, target_type, target_id FROM attachments
+    `SELECT storage_key, company_id, target_type, target_id, uploaded_by FROM attachments
       WHERE id = $1 AND status <> 'DELETED'`,
     [attachmentId],
   );
   const row = rows[0];
   if (!row || row.company_id !== actor.companyId)
     throw new AttachmentError("첨부를 찾을 수 없습니다.");
-  await verifyActor(actor, row.target_type, false);
+  const { role } = await verifyActor(actor, row.target_type, false);
+  assertOwnAttachment(actor, role, row.uploaded_by);
   await verifyTargetOwnership(actor, row.target_type, row.target_id);
   await query(
     `UPDATE attachments SET status = 'DELETED', deleted_at = now() WHERE id = $1`,
