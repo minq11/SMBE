@@ -73,23 +73,3 @@ export const PRO_FEATURES: ProFeature[] = [
     proBehavior: "보관 기간 전체",
   },
 ];
-
-export type ProPlanInfo = {
-  perSeatMonthlyKrw: number;
-  billingModel: string;
-  billingCycle: string;
-  paymentMethods: string[];
-  enterpriseNote: string;
-};
-
-export const PRO_PLAN: ProPlanInfo = {
-  perSeatMonthlyKrw: 10_000,
-  billingModel: "1인당 월 요금 · 일할 계산 (월 요금 ÷ 그 달 일수)",
-  billingCycle: "후불 · 월 마감 시 청구 스냅샷 확정",
-  paymentMethods: [
-    "카드 자동결제 (기본)",
-    "세금계산서 + 계좌이체 (연간 선납 조건에 한함)",
-  ],
-  enterpriseNote:
-    "100인 이상 도입은 개별 문의 시 할인·계약 조건을 협의합니다.",
-};

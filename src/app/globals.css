@@ -4914,3 +4914,86 @@ body.sidebar-lock {
   font-size: 13px;
   text-align: center;
 }
+
+/* 요금제 — 인원 구간별 정액제 */
+.billing-section-note {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.billing-launch-badge {
+  display: inline-block;
+  margin: 16px 0 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 14px;
+  font-weight: 600;
+}
+.billing-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+.billing-plan {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  background: #fff;
+}
+.billing-plan.is-current {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+.billing-plan h3 {
+  font-size: 17px;
+  margin-bottom: 2px;
+}
+.billing-plan-range {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.billing-plan-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.billing-plan-off {
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+.billing-plan-now {
+  margin-top: 4px;
+}
+.billing-plan-now strong {
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+.billing-plan-now span {
+  font-size: 14px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+.billing-plan-current-tag {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--brand-strong);
+  font-weight: 600;
+}
+.plan-notice {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--brand-softer);
+  border: 1px solid var(--brand-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}

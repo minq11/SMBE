@@ -1,9 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Check, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
 import type { MembershipRole } from "@/server/session";
-import type { CompanyOverview, MemberRow, OpenInviteRow } from "@/server/members";
+import type {
+  CompanyOverview,
+  MemberRow,
+  OpenInviteRow,
+} from "@/server/members";
 import {
   approvePendingAction,
   changeRoleAction,
@@ -11,6 +16,10 @@ import {
   resignMemberAction,
 } from "./actions";
 import { InvitePanel } from "./invite-panel";
+import {
+  planForHeadcount,
+  crossesOnNextMember,
+} from "@/features/billing/plans";
 
 type Tab = "active" | "pending" | "resigned";
 
@@ -56,6 +65,7 @@ export function MembersView({
   return (
     <>
       <MetaStrip overview={overview} />
+      <PlanNotice overview={overview} />
 
       <InvitePanel
         origin={origin}
@@ -109,8 +119,35 @@ export function MembersView({
   );
 }
 
+/**
+ * 다음 한 명을 등록하면 요금 구간이 올라가는 경우 미리 알린다.
+ * 등록 자체는 막지 않는다 — 막으면 그 작업자가 시스템 밖에 남아
+ * TBM·점검 기록에 구멍이 생긴다.
+ */
+function PlanNotice({ overview }: { overview: CompanyOverview }) {
+  if (!crossesOnNextMember(overview.active_count)) return null;
+  const next = planForHeadcount(overview.active_count + 1);
+  const paid = overview.pro_state !== "FREE";
+  return (
+    <p role="status" className="plan-notice">
+      <strong>
+        한 명 더 등록하면 {next ? next.name + " 구간" : "100인 이상 구간"}이
+        됩니다.
+      </strong>{" "}
+      {paid
+        ? "구간이 올라가면 차액만큼 추가 결제가 필요합니다."
+        : "지금은 무료로 계속 사용하실 수 있고, 유료 전환 시 이 구간 요금이 적용됩니다."}{" "}
+      <Link href="/billing">요금제 보기</Link>
+    </p>
+  );
+}
+
 function MetaStrip({ overview }: { overview: CompanyOverview }) {
-  const tierLabel = overview.pro_state === "FREE" ? "무료티어" : "Pro티어";
+  const paid = overview.pro_state !== "FREE";
+  const plan = planForHeadcount(overview.active_count);
+  const tierLabel = paid
+    ? (plan?.name ?? "개별 협의")
+    : `무료티어 (${plan?.name ?? "개별 협의"} 구간)`;
   return (
     <dl className="meta-strip">
       <div>
@@ -160,7 +197,8 @@ function TabButton({
 
 function EmptyForTab({ tab }: { tab: Tab }) {
   const text: Record<Tab, string> = {
-    active: "재직 중인 구성원이 없어요. 초대 링크로 관리자·작업자를 연결해 보세요.",
+    active:
+      "재직 중인 구성원이 없어요. 초대 링크로 관리자·작업자를 연결해 보세요.",
     pending:
       "가입 승인 대기 중인 요청이 없어요. 회사코드로 가입한 사람이 있으면 여기 표시됩니다.",
     resigned: "퇴사한 구성원이 없어요.",
@@ -307,7 +345,8 @@ function RoleChanger({
   if (currentRole !== "WORKER") options.push("WORKER");
   if (currentRole !== "MANAGER_SAFETY") options.push("MANAGER_SAFETY");
   if (managerRole === "MANAGER_SUPERVISOR" && !isSelf) {
-    if (currentRole !== "MANAGER_SUPERVISOR") options.push("MANAGER_SUPERVISOR");
+    if (currentRole !== "MANAGER_SUPERVISOR")
+      options.push("MANAGER_SUPERVISOR");
   }
   // 관리감독자 → 다른 역할은 본인만
   if (currentRole === "MANAGER_SUPERVISOR" && !isSelf) {
