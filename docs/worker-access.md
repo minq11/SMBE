@@ -18,7 +18,8 @@
   → inspections.entry_path = 'LINK' 로 기록
 ```
 
-전달 채널은 토큰과 무관하다. 같은 토큰이 메일로도 문자로도 나간다. 요금제는 **채널만** 가른다.
+전달 채널은 토큰과 무관하다. 같은 토큰이 메일로도 알림톡으로도 나간다. 요금제는 **채널만** 가른다.
+채널 설계(알림톡 + SMS 대체발송)와 데이터 모델 정리는 [notifications.md](notifications.md)에 있다.
 
 ## 설계 결정과 근거
 
@@ -125,5 +126,5 @@ IP와 User-Agent는 개인정보이므로 **최신 1건만 덮어쓴다.** 이�
   - 제출은 기존 `submitInspection()`에 `entryPath: 'LINK'`로 그대로 태운다
 - `work-order-delivery.ts`의 발송 링크를 토큰 URL로 전환
   - 현재는 `/work-orders/<id>?via=link` (로그인 필요)
-- 문자(SMS) 발송 연동 — Pro 전용 채널
+- 알림톡 + SMS 대체발송 연동 — Pro 전용 채널 ([notifications.md](notifications.md))
 - 제출 횟수 rate limit
