@@ -18,7 +18,11 @@ import {
 import { InvitePanel } from "./invite-panel";
 import {
   planForHeadcount,
-  crossesOnNextMember,
+  planName,
+  planAfter,
+  seatCapFor,
+  seatsExhausted,
+  type PaidPlanId,
 } from "@/features/billing/plans";
 
 type Tab = "active" | "pending" | "resigned";
@@ -120,23 +124,35 @@ export function MembersView({
 }
 
 /**
- * 다음 한 명을 등록하면 요금 구간이 올라가는 경우 미리 알린다.
- * 등록 자체는 막지 않는다 — 막으면 그 작업자가 시스템 밖에 남아
- * TBM·점검 기록에 구멍이 생긴다.
+ * 유료 회사에만 계약 인원 현황을 보여준다. 다 쓰면 등록이 막히므로 미리 알린다.
+ * 무료 회사에는 아무것도 띄우지 않는다 — 무료는 인원 제한 없이 기능만 제한된다.
  */
 function PlanNotice({ overview }: { overview: CompanyOverview }) {
-  if (!crossesOnNextMember(overview.active_count)) return null;
-  const next = planForHeadcount(overview.active_count + 1);
-  const paid = overview.pro_state !== "FREE";
+  if (overview.pro_state === "FREE") return null;
+  const cap = seatCapFor(overview.plan);
+  if (cap === null) return null;
+
+  const full = seatsExhausted(overview.plan, overview.active_count);
+  const next = planAfter(overview.plan as PaidPlanId);
+  const remaining = cap - overview.active_count;
   return (
-    <p role="status" className="plan-notice">
+    <p
+      role={full ? "alert" : "status"}
+      className={`plan-notice${full ? " is-blocked" : ""}`}
+    >
       <strong>
-        한 명 더 등록하면 {next ? next.name + " 구간" : "100인 이상 구간"}이
-        됩니다.
+        {planName(overview.plan)} 요금제 · {overview.active_count}/{cap}명
       </strong>{" "}
-      {paid
-        ? "구간이 올라가면 차액만큼 추가 결제가 필요합니다."
-        : "지금은 무료로 계속 사용하실 수 있고, 유료 전환 시 이 구간 요금이 적용됩니다."}{" "}
+      {full ? (
+        <>
+          계약 인원을 모두 사용했습니다. 인원을 더 등록하려면{" "}
+          {next
+            ? `${next.name} 으로 변경해야 합니다.`
+            : "개별 협의가 필요합니다."}
+        </>
+      ) : (
+        <>{remaining}명 더 등록할 수 있습니다.</>
+      )}{" "}
       <Link href="/billing">요금제 보기</Link>
     </p>
   );
@@ -144,10 +160,9 @@ function PlanNotice({ overview }: { overview: CompanyOverview }) {
 
 function MetaStrip({ overview }: { overview: CompanyOverview }) {
   const paid = overview.pro_state !== "FREE";
-  const plan = planForHeadcount(overview.active_count);
   const tierLabel = paid
-    ? (plan?.name ?? "개별 협의")
-    : `무료티어 (${plan?.name ?? "개별 협의"} 구간)`;
+    ? planName(overview.plan)
+    : `무료티어 (${planForHeadcount(overview.active_count)?.name ?? "개별 협의"} 구간 규모)`;
   return (
     <dl className="meta-strip">
       <div>

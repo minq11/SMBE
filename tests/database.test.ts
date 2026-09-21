@@ -17,6 +17,7 @@ import {
   acceptInvite,
   mutateMember,
   refreshHeadcount,
+  seatCapacityError,
 } from "../src/server/membership-mutations";
 import { resolveIdentity } from "../src/server/identity-mutations";
 import {
@@ -1318,7 +1319,8 @@ test("work order: old free records deny direct access, Pro allows access", async
     /최근 1주일/,
   );
   await pool.query(
-    "UPDATE companies SET pro_state='PRO_VOLUNTARY' WHERE id=$1",
+    // 유료 전환은 구간·결제 기준일을 함께 세팅해야 한다 (0012 제약).
+    "UPDATE companies SET pro_state='PRO_VOLUNTARY', plan='BASIC', plan_started_at=now() WHERE id=$1",
     [actor.companyId],
   );
   assert.equal(
@@ -1459,4 +1461,72 @@ test("worker link token: opens for its assignee and dies on reissue, revoke, exp
     [setup.actor.companyId, setup.worker],
   );
   assert.equal(await transaction((c) => resolveAccessToken(c, active)), null);
+});
+
+test("seat cap: paid plans block the next member, free is unlimited, and raising the plan reopens it", async () => {
+  const setup = await fixture();
+  const actor = { userId: setup.userId, companyId: setup.companyId };
+  const capacity = () =>
+    transaction((c) => seatCapacityError(c, setup.companyId));
+  const setPlan = (plan: string | null) =>
+    pool.query(
+      plan === null
+        ? `UPDATE companies SET pro_state='FREE', plan=NULL, plan_started_at=NULL WHERE id=$1`
+        : `UPDATE companies SET pro_state='PRO_VOLUNTARY', plan=$2, plan_started_at=now() WHERE id=$1`,
+      plan === null ? [setup.companyId] : [setup.companyId, plan],
+    );
+
+  // 무료는 인원 제한이 없다 — 무료는 기능이 제한된다.
+  await pool.query("UPDATE companies SET active_headcount=999 WHERE id=$1", [
+    setup.companyId,
+  ]);
+  assert.equal(await capacity(), null);
+
+  // 실제 구성원 수로 판정한다 (active_headcount 캐시가 아니라).
+  await setPlan("BASIC");
+  assert.equal(await capacity(), null);
+
+  const extras = [];
+  for (let i = 0; i < 18; i++) extras.push(await user());
+  for (const id of extras) await member(setup.companyId, id, "WORKER");
+
+  const blocked = await capacity();
+  assert.match(blocked ?? "", /Basic/);
+  assert.match(blocked ?? "", /19명까지/);
+  assert.match(blocked ?? "", /Standard/);
+
+  // 승인 경로가 실제로 막히는지 (차단은 여기서 일어난다).
+  const applicant = await user();
+  const pending = (
+    await pool.query(
+      `INSERT INTO company_members(user_id,company_id,role,status,joined_via,snapshot_display_name)
+       VALUES ($1,$2,'WORKER','JOIN_PENDING','DIRECT_JOIN','대기자') RETURNING id`,
+      [applicant, setup.companyId],
+    )
+  ).rows[0].id;
+  const denied = await transaction((c) =>
+    mutateMember(c, actor, pending, "approve"),
+  );
+  assert.match(denied.error ?? "", /Basic/);
+  assert.equal(
+    (
+      await pool.query("SELECT status FROM company_members WHERE id=$1", [
+        pending,
+      ])
+    ).rows[0].status,
+    "JOIN_PENDING",
+  );
+
+  // 구간을 올리면 다시 열린다.
+  await setPlan("STANDARD");
+  assert.equal(await capacity(), null);
+  const allowed = await transaction((c) =>
+    mutateMember(c, actor, pending, "approve"),
+  );
+  assert.equal(allowed.error, undefined);
+
+  // 개별 협의 계약은 상한이 없다.
+  await setPlan("ENTERPRISE");
+  assert.equal(await capacity(), null);
+  await setPlan(null);
 });

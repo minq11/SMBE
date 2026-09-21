@@ -6,6 +6,8 @@ import {
   PAID_PLANS,
   ENTERPRISE_FROM,
   planForHeadcount,
+  planName,
+  seatCapFor,
   launchDiscountPercent,
   maxLaunchDiscountPercent,
   withVat,
@@ -21,7 +23,10 @@ const TIER_LABEL: Record<CompanyOverview["pro_state"], string> = {
 
 export function BillingView({ overview }: { overview: CompanyOverview }) {
   const isPro = overview.pro_state !== "FREE";
+  // 유료는 계약한 구간, 무료는 현재 인원이 속할 구간을 보여준다.
+  const contracted = overview.plan;
   const current = planForHeadcount(overview.active_count);
+  const cap = seatCapFor(contracted);
 
   return (
     <>
@@ -31,10 +36,9 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
           <h2>{TIER_LABEL[overview.pro_state]}</h2>
           {isPro ? (
             <p>
-              현재 인원 {overview.active_count}명 ·{" "}
-              {current ? current.name + " 구간" : "100인 이상 (개별 협의)"}
-              입니다. 청구 내역은 <em>과금 내역</em> 메뉴에서 확인하세요 (준비
-              중).
+              {planName(contracted)} 요금제 · 현재 인원 {overview.active_count}
+              명{cap !== null && ` / 계약 ${cap}명`}입니다. 청구 내역은{" "}
+              <em>과금 내역</em> 메뉴에서 확인하세요 (준비 중).
             </p>
           ) : (
             <p>
@@ -158,16 +162,18 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
           <div>
             <dt>구간 변경</dt>
             <dd>
-              월 중간에 인원이 늘어 구간이 올라가면 차액만큼 추가 결제가
-              필요합니다. 인원이 줄어 구간이 내려가면 다음 결제 주기부터
-              적용되며 중도 환불은 없습니다.
+              상향하면 남은 기간의 현재 요금을 차감한 금액을 바로 결제하고,{" "}
+              <strong>그날이 새 결제 기준일</strong>이 됩니다. 다음 달부터는 새
+              구간 요금이 온전히 청구됩니다. 하향은 다음 결제 주기부터 적용되며
+              중도 환불은 없습니다.
             </dd>
           </div>
           <div>
             <dt>인원 기준</dt>
             <dd>
-              현재 재직중인 구성원 수(관리자 포함)입니다. 퇴사 처리하면 다음
-              주기부터 인원에서 빠집니다.
+              현재 재직중인 구성원 수(관리자 포함)입니다. 계약 인원을 모두
+              사용하면 상향 전까지 인원을 더 등록할 수 없습니다. 무료 이용
+              중에는 인원 제한이 없습니다.
             </dd>
           </div>
           <div>

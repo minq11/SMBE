@@ -1,6 +1,15 @@
 import type { PoolClient } from "@neondatabase/serverless";
 
 // Every membership writer locks the company before reading membership state.
+import {
+  seatsExhausted,
+  seatCapFor,
+  planName,
+  planAfter,
+  type ContractedPlan,
+  type PaidPlanId,
+} from "../features/billing/plans";
+
 export async function lockCompany(client: PoolClient, companyId: string) {
   const { rows } = await client.query(
     "SELECT id FROM companies WHERE id = $1 AND withdrawn_at IS NULL FOR UPDATE",
@@ -21,6 +30,42 @@ export async function refreshHeadcount(client: PoolClient, companyId: string) {
        WHERE company_id = $1 AND status = 'ACTIVE' AND left_at IS NULL) counts
      WHERE companies.id = $1`,
     [companyId],
+  );
+}
+
+/**
+ * 계약 인원을 다 쓴 유료 회사는 인원을 더 등록할 수 없다. 상향 결제가 등록의 조건이다.
+ * 무료 회사는 상한이 없다 — 무료는 인원이 아니라 기능이 제한된다.
+ *
+ * 반드시 lockCompany() 안에서 호출해야 한다. 동시에 두 명을 승인하면
+ * 두 트랜잭션이 같은 인원 수를 읽어 상한을 넘길 수 있다.
+ */
+export async function seatCapacityError(
+  client: PoolClient,
+  companyId: string,
+): Promise<string | null> {
+  const { rows } = await client.query<{
+    pro_state: string;
+    plan: ContractedPlan;
+    active: number;
+  }>(
+    `SELECT c.pro_state, c.plan,
+            (SELECT COUNT(*)::int FROM company_members m
+              WHERE m.company_id = c.id AND m.status = 'ACTIVE' AND m.left_at IS NULL) AS active
+       FROM companies c WHERE c.id = $1`,
+    [companyId],
+  );
+  const row = rows[0];
+  if (!row || row.pro_state === "FREE") return null;
+  if (!seatsExhausted(row.plan, row.active)) return null;
+
+  const cap = seatCapFor(row.plan);
+  const next = planAfter(row.plan as PaidPlanId);
+  return (
+    `${planName(row.plan)} 요금제는 ${cap}명까지입니다 (현재 ${row.active}명). ` +
+    (next
+      ? `${next.name} 으로 변경하면 바로 등록할 수 있습니다.`
+      : "인원을 더 등록하려면 개별 협의가 필요합니다.")
   );
 }
 
@@ -55,6 +100,8 @@ export async function acceptInvite(
     [token, userId],
   );
   if (!claimed[0]) throw new Error("이미 사용되었거나 만료된 초대입니다.");
+  const capacity = await seatCapacityError(client, companyId);
+  if (capacity) throw new Error(capacity);
   await client.query(
     `INSERT INTO company_members
        (user_id, company_id, role, status, joined_via, snapshot_display_name, approved_at)
@@ -125,6 +172,9 @@ export async function mutateMember(
       };
   }
   if (operation === "approve") {
+    // 승인은 인원을 늘리므로 계약 인원을 확인한다. 반려는 확인하지 않는다.
+    const capacity = await seatCapacityError(client, actor.companyId);
+    if (capacity) return { error: capacity };
     await client.query(
       "UPDATE company_members SET status = 'ACTIVE', approved_by = $2, approved_at = now() WHERE id = $1",
       [memberId, actor.userId],

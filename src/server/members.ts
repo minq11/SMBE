@@ -1,4 +1,5 @@
 import "server-only";
+import type { ContractedPlan } from "@/features/billing/plans";
 
 import { query, queryOne } from "@/server/db";
 import type { MembershipRole } from "@/server/session";
@@ -39,6 +40,8 @@ export type CompanyOverview = {
   active_count: number;
   pending_count: number;
   pro_state: "FREE" | "PRO_VOLUNTARY" | "PRO_MANDATORY";
+  plan: ContractedPlan;
+  plan_started_at: string | null;
 };
 
 export async function getCompanyOverview(
@@ -50,6 +53,8 @@ export async function getCompanyOverview(
             c.company_code,
             c.free_limit,
             c.pro_state,
+            c.plan,
+            c.plan_started_at::text,
             (
               SELECT COUNT(*)::int FROM company_members m
                WHERE m.company_id = c.id

@@ -3,10 +3,7 @@ import "server-only";
 import { query, queryOne } from "@/server/db";
 
 export type EmployeeSizeBand =
-  | "UNDER_5"
-  | "FROM_5_TO_19"
-  | "FROM_20_TO_49"
-  | "FROM_50";
+  "UNDER_5" | "FROM_5_TO_19" | "FROM_20_TO_49" | "FROM_50";
 
 export type CompanyListRow = {
   company_id: string;
@@ -17,6 +14,7 @@ export type CompanyListRow = {
   current_employee_size_band: EmployeeSizeBand | null;
   free_limit: number;
   pro_state: "FREE" | "PRO_VOLUNTARY" | "PRO_MANDATORY";
+  plan: "BASIC" | "STANDARD" | "PRO" | "ENTERPRISE" | null;
   active_count: number;
   pending_count: number;
   created_at: string;
@@ -39,11 +37,7 @@ export type UserListRow = {
   status: "ACTIVE" | "WITHDRAWN";
   created_at: string;
   active_company_name: string | null;
-  active_role:
-    | "MANAGER_SUPERVISOR"
-    | "MANAGER_SAFETY"
-    | "WORKER"
-    | null;
+  active_role: "MANAGER_SUPERVISOR" | "MANAGER_SAFETY" | "WORKER" | null;
 };
 
 export async function listCompanies(input: {
@@ -63,6 +57,7 @@ export async function listCompanies(input: {
             c.current_employee_size_band,
             c.free_limit,
             c.pro_state,
+            c.plan,
             (SELECT COUNT(*)::int FROM company_members m
               WHERE m.company_id = c.id
                 AND m.status = 'ACTIVE'
@@ -101,6 +96,7 @@ export async function getCompanyDetail(
             c.current_employee_size_band,
             c.free_limit,
             c.pro_state,
+            c.plan,
             c.withdrawn_at,
             c.created_at,
             u.display_name AS creator_name,

@@ -12,6 +12,8 @@
  */
 
 export type PaidPlanId = "BASIC" | "STANDARD" | "PRO";
+/** 계약 구간. 무료 회사는 null. ENTERPRISE 는 100인 이상 개별 협의. */
+export type ContractedPlan = PaidPlanId | "ENTERPRISE" | null;
 
 export type PaidPlan = {
   id: PaidPlanId;
@@ -64,21 +66,107 @@ export const launchDiscountPercent = (plan: PaidPlan) =>
 export const maxLaunchDiscountPercent = () =>
   Math.max(...PAID_PLANS.map(launchDiscountPercent));
 
+/**
+ * 계약 구간의 인원 상한. null 이면 상한 없음
+ * (무료는 인원이 아니라 기능이 제한되고, 개별 협의 계약은 상한을 두지 않는다).
+ */
+export function seatCapFor(plan: ContractedPlan): number | null {
+  if (plan === null || plan === "ENTERPRISE") return null;
+  return PAID_PLANS.find((p) => p.id === plan)?.maxHeadcount ?? null;
+}
+
+/** 이 구간 다음 구간. 상향 안내 문구에 쓴다. */
+export function planAfter(plan: PaidPlanId): PaidPlan | null {
+  const i = PAID_PLANS.findIndex((p) => p.id === plan);
+  return PAID_PLANS[i + 1] ?? null;
+}
+
+export const planName = (plan: ContractedPlan) =>
+  plan === null
+    ? "무료"
+    : plan === "ENTERPRISE"
+      ? "개별 협의"
+      : (PAID_PLANS.find((p) => p.id === plan)?.name ?? plan);
+
 /** 현재 인원이 속하는 구간. 100인 이상이면 null (개별 협의). */
 export function planForHeadcount(headcount: number): PaidPlan | null {
   return PAID_PLANS.find((p) => headcount <= p.maxHeadcount) ?? null;
 }
 
 /**
- * 인원이 한 명 늘었을 때 구간이 바뀌는지.
- * 인원 등록을 막지 않는다 — 등록이 막히면 그 작업자가 시스템 밖에 남고
- * TBM·점검 기록에 구멍이 생긴다. 안내만 띄우고 등록은 그대로 진행한다.
+ * 계약 인원을 다 쓴 상태인지. 유료 회사는 이 상태에서 인원 등록이 막힌다.
+ * 무료 회사는 상한이 없으므로 항상 false — 무료는 인원이 아니라 기능이 제한된다.
  */
-export function crossesOnNextMember(headcount: number): boolean {
-  return (
-    planForHeadcount(headcount)?.id !== planForHeadcount(headcount + 1)?.id
-  );
+export function seatsExhausted(
+  plan: ContractedPlan,
+  activeHeadcount: number,
+): boolean {
+  const cap = seatCapFor(plan);
+  return cap !== null && activeHeadcount >= cap;
 }
 
 /** 가입 시점 가격을 1년간 보장한다. 결제 도입 시 회사별로 이 만료일을 저장한다. */
 export const PRICE_LOCK_MONTHS = 12;
+
+const addMonth = (d: Date) => {
+  const next = new Date(d);
+  next.setMonth(next.getMonth() + 1);
+  return next;
+};
+const DAY = 86_400_000;
+
+/**
+ * 결제 기준일(anchor)로부터 지금이 속한 주기의 시작·끝.
+ * 기준일을 한 달씩 밀어 현재를 포함하는 구간을 찾는다.
+ */
+export function currentCycle(anchor: Date, now: Date) {
+  let start = new Date(anchor);
+  let end = addMonth(start);
+  while (end <= now) {
+    start = end;
+    end = addMonth(start);
+  }
+  return { start, end };
+}
+
+export type UpgradeQuote = {
+  /** 남은 기간에 대한 현재 구간 잔여 크레딧 (공급가) */
+  creditSupplyKrw: number;
+  /** 지금 결제할 금액 (공급가) */
+  chargeSupplyKrw: number;
+  /** 상향 후 새 결제 기준일 = 오늘 */
+  nextAnchor: Date;
+  remainingDays: number;
+  cycleDays: number;
+};
+
+/**
+ * 상향 시 즉시 결제 금액.
+ *
+ * 남은 기간만큼 현재 구간 요금을 크레딧으로 돌려 새 구간 요금에서 빼고, **그날이 새
+ * 결제 기준일**이 된다. 다음 달부터는 새 구간 요금이 온전히 청구된다.
+ * 하향은 이 계산을 쓰지 않는다 — 다음 주기부터 적용하고 환불하지 않는다.
+ */
+export function upgradeQuote(
+  from: PaidPlan,
+  to: PaidPlan,
+  anchor: Date,
+  now: Date,
+): UpgradeQuote {
+  const { start, end } = currentCycle(anchor, now);
+  const cycleDays = Math.round((end.getTime() - start.getTime()) / DAY);
+  const remainingDays = Math.max(
+    0,
+    Math.ceil((end.getTime() - now.getTime()) / DAY),
+  );
+  const creditSupplyKrw = Math.round(
+    (from.launchSupplyKrw * remainingDays) / cycleDays,
+  );
+  return {
+    creditSupplyKrw,
+    chargeSupplyKrw: Math.max(0, to.launchSupplyKrw - creditSupplyKrw),
+    nextAnchor: now,
+    remainingDays,
+    cycleDays,
+  };
+}

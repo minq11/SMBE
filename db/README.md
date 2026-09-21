@@ -57,5 +57,8 @@ docker compose --profile tools run --rm migrate
   발송 기록은 채널별 행이 되어야 하므로 테이블을 나눴다 (0010의 컬럼은 이관 후 제거).
   - 설계 배경과 보안 경계: [worker-access.md](../docs/worker-access.md),
     채널 설계: [notifications.md](../docs/notifications.md).
+- `0012_company_plan.sql` — 계약 요금 구간(`plan`)과 결제 기준일(`plan_started_at`).
+  계약 인원 초과 시 등록 차단의 판정 근거이며, 구간 정의는
+  `src/features/billing/plans.ts` 에 있습니다.
 
 후속 페이즈(표준서·PTW·사진·사후입력·수정이력·과금 등)는 새 파일로 추가합니다.
