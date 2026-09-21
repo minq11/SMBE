@@ -101,7 +101,7 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
                     <dd>{freeBehavior}</dd>
                   </div>
                   <div>
-                    <dt className="is-pro">Pro</dt>
+                    <dt className="is-pro">유료</dt>
                     <dd>
                       <Check size={12} className="pro-feature-tick" />
                       {proBehavior}

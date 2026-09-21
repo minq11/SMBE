@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { tierOf } from "@/components/shell/tier";
 import { AppShell } from "@/components/shell/app-shell";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
@@ -62,6 +63,7 @@ export default async function StandardDetailPage({
         { label: detail.name },
       ]}
       companyName={session.membership.company_name}
+      tier={tierOf(session.membership)}
       userName={session.user.displayName ?? undefined}
       isAuthenticated={true}
       isOperator={isOperator}

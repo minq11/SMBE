@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { tierOf } from "@/components/shell/tier";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
@@ -28,6 +29,7 @@ export default async function StandardsPage() {
       active="standards"
       breadcrumb={[{ label: "작업표준서" }]}
       companyName={session.membership.company_name}
+      tier={tierOf(session.membership)}
       userName={session.user.displayName ?? undefined}
       isAuthenticated={true}
       isOperator={isOperator}

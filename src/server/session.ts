@@ -10,6 +10,7 @@ export type ActiveMembership = {
   member_id: string;
   company_id: string;
   company_name: string;
+  pro_state: "FREE" | "PRO_VOLUNTARY" | "PRO_MANDATORY";
   role: MembershipRole;
   status: MembershipStatus;
 };
@@ -39,6 +40,7 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
     `SELECT m.id AS member_id,
             m.company_id,
             c.name AS company_name,
+            c.pro_state,
             m.role,
             m.status
        FROM company_members m

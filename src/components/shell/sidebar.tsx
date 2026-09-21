@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { Tier } from "./tier";
 import {
   BookOpen,
   Building2,
@@ -100,7 +101,7 @@ export function Sidebar({
 }: {
   active: NavKey;
   companyName?: string;
-  tier?: "무료" | "Pro";
+  tier?: Tier;
   isOpen: boolean;
   isMobile?: boolean;
   onClose: () => void;
@@ -143,7 +144,7 @@ export function Sidebar({
         </span>
         <span className="workspace-copy">
           <strong>{companyName ?? "우리 회사"}</strong>
-          <small>{tier}티어</small>
+          <small>{tier} 요금제</small>
         </span>
         <ChevronDown size={14} />
       </button>

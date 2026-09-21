@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { tierOf } from "@/components/shell/tier";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
 import { getCompanyOverview } from "@/server/members";
@@ -33,13 +34,14 @@ export default async function BillingPage() {
         { label: "요금제" },
       ]}
       companyName={session.membership.company_name}
+      tier={tierOf(session.membership)}
       userName={session.user.displayName ?? undefined}
       isAuthenticated={true}
       isOperator={isOperator}
     >
       <PageHeader
         title="요금제"
-        description="인원 수와 무관하게 텍스트 기반 기능은 무료로 사용할 수 있습니다. Pro 는 아래의 부가 기능이 필요할 때 자발적으로 전환하는 선택입니다."
+        description="인원 수와 무관하게 텍스트 기반 기능은 무료로 사용할 수 있습니다. 유료 전환은 아래의 부가 기능이 필요해질 때 하는 선택이며, 요금은 인원 구간으로만 갈립니다."
       />
       <BillingView overview={overview} />
     </AppShell>

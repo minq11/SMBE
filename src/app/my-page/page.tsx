@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { tierOf } from "@/components/shell/tier";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/server/session";
 import { ownProfile } from "@/server/profile";
@@ -57,6 +58,7 @@ export default async function MyPage({
       active="profile"
       breadcrumb={[{ label: "마이페이지" }]}
       companyName={current?.company_name ?? "소속 회사 없음"}
+      tier={tierOf(session.membership)}
       userName={data.user.display_name}
       isAuthenticated
     >

@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { tierOf } from "@/components/shell/tier";
 import { redirect } from "next/navigation";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { getCurrentSession } from "@/server/session";
@@ -43,6 +44,7 @@ export default async function Home() {
   return (
     <Dashboard
       companyName={session?.membership?.company_name}
+      tier={tierOf(session?.membership)}
       userName={session?.user.displayName ?? undefined}
       isAuthenticated={Boolean(session)}
       isOperator={isOperator}

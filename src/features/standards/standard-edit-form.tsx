@@ -186,7 +186,7 @@ export function StandardEditForm({
                       />
                     ) : (
                       <p className="attach-uploader-hint">
-                        Pro 요금제에서 작업 단계 사진을 첨부할 수 있습니다.
+                        유료 요금제에서 작업 단계 사진을 첨부할 수 있습니다.
                       </p>
                     )}
                   </div>

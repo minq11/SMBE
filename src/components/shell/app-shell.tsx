@@ -4,8 +4,9 @@ import { ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { PreviewDialogProvider } from "./preview-dialog";
 import { Sidebar, type NavKey } from "./sidebar";
 import { Topbar, type Crumb } from "./topbar";
+import type { Tier } from "./tier";
 
-export type { NavKey, Crumb };
+export type { NavKey, Crumb, Tier };
 
 const mobileQuery = "(max-width: 960px)";
 function subscribeViewport(callback: () => void) {
@@ -31,7 +32,7 @@ export function AppShell({
   userName?: string;
   isAuthenticated: boolean;
   isOperator?: boolean;
-  tier?: "무료" | "Pro";
+  tier?: Tier;
   children: ReactNode;
 }) {
   return (
@@ -67,7 +68,7 @@ function AppShellFrame({
   userName?: string;
   isAuthenticated: boolean;
   isOperator?: boolean;
-  tier?: "무료" | "Pro";
+  tier?: Tier;
   children: ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);

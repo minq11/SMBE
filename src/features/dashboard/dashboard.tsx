@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { Tier } from "@/components/shell/tier";
 import { ArrowRight, ChevronRight, ClipboardList, Users } from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
 import { usePreview } from "@/components/shell/preview-dialog";
@@ -69,6 +70,7 @@ const PREVIEW_JOBS: Job[] = [
 
 export function Dashboard({
   companyName,
+  tier,
   userName,
   isAuthenticated = false,
   isOperator = false,
@@ -77,6 +79,7 @@ export function Dashboard({
   openFindingCount = 0,
 }: {
   companyName?: string;
+  tier?: Tier;
   userName?: string;
   isAuthenticated?: boolean;
   isOperator?: boolean;
@@ -88,6 +91,7 @@ export function Dashboard({
     <AppShell
       active="home"
       companyName={companyName}
+      tier={tier}
       userName={userName}
       isAuthenticated={isAuthenticated}
       isOperator={isOperator}

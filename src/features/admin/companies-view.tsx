@@ -15,8 +15,8 @@ const SIZE_LABEL: Record<CompanyListRow["initial_employee_size_band"], string> =
 
 const PRO_LABEL: Record<CompanyListRow["pro_state"], string> = {
   FREE: "무료",
-  PRO_VOLUNTARY: "Pro (자발)",
-  PRO_MANDATORY: "Pro (한도초과)",
+  PRO_VOLUNTARY: "유료 (자발)",
+  PRO_MANDATORY: "유료 (한도초과)",
 };
 
 export function CompaniesView({

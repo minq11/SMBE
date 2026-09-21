@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/shell/app-shell";
+import { tierOf } from "@/components/shell/tier";
 import { isCurrentUserOperator } from "@/server/operator";
 import type { CurrentSession } from "@/server/session";
 export async function OrderShell({
@@ -16,6 +17,7 @@ export async function OrderShell({
     <AppShell
       active={active}
       companyName={session.membership?.company_name}
+      tier={tierOf(session.membership)}
       userName={session.user.displayName ?? undefined}
       isAuthenticated
       isOperator={await isCurrentUserOperator()}

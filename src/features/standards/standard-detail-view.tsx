@@ -186,7 +186,7 @@ export function StandardDetailView({
         )}
         {!isPro && detail.steps.length > 0 && (
           <p className="attach-uploader-hint">
-            Pro 요금제에서 작업 단계별 사진을 첨부할 수 있습니다.
+            유료 요금제에서 작업 단계별 사진을 첨부할 수 있습니다.
           </p>
         )}
       </section>
@@ -282,7 +282,7 @@ export function StandardDetailView({
             </ol>
             {!isPro && (
               <p className="attach-uploader-hint">
-                Pro 요금제에서 조치 전·후 사진을 첨부할 수 있습니다.
+                유료 요금제에서 조치 전·후 사진을 첨부할 수 있습니다.
               </p>
             )}
           </div>
