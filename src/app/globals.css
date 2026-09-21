@@ -4073,7 +4073,9 @@ button svg {
   .sidebar > * {
     flex-shrink: 0;
   }
-  .breadcrumb-item:not(:last-child) {
+  /* 좁은 화면에서 남는 건 마지막 조각뿐인데, 그건 바로 아래 제목과 같은 말이다.
+     뒤로가기도 제목 옆으로 옮겼으니 상단바에서 현재 위치는 통째로 뺀다. */
+  .breadcrumb {
     display: none;
   }
   .sidebar-shade {
@@ -4102,27 +4104,6 @@ button svg {
   .topbar-brand {
     display: inline-flex;
     flex-shrink: 0;
-  }
-  /* 긴 페이지명은 말줄임표로 자르고 topbar 오른쪽 아이콘을 밀지 않게 한다 */
-  .breadcrumb {
-    flex: 1;
-    min-width: 0;
-  }
-  .breadcrumb-item {
-    min-width: 0;
-    overflow: hidden;
-  }
-  .breadcrumb-item strong {
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: bottom;
-  }
-  .breadcrumb-sep,
-  .breadcrumb-item span:not(strong) {
-    display: none;
   }
   .topbar-tag,
   .topbar-divider,
