@@ -5,6 +5,12 @@
 #   ./scripts/deploy.sh                      기본 (git pull + rebuild + healthcheck)
 #   ./scripts/deploy.sh --no-pull            git pull 생략 (env 만 바꾸고 재기동할 때)
 #   ./scripts/deploy.sh --logs               배포 후 앱 로그 tail 시작
+#   ./scripts/deploy.sh --migrate            DB 마이그레이션 적용 후 배포
+#
+# 마이그레이션은 기본으로 실행하지 않습니다 (db/README.md 규칙: 명시적 실행).
+# db/ 에 새 .sql 이 추가된 배포에서만 --migrate 를 붙이세요.
+# 마이그레이션만 따로 돌리려면:
+#   docker compose --profile tools run --rm migrate
 #
 # 전역 단축어로 쓰려면 (최초 1회):
 #   sudo ln -s "$HOME/SMBE/scripts/deploy.sh" /usr/local/bin/smbe-deploy
@@ -31,15 +37,17 @@ die()  { echo "${RED}✗ $1${RESET}" >&2; exit 1; }
 
 PULL=1
 TAIL_LOGS=0
+MIGRATE=0
 for arg in "$@"; do
   case "$arg" in
     --no-pull) PULL=0 ;;
     --logs)    TAIL_LOGS=1 ;;
+    --migrate) MIGRATE=1 ;;
     -h|--help)
       grep -E '^# ' "$0" | sed 's/^# //'
       exit 0
       ;;
-    *) die "알 수 없는 옵션: $arg (--no-pull, --logs, --help 만 지원)" ;;
+    *) die "알 수 없는 옵션: $arg (--no-pull, --logs, --migrate, --help 만 지원)" ;;
   esac
 done
 
@@ -73,6 +81,20 @@ if docker compose config --quiet; then
   ok "compose.yaml 통과"
 else
   die "compose.yaml 오류. 위 메시지 확인."
+fi
+
+# ---- 2.5 DB 마이그레이션 (--migrate 일 때만) ------------------------------
+# 서버 호스트에는 Node 가 없고 운영 이미지에는 devDeps 가 없으므로
+# development 단계 컨테이너로 돌린다. 적용된 파일은 러너가 건너뛴다.
+if [ "$MIGRATE" -eq 1 ]; then
+  step "DB 마이그레이션 적용"
+  if docker compose --profile tools run --rm --build migrate; then
+    ok "마이그레이션 완료"
+  else
+    die "마이그레이션 실패. 위 메시지 확인. 앱은 재기동하지 않았습니다."
+  fi
+else
+  warn "마이그레이션 생략 (필요하면 --migrate)"
 fi
 
 # ---- 3. 빌드 + 재기동 -----------------------------------------------------

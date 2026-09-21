@@ -116,6 +116,8 @@ docker compose logs --tail=100 app proxy
 | 작업                      | 명령                                                                                         |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
 | 빌드·실행                 | `docker compose up -d --build`                                                               |
+| DB 마이그레이션 적용      | `docker compose --profile tools run --rm migrate`                                            |
+| 배포 + 마이그레이션       | `./scripts/deploy.sh --migrate`                                                              |
 | 상태                      | `docker compose ps`                                                                          |
 | 앱 로그                   | `docker compose logs -f --tail=100 app`                                                      |
 | 프록시·인증서 로그        | `docker compose logs -f --tail=100 proxy`                                                    |

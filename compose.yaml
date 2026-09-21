@@ -26,6 +26,19 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+  # DB 마이그레이션 전용. 운영 이미지(runner)에는 tsx·package.json 이 없고
+  # 서버 호스트에는 Node 를 설치하지 않으므로, devDeps 가 있는 development 단계로 실행한다.
+  # profiles 때문에 `up -d` 로는 뜨지 않는다:
+  #   docker compose --profile tools run --rm migrate
+  migrate:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: development
+    env_file: ${SMBE_ENV_FILE:-.env}
+    command: ["npm", "run", "db:migrate"]
+    restart: "no"
+
   proxy:
     image: caddy:2-alpine
     restart: unless-stopped

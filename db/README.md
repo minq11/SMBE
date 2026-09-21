@@ -13,10 +13,22 @@ Neon PostgreSQL을 사용합니다. 이 폴더의 `*.sql` 파일이 버전 관�
 
 ## 실행
 
+로컬 (Node 설치된 개발 PC):
+
 ```powershell
 # .env.local의 DATABASE_URL이 채워져 있어야 함
 npm run db:migrate
 ```
+
+운영 서버 (Lightsail — 호스트에 Node 를 설치하지 않습니다):
+
+```sh
+docker compose --profile tools run --rm migrate
+```
+
+운영 이미지(`runner`)에는 `tsx` 와 `package.json` 이 없어 `docker compose exec app` 으로는
+실행되지 않습니다. `migrate` 서비스가 devDeps 가 있는 `development` 단계로 돌립니다.
+배포와 함께 적용하려면 `./scripts/deploy.sh --migrate` 를 쓰세요.
 
 첫 실행 시 `schema_migrations` 테이블을 자동 생성합니다. 각 파일은 트랜잭션으로 실행되므로
 중간 실패 시 롤백됩니다.

@@ -58,5 +58,14 @@ docker compose up -d --build
 docker compose ps
 ```
 
+`db/` 에 새 마이그레이션이 포함된 배포라면 스키마를 먼저 적용합니다. 서버 호스트에는 Node 를
+설치하지 않으므로 컨테이너로 실행합니다.
+
+```sh
+./scripts/deploy.sh --migrate
+# 또는 마이그레이션만:
+docker compose --profile tools run --rm migrate
+```
+
 단일 서버이므로 재배포나 장애 시 잠깐 중단될 수 있습니다. Caddy 볼륨·시크릿은 삭제하지 않습니다. 이 단계는 무중단 배포나 자동 DB 복구를 제공하지 않습니다.
 첫 고객 도입 전에 운영 DB 분리, Neon 복구 보존 기간과 복구 테스트, S3 버전 관리·보존 정책, 인증 및 회사별 접근 검증을 완료해야 합니다.
