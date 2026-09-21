@@ -1,0 +1,1 @@
+export const MAX_CRITERIA_LENGTH = 4000;

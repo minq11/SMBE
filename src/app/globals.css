@@ -4997,3 +4997,28 @@ body.sidebar-lock {
   font-size: 14px;
   line-height: 1.6;
 }
+
+/* 위험성 판단 기준 — 회사가 정한 값을 그대로 보여 주는 읽기 전용 블록 */
+.criteria-readonly {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--line-soft);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+.wo-criteria {
+  margin: 8px 0 20px;
+}
+.wo-criteria h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.wo-criteria .wo-muted {
+  margin-top: 8px;
+  font-size: 13px;
+}

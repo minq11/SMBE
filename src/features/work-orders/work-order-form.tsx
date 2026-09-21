@@ -33,7 +33,6 @@ export type StandardPickerOption = {
     method: string;
     tbm: string[];
     during: string[];
-    criteria: string;
     safetyInfo: {
       equipment: string;
       materials: string;
@@ -76,7 +75,7 @@ function mergeStandardIntoDraft(
     name: prefill.name || base.name,
     method: prefill.method || base.method,
     ptwRequired: prefill.ptw_required,
-    criteria: prefill.criteria,
+    // criteria 는 회사 기준을 따르므로 표준서가 덮어쓰지 않는다.
     safetyInfo: prefill.safetyInfo,
     risks:
       prefill.risks.length > 0
@@ -423,15 +422,19 @@ export function WorkOrderForm({
                   />
                 </Field>
               </div>
-              <Field label="적용한 위험성 수준 판단 기준">
-                <textarea
-                  rows={3}
-                  value={data.criteria}
-                  onChange={(e) => set("criteria", e.target.value)}
-                  maxLength={4000}
-                  placeholder="회사가 정한 상·중·하 기준과 허용 가능한 수준을 적어 주세요."
-                />
-              </Field>
+              {/* 판단 기준은 회사가 한 번 정하는 값이다. 평가마다 다시 쓰지 않고
+                  회사 기준을 그대로 보여 주며, 저장 시 사본으로 함께 보관된다. */}
+              <section className="wo-criteria">
+                <h3>적용한 위험성 수준 판단 기준</h3>
+                <pre className="criteria-readonly">{data.criteria}</pre>
+                <p className="wo-muted">
+                  회사가 정한 기준이 그대로 적용됩니다. 바꾸려면{" "}
+                  <Link href="/company/criteria">
+                    회사정보 &gt; 위험성 판단 기준
+                  </Link>{" "}
+                  에서 수정하세요. 이미 승인된 평가는 영향을 받지 않습니다.
+                </p>
+              </section>
               {data.risks.map((risk, i) => {
                 const update = (key: keyof typeof risk, value: string) =>
                   set(

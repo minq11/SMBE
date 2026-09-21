@@ -28,7 +28,8 @@ export type NavKey =
   | "billing"
   | "profile"
   | "permits"
-  | "locations";
+  | "locations"
+  | "criteria";
 
 type NavEntry = {
   key: NavKey;
@@ -71,6 +72,12 @@ const NAV: ReadonlyArray<NavEntry> = [
         title: "장소관리",
         icon: Building2,
         href: "/company/locations",
+      },
+      {
+        key: "criteria",
+        title: "위험성 판단 기준",
+        icon: ShieldCheck,
+        href: "/company/criteria",
       },
       { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
     ],

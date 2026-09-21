@@ -60,5 +60,8 @@ docker compose --profile tools run --rm migrate
 - `0012_company_plan.sql` — 계약 요금 구간(`plan`)과 결제 기준일(`plan_started_at`).
   계약 인원 초과 시 등록 차단의 판정 근거이며, 구간 정의는
   `src/features/billing/plans.ts` 에 있습니다.
+- `0013_company_risk_criteria.sql` — 회사의 위험성 수준 판단 기준(`risk_criteria`).
+  평가는 생성 시 이 값을 `risk_assessments.criteria_snapshot` 으로 복사하므로,
+  기준을 바꿔도 이미 승인된 평가는 그때의 기준으로 남습니다.
 
 후속 페이즈(표준서·PTW·사진·사후입력·수정이력·과금 등)는 새 파일로 추가합니다.

@@ -10,7 +10,7 @@ export async function OrderShell({
   session: CurrentSession;
   title: string;
   children: React.ReactNode;
-  active?: "orders" | "inspection" | "locations";
+  active?: "orders" | "inspection" | "locations" | "criteria";
 }) {
   return (
     <AppShell
@@ -20,7 +20,7 @@ export async function OrderShell({
       isAuthenticated
       isOperator={await isCurrentUserOperator()}
       breadcrumb={[
-        active === "locations"
+        active === "locations" || active === "criteria"
           ? { label: "회사정보", href: "/company/members" }
           : { label: "작업지시", href: "/work-orders" },
         { label: title },

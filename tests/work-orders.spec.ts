@@ -76,9 +76,10 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       fullPage: true,
     });
     await page.getByRole("button", { name: "다음", exact: true }).click();
-    await page
-      .getByLabel("적용한 위험성 수준 판단 기준")
-      .fill("테스트 전용 판단 기준");
+    // 판단 기준은 회사가 정한 값이 자동으로 적용된다 (회사정보 > 위험성 판단 기준).
+    await expect(
+      page.getByRole("heading", { name: "적용한 위험성 수준 판단 기준" }),
+    ).toBeVisible();
     await page
       .getByLabel("유해·위험요인", { exact: true })
       .fill("테스트 위험요인");

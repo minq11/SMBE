@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { withTransaction } from "@/server/db";
+import { readRiskCriteria } from "@/server/company-settings";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import {
@@ -31,7 +33,12 @@ export default async function NewOrderPage({
     listLocationSuggestions(actor.companyId),
   ]);
 
-  let initial = blankDraft();
+  // 판단 기준은 회사가 정한 값을 쓴다. 화면에서는 읽기 전용이고,
+  // 평가 요청 시 서버가 다시 회사 값으로 스냅샷을 뜬다.
+  const companyCriteria = await withTransaction((c) =>
+    readRiskCriteria(c, actor.companyId),
+  );
+  let initial = { ...blankDraft(), criteria: companyCriteria };
   if (copy) {
     if (!z.string().uuid().safeParse(copy).success) notFound();
     try {
@@ -39,6 +46,7 @@ export default async function NewOrderPage({
       const active = new Set(members.map((m) => m.user_id));
       initial = {
         ...order.draft_data,
+        criteria: companyCriteria,
         startDate: "",
         endDate: "",
         participantIds: order.draft_data.participantIds.filter((id) =>
@@ -63,7 +71,10 @@ export default async function NewOrderPage({
 
   const standards: StandardPickerOption[] = await Promise.all(
     usable.map(async (s) => {
-      const prefill = await getStandardForPrefill(actor.companyId, s.standard_id);
+      const prefill = await getStandardForPrefill(
+        actor.companyId,
+        s.standard_id,
+      );
       return {
         id: s.standard_id,
         name: s.name,
@@ -75,7 +86,6 @@ export default async function NewOrderPage({
               method: prefill.work_method,
               tbm: prefill.checklist_tbm,
               during: prefill.checklist_during,
-              criteria: prefill.criteria,
               safetyInfo: prefill.safety_info,
               risks: prefill.risks.map((r) => ({
                 hazard: r.hazard,
@@ -106,7 +116,10 @@ export default async function NewOrderPage({
       : null;
 
   return (
-    <OrderShell session={session} title={copy ? "작업지시 복사" : "새 작업지시"}>
+    <OrderShell
+      session={session}
+      title={copy ? "작업지시 복사" : "새 작업지시"}
+    >
       <PageHeader
         title={copy ? "작업지시 복사" : "새 작업지시"}
         description={

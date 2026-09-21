@@ -1,4 +1,6 @@
 import { notFound, redirect } from "next/navigation";
+import { withTransaction } from "@/server/db";
+import { readRiskCriteria } from "@/server/company-settings";
 import { z } from "zod";
 import {
   workSession,
@@ -37,6 +39,9 @@ export default async function EditOrderPage({
     throw error;
   });
   if (detail.order.status !== "DRAFT") redirect("/work-orders/" + id);
+  const companyCriteria = await withTransaction((c) =>
+    readRiskCriteria(c, actor.companyId),
+  );
 
   const [members, locations, usable] = await Promise.all([
     orderMembers(actor),
@@ -46,7 +51,10 @@ export default async function EditOrderPage({
   const activeMemberIds = new Set(members.map((m) => m.user_id));
   const standards: StandardPickerOption[] = await Promise.all(
     usable.map(async (s) => {
-      const prefill = await getStandardForPrefill(actor.companyId, s.standard_id);
+      const prefill = await getStandardForPrefill(
+        actor.companyId,
+        s.standard_id,
+      );
       return {
         id: s.standard_id,
         name: s.name,
@@ -58,7 +66,6 @@ export default async function EditOrderPage({
               method: prefill.work_method,
               tbm: prefill.checklist_tbm,
               during: prefill.checklist_during,
-              criteria: prefill.criteria,
               safetyInfo: prefill.safety_info,
               risks: prefill.risks.map((r) => ({
                 hazard: r.hazard,
@@ -100,7 +107,11 @@ export default async function EditOrderPage({
       <WorkOrderForm
         id={id}
         revision={detail.order.revision}
-        initial={detail.order.draft_data}
+        initial={{
+          ...detail.order.draft_data,
+          // 판단 기준은 회사가 정한 현재 값을 보여 준다 (초안에 박힌 옛 값이 아니라).
+          criteria: companyCriteria,
+        }}
         members={members}
         standards={standards}
         initialStandardId={detail.order.draft_data.standardId ?? null}

@@ -1,4 +1,5 @@
 import type { PoolClient } from "@neondatabase/serverless";
+import { readRiskCriteria } from "./company-settings";
 import { lockCompany } from "./membership-mutations";
 import {
   archiveLocked,
@@ -251,6 +252,9 @@ export async function requestAssessment(
   const d = row.draft_data;
   validateAssessment(d);
   const members = await validatePeople(client, actor.companyId, d);
+  // 판단 기준은 회사가 정한 값이 원본이다. 클라이언트가 보낸 값을 믿지 않고
+  // 이 시점의 회사 기준을 그대로 스냅샷으로 남긴다.
+  const criteriaSnapshot = await readRiskCriteria(client, actor.companyId);
   const linkedStandardId = await resolveStandardLink(
     client,
     actor.companyId,
@@ -265,7 +269,7 @@ export async function requestAssessment(
       d.name,
       d.assessmentKind,
       d.performedOn,
-      d.criteria,
+      criteriaSnapshot,
       d.method,
       JSON.stringify(d.safetyInfo),
       actor.userId,
