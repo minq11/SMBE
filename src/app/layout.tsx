@@ -7,6 +7,7 @@ import "@fontsource/noto-sans-kr/800.css";
 import "@fontsource/noto-sans-kr/900.css";
 import "./globals.css";
 import { PreviewBanner } from "@/components/preview-banner";
+import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
 export const metadata: Metadata = {
   title: "SMBE · 안전관리, 쉽고 간편하게",
   description: "Safety must be easy. SMBE 관리자 홈 미리보기",
@@ -39,6 +40,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
+        <ServiceWorkerRegistrar />
         <PreviewBanner />
         {children}
       </body>

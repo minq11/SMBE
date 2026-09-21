@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#e96935" />
+    <title>오프라인 · SMBE</title>
+    <!-- 오프라인에서 열리는 화면이므로 외부 폰트·스크립트를 쓰지 않습니다. -->
+    <style>
+      :root {
+        --brand: #e96935;
+        --brand-strong: #cf5624;
+        --ink: #1f2429;
+        --muted: #6b7684;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px max(24px, env(safe-area-inset-left, 0px))
+          max(24px, env(safe-area-inset-bottom, 0px))
+          max(24px, env(safe-area-inset-right, 0px));
+        background: #fff7f1;
+        color: var(--ink);
+        font-family:
+          "Noto Sans KR",
+          "Apple SD Gothic Neo",
+          "Malgun Gothic",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        width: 100%;
+        max-width: 360px;
+        text-align: center;
+      }
+      img {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+      }
+      h1 {
+        margin: 20px 0 8px;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      p {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      button {
+        margin-top: 24px;
+        width: 100%;
+        padding: 14px 20px;
+        border: 0;
+        border-radius: 12px;
+        background: var(--brand);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      button:active {
+        background: var(--brand-strong);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon-192.png" alt="SMBE" />
+      <h1>연결이 끊겼습니다</h1>
+      <p>
+        네트워크에 연결되면 이어서 사용할 수 있습니다.<br />
+        현장 신호가 약한 곳이라면 잠시 후 다시 시도해 주세요.
+      </p>
+      <button type="button" onclick="location.reload()">다시 시도</button>
+    </main>
+  </body>
+</html>

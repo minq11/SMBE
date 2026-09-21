@@ -6,6 +6,16 @@ const config: NextConfig = {
   async headers() {
     return [
       {
+        // service worker 가 중간 캐시에 고정되면 배포가 반영되지 않습니다.
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+        ],
+      },
+      {
         source: "/:path*",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
