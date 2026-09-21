@@ -64,6 +64,11 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(
       page.getByRole("heading", { name: "새 작업지시" }),
     ).toBeVisible();
+    // 표준서가 없는 회사라 시작 방식을 먼저 고른다. 고르기 전에는
+    // 작업 정보 입력칸이 렌더링되지 않는다 (work-order-form.tsx: mode !== "idle").
+    await page
+      .getByRole("button", { name: /간이 위험성평가로 대체/ })
+      .click();
     await page
       .getByLabel("작업명", { exact: true })
       .fill("화면검증 작업 " + testInfo.project.name);
@@ -109,13 +114,20 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .getByLabel("작업 중 항목 1", { exact: true })
       .fill("테스트 점검");
     await page.getByRole("button", { name: "임시저장", exact: true }).click();
-    await expect(page).toHaveURL(/\/work-orders\/[a-f0-9-]{36}$/);
-    const path = new URL(page.url()).pathname;
-    const id = path.split("/").pop()!;
+    // 임시저장은 계속 작성할 수 있도록 편집 화면에 머문다 (actions.ts saveDraftAction).
+    await expect(page).toHaveURL(/\/work-orders\/[a-f0-9-]{36}\/edit$/);
+    const id = new URL(page.url()).pathname.split("/")[2];
+    const path = "/work-orders/" + id;
+    // 편집 화면은 첫 단계부터 다시 시작하므로 검토 단계까지 이동한다.
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole("button", { name: "다음", exact: true }).click();
+    }
     page.on("dialog", (dialog) => dialog.accept());
+    // 저장 → 본인 평가 승인 → 발급 → 링크 전송을 한 번에 처리한다.
     await page
-      .getByRole("button", { name: "평가 승인 후 발급", exact: true })
+      .getByRole("button", { name: "지금 발급하기", exact: true })
       .click();
+    await expect(page).toHaveURL(new RegExp(id + "$"));
     await expect(
       page.getByRole("heading", { name: "작업지시 QR", exact: true }),
     ).toBeVisible();
@@ -208,13 +220,29 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
         workerPage.getByRole("link", { name: "편집", exact: true }),
       ).toHaveCount(0);
       await workerContext.addCookies([await cookie(outsider)]);
-      const denied = await workerPage.goto(path);
-      expect(denied?.status()).toBe(404);
+      await workerPage.goto(path);
+      // 배정되지 않은 작업자는 not-found 를 본다 (work-order-service readOrder).
+      // 루트 loading.tsx 때문에 응답이 먼저 스트리밍되어 상태코드는 200 으로 고정되므로,
+      // 상태코드가 아니라 내용이 막혔는지를 확인한다.
+      await expect(
+        workerPage.getByRole("heading", {
+          name: "아직 준비되지 않은 페이지예요.",
+        }),
+      ).toBeVisible();
+      await expect(
+        workerPage.getByText("화면검증 작업 " + testInfo.project.name),
+      ).toHaveCount(0);
     } finally {
       await workerContext.close();
     }
     await page.goto(path);
-    await page.getByLabel("취소 사유").fill("화면검증 종료");
+    // 루트 loading.tsx 로 스트리밍되는 화면이라, 하이드레이션 전에 채우면 값이 지워진다.
+    // 값이 남을 때까지 다시 채운다 (required 가 빈 값이면 제출 자체가 막힌다).
+    const reason = page.getByLabel("취소 사유");
+    await expect(async () => {
+      await reason.fill("화면검증 종료");
+      await expect(reason).toHaveValue("화면검증 종료", { timeout: 1000 });
+    }).toPass({ timeout: 15000 });
     await page
       .getByRole("button", { name: "지시서 취소", exact: true })
       .click();
