@@ -148,12 +148,18 @@ function PlanNotice({ overview }: { overview: CompanyOverview }) {
           계약 인원을 모두 사용했습니다. 인원을 더 등록하려면{" "}
           {next
             ? `${next.name} 으로 변경해야 합니다.`
-            : "개별 협의가 필요합니다."}
+            : "100인 이상은 가격 협의가 필요합니다."}
         </>
       ) : (
         <>{remaining}명 더 등록할 수 있습니다.</>
       )}{" "}
       <Link href="/billing">요금제 보기</Link>
+      {full && !next && (
+        <>
+          {" · "}
+          <Link href="/contact">가격 문의하기</Link>
+        </>
+      )}
     </p>
   );
 }

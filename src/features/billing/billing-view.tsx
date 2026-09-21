@@ -17,8 +17,8 @@ import {
 
 const TIER_LABEL: Record<CompanyOverview["pro_state"], string> = {
   FREE: "무료티어",
-  PRO_VOLUNTARY: "Pro (자발적 전환)",
-  PRO_MANDATORY: "Pro",
+  PRO_VOLUNTARY: "유료 이용 중",
+  PRO_MANDATORY: "유료 이용 중",
 };
 
 export function BillingView({ overview }: { overview: CompanyOverview }) {
@@ -57,7 +57,7 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
               className="primary-button billing-cta"
               prefetch={false}
             >
-              Pro 문의하기
+              유료 전환 문의
               <ArrowRight size={14} />
             </Link>
           )}
@@ -68,12 +68,13 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
         </div>
       </section>
 
-      <section className="stack" aria-label="Pro 전용 기능">
+      <section className="stack" aria-label="유료 전용 기능">
         <header className="billing-section-header">
-          <h2>Pro 로 사용할 수 있는 기능</h2>
+          <h2>유료로 사용할 수 있는 기능</h2>
           <p>
-            아래 기능이 필요해지는 순간이 Pro 전환 시점입니다. 무료로도 안전관리
-            업무의 뼈대는 그대로 사용할 수 있습니다.
+            아래 기능이 필요해지는 순간이 유료 전환 시점입니다. 세 구간 모두
+            같은 기능을 제공하며 인원 범위만 다릅니다. 무료로도 안전관리 업무의
+            뼈대는 그대로 사용할 수 있습니다.
           </p>
         </header>
         <ul className="pro-feature-grid" role="list">
@@ -178,7 +179,10 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
           </div>
           <div>
             <dt>{ENTERPRISE_FROM}인 이상</dt>
-            <dd>개별 문의 시 할인·계약 조건을 협의합니다.</dd>
+            <dd>
+              구간표 밖입니다. <Link href="/contact">직접 문의</Link>해 주시면
+              인원 규모에 맞춰 가격과 계약 조건을 협의합니다.
+            </dd>
           </div>
         </dl>
       </section>

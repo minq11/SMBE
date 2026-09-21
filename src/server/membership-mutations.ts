@@ -4,6 +4,7 @@ import type { PoolClient } from "@neondatabase/serverless";
 import {
   seatsExhausted,
   seatCapFor,
+  ENTERPRISE_FROM,
   planName,
   planAfter,
   type ContractedPlan,
@@ -65,7 +66,7 @@ export async function seatCapacityError(
     `${planName(row.plan)} 요금제는 ${cap}명까지입니다 (현재 ${row.active}명). ` +
     (next
       ? `${next.name} 으로 변경하면 바로 등록할 수 있습니다.`
-      : "인원을 더 등록하려면 개별 협의가 필요합니다.")
+      : `${ENTERPRISE_FROM}인 이상은 가격을 협의해야 합니다. 문의 폼으로 연락 주세요.`)
   );
 }
 
