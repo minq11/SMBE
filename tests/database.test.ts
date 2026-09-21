@@ -20,6 +20,13 @@ import {
 } from "../src/server/membership-mutations";
 import { resolveIdentity } from "../src/server/identity-mutations";
 import {
+  issueAccessToken,
+  resolveAccessToken,
+  revokeAccessToken,
+  recordLinkOpen,
+  linkActor,
+} from "../src/server/worker-access";
+import {
   submitInspection,
   resolveFinding,
   inspectionOverview,
@@ -1364,4 +1371,92 @@ test("work order: input, overnight 16h limit and Korea session window boundaries
     effectiveStatus("ISSUED", schedule, new Date("2026-09-20T10:00:01+09:00")),
     "COMPLETED",
   );
+});
+
+test("worker link token: opens for its assignee and dies on reissue, revoke, expiry, cancellation and departure", async () => {
+  const setup = await inspectionFixture();
+  const target = {
+    workOrderId: setup.id,
+    issueVersion: 1,
+    userId: setup.worker,
+  };
+  const future = new Date(Date.now() + 86400_000);
+  const token = await transaction((c) => issueAccessToken(c, target, future));
+
+  const grant = await transaction((c) => resolveAccessToken(c, token));
+  assert.equal(grant?.workOrderId, setup.id);
+  assert.equal(grant?.worker.userId, setup.worker);
+  assert.deepEqual(linkActor(grant!), {
+    companyId: setup.actor.companyId,
+    userId: setup.worker,
+  });
+
+  // 모양이 어긋난 토큰과 존재하지 않는 토큰은 조용히 거절한다.
+  assert.equal(
+    await transaction((c) => resolveAccessToken(c, "too-short")),
+    null,
+  );
+  assert.equal(
+    await transaction((c) => resolveAccessToken(c, "A".repeat(22))),
+    null,
+  );
+
+  // 열람 기록은 첫 시각을 보존하고 최신값만 덮어쓴다.
+  await transaction((c) =>
+    recordLinkOpen(c, grant!, { ip: "203.0.113.9", userAgent: "probe/1" }),
+  );
+  await transaction((c) =>
+    recordLinkOpen(c, grant!, { ip: "203.0.113.10", userAgent: "probe/2" }),
+  );
+  const opened = (
+    await pool.query(
+      `SELECT open_count, first_opened_at, last_opened_at, last_open_ip
+         FROM work_order_access_grants WHERE work_order_id=$1 AND user_id=$2`,
+      [setup.id, setup.worker],
+    )
+  ).rows[0];
+  assert.equal(opened.open_count, 2);
+  assert.equal(opened.last_open_ip, "203.0.113.10");
+  assert.ok(opened.first_opened_at <= opened.last_opened_at);
+
+  // 재발급하면 이전 링크가 그 순간 죽고, 열람 기록도 새 회차로 초기화된다.
+  const reissued = await transaction((c) =>
+    issueAccessToken(c, target, future),
+  );
+  assert.equal(await transaction((c) => resolveAccessToken(c, token)), null);
+  assert.ok(await transaction((c) => resolveAccessToken(c, reissued)));
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT open_count FROM work_order_access_grants WHERE work_order_id=$1 AND user_id=$2",
+        [setup.id, setup.worker],
+      )
+    ).rows[0].open_count,
+    0,
+  );
+
+  // 폐기
+  await transaction((c) => revokeAccessToken(c, target));
+  assert.equal(await transaction((c) => resolveAccessToken(c, reissued)), null);
+
+  // 만료 (발급 API 는 과거 시각을 거부하므로 직접 되돌린다)
+  const live = await transaction((c) => issueAccessToken(c, target, future));
+  await pool.query(
+    // 발급시각도 함께 되돌린다. expiry_shape 제약이 만료 < 발급을 막는다.
+    `UPDATE work_order_access_grants
+        SET token_issued_at = now() - interval '2 hours',
+            token_expires_at = now() - interval '1 minute'
+      WHERE work_order_id=$1 AND user_id=$2`,
+    [setup.id, setup.worker],
+  );
+  assert.equal(await transaction((c) => resolveAccessToken(c, live)), null);
+
+  // 퇴사자는 자동으로 막힌다.
+  const active = await transaction((c) => issueAccessToken(c, target, future));
+  assert.ok(await transaction((c) => resolveAccessToken(c, active)));
+  await pool.query(
+    "UPDATE company_members SET status='RESIGNED', left_at=now() WHERE company_id=$1 AND user_id=$2",
+    [setup.actor.companyId, setup.worker],
+  );
+  assert.equal(await transaction((c) => resolveAccessToken(c, active)), null);
 });

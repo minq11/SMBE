@@ -15,7 +15,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:reconcile-headcounts": "tsx scripts/reconcile-headcounts.ts",
     "test:e2e": "playwright test",
-    "test:db": "tsx --test tests/database.test.ts",
+    "test:db": "node --conditions=react-server --import tsx --test tests/database.test.ts",
     "test:attachments": "node --conditions=react-server --import tsx --test tests/attachments.test.ts",
     "test:orders-ui": "node scripts/test-work-orders-ui.mjs"
   },

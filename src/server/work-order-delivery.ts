@@ -7,16 +7,11 @@ import {
   type Actor,
 } from "./work-order-service";
 import { sendEmail } from "./email";
+import { issueAccessToken, workerLinkUrl, linkExpiry } from "./worker-access";
 import { WorkOrderError } from "../features/work-orders/model";
 
-export function workOrderOrigin() {
-  const url = new URL(process.env.APP_URL || "http://localhost:3000");
-  if (!["http:", "https:"].includes(url.protocol))
-    throw new WorkOrderError("APP_URL을 확인하세요.");
-  return url.origin;
-}
+export { appOrigin as workOrderOrigin } from "./config";
 export async function deliverOrder(actor: Actor, orderId: string) {
-  const origin = workOrderOrigin();
   const claimed = await withTransaction(async (client) => {
     await memberAccess(client, actor, true);
     const order = await readOrder(client, actor, orderId);
@@ -25,6 +20,8 @@ export async function deliverOrder(actor: Actor, orderId: string) {
     const { rows } = await client.query<{
       id: string;
       link_target: string | null;
+      user_id: string;
+      issue_version: number;
     }>(
       `WITH pending AS (
          SELECT o.id FROM work_order_outputs o
@@ -35,27 +32,44 @@ export async function deliverOrder(actor: Actor, orderId: string) {
              AND m.company_id=$2 AND m.status='ACTIVE' AND m.left_at IS NULL)
          LIMIT 50 FOR UPDATE SKIP LOCKED
        ) UPDATE work_order_outputs o SET status='SENDING',attempt_count=attempt_count+1,attempted_at=now()
-         FROM pending p WHERE o.id=p.id RETURNING o.id,o.link_target`,
+         FROM pending p WHERE o.id=p.id RETURNING o.id,o.link_target,o.user_id,o.issue_version`,
       [orderId, actor.companyId],
     );
     if (rows.length)
       await auditOrder(client, actor, orderId, "SEND_LINKS", {
         count: rows.length,
       });
-    return rows;
+    // 토큰은 보낼 때 만든다. 평문은 여기서만 존재하고 DB 에는 해시만 남으므로,
+    // 링크를 다시 보내면 새 토큰이 발급되고 이전 링크는 그 순간 무효가 된다.
+    const expiresAt = linkExpiry(order.draft_data.endDate);
+    return Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        token: await issueAccessToken(
+          client,
+          {
+            workOrderId: orderId,
+            issueVersion: row.issue_version,
+            userId: row.user_id,
+          },
+          expiresAt,
+        ),
+      })),
+    );
   });
   await Promise.all(
     claimed.map(async (item) => {
-      const url = origin + "/work-orders/" + orderId + "?via=link";
+      // 로그인 없이 열리는 개인 링크. 배정된 본인에게만 보낸다.
+      const url = workerLinkUrl(item.token);
       const result = item.link_target
         ? await sendEmail({
             to: item.link_target,
             subject: "[SMBE] 작업지시가 발급되었습니다",
-            html: `<p>작업지시가 발급되었습니다. 로그인 후 배정된 작업 내용을 확인하세요.</p><p><a href="${url}">작업지시 확인</a></p><p>작업지시에서 TBM·작업 중 점검을 입력할 수 있습니다.</p>`,
+            html: `<p>배정된 작업지시가 발급되었습니다. 아래 링크에서 바로 확인하실 수 있습니다.</p><p><a href="${url}">작업지시 확인하기</a></p><p>TBM·작업 중 점검을 같은 화면에서 입력합니다. 이 링크는 본인 전용이므로 공유하지 마세요.</p>`,
             text:
-              "로그인 후 작업지시를 확인하세요: " +
+              "배정된 작업지시를 확인하세요: " +
               url +
-              "\n작업지시에서 TBM·작업 중 점검을 입력할 수 있습니다.",
+              "\nTBM·작업 중 점검을 같은 화면에서 입력합니다. 이 링크는 본인 전용이므로 공유하지 마세요.",
             idempotencyKey: "work-order-" + item.id,
           })
         : { status: "skipped" as const };

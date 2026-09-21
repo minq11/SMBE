@@ -1,8 +1,8 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import type { PoolClient } from "@neondatabase/serverless";
-import { queryOne, query } from "./db";
-import { workOrderOrigin } from "./work-order-delivery";
+
+import { appOrigin } from "./config";
 import type { Actor } from "./work-order-service";
 import { WorkOrderError } from "../features/work-orders/model";
 
@@ -50,7 +50,18 @@ function hashToken(token: string): string {
 }
 
 export function workerLinkUrl(token: string): string {
-  return `${workOrderOrigin()}/w/${token}`;
+  return `${appOrigin()}/w/${token}`;
+}
+
+/** 링크 진입 시 토큰을 담는 쿠키. URL 에서 토큰을 지우기 위한 교환 수단이다. */
+export const LINK_COOKIE = "smbe_work_link";
+
+/**
+ * 토큰 유효기간: 작업 종료일 자정(KST) + 12시간.
+ * 작업이 끝난 뒤 뒤늦게 확인하는 경우를 감안하되 무기한으로 두지 않는다.
+ */
+export function linkExpiry(endDate: string): Date {
+  return new Date(Date.parse(endDate + "T23:59:59+09:00") + 12 * 3600_000);
 }
 
 /**
@@ -125,11 +136,12 @@ type GrantRow = {
  *  - 작업자가 아직 그 회사의 활성 구성원
  */
 export async function resolveAccessToken(
+  client: PoolClient,
   token: string,
 ): Promise<WorkOrderLinkGrant | null> {
   if (!TOKEN_PATTERN.test(token)) return null;
 
-  const row = await queryOne<GrantRow>(
+  const { rows } = await client.query<GrantRow>(
     `SELECT g.id AS grant_id, g.work_order_id, g.issue_version,
             w.company_id, u.id AS user_id, u.display_name,
             g.token_expires_at::text AS expires_at
@@ -147,6 +159,7 @@ export async function resolveAccessToken(
        AND w.canceled_at IS NULL`,
     [hashToken(token)],
   );
+  const row = rows[0];
   if (!row) return null;
 
   return {
@@ -168,10 +181,11 @@ export async function resolveAccessToken(
  * IP·User-Agent는 개인정보이므로 최신 1건만 덮어쓴다 (보존 정책: docs/worker-access.md).
  */
 export async function recordLinkOpen(
+  client: PoolClient,
   grant: WorkOrderLinkGrant,
   meta: { ip?: string | null; userAgent?: string | null },
 ): Promise<void> {
-  await query(
+  await client.query(
     `UPDATE work_order_access_grants
      SET open_count = open_count + 1,
          first_opened_at = COALESCE(first_opened_at, now()),

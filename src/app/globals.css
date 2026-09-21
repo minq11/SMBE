@@ -39,7 +39,8 @@
   --banner-h: 40px;
 
   /* System font stack for English display */
-  --font-display: "Söhne", "Inter", -apple-system, BlinkMacSystemFont,
+  --font-display:
+    "Söhne", "Inter", -apple-system, BlinkMacSystemFont,
     "Segoe UI Variable Display", "Segoe UI", "Helvetica Neue", Helvetica, Arial,
     sans-serif;
 
@@ -197,7 +198,9 @@ button svg {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-.sidebar-close { display: none; }
+.sidebar-close {
+  display: none;
+}
 
 .brand {
   display: flex;
@@ -913,7 +916,9 @@ button svg {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-3);
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 .tab:hover {
   color: var(--ink);
@@ -1218,7 +1223,9 @@ button svg {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-3);
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 .admin-nav-link:hover {
   background: var(--surface-2);
@@ -1569,7 +1576,9 @@ button svg {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .pro-feature-card:hover {
   border-color: var(--line-strong);
@@ -1843,7 +1852,10 @@ button svg {
   border-radius: var(--radius);
   background: var(--surface);
   text-align: left;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
 }
 .band-chip strong {
   font-size: 14px;
@@ -2330,7 +2342,10 @@ button svg {
   font-weight: 600;
   color: var(--ink);
   text-align: left;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
 }
 .check-choice strong {
   font-size: 14px;
@@ -2436,7 +2451,10 @@ button svg {
   border-radius: var(--radius-sm);
   background: var(--surface);
   text-align: left;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
 }
 .check-answer-choice:hover {
   border-color: var(--line-strong);
@@ -3052,12 +3070,31 @@ button svg {
 }
 
 @media (max-width: 520px) {
-  .std-risk-grid { grid-template-columns: minmax(0, 1fr); }
-  .std-risk-head { display: grid; grid-template-columns: minmax(0, 1fr) 44px; }
-  .std-risk-head .std-list-number { justify-self: start; }
-  .std-risk-head .icon-button { grid-column: 2; grid-row: 1; }
-  .std-risk-hazard { grid-column: 1 / -1; grid-row: 2; width: 100%; }
-  .std-risk-field input, .std-risk-field select { min-height: 44px; width: 100%; min-width: 0; }
+  .std-risk-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .std-risk-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+  .std-risk-head .std-list-number {
+    justify-self: start;
+  }
+  .std-risk-head .icon-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .std-risk-hazard {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+  .std-risk-field input,
+  .std-risk-field select {
+    min-height: 44px;
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .std-participant-grid {
@@ -3076,7 +3113,10 @@ button svg {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-2);
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
 }
 .std-participant:hover {
   border-color: var(--line-strong);
@@ -3527,7 +3567,9 @@ button svg {
   border-radius: var(--radius-sm);
   background: var(--surface);
   text-align: left;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 .std-kind-choice:hover {
   border-color: var(--line-strong);
@@ -3586,7 +3628,9 @@ button svg {
   border-radius: var(--radius-sm);
   background: var(--surface);
   text-align: left;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 .wo-std-option:hover {
   border-color: var(--line-strong);
@@ -3774,7 +3818,12 @@ button svg {
     overflow-y: auto;
     overscroll-behavior: contain;
   }
-  .help-tip-button, .help-tip-close { width: 44px; height: 44px; flex-shrink: 0; }
+  .help-tip-button,
+  .help-tip-close {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
 }
 /* work-order form: label wrapper for HelpTip */
 .wo-field-label {
@@ -4009,8 +4058,12 @@ button svg {
     background: var(--surface);
     font: inherit;
   }
-  .sidebar > * { flex-shrink: 0; }
-  .breadcrumb-item:not(:last-child) { display: none; }
+  .sidebar > * {
+    flex-shrink: 0;
+  }
+  .breadcrumb-item:not(:last-child) {
+    display: none;
+  }
   .sidebar-shade {
     display: block;
   }
@@ -4121,16 +4174,48 @@ body.sidebar-lock {
 }
 
 @media (max-width: 600px) {
-  .row:has(.row-meta--wide) { display: grid; grid-template-columns: minmax(0,1fr) 16px; }
-  .row:has(.row-meta--wide) .row-main { grid-column: 1; }
-  .row:has(.row-meta--wide) .row-meta--wide { grid-column: 1; justify-content: flex-start; gap: 8px 14px; }
-  .row:has(.row-meta--wide) .row-chev { grid-column: 2; grid-row: 1 / 3; }
-  .page-header-side, .page-header-actions { flex-wrap: wrap; min-width: 0; max-width: 100%; }
-  .page-header-copy, .row-main { overflow-wrap: anywhere; }
-  .page-header-actions > a, .page-header-actions > button, .primary-button, .secondary-button { min-height: 44px; }
-  .topbar { padding-inline: 8px; gap: 4px; }
-  .topbar .profile > svg { display: none; }
-  .topbar .profile { padding-inline: 6px; }
+  .row:has(.row-meta--wide) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 16px;
+  }
+  .row:has(.row-meta--wide) .row-main {
+    grid-column: 1;
+  }
+  .row:has(.row-meta--wide) .row-meta--wide {
+    grid-column: 1;
+    justify-content: flex-start;
+    gap: 8px 14px;
+  }
+  .row:has(.row-meta--wide) .row-chev {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .page-header-side,
+  .page-header-actions {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .page-header-copy,
+  .row-main {
+    overflow-wrap: anywhere;
+  }
+  .page-header-actions > a,
+  .page-header-actions > button,
+  .primary-button,
+  .secondary-button {
+    min-height: 44px;
+  }
+  .topbar {
+    padding-inline: 8px;
+    gap: 4px;
+  }
+  .topbar .profile > svg {
+    display: none;
+  }
+  .topbar .profile {
+    padding-inline: 6px;
+  }
 }
 
 /* =========================================================================
@@ -4544,7 +4629,10 @@ body.sidebar-lock {
   font-weight: 600;
   color: var(--ink-2);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
 }
 .topic-choice:hover {
   border-color: var(--line-strong);
@@ -4613,7 +4701,6 @@ body.sidebar-lock {
   justify-content: center;
 }
 
-
 /* =========================================================================
    19. Attachments (S3 사진 업로더 · 목록 · 라이트박스)
    ========================================================================= */
@@ -4635,7 +4722,9 @@ body.sidebar-lock {
   color: var(--ink-2);
   background: var(--surface);
   align-self: flex-start;
-  transition: border-color 0.12s, color 0.12s;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
 }
 .attach-uploader-cta:hover {
   border-color: var(--brand);
@@ -4734,7 +4823,9 @@ body.sidebar-lock {
 }
 @media (hover: none) {
   .attach-thumb-icon,
-  .attach-thumb-delete { opacity: 1; }
+  .attach-thumb-delete {
+    opacity: 1;
+  }
 }
 .attach-lightbox {
   position: fixed;
@@ -4771,5 +4862,55 @@ body.sidebar-lock {
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 작업자 링크 화면 (/w) — 로그인·사이드바 없이 단독으로 열린다.
+   현장에서 한 손으로 쓰는 화면이라 세로 한 줄, 큰 터치 영역으로 둔다. */
+.link-work,
+.link-notice {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px max(32px, env(safe-area-inset-bottom, 0px));
+}
+.link-notice {
+  text-align: center;
+  padding-top: 64px;
+}
+.link-notice h1 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.link-notice p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.link-work-head {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.link-work-greeting {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.link-work-greeting strong {
+  color: var(--brand);
+  font-size: 16px;
+}
+.link-work-head h1 {
+  font-size: 20px;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.link-work .wo-section {
+  margin-top: 20px;
+}
+.link-work-foot {
+  margin-top: 32px;
+  font-size: 13px;
+  text-align: center;
 }
