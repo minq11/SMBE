@@ -26,7 +26,7 @@ export function InspectionSummary({
       {current && !canceled ? (
         <>
           <p>
-            현재 회차: {current.work_date} · {SESSION_LABEL[state!.state]}
+            오늘 회차: {current.work_date} · {SESSION_LABEL[state!.state]}
           </p>
           <p>
             TBM {current.expected_assignees.length - state!.missing.length}/
@@ -61,7 +61,7 @@ export function InspectionSummary({
         <p className="wo-muted">
           {canceled
             ? "취소된 작업은 새 점검을 입력할 수 없습니다."
-            : "현재 입력 가능한 회차가 없습니다. 매 회차 시작 2시간 전부터 종료 2시간 후까지 입력할 수 있습니다."}
+            : "오늘 회차가 없습니다. 아래 목록에서 회차를 선택해 이어 입력할 수 있습니다."}
         </p>
       )}
       <p>

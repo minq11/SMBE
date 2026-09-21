@@ -91,9 +91,11 @@ export async function submitInspection(
   const now = await databaseNow(client);
   const sessions = await inspectionSessions(client, data.orderId);
   const session = sessions.find((s) => s.id === data.sessionId);
-  if (!session || !sessionState(session, now).open)
+  if (!session)
+    throw new WorkOrderError("존재하지 않는 회차입니다.");
+  if (!sessionState(session, now).canInput)
     throw new WorkOrderError(
-      "현재 회차만 입력할 수 있습니다. 시작 2시간 전부터 종료 2시간 후까지 가능합니다.",
+      "아직 시작하지 않은 회차입니다. 작업일이 되면 입력할 수 있습니다.",
     );
   if (
     access.role === "WORKER" &&
@@ -269,7 +271,8 @@ export async function inspectionOverview(
   const access = await memberAccess(client, actor);
   const now = await databaseNow(client);
   const sessions = await inspectionSessions(client, orderId);
-  const current = sessions.find((s) => sessionState(s, now).open) ?? null;
+  const current =
+    sessions.find((s) => sessionState(s, now).state === "TODAY") ?? null;
   const cutoff = seoulToday(new Date(now.getTime() - 7 * 86400000));
   const visible = sessions.filter(
     (s) =>

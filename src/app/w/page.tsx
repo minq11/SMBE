@@ -10,7 +10,11 @@ import {
 import { inspectionOverview } from "@/server/inspection-service";
 import { WorkOrderError } from "@/features/work-orders/model";
 import { InspectionForm } from "@/features/inspections/inspection-form";
-import { SESSION_LABEL, sessionState } from "@/features/inspections/model";
+import {
+  sessionState,
+  SESSION_LABEL,
+  orderSessionsForDisplay,
+} from "@/features/inspections/model";
 
 export const metadata = { title: "내 작업지시 · SMBE" };
 
@@ -20,7 +24,7 @@ const at = (value: string) =>
 export default async function WorkerLinkPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; saved?: string }>;
+  searchParams: Promise<{ session?: string; type?: string; saved?: string }>;
 }) {
   const query = await searchParams;
   const token = (await cookies()).get(LINK_COOKIE)?.value;
@@ -38,21 +42,31 @@ export default async function WorkerLinkPage({
     throw error;
   });
 
-  const assigned = data.current?.expected_assignees.some(
-    (a) => a.userId === actor.userId,
-  );
   const canceled = data.order.status === "CANCELED";
-  const tbmDone = data.current?.tbm_users.includes(actor.userId) ?? false;
   const kind =
-    query.type === "DURING_WORK"
-      ? "DURING_WORK"
-      : query.type === "TBM"
-        ? "TBM"
-        : tbmDone
-          ? "DURING_WORK"
-          : "TBM";
-  const open = Boolean(data.current) && !canceled && Boolean(assigned);
-  const showForm = open && (kind === "DURING_WORK" || !tbmDone);
+    query.type === "TBM"
+      ? "TBM"
+      : query.type === "DURING_WORK"
+        ? "DURING_WORK"
+        : null;
+  const target =
+    (query.session
+      ? data.sessions.find((s) => s.id === query.session)
+      : null) ?? null;
+  const targetState = target ? sessionState(target, new Date(data.now)) : null;
+  const assigned = target
+    ? target.expected_assignees.some((a) => a.userId === actor.userId)
+    : false;
+  const tbmDone = target
+    ? target.tbm_users.includes(actor.userId)
+    : false;
+  const showForm =
+    !!target &&
+    !!kind &&
+    !canceled &&
+    !!targetState?.canInput &&
+    assigned &&
+    (kind === "DURING_WORK" || !tbmDone);
 
   return (
     <main className="link-work">
@@ -61,12 +75,6 @@ export default async function WorkerLinkPage({
           <strong>{grant.worker.name}</strong>님
         </p>
         <h1>{data.order.name}</h1>
-        {data.current && (
-          <p className="wo-muted">
-            작업일자 {data.current.work_date} · {at(data.current.starts_at)} ~{" "}
-            {at(data.current.ends_at)}
-          </p>
-        )}
       </header>
 
       {query.saved === "1" && (
@@ -79,16 +87,16 @@ export default async function WorkerLinkPage({
           취소된 지시서입니다. 작업·점검에 사용하지 마세요.
         </p>
       )}
-      {!canceled && !data.current && (
+
+      {target && !showForm && targetState?.state === "FUTURE" && (
         <p className="wo-notice">
-          지금은 입력할 수 있는 작업 회차가 없습니다. 작업 시작 2시간 전부터
-          종료 2시간 후까지 입력할 수 있습니다.
+          아직 시작하지 않은 회차입니다. 작업일이 되면 입력할 수 있습니다.
         </p>
       )}
-      {!canceled && data.current && !assigned && (
+      {target && !showForm && !assigned && targetState?.state !== "FUTURE" && (
         <p className="wo-notice">이 회차에 배정되지 않았습니다.</p>
       )}
-      {tbmDone && kind === "TBM" && (
+      {target && kind === "TBM" && tbmDone && (
         <p role="status" className="wo-notice">
           이미 이 회차의 TBM을 확인했습니다.
         </p>
@@ -96,6 +104,10 @@ export default async function WorkerLinkPage({
 
       {showForm && kind === "TBM" && (
         <section className="wo-section">
+          <p className="wo-muted">
+            작업일자 {target!.work_date} · {at(target!.starts_at)} ~{" "}
+            {at(target!.ends_at)}
+          </p>
           <h2>발급 당시 위험요인·감소대책</h2>
           {data.risks.map((r, i) => (
             <article className="wo-risk" key={i}>
@@ -110,48 +122,106 @@ export default async function WorkerLinkPage({
         <section className="wo-section">
           <h2>{kind === "TBM" ? "TBM 체크리스트" : "작업 중 체크리스트"}</h2>
           <InspectionForm
-            key={data.current!.id + kind}
+            key={target!.id + kind}
             orderId={orderId}
-            sessionId={data.current!.id}
-            category={kind}
+            sessionId={target!.id}
+            category={kind!}
             path="LINK"
             checklist={data.checklist.filter((c) => c.category === kind)}
             managers={data.managers}
-            previousActions={kind === "TBM" ? data.previousActions : []}
+            previousActions={
+              // 이전 회차 조치 팝업은 오늘 회차에서만 노출한다.
+              // 지난 회차를 뒤늦게 입력할 때 팝업이 뜨면 흐름이 어지러워진다.
+              target!.id === data.current?.id && kind === "TBM"
+                ? data.previousActions
+                : []
+            }
           />
+          <p>
+            <Link className="btn-secondary" href="/w">
+              회차 목록으로
+            </Link>
+          </p>
         </section>
       )}
 
-      {open && tbmDone && kind === "TBM" && (
-        <p>
-          <Link className="btn-secondary" href="/w?type=DURING_WORK">
-            작업 중 점검 입력
-          </Link>
-        </p>
-      )}
-      {open && kind === "DURING_WORK" && !tbmDone && (
-        <p>
-          <Link className="btn-secondary" href="/w?type=TBM">
-            TBM 확인 먼저 하기
-          </Link>
-        </p>
-      )}
-
-      {data.current && (
+      {!showForm && (
         <section className="wo-section">
-          <h2>이 회차 진행 상황</h2>
-          <p>
-            {
-              SESSION_LABEL[
-                sessionState(data.current, new Date(data.now)).state
-              ]
-            }{" "}
-            · TBM{" "}
-            {data.current.expected_assignees.length -
-              sessionState(data.current, new Date(data.now)).missing.length}
-            /{data.current.expected_assignees.length} · 작업 중{" "}
-            {data.current.during_count}건
+          <h2>회차 목록</h2>
+          <p className="wo-muted">
+            오늘 회차부터 처리하고, 놓친 지난 회차도 여기서 이어 입력할 수
+            있습니다.
           </p>
+          <ul className="link-session-list">
+            {orderSessionsForDisplay(data.sessions, new Date(data.now)).map(
+              (s) => {
+                const state = sessionState(s, new Date(data.now));
+                const mine = s.tbm_users.includes(actor.userId);
+                const rowAssigned = s.expected_assignees.some(
+                  (a) => a.userId === actor.userId,
+                );
+                const showActions =
+                  state.canInput && !canceled && rowAssigned;
+                return (
+                  <li
+                    key={s.id}
+                    className={
+                      "link-session link-session-" +
+                      state.state.toLowerCase() +
+                      (s.id === data.current?.id ? " is-current" : "")
+                    }
+                  >
+                    <div className="link-session-head">
+                      <strong>{s.work_date}</strong>
+                      <span className="link-session-badge">
+                        {SESSION_LABEL[state.state]}
+                      </span>
+                    </div>
+                    <p className="wo-muted">
+                      {at(s.starts_at)} ~ {at(s.ends_at)}
+                    </p>
+                    <p className="wo-muted">
+                      TBM{" "}
+                      {s.expected_assignees.length - state.missing.length}/
+                      {s.expected_assignees.length} · 작업 중 {s.during_count}건
+                      {mine ? " · 내 TBM 확인 완료" : ""}
+                    </p>
+                    {showActions && (
+                      <div className="wo-actions">
+                        {!mine && (
+                          <Link
+                            className="btn-primary"
+                            href={`/w?session=${s.id}&type=TBM`}
+                          >
+                            TBM 확인
+                          </Link>
+                        )}
+                        <Link
+                          className="btn-secondary"
+                          href={`/w?session=${s.id}&type=DURING_WORK`}
+                        >
+                          작업 중 점검
+                        </Link>
+                      </div>
+                    )}
+                    {!rowAssigned && (
+                      <p className="wo-muted">
+                        이 회차에 배정되지 않았습니다.
+                      </p>
+                    )}
+                  </li>
+                );
+              },
+            )}
+            {!data.sessions.length && (
+              <li className="wo-muted">회차가 없습니다.</li>
+            )}
+          </ul>
+          {data.lockedSessions > 0 && (
+            <p className="wo-muted">
+              무료 이용의 과거 열람 제한 회차: {data.lockedSessions}건
+            </p>
+          )}
         </section>
       )}
 

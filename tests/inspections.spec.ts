@@ -239,7 +239,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await workerPage
       .getByRole("button", { name: "작업 중 점검 저장", exact: true })
       .click();
-    await expect(workerPage.getByText(/현재 회차: .*점검 가능/)).toBeVisible();
+    await expect(workerPage.getByText(/오늘 회차: .*오늘/)).toBeVisible();
     await workerPage.screenshot({
       path: testInfo.outputPath("inspection-complete.png"),
       fullPage: true,

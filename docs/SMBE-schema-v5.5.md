@@ -664,23 +664,24 @@ erDiagram
 | id | uuid PK | |
 | work_order_id | uuid FK | |
 | work_date | date | 시작일 기준(자정 넘는 야간작업도 시작일로 묶음) |
-| session_open_at | timestamptz | 시작 2시간 전 |
-| session_close_at | timestamptz | 종료 2시간 후 |
+| starts_at | timestamptz | 표시용. 게이트에는 쓰지 않는다 |
+| ends_at | timestamptz | 표시용 |
 | excluded_at | timestamptz NULL | 일정 변경으로 제외된 회차 |
 | excluded_reason | text NULL | |
 | UNIQUE(work_order_id, work_date) | | 조 추가는 지시서 자체가 분리되므로 (work_order, date) 유일 |
 
 - **상태는 저장하지 않고 조회 시 계산한다(v5.5).** 상태 전환 배치 없음.
+- **판정 기준은 작업일자(KST) 하나.** 시간대별 판정 창은 두지 않는다 — 도입기 사용자가 시간대를 놓쳐도 TBM을 이어서 찍을 수 있어야 정착한다.
 
-| 계산 상태 | 조건 |
-|---|---|
-| SCHEDULED | `now < session_open_at` |
-| OPEN | `session_open_at <= now <= session_close_at` |
-| DONE | `now > session_close_at` AND 배정 작업자 전원 TBM 1건 이상 AND 작업 중 점검 1건 이상 |
-| MISSED | `now > session_close_at` AND 위 조건 미충족 (누락 구분: TBM / DURING_WORK / ALL도 계산) |
-| EXCLUDED | `excluded_at IS NOT NULL` — 누락 판정 대상에서 제외 |
+| 계산 상태 | 조건 | 입력 |
+|---|---|---|
+| FUTURE | `work_date > today(KST)` | 잠금 |
+| TODAY | `work_date = today(KST)` | 가능 |
+| PAST | `work_date < today(KST)` | 가능 (지난 회차 사후 입력) |
+| EXCLUDED | `excluded_at IS NOT NULL` | 잠금 · 누락 판정 대상에서 제외 |
 
-- 사후보완 여부는 `inspections.is_post_input` 존재 여부로 계산
+- 완료 여부(`done`)는 상태와 별도. 배정 작업자 전원 TBM 확인 + 작업 중 점검 1건 이상이면 참.
+- 지연 입력 여부는 `inspections.submitted_at`과 `work_sessions.ends_at`을 비교해 조회 시 계산한다(별도 컬럼 없음).
 - 알림(누락 메일 등)은 계산 결과를 매일 훑어서 발송하는 **알림 배치**만 유지
 
 ### 9-3. `inspections` (개별 점검)
