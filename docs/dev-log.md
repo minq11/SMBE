@@ -1,5 +1,27 @@
 # SMBE 개발일지
 
+## 2026-09-21 PWA 설치 · 작업자 링크 토큰 · 알림 채널 설계
+
+- PWA: manifest·아이콘·safe-area는 이미 있었고 service worker만 없어 Android 설치(WebAPK)가 불가했다. `public/sw.js` 추가로 해결. iOS는 기존 상태로 이미 설치 가능했고 실기기 확인됨.
+- sw 캐시 전략은 보수적으로: `/api/*`와 타 출처(S3 presigned·OAuth)는 가로채지 않고, 빌드 해시가 박힌 `/_next/static`·`/brand`만 cache-first, 화면은 네트워크 우선 + 실패 시 `offline.html`. 로그인 기반 SaaS에서 회사별 데이터가 캐시에 남지 않게 하는 것이 설계의 본체다. registrar는 production에서만 등록.
+- `next.config.ts`에 `/sw.js` `no-store` 추가, manifest에 `id` 추가(이후 start_url 변경 시 다른 앱으로 인식되는 문제 방지).
+- 첨부 권한 정책 전환: 사진 첨부 가능 여부를 **역할이 아니라 요금제로만** 결정. 기존 `verifyActor`는 WORKER를 전면 차단했으나 위험 앞에 서 있는 사람이 작업자이므로 정책이 뒤집혔다. Free는 전 대상 업로드 불가(= 요금제 안내와 코드가 이제 일치), Pro는 작업자도 가능.
+- 역할은 "첨부 가능 여부"가 아니라 "어떤 문서에 붙이는가"만 가른다 — `verifyTargetOwnership`이 테넌트만 검사하므로 작업자는 `work_order`·`inspection_finding`에만 허용. 작업자는 본인이 올린 첨부만 확정·삭제, 관리자는 회사 전체 정리 가능.
+- 작업자 링크 접근: 현장은 인원 교체가 잦고 기기도 제각각이라 설치·로그인을 전제하면 도입이 막힌다. 토큰 링크로 무설치·무로그인 진입을 기본값으로 삼기로 결정. `src/server/worker-access.ts` — 발급·검증·열람기록·폐기.
+- 토큰은 정보를 담지 않는 16바이트 임의 포인터(base64url 22자). JWT식으로 이름을 넣으면 문자 본문·로그·히스토리에 평문으로 남고 폐기가 불가능해지며 SMS 90바이트를 넘긴다. DB에는 sha256 해시만 저장.
+- 배정별 1개, 공용 링크 없음 — 공용이면 "누가 TBM을 확인했는가"가 남지 않아 증빙이 성립하지 않는다. 무효화 조건: 폐기·만료·발급회차 불일치(재발급 시 옛 링크 사망)·지시서 취소·퇴사. `linkActor()`가 기존 `Actor`로 가는 유일한 통로이며 이후 권한 검사는 로그인 사용자와 동일하게 돈다.
+- 증빙 수준은 "해당 연락처로 보낸 링크가 열렸고 확인이 눌렸다"까지. 본인 인증이 아니다. 이름 입력은 채택하지 않았다(토큰이 이미 배정별이라 서버가 누구인지 알고, 옆 사람도 이름은 알므로 강도가 오르지 않음) — 대신 이름을 표시하고 확인만 받는다. 고객 고지 필요.
+- `0010`에서 토큰을 `work_order_outputs`에 붙였다가 `0011`에서 `work_order_access_grants`로 분리. Pro는 한 작업자에게 메일과 알림톡을 모두 보내 발송 기록이 채널별로 나뉘는데, 토큰까지 복제되면 열람 집계가 흩어진다. 접근 권한과 발송 기록은 수명도 다르다.
+- 알림 채널 설계 확정(`docs/notifications.md`): Free는 메일+QR(대면 배포), Pro는 메일+알림톡(실패 시 SMS 대체발송). 알림톡 단독은 카카오 미사용자(고령·외국인 작업자)에게 도달하지 않아 안전 알림 누락이 된다. 대체발송은 발송사 기능으로 처리하고 앱은 요청 1건 + 실제 발송 채널 기록만 한다.
+- 알림톡 템플릿은 사전 승인제이고 광고성 문구가 금지되므로 Pro 전환 유도는 앱 안에서만 한다. 열람 데이터(`open_count`·`first_opened_at`)가 그대로 전환 근거가 된다("메일 5건 발송 · 열람 0건").
+- 서버 마이그레이션 경로 신설: Lightsail 호스트에는 Node를 설치하지 않고 운영 이미지에도 devDeps가 없어 `npm run db:migrate`도 `docker compose exec app`도 불가했다. `compose.yaml`에 `tools` 프로필의 `migrate` 서비스(development 단계) 추가, `deploy.sh --migrate`로 연결. 기본 실행은 하지 않는다(db/README 규칙).
+- `deploy.sh`·`logs.sh`·`status.sh`가 저장소에 `100644`로 커밋돼 있어 clone/pull마다 실행 불가였고, 서버에서 `chmod +x` 하면 그 모드 변경이 다음 pull을 막았다. 실행 비트를 저장소에 커밋해 고리를 끊음.
+- 검증: 타입·lint·프로덕션 빌드 통과, 첨부 회귀 8개 통과(작업자 시나리오 3개 신규). `0010`·`0011` 운영 Neon 적용 완료 — 두 파일은 이후 수정하지 않는다.
+- 미구현: `/w/<토큰>` 화면(작업자 모바일 UI 스코프와 함께), `work-order-delivery.ts`의 토큰 URL 전환, 알림톡 발송사 선정 및 연동(`0012`), 제출 rate limit, 웹푸시. 사진 EXIF 회전은 실기기 확인 미실시.
+- 인프라 판단 기록: Lightsail은 듀얼스택 2GB/2vCPU 권장(빌드 피크가 사이징을 결정). CDN은 불필요 — 폰트 weight 정리와 service worker 캐시가 더 싸고 효과적. TWA/스토어 등록은 SMS로 업무가 도는 구조에서 명분이 약해 후순위.
+
+---
+
 ## 2026-09-21 S3 권한 보완 · PTW · 장소 등록
 
 - 기존 미커밋 마이페이지·사진첨부·뒤로가기 변경을 보존하고 후속 구현.
@@ -62,6 +84,7 @@
 **해결한 이슈**: 이전까지 지시서에서 표준서를 선택해도 폼 pre-fill 만 되고 저장 시 표준서 참조가 남지 않던 문제. 이제 지시서·평가·스냅샷 세 곳에서 표준서를 정식으로 링크한다.
 
 **변경**
+
 - 마이그레이션 `db/0007_work_order_standard_link.sql`: `work_orders.standard_id uuid REFERENCES standards(id)` 컬럼 + 인덱스
 - `features/work-orders/model.ts` `draftSchema`: `standardId` (nullable, optional, default null) 추가
 - `server/work-order-service.ts`:
@@ -73,11 +96,13 @@
 - `app/work-orders/[id]/page.tsx`: 상세 헤더에 "표준서 기반 · {표준서명}" 링크 배지 (발급 후엔 STANDARD_META 스냅샷, 초안이면 draft_data.standardId 기준)
 
 **감사·심사 대응**
+
 - 발급된 지시서는 STANDARD_META 스냅샷으로 "당시 표준서명 / PTW 여부 / 표준서 최신 수정 시각 / 스냅샷 시각" 을 불변 기록
 - 표준서가 이후 편집·폐기돼도 지시서 발급 당시 정보는 보존
 - 감사 로그(audit_logs) 와 결합하면 "표준서 X 를 언제 사용해 어떤 지시서를 발급했는가" 완전 추적 가능
 
 **남은 한계**
+
 - 표준서 기반 지시서에서 폼 값을 수정해도 그 수정본이 `risk_assessments` 회차로 별도 등록되지는 않음 (같은 표준서·다른 지시서의 평가는 각자 record 로 저장되지만 표준서의 회차 이력에는 자동 편입 안 됨). 필요 시 후속으로 "지시서에서 발생한 평가를 표준서 회차로 승격" 흐름 추가.
 - 표준서 폐기 시 이미 발급된 지시서의 STANDARD_META 스냅샷은 살아 있지만, 그 표준서 상세 페이지 접근 링크는 여전히 열림 (폐기된 상세 페이지에서 이력만 표시).
 
@@ -97,12 +122,14 @@
 ### 스키마 변경 (마이그레이션 `db/0006_standards_flat.sql`)
 
 **폐기**:
+
 - `standard_versions` 테이블 통째로 삭제
 - `standards.current_version_id` 컬럼 삭제
 - `standard_steps.version_id`, `standard_checklist_items.version_id` 삭제
 - `risk_assessments.standard_version_id` 삭제
 
 **추가**:
+
 - `standards.ptw_required` (버전에서 표준서 직접으로 이관)
 - `standard_steps.standard_id` (직접 참조), UNIQUE (standard_id, order_no)
 - `standard_checklist_items.standard_id` (직접 참조), UNIQUE (standard_id, category, order_no)
@@ -134,6 +161,7 @@ work_orders
 ### 서비스·UI 변경
 
 **서버 (`src/server/standards-service.ts`)** — 완전 재작성:
+
 - `createStandardWithFirstAssessment` — 표준서 + 최초평가를 한 트랜잭션에서 생성 (self-approve)
 - `updateStandardMutable` — 표준서 필드·단계·체크리스트 수정, before/after 를 `audit_logs` 에 기록
 - `addAssessmentRound` — 기존 표준서에 새 위험성평가 회차 추가 (정기·수시·상시)
@@ -142,12 +170,14 @@ work_orders
 - `listUsableStandards` — 지시서 발급 시 선택 가능한 표준서 = 승인 상태 + 유효 평가 있음
 
 **서버 액션 (`src/features/standards/actions.ts`)**:
+
 - `createStandardAction` — 신규 (변경: `initialStandardSchema` 로 nested `first_assessment`)
 - `updateStandardAction` — 편집 (신규)
 - `addAssessmentAction` — 평가 회차 추가 (신규)
 - `archiveStandardAction` — 폐기
 
 **UI**:
+
 - `/standards` — 목록. 표준서별 최근 평가일·회차 수·사용 가능 여부 표시
 - `/standards/new` — 표준서 + 최초평가를 한 폼에서 생성 (기존, `performed_on` 필드 추가)
 - `/standards/[id]` — 상세. 현재 평가·전체 회차 이력·유효기간 배지·**수정**·**평가 회차 추가** CTA. 만료 시 상단 경고 배너.
@@ -155,6 +185,7 @@ work_orders
 - `/standards/[id]/assessments/new` — 새 위험성평가 회차 등록 (신규). 이전 회차의 방법·기준·사전조사 값을 seed 로 재사용해 입력 부담 완화. 평가 유형(정기/수시/상시/최초) 선택 UI.
 
 **지시서 폼 (`work-order-form.tsx`, `/work-orders/new/page.tsx`)**:
+
 - `StandardPickerOption` 에서 `version_id`, `version_no` 필드 제거 → `id` 만 사용
 - 표준서 선택 시 현재 승인 평가를 자동 pre-fill (변경 없음, 내부 조회 로직만 flat 참조로 바뀜)
 
@@ -182,11 +213,13 @@ work_orders
 **결정**: 기존 "무료 인원 한도(기본 10명) 초과 시 회사 전체 Pro 자동 전환·전체 인원 과금" 규칙을 폐지한다. 앞으로는 **인원 수와 무관하게 텍스트 기반 기능은 무료로 누구나 사용**, **Pro 는 부가 기능이 필요한 회사가 자발적으로 전환**하는 프리미엄 모델로 전환한다.
 
 **근거**
+
 - 무료 사용자의 실 인프라 부담(Neon 스토리지·Resend 발송·Lightsail 고정요금)이 매우 낮아 규모 상관없이 무료 제공이 지속 가능하다고 판단.
 - 초기 도입 마찰 제거가 매출보다 우선. 인원 제한은 진입 장벽이지 매출 메커니즘이 아님. 실 매출은 Pro 전용 기능에서 발생.
 - 아직 `pro_state` 자동 전환·일일 사용량 스냅샷·과금 로직을 코드로 구현하지 않은 상태라 방향 전환에 코드 부담이 없다.
 
 **Pro 전용으로 유지되는 기능** (매출 원천)
+
 - 문자(SMS) 알림 (무료는 메일만)
 - 표준서·점검·안전사고 사진 첨부
 - 점검 모니터링 대시보드
@@ -195,12 +228,14 @@ work_orders
 - 지난 기록 전체 조회 (무료는 최근 1주일, 이전은 건수만 표시)
 
 **설계 문서·코드 변경 사항**
+
 - `docs/SMBE-design-v5.4.md` 요금제 표에서 "한도 초과 시 자동 Pro 전환" 항목 향후 개정 예정. 우선 dev-log 로 결정 기록.
 - DB: `companies.pro_state` `PRO_MANDATORY` 값은 스키마에 남기되 코드 경로에서 사용하지 않음. `free_limit` 컬럼은 유지하되 자동 강제 트리거로 쓰지 않고, 운영자가 특정 회사에 프리미엄 안내 여부를 조절하는 참고값으로만 사용.
 - 인원관리 화면의 "한도 초과" 경고 배지 제거 → Pro 부가 기능 소프트 안내로 대체.
 - 이용·관리(B-01) 화면 신설: 현재 요금제 상태, Pro 전용 기능 카탈로그, 가격 안내, 문의 CTA. 결제 자체는 미구현 상태로 문의 폼(/contact)에 연결.
 
 **엔터프라이즈(100인+) 대응**
+
 - "규모가 크면 자연스레 문자 알림·모바일 관리·다중 사업장 요구가 커짐 → 그 시점에 Pro 전환하며 개별 협의" 흐름으로 흡수. 인원 강제 트리거 없이 필요 기능이 트리거가 된다.
 
 ---
@@ -279,20 +314,24 @@ work_orders
 ### 1. UI / 셸 · 프리미티브
 
 **공용 셸 (`src/components/shell/`)**
+
 - `AppShell`, `Sidebar`, `Topbar`, `PreviewDialogProvider` — 모든 관리자 페이지가 공유
 - `NavEntry.href` 지원: 구현된 메뉴는 `<Link>`, 미구현은 준비 중 모달
 - 데스크톱에서 상단바 왼쪽(햄버거·로고·홈 브레드크럼) 숨김, 모바일에서만 노출
 
 **UI 프리미티브 (`src/components/ui/`)**
+
 - `PageHeader`, `SectionHeading`, `Panel`, `EmptyState` — 향후 메뉴에서 재사용
 - `row-list` / `row` 패턴을 CSS 클래스로 정형화 (인원 목록·오늘 처리할 일·오늘 작업 등)
 
 **브랜드**
+
 - 앱 아이콘: `public/brand/logo.png` 를 `AppIcon` 컴포넌트로 인라인 렌더링
 - `layout.tsx` metadata 에 favicon(logo.png) 등록
 - 사이드바 워드마크: `public/brand/smbe-original.png` (기존 유지)
 
 **홈 리디자인**
+
 - 히어로: `Safety must be easy.` 슬로건 + 서브카피 두 줄, 시스템 폰트 스택
 - 두 개 액션 카드(구성원 초대 / 오늘의 작업 지시) — 오늘의 작업 카드는 브랜드 오렌지 필
 - 오늘 처리할 일·오늘의 작업: row-list 방식 (기존 카드 그리드에서 전환)
@@ -303,17 +342,20 @@ work_orders
 ### 2. 인원관리 (C-01)
 
 **서버 (`src/server/members.ts` · `src/features/members/actions.ts`)**
+
 - 데이터: `listMembers`, `listOpenInvites`, `getCompanyOverview`, `isLastSupervisor`
 - 액션: `createInviteAction`, `revokeInviteAction`, `approvePendingAction`, `rejectPendingAction`, `changeRoleAction`, `resignMemberAction`
 - 마지막 관리감독자 강등·퇴사 차단, 관리감독자 승격은 관리감독자만·본인 승격 금지 등 설계 규칙 준수
 - 초대 토큰: `crypto.getRandomValues` 22자, 14일 유효, 충돌 재시도 5회
 
 **UI**
+
 - `/company/members` — 페이지 헤더 + 메타 스트립(현재 인원·무료 한도·요금제·회사코드) + 초대 패널 + 탭(재직/승인 대기/퇴사) + 인원 row-list
 - 인라인 액션 버튼: 승인·거부·역할 변경 드롭다운·퇴사
 - 초대 패널: 대상 역할 · 이메일 · 전화번호 입력 → 링크 생성 + 자동 이메일 발송 → URL 복사 가능, 미수락 초대 목록에서 재복사·폐기 가능
 
 **초대 수락 흐름 (`/invite/[token]`)**
+
 - 미로그인 시 `/login?next=/invite/{token}` 으로 리다이렉트 (open-redirect 방지: 상대 경로만 허용)
 - 로그인 상태면 유효성 검증 후 자동 `ACTIVE` 소속 생성, `active_headcount +1`, 초대 accepted 마킹
 - 에러 케이스별 안내: 유효하지 않은 토큰 / 이미 사용 / 만료 / 이미 다른 회사 소속
@@ -323,14 +365,17 @@ work_orders
 ### 3. 이메일 발송
 
 **Resend 통합 (`src/server/email.ts`)**
+
 - `sendEmail()` — API 키/발신자 미설정 시 안전하게 `skipped` 반환
 - `inviteEmailTemplate()` — HTML + plain-text 병행, 브랜드 컬러·CTA·유효기간·평문 링크 폴백 포함
 
 **도메인 검증**
+
 - Resend Dashboard 에 `smbe.net` 등록 → Cloudflare DNS 에 SPF·DKIM(CNAME)·MX 레코드 추가
 - 검증 완료 후 `EMAIL_FROM=SMBE <no-reply@smbe.net>` 설정
 
 **Contact 발송의 self-loop 이슈**
+
 - Cloudflare Email Routing 이 `no-reply@smbe.net → hi@smbe.net` 같은 자기 도메인 내부 발송을 조용히 드롭
 - 해결: `/contact` 폼에서는 `CONTACT_INBOX` 환경변수를 통해 Gmail(`gooddonutsyh@gmail.com`) 로 직행
 
@@ -339,24 +384,29 @@ work_orders
 ### 4. 운영자 백오피스 (O-01 / O-02)
 
 **인증 (`src/server/operator.ts`)**
+
 - 환경변수 `SMBE_OPERATOR_EMAILS` (콤마 구분) 에 매칭되는 세션 이메일만 접근
 - `requireOperator()` 는 비운영자에게 **404 반환** (403 대신, 페이지 존재 자체를 감춤)
 
 **데이터 (`src/server/admin.ts`)**
+
 - `listCompanies({search, limit})` — 활성/대기 인원 수 조인 포함
 - `getCompanyDetail(id)` — 회사 필드 전체 + 인원 breakdown
 - `listUsers({search})` — 이름/이메일/전화 부분 검색
 
 **액션 (`src/features/admin/actions.ts`)**
+
 - `updateFreeLimitAction` — 회사별 무료 한도 조정 (0~10000)
 
 **UI**
+
 - `AdminShell` — 심플한 상단 네비 (SMBE 운영자 · 회사 / 사용자 · 일반화면 링크 · 로그아웃)
 - `/admin` — 회사 목록 (검색·상세 링크)
 - `/admin/companies/[id]` — 상세 + free_limit 편집 폼
 - `/admin/users` — 사용자 검색
 
 **진입점**
+
 - 운영자로 로그인 시 `AppShell` 상단바에 **오렌지 렌치 아이콘** 노출 → `/admin` 이동
 - 비운영자에겐 서버 사이드에서 아예 렌더 안 함 (DOM 조작으로도 못 봄)
 
@@ -367,6 +417,7 @@ work_orders
 **목적**: 프리런치 상태에서 유입된 사용자가 사전 예약·기능 문의를 남길 수 있도록.
 
 **서버 액션 (`src/features/contact/actions.ts`)**
+
 - Zod 검증: 이름·이메일·회사(선택)·유형(사전예약/문의/기타)·메시지(5~2000자)
 - **허니팟** `website` 필드: 봇이 채우면 조용히 성공 응답 반환 (실제 발송 안 함)
 - 검증 실패 시 입력값 스냅샷을 함께 반환 → 폼에서 `defaultValue` 로 복원 (React 19 auto-reset 대응)
@@ -374,11 +425,13 @@ work_orders
 - 발송 대상: `CONTACT_INBOX` env (기본 `hi@smbe.net`, 현재는 self-loop 회피 위해 Gmail 직행)
 
 **UI**
+
 - 성공 시 확인 화면, 실패 시 폼 값 유지 + 오류 배지
 - 문의 유형 라디오: `white-space: nowrap; word-break: keep-all; flex: 0 0 auto` 로 CJK 문자 깨짐 방지
 - 폴백: "직접 hi@smbe.net 으로 메일을 보내주셔도 됩니다"
 
 **상단 배너 (`PreviewBanner`)**
+
 - 모든 페이지 최상단에 40px(모바일 56px) 다크 스트립
 - "SMBE 는 아직 개발 중입니다. → 사전 예약 · 문의하기" → `/contact` 링크
 - `--banner-h` CSS 변수로 sidebar/topbar top offset 자동 조정
@@ -389,6 +442,7 @@ work_orders
 ### 6. 인프라 · 배포
 
 **프로덕션 스택**
+
 - AWS Lightsail Ubuntu 22.04 LTS · 서울 리전 · 고정 IP
 - 도메인: **smbe.net** (Cloudflare Registrar 구매, DNS-only 회색 구름)
 - 프록시: Caddy 2 (자동 Let's Encrypt 인증서 발급·갱신)
@@ -397,12 +451,14 @@ work_orders
 - Compose 파일: `compose.yaml` (프로덕션), `compose.dev.yaml` (로컬)
 
 **보안 · 접근**
+
 - GitHub 리포지토리 private 전환
 - 서버는 Ed25519 SSH deploy key 로 pull-only 액세스
 - `.env` 는 서버 로컬 파일로 유지 (git 미포함)
 - OAuth 콜백 URL `https://smbe.net/api/auth/callback/{google|naver|kakao}` 등록 완료
 
 **배포 스크립트 (`scripts/`)**
+
 - `deploy.sh` — git pull → 이미지 rebuild → healthy 체크 → 도메인 응답 확인
   - 옵션: `--no-pull`, `--logs`
 - `status.sh` — 컨테이너 상태 + 로컬/공개 헬스체크 + 최근 로그 20줄
@@ -410,6 +466,7 @@ work_orders
 - 심볼릭 링크로 전역 단축어: `smbe-deploy`, `smbe-status`, `smbe-logs`
 
 **Cloudflare Email Routing**
+
 - `hi@smbe.net → gooddonutsyh@gmail.com` 자동 포워딩 (수신 전용)
 - **주의**: Contact 폼처럼 `no-reply@smbe.net → hi@smbe.net` self-loop 는 드롭됨 → CONTACT_INBOX 로 Gmail 직행
 
@@ -417,31 +474,33 @@ work_orders
 
 ### 7. 환경변수 (현재 기준)
 
-| 이름 | 용도 | 로컬 | 프로덕션 |
-|---|---|---|---|
-| `DATABASE_URL` | Neon Postgres | 필수 | 필수 (동일 값) |
-| `AUTH_SECRET` | NextAuth 서명 | 필수 | 필수 (다른 값) |
-| `AUTH_TRUST_HOST` | 프록시 뒤 신뢰 | 비움 | `1` |
-| `AUTH_GOOGLE_ID/SECRET` | Google OAuth | 필수 | 동일 |
-| `AUTH_NAVER_ID/SECRET` | Naver OAuth | 필수 | 동일 |
-| `AUTH_KAKAO_ID/SECRET` | Kakao OAuth | 필수 | 동일 |
-| `RESEND_API_KEY` | 이메일 발송 | 로컬용 키 | 프로덕션용 별도 키 권장 |
-| `EMAIL_FROM` | 발신자 | `SMBE <no-reply@smbe.net>` | 동일 |
-| `APP_URL` | 이메일·초대 링크 base | `http://127.0.0.1:3001` | `https://smbe.net` |
-| `SMBE_OPERATOR_EMAILS` | 운영자 화이트리스트 | 콤마 구분 | 동일 |
-| `CONTACT_INBOX` | 문의 폼 도착 주소 | `gooddonutsyh@gmail.com` | 동일 |
-| `SITE_ADDRESS` | Caddy 도메인 | (로컬 미사용) | `smbe.net` |
-| `HEALTHCHECK_TOKEN` | 진단 API 토큰 | 32자+ | 32자+ (다른 값 권장) |
+| 이름                    | 용도                  | 로컬                       | 프로덕션                |
+| ----------------------- | --------------------- | -------------------------- | ----------------------- |
+| `DATABASE_URL`          | Neon Postgres         | 필수                       | 필수 (동일 값)          |
+| `AUTH_SECRET`           | NextAuth 서명         | 필수                       | 필수 (다른 값)          |
+| `AUTH_TRUST_HOST`       | 프록시 뒤 신뢰        | 비움                       | `1`                     |
+| `AUTH_GOOGLE_ID/SECRET` | Google OAuth          | 필수                       | 동일                    |
+| `AUTH_NAVER_ID/SECRET`  | Naver OAuth           | 필수                       | 동일                    |
+| `AUTH_KAKAO_ID/SECRET`  | Kakao OAuth           | 필수                       | 동일                    |
+| `RESEND_API_KEY`        | 이메일 발송           | 로컬용 키                  | 프로덕션용 별도 키 권장 |
+| `EMAIL_FROM`            | 발신자                | `SMBE <no-reply@smbe.net>` | 동일                    |
+| `APP_URL`               | 이메일·초대 링크 base | `http://127.0.0.1:3001`    | `https://smbe.net`      |
+| `SMBE_OPERATOR_EMAILS`  | 운영자 화이트리스트   | 콤마 구분                  | 동일                    |
+| `CONTACT_INBOX`         | 문의 폼 도착 주소     | `gooddonutsyh@gmail.com`   | 동일                    |
+| `SITE_ADDRESS`          | Caddy 도메인          | (로컬 미사용)              | `smbe.net`              |
+| `HEALTHCHECK_TOKEN`     | 진단 API 토큰         | 32자+                      | 32자+ (다른 값 권장)    |
 
 ---
 
 ### 8. DB 스키마 현황
 
 이번 회차에는 마이그레이션 추가 없음. `db/0001_init.sql` + `db/0002_company_required_fields.sql` 그대로 사용:
+
 - `users`, `user_identities`, `companies`, `company_members`, `work_locations`, `company_invitations`
 - 인원관리·초대 흐름은 기존 `company_invitations` · `company_members` 로 커버
 
 **향후 필요 마이그레이션** (다음 스코프 시작 시)
+
 - 작업지시(`work_orders`, `work_order_assignments`, 간이평가)
 - 감사 로그
 - 청구·과금(일일 사용량 스냅샷)
@@ -451,15 +510,18 @@ work_orders
 ### 9. 확인된 이슈 · 임시 대응
 
 **Contact 폼 self-loop**
+
 - 원인: Cloudflare Email Routing 이 same-domain 발송을 드롭
 - 임시 대응: `CONTACT_INBOX=gooddonutsyh@gmail.com` 로 Gmail 직행
 - 정식 대응 후보: (1) 별도 서브도메인 발신자 (`notify.smbe.net`), (2) Resend 로 발신하되 라우팅 우회를 문서화
 
 **환경변수 변경 반영**
+
 - `.env.local` / `.env` 수정 후 `restart` 만으로는 반영 안 됨 → `down` + `up` 필요
 - 배포 스크립트는 `--build` 로 매번 재생성하므로 문제 없음
 
 **브라우저 확장 hydration 경고**
+
 - `data-wxt-integrated`, `__endic_crx__` 등 사전·번역 확장이 DOM 을 건드려 나는 경고 → 코드 이슈 아님
 
 ---
@@ -467,6 +529,7 @@ work_orders
 ### 10. 다음 스코프 후보
 
 우선순위 순:
+
 1. **작업지시 (W-01·W-02·W-05)** — 홈의 두 번째 CTA "오늘의 작업 지시하기" 실동작. 표준서 없이 시작 흐름 + 간이평가 + QR 발급까지
 2. **작업자 모바일 (M-01~M-04)** — TBM 확인·작업 중 점검
 3. **감사 로그** — 운영자 조정·역할 변경 이력 추적
@@ -475,6 +538,7 @@ work_orders
 6. **요금제·과금 UI (B-01/B-02)** — 실 로직은 일일 사용량 스냅샷 스케줄 만든 뒤
 
 정식 오픈 조건 (배너 제거 시점):
+
 - 최소 작업지시 발급 → QR → 작업자 확인까지 사이클 완료
 - 감사 로그 최소 기능
 - 개인정보/약관 페이지 실제 내용 채움
