@@ -72,12 +72,16 @@ afterEach(() => {
   globalThis.__smbePgPool = undefined;
   mock.restoreAll();
 });
-test("worker cannot touch manager-only documents", async () => {
+test("role never gates what a photo can be attached to", async () => {
+  // 작업자도 표준서에 사진을 올린다 — 가르는 것은 요금제 하나뿐이다.
   role = "WORKER";
   targetType = "standard_step";
-  await assert.rejects(deleteAttachment(actor, actor.userId), /작업자/);
-  await assert.rejects(confirmUpload(actor, actor.userId), /작업자/);
-  assert.equal(writes.length, 0);
+  mock.method(S3Client.prototype, "send", async () => ({
+    ContentLength: 100,
+    ContentType: "image/png",
+  }));
+  await confirmUpload(actor, actor.userId);
+  assert.equal(writes.length, 1);
 });
 test("worker cannot delete or confirm someone else's attachment", async () => {
   role = "WORKER";
@@ -129,24 +133,25 @@ test("link visitor stays inside the work order the token opens", async () => {
     /이 링크로/,
   );
 });
-test("link visitor carries no manager rights into the company", async () => {
+test("link visitor stays inside the documents the link opens", async () => {
+  // 역할 때문이 아니라 토큰이 여는 범위가 작업지시 하나이기 때문이다.
   role = "MANAGER_SUPERVISOR";
   await assert.rejects(
     listAttachments(linkVisitor, "standard_step", OTHER),
-    /작업자/,
-  );
-});
-test("link visitor reaches only findings raised on that work order", async () => {
-  role = "WORKER";
-  assert.deepEqual(
-    await listAttachments(linkVisitor, "inspection_finding", OTHER),
-    [],
-  );
-  linkScope = false;
-  await assert.rejects(
-    listAttachments(linkVisitor, "inspection_finding", OTHER),
     /이 링크로/,
   );
+});
+test("link visitor reaches only results and findings from that work order", async () => {
+  role = "WORKER";
+  for (const target of ["inspection_result", "inspection_finding"] as const) {
+    linkScope = true;
+    assert.deepEqual(await listAttachments(linkVisitor, target, OTHER), []);
+    linkScope = false;
+    await assert.rejects(
+      listAttachments(linkVisitor, target, OTHER),
+      /이 링크로/,
+    );
+  }
 });
 test("a Free company blocks the link visitor's upload too", async () => {
   pro = "FREE";

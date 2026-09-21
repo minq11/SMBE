@@ -69,4 +69,8 @@ docker compose --profile tools run --rm migrate
   `inspector_id` 는 누구의 점검인가, `recorded_by` 는 누가 실제로 입력했는가이며
   `submitted_at` 은 언제나 실제 저장 시각입니다.
 
+- `0015_inspection_result_attachments.sql` — 점검 **항목별** 사진 첨부
+  (`attachments.target_type` 에 `inspection_result` 추가). 부적합 증거뿐 아니라
+  적합 판정의 근거도 사진이 가장 빠른데 붙일 자리가 없었습니다.
+
 후속 페이즈(안전사고·과금 등)는 새 파일로 추가합니다.

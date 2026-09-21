@@ -2,12 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Camera, ImageUp, Loader2, X } from "lucide-react";
-import imageCompression from "browser-image-compression";
-import {
-  confirmUploadAction,
-  requestUploadUrlAction,
-  type AttachmentTargetType,
-} from "./actions";
+import { type AttachmentTargetType } from "./actions";
+import { uploadImage, type UploadStage } from "./upload";
 
 type Props = {
   targetType: AttachmentTargetType;
@@ -20,14 +16,6 @@ type Props = {
   onUploaded?: () => void;
   /** 라벨 override. */
   label?: string;
-};
-
-const COMPRESS_OPTIONS = {
-  maxSizeMB: 1,
-  maxWidthOrHeight: 1600,
-  useWebWorker: true,
-  fileType: "image/jpeg",
-  initialQuality: 0.85,
 };
 
 export function AttachmentUploader({
@@ -43,7 +31,7 @@ export function AttachmentUploader({
   const [progress, setProgress] = useState<{
     current: number;
     total: number;
-    stage: "compress" | "upload" | "confirm";
+    stage: UploadStage;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,38 +46,14 @@ export function AttachmentUploader({
       for (let i = 0; i < list.length; i++) {
         const raw = list[i];
         try {
-          setProgress({ current: i + 1, total: list.length, stage: "compress" });
-          const compressed = keepOriginal
-            ? raw
-            : await imageCompression(raw, COMPRESS_OPTIONS);
-
-          // width/height 파악 (실패해도 무해)
-          const dims = await readDimensions(compressed).catch(() => null);
-
-          setProgress({ current: i + 1, total: list.length, stage: "upload" });
-          const presign = await requestUploadUrlAction({
-            targetType,
-            targetId,
-            filename: raw.name.slice(0, 200),
-            mimeType: compressed.type || "image/jpeg",
-            sizeBytes: compressed.size,
-          });
-          if (!presign.ok) throw new Error(presign.error);
-
-          await putToS3(presign.uploadUrl, compressed);
-
-          setProgress({ current: i + 1, total: list.length, stage: "confirm" });
-          const confirm = await confirmUploadAction({
-            attachmentId: presign.attachmentId,
-            width: dims?.width,
-            height: dims?.height,
-            sizeBytes: compressed.size,
+          await uploadImage({ targetType, targetId }, raw, {
+            keepOriginal,
             invalidatePath,
+            onStage: (stage) =>
+              setProgress({ current: i + 1, total: list.length, stage }),
           });
-          if (!confirm.ok) throw new Error(confirm.error);
         } catch (err) {
-          const message =
-            err instanceof Error ? err.message : "업로드 실패";
+          const message = err instanceof Error ? err.message : "업로드 실패";
           setError(`${raw.name}: ${message}`);
           break;
         }
@@ -144,32 +108,4 @@ function progressLabel(p: {
   const s =
     p.stage === "compress" ? "압축" : p.stage === "upload" ? "업로드" : "완료";
   return p.total > 1 ? `${p.current}/${p.total} ${s} 중…` : `${s} 중…`;
-}
-
-async function putToS3(url: string, file: Blob): Promise<void> {
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: { "Content-Type": file.type || "application/octet-stream" },
-    body: file,
-  });
-  if (!res.ok) throw new Error(`S3 업로드 실패 (${res.status})`);
-}
-
-function readDimensions(
-  file: Blob,
-): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const dims = { width: img.naturalWidth, height: img.naturalHeight };
-      URL.revokeObjectURL(url);
-      resolve(dims);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("치수 파악 실패"));
-    };
-    img.src = url;
-  });
 }

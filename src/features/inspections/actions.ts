@@ -1,6 +1,5 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { getCurrentSession } from "@/server/session";
@@ -10,12 +9,26 @@ import {
   LINK_COOKIE,
 } from "@/server/worker-access";
 import { withTransaction } from "@/server/db";
-import { submitInspection, resolveFinding } from "@/server/inspection-service";
+import {
+  submitInspection,
+  resolveFinding,
+  type SavedInspectionItem,
+} from "@/server/inspection-service";
 import { inspectionSchema } from "./model";
 import { WorkOrderError } from "../work-orders/model";
 
 export type InspectionActionState =
-  { error?: string; message?: string } | undefined;
+  | {
+      error?: string;
+      message?: string;
+      /**
+       * 저장이 끝나면 항목별 결과 행 id 와 다음 화면을 돌려준다. 서버에서 바로
+       * redirect 하지 않는 이유는 사진 때문이다 — 붙일 자리(결과 행)가 저장
+       * 후에야 생기므로, 화면이 들고 있던 파일을 올린 뒤에 이동해야 한다.
+       */
+      saved?: { items: SavedInspectionItem[]; next: string };
+    }
+  | undefined;
 async function actor() {
   const s = await getCurrentSession();
   if (!s?.membership || s.membership.status !== "ACTIVE")
@@ -69,24 +82,28 @@ export async function submitInspectionAction(
   _prev: InspectionActionState,
   form: FormData,
 ): Promise<InspectionActionState> {
-  let orderId: string;
-  let viaLink = false;
   try {
     const raw = form.get("payload");
     if (typeof raw !== "string" || raw.length > 300000)
       throw new WorkOrderError("입력 데이터가 너무 큽니다.");
     const data = inspectionSchema.parse(JSON.parse(raw));
     const context = await inspectionActor(data.orderId);
-    await withTransaction((client) => submitInspection(client, context, data));
-    orderId = data.orderId;
-    viaLink = await isLinkVisitor();
+    const saved = await withTransaction((client) =>
+      submitInspection(client, context, data),
+    );
+    const viaLink = await isLinkVisitor();
+    refresh(data.orderId);
+    return {
+      saved: {
+        items: saved.items,
+        next: viaLink
+          ? "/w?saved=1"
+          : "/work-orders/" + data.orderId + "/inspections?saved=1",
+      },
+    };
   } catch (error) {
     return errorState(error);
   }
-  refresh(orderId);
-  redirect(
-    viaLink ? "/w?saved=1" : "/work-orders/" + orderId + "/inspections?saved=1",
-  );
 }
 export async function resolveFindingAction(
   _prev: InspectionActionState,

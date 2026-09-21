@@ -1,6 +1,8 @@
 "use client";
 import { useActionState, useRef, useState, useEffect } from "react";
-import { CheckCircle2, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Camera, CheckCircle2, Save, X } from "lucide-react";
+import { uploadImage } from "@/features/attachments/upload";
 import { submitInspectionAction, resolveFindingAction } from "./actions";
 import { RESULT_LABEL, type InspectionInput } from "./model";
 
@@ -12,6 +14,7 @@ export function InspectionForm({
   checklist,
   managers,
   previousActions,
+  canAttach = false,
 }: {
   orderId: string;
   sessionId: string;
@@ -24,19 +27,67 @@ export function InspectionForm({
     item_text: string;
     resolution: string | null;
   }>;
+  /** 유료 여부. 사진 첨부는 요금제만 가르고 역할은 보지 않는다. */
+  canAttach?: boolean;
 }) {
   const [state, action, pending] = useActionState(
     submitInspectionAction,
     undefined,
   );
+  const router = useRouter();
   const [requestId] = useState(() => crypto.randomUUID());
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [reviewed, setReviewed] = useState(previousActions.length === 0);
+  // 항목별로 고른 사진. 붙일 자리(결과 행)가 저장 후에 생기므로 그때까지 들고 있는다.
+  const [photos, setPhotos] = useState<Record<string, File[]>>({});
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     if (previousActions.length && !reviewed && !dialog.current?.open)
       dialog.current?.showModal();
   }, [previousActions.length, reviewed]);
+
+  // 저장 성공 → 들고 있던 사진을 항목별 결과 행에 올리고 → 이동.
+  // 사진이 실패해도 점검 기록은 이미 저장됐으므로 이동은 막지 않는다.
+  const saved = state?.saved;
+  useEffect(() => {
+    if (!saved) return;
+    let alive = true;
+    (async () => {
+      const queue = saved.items.flatMap((item) =>
+        (photos[item.itemId] ?? []).map((file) => ({
+          resultId: item.resultId,
+          file,
+        })),
+      );
+      for (let i = 0; i < queue.length; i++) {
+        if (!alive) return;
+        setUploading(`사진 ${i + 1}/${queue.length} 올리는 중…`);
+        try {
+          await uploadImage(
+            { targetType: "inspection_result", targetId: queue[i].resultId },
+            queue[i].file,
+          );
+        } catch (error) {
+          if (!alive) return;
+          setUploadError(
+            (error instanceof Error ? error.message : "사진 업로드 실패") +
+              " — 점검 기록은 저장되었습니다.",
+          );
+          break;
+        }
+      }
+      if (!alive) return;
+      setUploading(null);
+      router.push(saved.next);
+    })();
+    return () => {
+      alive = false;
+    };
+    // photos 는 저장 시점에 고정된 값으로 읽으면 충분하다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saved]);
   const send = (form: FormData) => {
     const data: InspectionInput = {
       id: requestId,
@@ -122,6 +173,53 @@ export function InspectionForm({
                 disabled={pending}
               />
             </label>
+            {canAttach && (
+              <div className="inspection-photos">
+                <label className="attach-uploader-cta">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    hidden
+                    disabled={pending}
+                    onChange={(event) => {
+                      const picked = Array.from(event.target.files ?? []).filter(
+                        (f) => f.type.startsWith("image/"),
+                      );
+                      if (picked.length)
+                        setPhotos((old) => ({
+                          ...old,
+                          [c.id]: [...(old[c.id] ?? []), ...picked],
+                        }));
+                      event.target.value = "";
+                    }}
+                  />
+                  <Camera size={14} />
+                  <span>사진 추가</span>
+                </label>
+                {(photos[c.id] ?? []).map((file, i) => (
+                  <span className="inspection-photo-chip" key={file.name + i}>
+                    {file.name}
+                    <button
+                      type="button"
+                      aria-label={`${file.name} 빼기`}
+                      disabled={pending}
+                      onClick={() =>
+                        setPhotos((old) => ({
+                          ...old,
+                          [c.id]: (old[c.id] ?? []).filter(
+                            (_, index) => index !== i,
+                          ),
+                        }))
+                      }
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             {answers[c.id] === "FAIL" && (
               <label className="wo-field">
                 알림 대상 관리자
@@ -156,21 +254,33 @@ export function InspectionForm({
             기록합니다.
           </label>
         )}
+        {uploadError && (
+          <p role="alert" className="wo-error">
+            {uploadError}
+          </p>
+        )}
         <p className="wo-muted">
-          로그인한 본인 이름·역할·실제 저장 시각·진입경로가 기록됩니다. 부적합은
-          선택한 관리자의 안전점검 알림함에 등록됩니다. 사진 첨부·저장 후 수정은
-          아직 지원하지 않습니다.
+          본인 이름·역할·실제 저장 시각·진입경로가 기록됩니다. 부적합은 선택한
+          관리자의 안전점검 알림함에 등록됩니다.{" "}
+          {canAttach
+            ? "사진은 저장할 때 항목별로 함께 올라갑니다."
+            : "사진 첨부는 유료 요금제에서 이용할 수 있습니다."}{" "}
+          저장 후 수정은 아직 지원하지 않습니다.
         </p>
         <button
           className="btn-primary"
-          disabled={pending || !reviewed || checklist.length === 0}
+          disabled={
+            pending || !!saved || !reviewed || checklist.length === 0
+          }
         >
           <Save size={14} />
-          {pending
-            ? "저장 중…"
-            : category === "TBM"
-              ? "TBM 확인 저장"
-              : "작업 중 점검 저장"}
+          {uploading
+            ? uploading
+            : pending || saved
+              ? "저장 중…"
+              : category === "TBM"
+                ? "TBM 확인 저장"
+                : "작업 중 점검 저장"}
         </button>
       </form>
     </>

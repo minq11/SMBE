@@ -14,6 +14,7 @@ import {
   FindingResolution,
 } from "@/features/inspections/inspection-form";
 import { InspectionSummary } from "@/features/inspections/inspection-summary";
+import { AttachmentList } from "@/features/attachments/attachment-list";
 import {
   sessionState,
   SESSION_LABEL,
@@ -150,6 +151,7 @@ export default async function InspectionPage({
             category={kind}
             path={path}
             checklist={data.checklist.filter((c) => c.category === kind)}
+            canAttach={data.canAttach}
             managers={data.managers}
             previousActions={
               // 이전 회차 조치 팝업은 오늘 회차에서만 노출. 지난 회차 사후 입력에는 방해가 된다.
@@ -269,6 +271,9 @@ export default async function InspectionPage({
                 <p className="wo-detail-text">
                   {result.comment || "코멘트 없음"}
                 </p>
+                {result.photos.length > 0 && (
+                  <AttachmentList items={result.photos} canDelete={false} compact />
+                )}
               </div>
             ))}
           </details>

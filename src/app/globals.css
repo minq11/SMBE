@@ -4723,6 +4723,43 @@ body.sidebar-lock {
   border-color: var(--brand);
   color: var(--brand-strong);
 }
+
+/* 점검 폼의 항목별 사진: 저장 전까지는 고른 파일만 칩으로 들고 있는다 */
+.inspection-photos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.inspection-photos .attach-uploader-cta {
+  min-height: 44px;
+}
+.inspection-photo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 8px 6px 10px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  color: var(--ink-2);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.inspection-photo-chip button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.inspection-photo-chip button:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
 .attach-uploader-hint {
   display: inline-flex;
   align-items: center;

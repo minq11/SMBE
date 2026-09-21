@@ -622,7 +622,10 @@ test("inspection: concurrent retries are idempotent; different TBM requests have
       transaction((c) => submitInspection(c, f.workerActor, data)),
     ),
   );
-  assert.equal(same[0], same[1]);
+  // 저장 결과는 영수증(id)과 항목별 결과 행 id 를 함께 돌려준다 — 사진이 붙을 자리.
+  assert.equal(same[0].id, same[1].id);
+  assert.deepEqual(same[0].items, same[1].items);
+  assert.equal(same[0].items.length, data.results.length);
   assert.equal(
     (
       await pool.query(

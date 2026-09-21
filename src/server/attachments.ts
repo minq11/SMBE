@@ -25,17 +25,19 @@ export const TARGET_TYPES = [
   "risk_item_before",
   "risk_item_after",
   "work_order",
+  "inspection_result",
   "inspection_finding",
   "incident",
 ] as const;
 export type AttachmentTarget = (typeof TARGET_TYPES)[number];
 
 /**
- * 작업자가 다룰 수 있는 대상. 표준서·위험성평가는 관리자가 쓰는 문서라 제외한다.
- * 역할은 "첨부할 수 있는가"가 아니라 "어떤 문서에 붙이는가"만 가른다.
+ * 토큰 링크로 들어온 사람이 붙일 수 있는 대상. 역할 때문이 아니라 **링크가 여는
+ * 범위**가 작업지시 하나이기 때문이다. `/w` 화면이 보여 주는 문서가 늘면 여기도 는다.
  */
-const WORKER_TARGETS: ReadonlySet<AttachmentTarget> = new Set([
+const LINK_TARGETS: ReadonlySet<AttachmentTarget> = new Set([
   "work_order",
+  "inspection_result",
   "inspection_finding",
 ]);
 
@@ -66,16 +68,13 @@ async function verifyActor(
   const row = rows[0];
   if (!row) throw new AttachmentError("권한이 없습니다.");
   const pro = row.pro_state !== "FREE";
-  // 사진 첨부 가능 여부는 요금제만 가른다. 작업자도 유료 회사면 첨부할 수 있다.
+  // 사진 첨부는 **요금제 하나만** 가른다. 역할에 따른 차이는 없다 —
+  // 작업자도 표준서에 사진을 올릴 수 있다. 위험 앞에 서 있는 사람이 작업자다.
   if (upload && !pro)
     throw new AttachmentError("사진 첨부는 유료 요금제에서 이용할 수 있습니다.");
   // 링크 방문자는 회사에서 어떤 역할이든 현장 작업자 권한으로만 다룬다.
   // 토큰은 배정 하나를 여는 열쇠이지 관리자 자격을 옮겨 오지 않는다.
   const role = actor.linkWorkOrderId ? "WORKER" : row.role;
-  if (role === "WORKER" && !WORKER_TARGETS.has(target))
-    throw new AttachmentError(
-      "작업자는 작업지시와 점검 부적합에만 첨부할 수 있습니다.",
-    );
   return { role, pro };
 }
 
@@ -122,6 +121,11 @@ async function verifyTargetOwnership(
       table: "work_orders",
       join: "id = $1 AND company_id = $2",
     },
+    inspection_result: {
+      table:
+        "inspection_results r JOIN inspections i ON i.id = r.inspection_id JOIN work_sessions ws ON ws.id = i.session_id",
+      join: "r.id = $1 AND ws.company_id = $2",
+    },
     inspection_finding: {
       table:
         "inspection_findings f JOIN inspection_results r ON r.id = f.result_id JOIN inspections i ON i.id = r.inspection_id JOIN work_sessions ws ON ws.id = i.session_id JOIN work_orders wo ON wo.id = ws.work_order_id",
@@ -154,21 +158,26 @@ async function assertLinkScope(
 ) {
   const scope = actor.linkWorkOrderId;
   if (!scope) return;
+  if (!LINK_TARGETS.has(target))
+    throw new AttachmentError("이 링크로 열 수 있는 문서가 아닙니다.");
   if (target === "work_order" && targetId !== scope)
     throw new AttachmentError("이 링크로 열 수 있는 작업지시가 아닙니다.");
-  if (target === "inspection_finding") {
-    const rows = await query<{ ok: boolean }>(
-      `SELECT true AS ok
-         FROM inspection_findings f
+  const inspectionScope: Partial<Record<AttachmentTarget, string>> = {
+    inspection_result: `SELECT true AS ok FROM inspection_results r
+         JOIN inspections i ON i.id = r.inspection_id
+         JOIN work_sessions ws ON ws.id = i.session_id
+        WHERE r.id = $1 AND ws.work_order_id = $2 LIMIT 1`,
+    inspection_finding: `SELECT true AS ok FROM inspection_findings f
          JOIN inspection_results r ON r.id = f.result_id
          JOIN inspections i ON i.id = r.inspection_id
          JOIN work_sessions ws ON ws.id = i.session_id
         WHERE f.id = $1 AND ws.work_order_id = $2 LIMIT 1`,
-      [targetId, scope],
-    );
-    if (!rows[0])
-      throw new AttachmentError("이 링크로 열 수 있는 작업지시가 아닙니다.");
-  }
+  };
+  const sql = inspectionScope[target];
+  if (!sql) return;
+  const rows = await query<{ ok: boolean }>(sql, [targetId, scope]);
+  if (!rows[0])
+    throw new AttachmentError("이 링크로 열 수 있는 작업지시가 아닙니다.");
 }
 
 const presignSchema = z.object({

@@ -168,6 +168,7 @@ export default async function WorkerLinkPage({
             category={kind!}
             path="LINK"
             checklist={data.checklist.filter((c) => c.category === kind)}
+            canAttach={data.canAttach}
             managers={data.managers}
             previousActions={
               // 이전 회차 조치 팝업은 오늘 회차에서만 노출한다.

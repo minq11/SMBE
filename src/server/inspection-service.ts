@@ -84,7 +84,7 @@ export async function submitInspection(
     )
       throw new WorkOrderError("이미 사용된 요청입니다.");
     // Retry after a successful commit returns the original receipt, never writes again.
-    return data.id;
+    return { id: data.id, items: await savedItems(client, data.id) };
   }
   if (!order.issued_at || order.status === "CANCELED")
     throw new WorkOrderError("발급된 유효한 작업지시만 점검할 수 있습니다.");
@@ -188,7 +188,24 @@ export async function submitInspection(
     },
     data.entryPath,
   );
-  return data.id;
+  // 사진은 저장이 끝나야 붙일 자리가 생긴다. 항목별 결과 행 id 를 돌려주면
+  // 화면이 들고 있던 파일을 그 자리에 올린다 (0015).
+  return { id: data.id, items: await savedItems(client, data.id) };
+}
+
+export type SavedInspectionItem = { itemId: string; resultId: string };
+
+async function savedItems(
+  client: PoolClient,
+  inspectionId: string,
+): Promise<SavedInspectionItem[]> {
+  return (
+    await client.query<SavedInspectionItem>(
+      `SELECT checklist_item_id AS "itemId", id AS "resultId"
+       FROM inspection_results WHERE inspection_id=$1`,
+      [inspectionId],
+    )
+  ).rows;
 }
 
 export async function resolveFinding(
@@ -329,10 +346,21 @@ export async function inspectionOverview(
       item_text: string;
       result: "PASS" | "FAIL" | "NA";
       comment: string;
+      photos: Array<{
+        id: string;
+        filename: string;
+        mimeType: string;
+        sizeBytes: number | null;
+        width: number | null;
+        height: number | null;
+      }>;
     }>;
   }>(
     `SELECT i.id,i.session_id,i.inspector_id,i.inspector_name,i.inspector_role,i.category,i.entry_path,i.submitted_at::text,
-    (SELECT jsonb_agg(jsonb_build_object('item_text',r.item_text,'result',r.result,'comment',r.comment) ORDER BY c.order_no)
+    (SELECT jsonb_agg(jsonb_build_object('item_text',r.item_text,'result',r.result,'comment',r.comment,
+      'photos',coalesce((SELECT jsonb_agg(jsonb_build_object('id',a.id,'filename',a.original_filename,'mimeType',a.mime_type,
+          'sizeBytes',a.size_bytes,'width',a.width,'height',a.height) ORDER BY a.created_at)
+        FROM attachments a WHERE a.target_type='inspection_result' AND a.target_id=r.id AND a.status='READY'),'[]'::jsonb)) ORDER BY c.order_no)
     FROM inspection_results r JOIN work_order_checklist_items c ON c.id=r.checklist_item_id WHERE r.inspection_id=i.id) AS results
     FROM inspections i JOIN work_sessions s ON s.id=i.session_id
     WHERE s.work_order_id=$1 AND s.id=ANY($2::uuid[]) ORDER BY i.submitted_at DESC LIMIT 101`,
@@ -365,6 +393,8 @@ export async function inspectionOverview(
   return {
     order,
     isManager: access.role !== "WORKER",
+    // 사진 첨부는 요금제만 가른다 — 역할은 보지 않는다.
+    canAttach: access.pro_state !== "FREE",
     current,
     sessions: visible,
     lockedSessions: sessions.length - visible.length,
