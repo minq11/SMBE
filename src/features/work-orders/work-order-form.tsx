@@ -224,13 +224,13 @@ export function WorkOrderForm({
           {step === 0 && (
             <>
               <section className="wo-std-picker">
-                <h2>이 지시서의 위험성평가</h2>
+                <h2>이 지시서의 작업표준서</h2>
                 {standards.length > 0 ? (
                   <>
                     <p className="wo-muted">
-                      표준서를 선택하면 그 표준서의 승인된 위험성평가·작업방법·
-                      체크리스트가 자동으로 딸려갑니다. 등록된 표준서가 없는
-                      1회성 작업만 예외적으로 &lsquo;간이 위험성평가로
+                      작업표준서를 선택하면 그 표준서에 승인된 위험성평가와
+                      작업방법·체크리스트가 함께 딸려옵니다. 등록된 표준서가
+                      없는 1회성 작업만 예외적으로 &lsquo;간이 위험성평가로
                       대체&rsquo; 를 사용하세요.
                     </p>
                     <ul className="wo-std-list" role="list">
@@ -265,9 +265,9 @@ export function WorkOrderForm({
                   </>
                 ) : (
                   <p className="wo-muted">
-                    등록된 표준서가 없습니다. 반복 작업이면 표준서를 먼저 만드는
-                    걸 권장합니다. 1회성이면 간이 위험성평가로 대체하고 계속
-                    진행할 수 있습니다.
+                    등록된 작업표준서가 없습니다. 반복 작업이면 표준서를 먼저
+                    만드는 걸 권장합니다. 1회성이면 간이 위험성평가로 대체하고
+                    계속 진행할 수 있습니다.
                   </p>
                 )}
                 <div className="wo-std-picker-actions">
@@ -300,7 +300,7 @@ export function WorkOrderForm({
                 </div>
                 {mode === "standard" && pickedStandard && (
                   <p className="wo-std-note">
-                    <ShieldCheck size={13} /> 선택한 표준서{" "}
+                    <ShieldCheck size={13} /> 선택한 작업표준서{" "}
                     <strong>{pickedStandard.name}</strong> 의 현재 사용 중
                     위험성평가가 아래 폼에 채워졌습니다. 필요하면 개별 항목을
                     수정할 수 있고, 발급 시 표준서 스냅샷이 함께 저장됩니다.
@@ -315,7 +315,7 @@ export function WorkOrderForm({
                 )}
                 {mode === "idle" && (
                   <p className="wo-std-note wo-std-note--warn">
-                    <FileText size={13} /> 위에서 표준서를 선택하거나
+                    <FileText size={13} /> 위에서 작업표준서를 선택하거나
                     &lsquo;간이 위험성평가로 대체&rsquo; 를 눌러야 작업 정보를
                     입력할 수 있습니다.
                   </p>
@@ -327,7 +327,7 @@ export function WorkOrderForm({
                   <h2>
                     {mode === "standard"
                       ? "작업 정보 (표준서 값 채워짐)"
-                      : "간이 위험성평가 작업 정보"}
+                      : "작업 정보 (표준서 없이 작성)"}
                   </h2>
                   <p className="wo-muted">
                     {mode === "standard"
