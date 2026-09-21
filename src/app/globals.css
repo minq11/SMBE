@@ -5015,3 +5015,36 @@ body.sidebar-lock {
   margin-top: 8px;
   font-size: 13px;
 }
+
+/* TBM 화면: 위험성 수준 배지와 접어 둔 판단 기준 안내 */
+.wo-risk-level {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.wo-criteria-help {
+  margin-top: 12px;
+}
+.wo-criteria-help > summary {
+  cursor: pointer;
+  padding: 10px 0;
+  color: var(--brand-strong);
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.wo-criteria-help > summary::marker {
+  color: var(--ink-4);
+}
+.wo-criteria-help .wo-muted {
+  margin-top: 8px;
+  font-size: 13px;
+}

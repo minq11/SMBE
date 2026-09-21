@@ -64,4 +64,9 @@ docker compose --profile tools run --rm migrate
   평가는 생성 시 이 값을 `risk_assessments.criteria_snapshot` 으로 복사하므로,
   기준을 바꿔도 이미 승인된 평가는 그때의 기준으로 남습니다.
 
-후속 페이즈(표준서·PTW·사진·사후입력·수정이력·과금 등)는 새 파일로 추가합니다.
+- `0014_inspection_records.sql` — 점검의 사후 입력(`recorded_by`·`backfilled`), 수정 이력
+  (`inspection_revisions`), 주간 안전점검 회의(`safety_meetings` 3종).
+  `inspector_id` 는 누구의 점검인가, `recorded_by` 는 누가 실제로 입력했는가이며
+  `submitted_at` 은 언제나 실제 저장 시각입니다.
+
+후속 페이즈(안전사고·과금 등)는 새 파일로 추가합니다.

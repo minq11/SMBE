@@ -597,6 +597,29 @@ test("inspection: during-work before TBM is allowed; all assignees and one patro
   );
 });
 
+test("inspection: field entry is its own author and backfill stays a web action", async () => {
+  const f = await inspectionFixture();
+  const input = f.input();
+  await transaction((c) => submitInspection(c, f.workerActor, input));
+  const row = (
+    await pool.query(
+      "SELECT inspector_id,inspector_name,recorded_by,recorded_by_name,backfilled FROM inspections WHERE id=$1",
+      [input.id],
+    )
+  ).rows[0];
+  // 현장에서 본인이 넣었으므로 두 사람이 같고, 사후 입력 표시가 붙지 않는다.
+  assert.equal(row.recorded_by, row.inspector_id);
+  assert.equal(row.recorded_by_name, row.inspector_name);
+  assert.equal(row.backfilled, false);
+  // QR·링크로 들어온 기록을 대리 입력으로 둔갑시킬 수 없다 (0014).
+  await assert.rejects(
+    pool.query("UPDATE inspections SET backfilled=true WHERE id=$1", [
+      input.id,
+    ]),
+    /inspections_backfill_is_web/,
+  );
+});
+
 test("inspection: concurrent retries are idempotent; different TBM requests have one winner", async () => {
   const f = await inspectionFixture();
   const data = f.input();

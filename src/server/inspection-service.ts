@@ -133,9 +133,11 @@ export async function submitInspection(
         "부적합마다 현재 회사의 활성 관리자를 선택하세요.",
       );
   }
+  // 현장 입력은 본인이 본인 것을 넣는다 — recorded_by 가 inspector 와 같고 backfilled 는 false.
+  // 관리자 사후 입력이 생기면 이 두 값이 갈라진다 (0014).
   await client.query(
-    `INSERT INTO inspections(id,session_id,inspector_id,inspector_name,inspector_role,category,entry_path,confirmed,submitted_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    `INSERT INTO inspections(id,session_id,inspector_id,inspector_name,inspector_role,category,entry_path,confirmed,submitted_at,recorded_by,recorded_by_name)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$3,$4)`,
     [
       data.id,
       session.id,
@@ -288,11 +290,28 @@ export async function inspectionOverview(
     "SELECT id,category,text FROM work_order_checklist_items WHERE work_order_id=$1 ORDER BY category,order_no",
     [orderId],
   );
+  // 발급 시 굳은 평가 사본. 판단 기준도 이 안에 들어 있으므로, 회사가 기준을
+  // 바꿔도 현장에서 보이는 것은 이 지시서가 발급될 때의 기준이다 (0013).
   const { rows: risks } = await client.query<{
-    payload: { items: Array<{ hazard: string; reduction_measure: string }> };
+    payload: {
+      criteria_snapshot?: string;
+      items: Array<{
+        hazard: string;
+        reduction_measure: string;
+        initial_risk_level: "HIGH" | "MID" | "LOW";
+        initial_allowable: boolean;
+      }>;
+    };
   }>(
     "SELECT payload FROM work_order_snapshots WHERE work_order_id=$1 AND snapshot_kind='RISK_ASSESSMENT'",
     [orderId],
+  );
+  const { rows: permits } = await client.query<{
+    status: string;
+    self_approval: boolean;
+  }>(
+    "SELECT status,self_approval FROM work_permits WHERE work_order_id=$1 AND company_id=$2",
+    [orderId, actor.companyId],
   );
   const { rows: records } = await client.query<{
     id: string;
@@ -348,6 +367,8 @@ export async function inspectionOverview(
     lockedSessions: sessions.length - visible.length,
     checklist,
     risks: risks[0]?.payload.items ?? [],
+    criteria: risks[0]?.payload.criteria_snapshot ?? "",
+    permit: permits[0] ?? null,
     records,
     findings,
     previousActions,
