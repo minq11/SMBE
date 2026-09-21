@@ -1,6 +1,7 @@
 {
   "name": "SMBE · 안전관리는 쉬워야 합니다",
   "short_name": "SMBE",
+  "id": "/",
   "description": "소기업을 위한 안전관리 SaaS. 작업지시 · 위험성평가 · 표준서 · 안전점검을 한 곳에서.",
   "start_url": "/",
   "scope": "/",
