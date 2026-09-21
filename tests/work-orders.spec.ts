@@ -66,9 +66,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     ).toBeVisible();
     // 표준서가 없는 회사라 시작 방식을 먼저 고른다. 고르기 전에는
     // 작업 정보 입력칸이 렌더링되지 않는다 (work-order-form.tsx: mode !== "idle").
-    await page
-      .getByRole("button", { name: /간이 위험성평가로 대체/ })
-      .click();
+    await page.getByRole("button", { name: /표준서 없이 진행/ }).click();
     await page
       .getByLabel("작업명", { exact: true })
       .fill("화면검증 작업 " + testInfo.project.name);

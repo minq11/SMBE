@@ -132,7 +132,7 @@ export function WorkOrderForm({
   const [standardId, setStandardId] = useState<string | null>(
     initialStandardId,
   );
-  // 명시적 "간이 위험성평가로 대체" 선택 여부. false = 아직 방식 미선택 (idle).
+  // 명시적 "표준서 없이 진행" 선택 여부. false = 아직 방식 미선택 (idle).
   const [simpleOverride, setSimpleOverride] = useState<boolean>(
     () => Boolean(initial?.name) && !initialStandardId,
   );
@@ -230,8 +230,8 @@ export function WorkOrderForm({
                     <p className="wo-muted">
                       작업표준서를 선택하면 그 표준서에 승인된 위험성평가와
                       작업방법·체크리스트가 함께 딸려옵니다. 등록된 표준서가
-                      없는 1회성 작업만 예외적으로 &lsquo;간이 위험성평가로
-                      대체&rsquo; 를 사용하세요.
+                      없는 1회성 작업만 예외적으로 &lsquo;표준서 없이
+                      진행&rsquo; 을 사용하세요.
                     </p>
                     <ul className="wo-std-list" role="list">
                       {standards.map((s) => {
@@ -266,8 +266,8 @@ export function WorkOrderForm({
                 ) : (
                   <p className="wo-muted">
                     등록된 작업표준서가 없습니다. 반복 작업이면 표준서를 먼저
-                    만드는 걸 권장합니다. 1회성이면 간이 위험성평가로 대체하고
-                    계속 진행할 수 있습니다.
+                    만드는 걸 권장합니다. 1회성이면 표준서 없이 진행할 수
+                    있으며, 위험성평가는 다음 단계에서 직접 입력합니다.
                   </p>
                 )}
                 <div className="wo-std-picker-actions">
@@ -286,7 +286,7 @@ export function WorkOrderForm({
                     onClick={chooseSimple}
                     aria-pressed={mode === "simple"}
                   >
-                    <FileText size={13} /> 간이 위험성평가로 대체 (예외)
+                    <FileText size={13} /> 표준서 없이 진행 (예외)
                   </button>
                   {mode !== "idle" && (
                     <button
@@ -308,16 +308,17 @@ export function WorkOrderForm({
                 )}
                 {mode === "simple" && (
                   <p className="wo-std-note wo-std-note--warn">
-                    <FileText size={13} /> 간이 위험성평가로 대체 중입니다. 같은
-                    작업이 반복될 예정이면 이번 지시서 발급 후 표준서로 등록해
+                    <FileText size={13} /> 표준서 없이 진행 중입니다.
+                    위험성평가는 다음 단계에서 직접 입력합니다. 같은 작업이
+                    반복될 예정이면 이번 지시서 발급 후 표준서로 등록해
                     재사용하세요.
                   </p>
                 )}
                 {mode === "idle" && (
                   <p className="wo-std-note wo-std-note--warn">
                     <FileText size={13} /> 위에서 작업표준서를 선택하거나
-                    &lsquo;간이 위험성평가로 대체&rsquo; 를 눌러야 작업 정보를
-                    입력할 수 있습니다.
+                    &lsquo;표준서 없이 진행&rsquo; 을 눌러야 작업 정보를 입력할
+                    수 있습니다.
                   </p>
                 )}
               </section>
