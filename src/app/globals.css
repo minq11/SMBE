@@ -4514,12 +4514,27 @@ html[data-banner-hidden] .preview-banner {
      같은 색이라 경계가 없다. 본문이 밑으로 들어가면 그림자만 살짝 켠다
      (.is-scrolled, app-shell.tsx). 공지 띠는 이 틀에서는 접는다 — 상단바의
      '개발 중' 표시로 충분하다. */
-  body:has(.app-shell) {
+  body:has(.app-shell),
+  body:has(.auth-shell) {
     --banner-h: 0px;
     height: 100dvh;
     overflow: hidden;
   }
-  body:has(.app-shell) .preview-banner {
+  body:has(.app-shell) .preview-banner,
+  body:has(.auth-shell) .preview-banner {
+    display: none;
+  }
+  .auth-shell {
+    height: 100dvh;
+    min-height: 0;
+  }
+  .auth-main {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 24px 16px max(40px, env(safe-area-inset-bottom, 0px));
+  }
+  .topbar--public .public-nav {
     display: none;
   }
   .app-shell {
@@ -4827,33 +4842,21 @@ body.sidebar-lock {
   flex-direction: column;
   background: var(--bg);
 }
-.auth-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 32px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
-}
-.auth-header .brand-text {
+/* 공개 화면 상단바 — 홈의 .topbar 와 같은 틀. 워드마크는 넓은 화면에서도 보인다. */
+.topbar--public .topbar-brand {
   display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.4px;
-  color: var(--ink);
 }
-.auth-header .brand-text > svg {
-  flex-shrink: 0;
+.topbar--public .topbar-wordmark {
+  font-size: 19px;
 }
-.auth-header nav {
+.public-nav {
   display: flex;
-  gap: 20px;
+  gap: 18px;
+  margin-left: 24px;
   font-size: 13px;
   color: var(--ink-3);
 }
-.auth-header nav a:hover {
+.public-nav a:hover {
   color: var(--ink);
 }
 .auth-main {

@@ -62,7 +62,7 @@ const REASONS = [
   },
   {
     keyword: "앱 설치",
-    body: "작업자는 QR 한 번, 로그인만으로 TBM·점검 기록.",
+    body: "구성원은 QR만 찍으면 TBM·점검 기록.",
   },
   {
     keyword: "국경",
