@@ -74,6 +74,11 @@ export async function acceptInvite(
   client: PoolClient,
   token: string,
   userId: string,
+  /**
+   * 초대 수락도 가입이라, 이 자리에서 연락처를 함께 받는다 (선택 입력).
+   * 넘기지 않으면 지금 저장된 값을 그대로 둔다.
+   */
+  contact?: { contactEmail: string; phone: string },
 ) {
   const { rows: invites } = await client.query(
     "SELECT company_id FROM company_invitations WHERE token = $1",
@@ -87,6 +92,11 @@ export async function acceptInvite(
     [userId],
   );
   if (!users[0]) throw new Error("사용자를 찾을 수 없습니다.");
+  if (contact)
+    await client.query(
+      "UPDATE users SET contact_email = $2, phone = $3 WHERE id = $1",
+      [userId, contact.contactEmail || null, contact.phone || null],
+    );
   const { rows: existing } = await client.query(
     "SELECT id FROM company_members WHERE user_id = $1 AND left_at IS NULL",
     [userId],

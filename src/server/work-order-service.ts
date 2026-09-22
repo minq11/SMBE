@@ -439,7 +439,8 @@ export async function issueOrder(
       [id, userId, members.find((m) => m.user_id === userId)!.display_name],
     );
     await client.query(
-      "INSERT INTO work_order_outputs(work_order_id,issue_version,user_id,link_target) SELECT $1,1,id,email FROM users WHERE id=$2",
+      // 본인이 정한 알림 주소가 있으면 그리로 보낸다 (없으면 로그인 계정 메일).
+      "INSERT INTO work_order_outputs(work_order_id,issue_version,user_id,link_target) SELECT $1,1,id,COALESCE(contact_email,email) FROM users WHERE id=$2",
       [id, userId],
     );
   }

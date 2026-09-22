@@ -6,6 +6,13 @@ import { queryOne, withTransaction } from "@/server/db";
 import { acceptInvite } from "@/server/membership-mutations";
 import { revalidatePath } from "next/cache";
 import { PublicHeader } from "@/features/auth/public-header";
+import { ContactFields } from "@/features/onboarding/contact-fields";
+import { notifyEmailOf } from "@/server/profile";
+import {
+  contactEmailField,
+  optionalText,
+  phoneField,
+} from "@/server/contact-input";
 
 export const metadata = { title: "회사 초대 · SMBE" };
 
@@ -98,13 +105,24 @@ export default async function InvitePage({
     );
   }
 
-  async function acceptAction() {
+  const defaultEmail = await notifyEmailOf(userId);
+
+  async function acceptAction(form: FormData) {
     "use server";
     const current = await auth();
     if (!current?.user?.id) redirect("/login");
+    // 연락처는 선택 입력이다. 형식이 틀렸다고 초대 수락을 막지는 않고, 틀린
+    // 값만 버린다 — 여기서 걸리면 링크를 다시 받아야 하는 줄 알게 된다.
+    const contactEmail = contactEmailField.safeParse(
+      optionalText(form.get("contact_email")),
+    );
+    const phone = phoneField.safeParse(optionalText(form.get("phone")));
     try {
       await withTransaction((client) =>
-        acceptInvite(client, token, current.user.id),
+        acceptInvite(client, token, current.user.id, {
+          contactEmail: contactEmail.success ? contactEmail.data : "",
+          phone: phone.success ? phone.data : "",
+        }),
       );
     } catch {
       // A fresh GET explains expired/used links without exposing DB errors.
@@ -127,7 +145,8 @@ export default async function InvitePage({
               초대를 수락하지 못했습니다. 다시 시도하거나 관리자에게 문의하세요.
             </p>
           )}
-          <form action={acceptAction}>
+          <form action={acceptAction} className="invite-accept-form">
+            <ContactFields defaultEmail={defaultEmail} />
             <button type="submit" className="btn-primary">
               <Check size={14} /> 초대 수락하기
             </button>

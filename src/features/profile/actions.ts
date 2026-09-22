@@ -30,6 +30,7 @@ export async function saveProfileAction(
       updateOwnProfile(c, session.user.id, {
         displayName: form.get("displayName"),
         phone: form.get("phone"),
+        contactEmail: form.get("contactEmail"),
         version: form.get("version"),
       }),
     );

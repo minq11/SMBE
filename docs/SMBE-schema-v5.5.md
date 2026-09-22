@@ -133,15 +133,19 @@ erDiagram
 |---|---|---|
 | id | uuid PK | |
 | display_name | text | 표시명 |
-| email | citext UNIQUE NULL | 알림 수신용. **NULL 허용** — 카카오 이메일 미동의, 이메일 없는 작업자 대응 |
-| phone | text NULL | Pro 문자 알림용, 무료는 이메일 |
+| email | citext UNIQUE NULL | **로그인 계정의 메일**. 소셜 로그인에서 따라온 값이라 사람이 고치지 않는다. **NULL 허용** — 카카오 이메일 미동의, 이메일 없는 작업자 대응 |
+| contact_email | citext NULL | **알림 받을 주소** (`0018`). 가입 화면·마이페이지에서 직접 정한다. 비어 있으면 `email` 로 보낸다 (`COALESCE(contact_email, email)`). 유일 제약 없음 — 현장 한 곳이 대표 메일을 같이 쓸 수 있다 |
+| phone | text NULL | 유료 문자·알림톡 발송용, 무료는 이메일. 가입 화면에서 선택으로 받는다 |
 | status | enum(`ACTIVE`,`WITHDRAWN`) | 계정 자체 상태 |
 | created_at, updated_at | timestamptz | |
 
 - 휴대폰 인증은 두지 않음(설계 4장). `phone`은 알림·초대 수신 정보로만 사용.
 - 이메일이 없으면 알림은 인앱으로만 수신. 이메일 필요한 기능(승인 링크 수신 등)은 이메일 등록 유도.
 - 같은 이메일로 서로 다른 provider 가입 시 계정 병합 처리 규칙은 확인사항.
-- 계정 탈퇴 시 개인정보(`email`, `phone`, `display_name`) 파기. 소속 기록의 이름 스냅샷은 별도 유지.
+- **받는 주소와 신원을 나눈다.** 로그인은 `user_identities` 로 하므로 `contact_email`
+  을 바꿔도 로그인에 영향이 없다. 메일을 보내는 자리는 모두 `COALESCE(contact_email,
+  email)` 을 쓴다 (지시서 링크·가입 신청 알림·주간 회의 알림).
+- 계정 탈퇴 시 개인정보(`email`, `contact_email`, `phone`, `display_name`) 파기. 소속 기록의 이름 스냅샷은 별도 유지.
 
 ### 2-3. `user_identities` (OAuth)
 

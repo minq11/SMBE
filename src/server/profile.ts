@@ -1,15 +1,29 @@
 import "server-only";
 import { query, queryOne } from "./db";
 
+/**
+ * 알림이 나갈 주소. 따로 정한 값이 있으면 그것, 없으면 로그인 계정의 메일이다.
+ * 가입 화면의 기본값으로 쓴다 — 퇴사 후 다른 회사에 다시 들어올 때, 전에 정해
+ * 둔 주소가 그대로 채워져 있어야 한다.
+ */
+export async function notifyEmailOf(userId: string): Promise<string> {
+  const row = await queryOne<{ email: string | null }>(
+    "SELECT COALESCE(contact_email, email) AS email FROM users WHERE id=$1",
+    [userId],
+  );
+  return row?.email ?? "";
+}
+
 export async function ownProfile(userId: string) {
   const user = await queryOne<{
     display_name: string;
     email: string | null;
+    contact_email: string | null;
     phone: string | null;
     created_at: string;
     version: string;
   }>(
-    "SELECT display_name,email,phone,created_at::text,updated_at::text AS version FROM users WHERE id=$1 AND status='ACTIVE'",
+    "SELECT display_name,email,contact_email,phone,created_at::text,updated_at::text AS version FROM users WHERE id=$1 AND status='ACTIVE'",
     [userId],
   );
   if (!user) return null;

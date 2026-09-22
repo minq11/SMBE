@@ -4,10 +4,14 @@ import { saveProfileAction, leaveCompanyAction } from "./actions";
 export function ProfileForm({
   name,
   phone,
+  contactEmail,
+  loginEmail,
   version,
 }: {
   name: string;
   phone: string | null;
+  contactEmail: string | null;
+  loginEmail: string | null;
   version: string;
 }) {
   const [state, action, pending] = useActionState(saveProfileAction, undefined);
@@ -25,6 +29,17 @@ export function ProfileForm({
         />
       </label>
       <label>
+        알림 받을 메일 <span className="account-muted">(선택)</span>
+        <input
+          type="email"
+          name="contactEmail"
+          autoComplete="email"
+          defaultValue={contactEmail ?? loginEmail ?? ""}
+          maxLength={254}
+          placeholder="example@company.com"
+        />
+      </label>
+      <label>
         전화번호 <span className="account-muted">(선택)</span>
         <input
           type="tel"
@@ -37,7 +52,9 @@ export function ProfileForm({
       </label>
       <p className="account-muted">
         이름 변경은 앞으로 표시되는 정보에 적용됩니다. 기존 지시서·점검 기록의
-        이름은 유지됩니다.
+        이름은 유지됩니다. 작업지시 링크·승인 요청·회의 알림은 위 메일로 가고,
+        비워 두면 로그인 계정의 메일로 갑니다. 전화번호는 추후 문자·알림톡
+        발송에 씁니다.
       </p>
       {state?.error && (
         <p role="alert" className="account-error">

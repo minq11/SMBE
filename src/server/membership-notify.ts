@@ -21,11 +21,12 @@ export async function notifyJoinRequest(input: {
   applicantName: string;
 }) {
   const managers = await query<{ email: string }>(
-    `SELECT u.email
+    `SELECT COALESCE(u.contact_email, u.email) AS email
        FROM company_members m JOIN users u ON u.id = m.user_id
       WHERE m.company_id = $1 AND m.status = 'ACTIVE' AND m.left_at IS NULL
         AND m.role IN ('MANAGER_SUPERVISOR','MANAGER_SAFETY')
-        AND u.status = 'ACTIVE' AND u.email IS NOT NULL
+        AND u.status = 'ACTIVE'
+        AND COALESCE(u.contact_email, u.email) IS NOT NULL
       ORDER BY u.display_name LIMIT 50`,
     [input.companyId],
   );

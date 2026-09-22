@@ -176,7 +176,12 @@ test("profile: validation, stale write protection and audit privacy", async () =
       id,
     ])
   ).rows[0].v;
-  const input = { displayName: "새 이름", phone: "010-1234-5678", version };
+  const input = {
+    displayName: "새 이름",
+    phone: "010-1234-5678",
+    contactEmail: "alert@example.com",
+    version,
+  };
   await transaction((c) => updateOwnProfile(c, id, input));
   await assert.rejects(
     transaction((c) => updateOwnProfile(c, id, input)),
@@ -186,13 +191,27 @@ test("profile: validation, stale write protection and audit privacy", async () =
     transaction((c) => updateOwnProfile(c, id, { ...input, phone: "invalid" })),
     /전화번호/,
   );
+  await assert.rejects(
+    transaction((c) =>
+      updateOwnProfile(c, id, { ...input, contactEmail: "골뱅이없음" }),
+    ),
+    /메일 주소/,
+  );
+  // 알림 주소는 로그인 계정 메일과 별개로 저장된다.
+  const saved = (
+    await pool.query("SELECT contact_email,email FROM users WHERE id=$1", [id])
+  ).rows[0];
+  assert.equal(saved.contact_email, "alert@example.com");
+  assert.equal(saved.email, null);
   const audit = (
     await pool.query(
       "SELECT after_json FROM audit_logs WHERE actor_id=$1 AND action='UPDATE_PROFILE'",
       [id],
     )
   ).rows[0].after_json;
-  assert.deepEqual(audit, { fields: ["display_name", "phone"] });
+  assert.deepEqual(audit, {
+    fields: ["display_name", "phone", "contact_email"],
+  });
 });
 
 test("profile: concurrent supervisor exits retain one; cross-user exit forbidden; pending cancellation idempotent", async () => {
@@ -391,6 +410,44 @@ test("two users racing for one invite produce only one membership", async () => 
       ])
     ).rows[0].active_headcount,
     2,
+  );
+});
+test("invite acceptance stores the contact details entered on the way in", async () => {
+  const actor = await fixture();
+  const token = await invitation(actor.companyId, actor.userId);
+  const id = await user();
+  await transaction((c) =>
+    acceptInvite(c, token, id, {
+      contactEmail: "site@example.com",
+      phone: "01012345678",
+    }),
+  );
+  const row = (
+    await pool.query("SELECT contact_email,phone,email FROM users WHERE id=$1", [
+      id,
+    ])
+  ).rows[0];
+  assert.equal(row.contact_email, "site@example.com");
+  assert.equal(row.phone, "01012345678");
+  // 로그인 계정의 메일은 건드리지 않는다 — 신원과 연락처는 다른 값이다.
+  assert.equal(row.email, null);
+
+  // 빈 값으로 들어오면 지운다 (선택 입력이라 비우는 것도 뜻이 있다).
+  const second = await invitation(actor.companyId, actor.userId);
+  const other = await user();
+  await pool.query("UPDATE users SET contact_email='old@example.com' WHERE id=$1", [
+    other,
+  ]);
+  await pool.query("UPDATE company_members SET left_at=now(),status='RESIGNED' WHERE user_id=$1", [
+    id,
+  ]);
+  await transaction((c) =>
+    acceptInvite(c, second, other, { contactEmail: "", phone: "" }),
+  );
+  assert.equal(
+    (await pool.query("SELECT contact_email FROM users WHERE id=$1", [other]))
+      .rows[0].contact_email,
+    null,
   );
 });
 test("expired invite and existing membership never consume invitation", async () => {

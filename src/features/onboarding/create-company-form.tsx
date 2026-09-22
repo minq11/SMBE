@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createCompanyAction, type FormState } from "./actions";
+import { ContactFields } from "./contact-fields";
 
 const bands = [
   { value: "UNDER_5", label: "5인 미만" },
@@ -14,8 +15,10 @@ const bands = [
 
 export function CreateCompanyForm({
   defaultDisplayName,
+  defaultEmail,
 }: {
   defaultDisplayName: string;
+  defaultEmail: string;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     createCompanyAction,
@@ -112,10 +115,10 @@ export function CreateCompanyForm({
           required
           placeholder="예: 50000  (= 5억)"
         />
-        <span className="hint">
-          만원 단위로 입력하세요. 예: 1억 원 → 10000
-        </span>
+        <span className="hint">만원 단위로 입력하세요. 예: 1억 원 → 10000</span>
       </div>
+
+      <ContactFields defaultEmail={defaultEmail} />
 
       <div className="form-actions">
         <Link href="/onboarding" className="btn-secondary">
