@@ -25,7 +25,7 @@ export function PreviewBanner() {
     <div className="preview-banner" role="note">
       <span className="preview-banner-copy">
         <span className="preview-banner-dot" aria-hidden="true" />
-        <span className="preview-banner-text">SMBE 는 아직 개발 중입니다.</span>
+        <span className="preview-banner-text">심플안전은 아직 개발 중입니다.</span>
         <Link href="/contact" className="preview-banner-mail">
           사전 예약 · 문의하기
           <ArrowRight size={12} />

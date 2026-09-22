@@ -9,7 +9,7 @@ export function AppIcon({
   return (
     <img
       src="/brand/logo.png"
-      alt="SMBE"
+      alt="심플안전"
       width={size}
       height={size}
       className={className}

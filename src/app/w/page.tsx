@@ -20,7 +20,7 @@ import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
 
 const RISK_LEVEL: Record<string, string> = { HIGH: "상", MID: "중", LOW: "하" };
 
-export const metadata = { title: "내 작업지시 · SMBE" };
+export const metadata = { title: "내 작업지시 · 심플안전" };
 
 const at = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });

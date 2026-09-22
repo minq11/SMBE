@@ -7,7 +7,7 @@ import { acceptInvite } from "@/server/membership-mutations";
 import { revalidatePath } from "next/cache";
 import { PublicHeader } from "@/features/auth/public-header";
 
-export const metadata = { title: "회사 초대 · SMBE" };
+export const metadata = { title: "회사 초대 · 심플안전" };
 
 type InviteRow = {
   id: string;

@@ -64,7 +64,7 @@ export function GuideIndexView() {
           <h2>우리 회사, 위험성평가 인정 준비가 되어있을까요?</h2>
           <p>
             10문항 안팎의 짧은 문답으로 신청대상 여부와 준비 상태를 확인합니다.
-            결과를 보고 부족한 항목을 SMBE 로 바로 채워 나갈 수 있습니다.
+            결과를 보고 부족한 항목을 심플안전으로 바로 채워 나갈 수 있습니다.
           </p>
         </div>
         <Link href="/recognition-check" className="primary-button guide-check-cta-button">

@@ -20,10 +20,10 @@ export function AdminShell({
     <div className="admin-shell">
       <header className="admin-topbar">
         <BackButton hideOn={["/admin"]} />
-        <Link href="/admin" className="admin-brand" aria-label="SMBE 운영자">
+        <Link href="/admin" className="admin-brand" aria-label="심플안전 운영자">
           <AppIcon size={22} />
           <span>
-            <strong>SMBE</strong> 운영자
+            <strong>심플안전</strong> 운영자
           </span>
         </Link>
         <nav className="admin-nav" aria-label="운영자 메뉴">

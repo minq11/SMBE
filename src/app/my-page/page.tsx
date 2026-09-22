@@ -13,7 +13,7 @@ import {
 import { logoutAction } from "@/features/auth/logout-action";
 import "@/features/profile/profile.css";
 
-export const metadata = { title: "마이페이지 · SMBE" };
+export const metadata = { title: "마이페이지 · 심플안전" };
 const roles: Record<string, string> = {
   WORKER: "작업자",
   MANAGER_SUPERVISOR: "관리감독자",

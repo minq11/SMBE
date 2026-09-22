@@ -6,7 +6,7 @@ import { isCurrentUserOperator } from "@/server/operator";
 import { listCompanyMembersForPicker } from "@/server/standards-service";
 import { StandardForm } from "@/features/standards/standard-form";
 
-export const metadata = { title: "새 표준서 · SMBE" };
+export const metadata = { title: "새 표준서 · 심플안전" };
 
 export default async function NewStandardPage({
   searchParams,

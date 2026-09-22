@@ -64,7 +64,7 @@ export async function deliverOrder(actor: Actor, orderId: string) {
       const result = item.link_target
         ? await sendEmail({
             to: item.link_target,
-            subject: "[SMBE] 작업지시가 발급되었습니다",
+            subject: "[심플안전] 작업지시가 발급되었습니다",
             html: `<p>배정된 작업지시가 발급되었습니다. 아래 링크에서 바로 확인하실 수 있습니다.</p><p><a href="${url}">작업지시 확인하기</a></p><p>TBM·작업 중 점검을 같은 화면에서 입력합니다. 이 링크는 본인 전용이므로 공유하지 마세요.</p>`,
             text:
               "배정된 작업지시를 확인하세요: " +

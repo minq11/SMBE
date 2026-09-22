@@ -570,7 +570,7 @@ function ResultPanel({
 
       <section className="check-cta-card">
         <div>
-          <strong>SMBE 로 부족한 항목을 채워보세요</strong>
+          <strong>심플안전으로 부족한 항목을 채워보세요</strong>
           <p>
             무료로 시작해 위험성평가·작업지시·TBM·점검 기록을 실제 업무에 연결할
             수 있습니다.

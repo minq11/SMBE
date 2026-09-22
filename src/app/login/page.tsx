@@ -4,7 +4,7 @@ import { getCurrentSession } from "@/server/session";
 import { PublicHeader } from "@/features/auth/public-header";
 import { ProviderButtons } from "@/features/auth/provider-buttons";
 
-export const metadata = { title: "로그인 · SMBE" };
+export const metadata = { title: "로그인 · 심플안전" };
 
 function sanitizeNext(raw: string | undefined): string {
   // open-redirect 방지: 상대 경로만 허용

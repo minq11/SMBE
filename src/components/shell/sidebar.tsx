@@ -169,7 +169,7 @@ export function Sidebar({
       <button type="button" className="sidebar-close" onClick={onClose}>
         메뉴 닫기 ×
       </button>
-      <Link href="/" className="brand" aria-label="SMBE 홈">
+      <Link href="/" className="brand" aria-label="심플안전 홈">
         <BrandWordmark className="brand-logo" />
       </Link>
 

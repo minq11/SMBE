@@ -1,4 +1,4 @@
-export const metadata = { title: "링크 확인 · SMBE" };
+export const metadata = { title: "링크 확인 · 심플안전" };
 
 export default function ExpiredLinkPage() {
   return (

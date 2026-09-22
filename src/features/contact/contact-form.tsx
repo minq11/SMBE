@@ -40,7 +40,7 @@ export function ContactForm() {
     <form action={formAction} className="form-shell">
       <h1>사전 예약 · 문의하기</h1>
       <p className="lead">
-        SMBE 는 아직 개발 중입니다. 도입 관심·기능 문의·기타 하실 말씀을 남겨
+        심플안전은 아직 개발 중입니다. 도입 관심·기능 문의·기타 하실 말씀을 남겨
         주시면 며칠 안에 답장 드릴게요.
       </p>
 

@@ -11,7 +11,7 @@ import {
   type StepAttachmentMap,
 } from "@/features/standards/standard-edit-form";
 
-export const metadata = { title: "표준서 수정 · SMBE" };
+export const metadata = { title: "표준서 수정 · 심플안전" };
 
 export default async function EditStandardPage({
   params,

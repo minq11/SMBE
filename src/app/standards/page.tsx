@@ -9,7 +9,7 @@ import { isCurrentUserOperator } from "@/server/operator";
 import { listStandards } from "@/server/standards-service";
 import { StandardsListView } from "@/features/standards/standards-list-view";
 
-export const metadata = { title: "작업표준서 · SMBE" };
+export const metadata = { title: "작업표준서 · 심플안전" };
 
 export default async function StandardsPage() {
   const session = await getCurrentSession();

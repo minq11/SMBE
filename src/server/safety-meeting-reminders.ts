@@ -73,8 +73,8 @@ function body(companyName: string, weeks: string[]) {
   const url = appOrigin() + "/meetings";
   const subject =
     weeks.length === 1
-      ? `[SMBE] ${list[0]} 주간 안전점검 회의가 실시되지 않았습니다`
-      : `[SMBE] 주간 안전점검 회의 미실시 ${weeks.length}주`;
+      ? `[심플안전] ${list[0]} 주간 안전점검 회의가 실시되지 않았습니다`
+      : `[심플안전] 주간 안전점검 회의 미실시 ${weeks.length}주`;
   const text = [
     `${companyName} · 주간 안전점검 회의 미실시 안내`,
     "",

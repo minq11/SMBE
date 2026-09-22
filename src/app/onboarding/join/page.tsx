@@ -3,7 +3,7 @@ import { getCurrentSession } from "@/server/session";
 import { PublicHeader } from "@/features/auth/public-header";
 import { JoinForm } from "@/features/onboarding/join-form";
 
-export const metadata = { title: "회사코드로 참여 · SMBE" };
+export const metadata = { title: "회사코드로 참여 · 심플안전" };
 
 export default async function JoinPage() {
   const session = await getCurrentSession();

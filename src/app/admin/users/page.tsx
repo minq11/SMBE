@@ -4,7 +4,7 @@ import { requireOperator } from "@/server/operator";
 import { listUsers } from "@/server/admin";
 import { UsersView } from "@/features/admin/users-view";
 
-export const metadata = { title: "사용자 검색 · SMBE 운영자" };
+export const metadata = { title: "사용자 검색 · 심플안전 운영자" };
 
 export default async function AdminUsersPage({
   searchParams,

@@ -5,7 +5,7 @@ import { getCurrentSession } from "@/server/session";
 import { PublicHeader } from "@/features/auth/public-header";
 import { SignOutButton } from "@/features/auth/signout-button";
 
-export const metadata = { title: "회사 연결 · SMBE" };
+export const metadata = { title: "회사 연결 · 심플안전" };
 
 export default async function OnboardingPage() {
   const session = await getCurrentSession();

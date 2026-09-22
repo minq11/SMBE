@@ -4,7 +4,7 @@ import { requireOperator } from "@/server/operator";
 import { listCompanies } from "@/server/admin";
 import { CompaniesView } from "@/features/admin/companies-view";
 
-export const metadata = { title: "회사 목록 · SMBE 운영자" };
+export const metadata = { title: "회사 목록 · 심플안전 운영자" };
 
 export default async function AdminCompaniesPage({
   searchParams,

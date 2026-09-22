@@ -3,7 +3,7 @@ import { getCurrentSession } from "@/server/session";
 import { PublicHeader } from "@/features/auth/public-header";
 import { CreateCompanyForm } from "@/features/onboarding/create-company-form";
 
-export const metadata = { title: "회사 만들기 · SMBE" };
+export const metadata = { title: "회사 만들기 · 심플안전" };
 
 export default async function CreateCompanyPage() {
   const session = await getCurrentSession();

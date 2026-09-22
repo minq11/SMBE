@@ -7,7 +7,7 @@ import { AppShell } from "@/components/shell/app-shell";
 import { PageHeader } from "@/components/ui/page-header";
 import { BillingView } from "@/features/billing/billing-view";
 
-export const metadata = { title: "요금제 · SMBE" };
+export const metadata = { title: "요금제 · 심플안전" };
 
 export default async function BillingPage() {
   const session = await getCurrentSession();

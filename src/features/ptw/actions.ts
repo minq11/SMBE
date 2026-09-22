@@ -121,7 +121,7 @@ export async function permitAction(
         const result = p.email
           ? await sendEmail({
               to: p.email,
-              subject: "[SMBE] 위험작업허가 상태 확인",
+              subject: "[심플안전] 위험작업허가 상태 확인",
               html: `<p>위험작업허가 신청 또는 담당자가 변경되었습니다. 현재 상태를 확인하세요.</p><p><a href="${url}">허가 확인</a></p>`,
               text: "위험작업허가 상태 확인: " + url,
               idempotencyKey: "ptw-" + p.id + "-" + p.revision,

@@ -96,10 +96,10 @@ export async function submitContactAction(
     "-";
   const userAgent = h.get("user-agent") ?? "-";
 
-  const subject = `[SMBE ${topicLabel}] ${name}`;
+  const subject = `[심플안전 ${topicLabel}] ${name}`;
   const html = `<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1e2429;line-height:1.6;">
   <table cellpadding="0" cellspacing="0" style="max-width:600px;">
-    <tr><td style="padding-bottom:12px;font-size:16px;font-weight:700;">SMBE 문의 접수</td></tr>
+    <tr><td style="padding-bottom:12px;font-size:16px;font-weight:700;">심플안전 문의 접수</td></tr>
     <tr><td>
       <table cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
         <tr><td style="color:#7a838d;">유형</td><td>${escapeHtml(topicLabel)}</td></tr>
@@ -117,7 +117,7 @@ export async function submitContactAction(
 </body></html>`;
 
   const text = [
-    `SMBE 문의 접수`,
+    `심플안전 문의 접수`,
     ``,
     `유형: ${topicLabel}`,
     `이름: ${name}`,

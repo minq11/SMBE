@@ -398,7 +398,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await workerContext.addCookies([await cookie(outsider)]);
     await workerPage.goto(path + "/inspections?type=TBM");
     await expect(
-      workerPage.getByText("SMBE / 404", { exact: true }),
+      workerPage.getByText("심플안전 / 404", { exact: true }),
     ).toBeVisible();
   } finally {
     await workerContext.close();

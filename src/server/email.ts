@@ -80,7 +80,7 @@ export function inviteEmailTemplate(input: {
     ? `이 링크는 ${expiresAt.toLocaleDateString("ko-KR")}까지 유효합니다.`
     : "";
 
-  const subject = `[SMBE] ${companyName} 안전관리에 초대되셨습니다`;
+  const subject = `[심플안전] ${companyName} 안전관리에 초대되셨습니다`;
 
   const html = `<!DOCTYPE html>
 <html lang="ko">
@@ -133,7 +133,7 @@ export function inviteEmailTemplate(input: {
             </tr>
             <tr>
               <td style="border-top:1px solid #eef0f3;padding-top:16px;font-size:11px;color:#b0b7bf;">
-                본 메일은 SMBE 초대 링크 발송 시스템에서 자동으로 발송되었습니다.
+                본 메일은 심플안전 초대 링크 발송 시스템에서 자동으로 발송되었습니다.
                 초대 요청을 보내신 적이 없다면 이 메일을 무시하셔도 됩니다.
               </td>
             </tr>
@@ -154,7 +154,7 @@ export function inviteEmailTemplate(input: {
     "",
     expiryLine,
     "",
-    "본 메일은 SMBE 초대 시스템에서 자동으로 발송되었습니다.",
+    "본 메일은 심플안전 초대 시스템에서 자동으로 발송되었습니다.",
   ]
     .filter(Boolean)
     .join("\n");

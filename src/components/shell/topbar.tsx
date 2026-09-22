@@ -68,7 +68,7 @@ export function Topbar({
         )}
         {/* 좁은 화면에는 사이드바가 접혀 있어 브랜드가 아예 안 보였다.
             아이콘만 두면 무슨 서비스인지 모르므로 워드마크를 그대로 쓴다. */}
-        <Link href="/" className="topbar-brand" aria-label="SMBE 홈">
+        <Link href="/" className="topbar-brand" aria-label="심플안전 홈">
           <BrandWordmark className="topbar-wordmark" />
         </Link>
         {/* 좁은 화면: 제목은 여기 한 줄뿐이다. 본문 머리말의 제목·뒤로가기는
@@ -122,7 +122,7 @@ export function Topbar({
             href="/admin"
             className="icon-button topbar-operator-link"
             aria-label="운영자 백오피스"
-            title="SMBE 운영자 백오피스"
+            title="심플안전 운영자 백오피스"
           >
             <Wrench size={17} />
           </Link>

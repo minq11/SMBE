@@ -7,7 +7,7 @@ import { RiskCriteriaForm } from "@/features/company/criteria-form";
 import "@/features/profile/profile.css";
 import { PageHeader } from "@/components/ui/page-header";
 
-export const metadata = { title: "위험성 판단 기준 · SMBE" };
+export const metadata = { title: "위험성 판단 기준 · 심플안전" };
 
 export default async function CriteriaPage() {
   const { session, actor } = await workSession("/company/criteria");

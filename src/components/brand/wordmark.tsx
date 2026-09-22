@@ -1,16 +1,26 @@
+import { AppIcon } from "./app-icon";
+
 /**
- * SMBE 워드마크. 사이드바와 좁은 화면 상단바가 같은 크롭을 쓴다.
- * viewBox 로 원본 PNG 의 여백을 잘라 낸다 (2073×758 중 로고 영역).
+ * 심플안전 워드마크 — 심볼 + 글자. 사이드바와 좁은 화면 상단바가 같이 쓴다.
+ * 예전 심플안전 로고 원본(public/brand/smbe-original.png)은 그대로 보관한다.
  */
-export function BrandWordmark({ className }: { className?: string }) {
+export function BrandWordmark({
+  className,
+  iconSize = 24,
+}: {
+  className?: string;
+  iconSize?: number;
+}) {
   return (
-    <svg
-      className={className}
-      viewBox="320 170 1430 400"
+    <span
+      className={`wordmark${className ? " " + className : ""}`}
       role="img"
-      aria-label="SMBE 로고"
+      aria-label="심플안전 로고"
     >
-      <image href="/brand/smbe-original.png" width="2073" height="758" />
-    </svg>
+      <AppIcon size={iconSize} />
+      <span className="wordmark-text" aria-hidden="true">
+        심플안전
+      </span>
+    </span>
   );
 }

@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PERMIT_LABEL } from "@/features/ptw/model";
 import "@/features/work-orders/work-orders.css";
 
-export const metadata = { title: "점검 모니터링 · SMBE" };
+export const metadata = { title: "점검 모니터링 · 심플안전" };
 
 const at = (value: string) =>
   new Date(value).toLocaleTimeString("ko-KR", {

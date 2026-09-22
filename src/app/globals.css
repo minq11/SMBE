@@ -240,9 +240,7 @@ html[data-banner-hidden] .preview-banner {
   padding: 0 8px 4px;
 }
 .brand-logo {
-  display: block;
-  width: 100%;
-  height: auto;
+  font-size: 20px;
 }
 
 .workspace-picker {
@@ -757,42 +755,87 @@ html[data-banner-hidden] .preview-banner {
   }
 }
 
-/* 로그인 전 기능 소개. 숫자·목록이 아니라 무엇을 하는지만 적는다. */
-.landing-features {
+/* 로그인 전 — 써야 하는 이유 네 가지. 번호 + 제목 + 한 줄 설명. */
+.reasons {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
+  counter-reset: reason;
 }
-.landing-features li {
-  padding: 18px;
+.reasons li {
+  display: flex;
+  gap: 14px;
+  padding: 20px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: var(--surface);
 }
-.landing-feature-icon {
+.reason-no {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  background: var(--brand-soft);
-  color: var(--brand-strong);
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
 }
-.landing-features strong {
-  display: block;
+.reasons h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.4;
+}
+.reasons p {
+  margin-top: 6px;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.reason-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 700;
+}
+.hero-eyebrow {
   font-size: 15px;
   font-weight: 700;
-  letter-spacing: -0.2px;
+  color: var(--brand-strong);
+  margin-bottom: 6px;
 }
-.landing-features p {
-  margin-top: 6px;
-  color: var(--ink-3);
-  font-size: 13px;
-  line-height: 1.7;
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* 워드마크 — 심볼 + 글자 (components/brand/wordmark.tsx) */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: -0.6px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 /* =========================================================================
@@ -802,18 +845,14 @@ html[data-banner-hidden] .preview-banner {
   padding-top: 4px;
 }
 .hero h1 {
-  font-family: var(--font-display);
-  font-size: 56px;
-  letter-spacing: -2.2px;
-  font-weight: 700;
-  line-height: 1.02;
+  font-size: 40px;
+  letter-spacing: -1.4px;
+  font-weight: 900;
+  line-height: 1.15;
   color: var(--ink);
 }
 .hero h1 span {
   color: var(--brand);
-  font-style: italic;
-  font-weight: 700;
-  padding-bottom: 4px;
 }
 .hero-lead {
   color: var(--ink-2);
@@ -4217,7 +4256,7 @@ html[data-banner-hidden] .preview-banner {
     gap: 48px;
   }
   .hero h1 {
-    font-size: 46px;
+    font-size: 36px;
   }
 }
 
@@ -4247,7 +4286,7 @@ html[data-banner-hidden] .preview-banner {
     display: none;
   }
   .hero h1 {
-    font-size: 40px;
+    font-size: 32px;
   }
 }
 
@@ -4334,9 +4373,7 @@ html[data-banner-hidden] .preview-banner {
     flex-shrink: 0;
   }
   .topbar-wordmark {
-    display: block;
-    width: 68px;
-    height: 19px;
+    font-size: 17px;
   }
   .topbar-tag,
   .topbar-divider,
@@ -4433,8 +4470,19 @@ html[data-banner-hidden] .preview-banner {
     min-height: 70vh;
   }
   .hero h1 {
-    font-size: 36px;
-    letter-spacing: -1.4px;
+    font-size: 28px;
+    letter-spacing: -0.8px;
+  }
+  .reasons {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .reasons li {
+    padding: 16px;
+  }
+  .hero-actions > * {
+    flex: 1;
+    justify-content: center;
   }
   .hero-lead {
     font-size: 14px;

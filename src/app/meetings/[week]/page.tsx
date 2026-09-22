@@ -15,7 +15,7 @@ import { SOURCE_LABEL, weekLabel } from "@/features/meetings/model";
 import "@/features/work-orders/work-orders.css";
 import "@/features/meetings/meetings.css";
 
-export const metadata = { title: "주간 안전점검 회의 · SMBE" };
+export const metadata = { title: "주간 안전점검 회의 · 심플안전" };
 
 const at = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });

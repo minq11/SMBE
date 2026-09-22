@@ -12,7 +12,7 @@ import { AppShell } from "@/components/shell/app-shell";
 import { PageHeader } from "@/components/ui/page-header";
 import { MembersView } from "@/features/members/members-view";
 
-export const metadata = { title: "인원관리 · SMBE" };
+export const metadata = { title: "인원관리 · 심플안전" };
 
 async function currentOrigin(): Promise<string> {
   const h = await headers();

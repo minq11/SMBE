@@ -2,9 +2,9 @@ import { PublicHeader } from "@/features/auth/public-header";
 import { ContactForm } from "@/features/contact/contact-form";
 
 export const metadata = {
-  title: "사전 예약 · 문의 · SMBE",
+  title: "사전 예약 · 문의 · 심플안전",
   description:
-    "SMBE 사전 예약과 문의 접수. 남겨주신 이메일로 답장 드립니다.",
+    "심플안전 사전 예약과 문의 접수. 남겨주신 이메일로 답장 드립니다.",
 };
 
 export default function ContactPage() {

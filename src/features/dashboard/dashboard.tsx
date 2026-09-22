@@ -4,8 +4,6 @@ import Link from "next/link";
 import type { Tier } from "@/components/shell/tier";
 import {
   ArrowRight,
-  BookOpen,
-  CalendarCheck,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
@@ -49,33 +47,26 @@ export type Today = {
 };
 
 /**
- * 로그인 전 화면에 넣는 것.
- *
- * 전에는 "오늘 처리할 일 3건", "제1공장 프레스 설비 점검" 같은 가짜 데이터를
- * 깔아 두고 누르면 준비 중 안내를 띄웠다. 처음 온 사람에게는 이미 돌아가는
- * 회사의 화면처럼 보이고, 누르면 아무 일도 없어 신뢰를 깎는다. 그래서 숫자를
- * 다 빼고 **실제로 하는 일**만 적는다.
+ * 로그인 전 화면 — 구성 설명이 아니라 "왜 써야 하는가" 네 가지.
+ * 가짜 데이터는 두지 않는다. 처음 온 사람이 읽고 바로 시작하게만 한다.
  */
-const FEATURES = [
+const REASONS = [
   {
-    icon: BookOpen,
-    title: "작업표준서 · 위험성평가",
-    body: "반복 작업은 표준서로 한 번 만들어 재사용합니다. 표준서가 없어도 간이 위험성평가로 바로 시작할 수 있습니다.",
+    title: "인원 제한 없이 무료로 시작",
+    body: "문의나 협의 없이 포털처럼 바로 가입해 씁니다. 먼저 써 보고, 추가 기능이 필요할 때만 유료 플랜으로 넘어갑니다.",
   },
   {
-    icon: ClipboardList,
-    title: "작업지시 발급 · QR",
-    body: "승인된 평가를 바탕으로 지시서를 발급하면 내용이 고정됩니다. 작업 정보와 QR 이 담긴 A4 한 장을 현장에 붙입니다.",
+    title: "위험성평가부터 작업지시·허가서 발급·안전점검까지",
+    body: "한 흐름으로 이어집니다. 공단 인정을 받으면 3년간 감독 유예, 산재보험료 20% 인하, 중대재해처벌법 일부 대응이 됩니다.",
   },
   {
-    icon: ClipboardCheck,
-    title: "TBM · 작업 중 점검",
-    body: "배정된 작업자에게 본인 전용 링크가 갑니다. 설치도 로그인도 없이 열어 TBM 과 순회점검을 기록합니다.",
+    title: "작업자는 앱 설치 없이 QR만 찍으면 끝",
+    body: "설치도 로그인도 없이 본인 링크로 위험요인을 확인하고 TBM·작업 중 점검을 기록합니다.",
   },
   {
-    icon: CalendarCheck,
-    title: "주간 안전점검 회의",
-    body: "그 주의 부적합과 기한이 지난 감소대책을 모아 줍니다. 상시 위험성평가의 매주 기록 요건을 채웁니다.",
+    title: "외국인 근로자도 자기 언어로",
+    body: "위험요인과 감소대책을 자기 언어로 확인하고 기록합니다.",
+    soon: true,
   },
 ];
 
@@ -243,13 +234,22 @@ function DashboardBody({
           구호에 주면 정작 할 일이 밀린다 — 오늘 할 일이 먼저다. */}
       {!isAuthenticated && (
         <section className="hero">
+          <p className="hero-eyebrow">제조업 중소기업 사장님이</p>
           <h1>
-            Safety must be <span>easy.</span>
+            <span>심플안전</span>을 해야 하는 이유
           </h1>
           <p className="hero-lead">
-            중소기업 안전관리를 표준서·지시서·현장점검 한 줄기로 묶습니다. 인원
-            제한 없이 무료로 시작하세요.
+            위험성평가부터 작업지시·허가서·안전점검까지. 문의 없이 오늘 바로
+            시작합니다.
           </p>
+          <div className="hero-actions">
+            <Link href="/login" className="btn-primary">
+              무료로 시작하기 <ArrowRight size={15} />
+            </Link>
+            <Link href="/recognition-check" className="btn-secondary">
+              <ShieldCheck size={15} /> 우리 회사는 준비됐나 · 진단
+            </Link>
+          </div>
         </section>
       )}
       {isAuthenticated && today && (
@@ -300,59 +300,32 @@ function DashboardBody({
       )}
 
       {!isAuthenticated && (
-        <>
-          <section className="action-grid" aria-label="시작하기">
-            <Link href="/login" className="action-card action-card--primary">
-              <span className="action-card-icon">
-                <ArrowRight size={17} />
-              </span>
-              <h2>무료로 시작하기</h2>
-              <p>
-                구글·네이버·카카오 계정으로 로그인하고 회사를 만들면 바로
-                씁니다. 인원 제한 없이 무료입니다.
-              </p>
-              <span className="action-card-cta">
-                로그인 <ArrowRight size={14} />
-              </span>
-            </Link>
-            <Link href="/recognition-check" className="action-card">
-              <span className="action-card-icon">
-                <ShieldCheck size={17} />
-              </span>
-              <h2>우리 회사는 준비됐나</h2>
-              <p>
-                위험성평가 인정 준비도를 로그인 없이 진단합니다. 부족한 항목과
-                다음 행동을 알려 줍니다.
-              </p>
-              <span className="action-card-cta">
-                진단해 보기 <ArrowRight size={14} />
-              </span>
-            </Link>
-          </section>
-
-          <section className="stack" aria-label="주요 기능">
-            <SectionHeading title="무엇을 하는 서비스인가" />
-            <ul className="landing-features" role="list">
-              {FEATURES.map(({ icon: Icon, title, body }) => (
-                <li key={title}>
-                  <span className="landing-feature-icon">
-                    <Icon size={16} />
-                  </span>
-                  <strong>{title}</strong>
+        <section className="stack" aria-label="심플안전을 해야 하는 이유">
+          <ol className="reasons">
+            {REASONS.map(({ title, body, soon }, i) => (
+              <li key={title}>
+                <span className="reason-no" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <div>
+                  <h2>
+                    {title}
+                    {soon && <span className="reason-badge">준비 중</span>}
+                  </h2>
                   <p>{body}</p>
-                </li>
-              ))}
-            </ul>
-            <p className="hero-lead">
-              표준서·지시서·PTW·TBM·점검 같은 텍스트 기반 기능은 인원 제한 없이
-              무료입니다. 사진 첨부, 알림톡 발송, 지시서 출력물, 전체 기록
-              조회가 필요해질 때 유료로 전환합니다.{" "}
-              <Link className="text-button" href="/contact">
-                요금·도입 문의 <ChevronRight size={13} />
-              </Link>
-            </p>
-          </section>
-        </>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p className="hero-lead">
+            표준서·지시서·PTW·TBM·점검 같은 텍스트 기반 기능은 인원 제한 없이
+            무료입니다. 사진 첨부, 알림톡 발송, 지시서 출력물, 전체 기록 조회가
+            필요해질 때 유료로 전환합니다.{" "}
+            <Link className="text-button" href="/contact">
+              요금·도입 문의 <ChevronRight size={13} />
+            </Link>
+          </p>
+        </section>
       )}
 
       {isAuthenticated && (

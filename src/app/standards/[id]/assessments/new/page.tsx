@@ -9,7 +9,7 @@ import {
 } from "@/server/standards-service";
 import { AssessmentForm } from "@/features/standards/assessment-form";
 
-export const metadata = { title: "평가 회차 추가 · SMBE" };
+export const metadata = { title: "평가 회차 추가 · 심플안전" };
 
 export default async function NewAssessmentPage({
   params,

@@ -4,7 +4,7 @@ import { requireOperator } from "@/server/operator";
 import { getCompanyDetail } from "@/server/admin";
 import { CompanyDetailView } from "@/features/admin/company-detail-view";
 
-export const metadata = { title: "회사 상세 · SMBE 운영자" };
+export const metadata = { title: "회사 상세 · 심플안전 운영자" };
 
 export default async function AdminCompanyDetailPage({
   params,

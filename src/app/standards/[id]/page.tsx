@@ -11,7 +11,7 @@ import {
   type AttachmentMap,
 } from "@/features/standards/standard-detail-view";
 
-export const metadata = { title: "표준서 상세 · SMBE" };
+export const metadata = { title: "표준서 상세 · 심플안전" };
 
 export default async function StandardDetailPage({
   params,

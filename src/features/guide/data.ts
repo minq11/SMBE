@@ -155,7 +155,7 @@ export const LAW_DETAILS: LawDetail[] = [
     nextActions: [
       {
         text: "회사에 위험성평가·작업지시·점검 흐름을 만들고 이행 기록을 자동으로 남기세요.",
-        ctaLabel: "SMBE 무료로 시작",
+        ctaLabel: "심플안전 무료로 시작",
         ctaHref: "/login?next=/onboarding",
       },
       {
@@ -211,7 +211,7 @@ export const LAW_DETAILS: LawDetail[] = [
     ],
     nextActions: [
       {
-        text: "SMBE 무료 티어로 위험성평가·작업지시·TBM·현장 점검을 바로 시작할 수 있습니다.",
+        text: "심플안전 무료 티어로 위험성평가·작업지시·TBM·현장 점검을 바로 시작할 수 있습니다.",
         ctaLabel: "무료로 시작하기",
         ctaHref: "/login?next=/onboarding",
       },
