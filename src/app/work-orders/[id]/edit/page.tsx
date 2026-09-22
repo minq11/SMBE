@@ -18,7 +18,7 @@ import {
   type StandardPickerOption,
 } from "@/features/work-orders/work-order-form";
 import { OrderShell } from "@/features/work-orders/order-shell";
-import { OrderCommand } from "@/features/work-orders/order-controls";
+import { DeleteDraftButton } from "@/features/work-orders/order-controls";
 import { DraftReview } from "@/features/work-orders/draft-review";
 
 const ACTIONS: Record<string, string> = {
@@ -140,19 +140,18 @@ export default async function EditOrderPage({
         }
         footer={
           <>
-            <section className="wo-section">
-              <h2>초안 삭제</h2>
+            {/* 삭제는 버튼 하나면 되는 동작이라 절을 만들지 않는다. 목록 행에도
+                같은 버튼이 있다. 지우면 이 자리가 404 가 되니 목록으로 보낸다. */}
+            <section className="wo-section wo-editor-delete">
               <p className="wo-muted">
-                아직 발급하지 않은 초안을 목록에서 없앱니다. 발급된 지시서는
-                삭제할 수 없고 <strong>취소</strong>로 처리합니다 —
-                회차·점검·부적합 기록이 딸려 있기 때문입니다.
+                잘못 만든 초안이면 지울 수 있습니다. 발급된 지시서는 삭제가
+                아니라 취소로 처리합니다.
               </p>
-              <OrderCommand
+              <DeleteDraftButton
                 id={id}
                 revision={order.revision}
-                command="delete"
-                label="초안 삭제"
-                confirmText="이 초안을 삭제하시겠습니까? 목록에서 사라지며 되돌리려면 운영자 문의가 필요합니다."
+                name={order.name}
+                next="/work-orders?tab=draft"
               />
             </section>
             <section className="wo-section">

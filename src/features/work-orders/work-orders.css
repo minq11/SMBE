@@ -473,6 +473,38 @@
 .wo-command {
   margin: 12px 0;
 }
+/* 초안 삭제 — 목록 행과 상세 액션 줄에 같은 모양으로 붙는다.
+   지우는 동작이라 눈에 띄되, 평소에는 앞에 나서지 않게 테두리 없이 둔다. */
+.wo-delete {
+  margin: 0;
+}
+.wo-delete-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.wo-delete-button:hover:not(:disabled) {
+  border-color: #b83a12;
+  color: #b83a12;
+}
+.wo-delete-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.wo-col-action {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
 .wo-detail-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -695,6 +727,21 @@
   .wo-table td small {
     display: inline;
     margin: 0 0 0 6px;
+  }
+  /* 카드 전체가 링크라 그 위에 덮인다. 삭제는 그 위로 올려야 눌린다. */
+  .wo-table td.wo-col-action {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+    text-align: left;
+  }
+  .wo-table td.wo-col-action:empty {
+    display: none;
+  }
+  .wo-table td.wo-col-action::before {
+    content: none;
   }
   .wo-table td[data-label="작업명"] small {
     display: block;

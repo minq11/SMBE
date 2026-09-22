@@ -118,11 +118,11 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     const id = new URL(page.url()).pathname.split("/")[2];
     const path = "/work-orders/" + id;
     // 작성 중인 지시서는 조회가 아니라 편집으로 열린다 ([id]/page.tsx redirect).
-    // 초안에는 삭제가 있고 취소가 없다. 발급 뒤에는 반대가 된다.
+    // 초안에는 삭제 버튼이 있고 취소가 없다. 발급 뒤에는 반대가 된다.
     await page.goto(path);
     await expect(page).toHaveURL(new RegExp(id + "/edit$"));
     await expect(
-      page.getByRole("heading", { name: "초안 삭제", exact: true }),
+      page.getByRole("button", { name: /초안 .* 삭제/ }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "지시서 취소", exact: true }),
@@ -175,7 +175,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await page.goto(path + "/edit");
     await expect(page).toHaveURL(new RegExp(id + "$"));
     await expect(
-      page.getByRole("heading", { name: "초안 삭제", exact: true }),
+      page.getByRole("button", { name: /초안 .* 삭제/ }),
     ).toHaveCount(0);
     expect(
       await page.evaluate(

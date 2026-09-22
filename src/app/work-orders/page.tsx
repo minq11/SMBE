@@ -4,6 +4,7 @@ import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
 import { STATUS_LABEL } from "@/features/work-orders/model";
+import { DeleteDraftButton } from "@/features/work-orders/order-controls";
 
 export default async function WorkOrdersPage({
   searchParams,
@@ -78,6 +79,7 @@ export default async function WorkOrdersPage({
                 <th>장소</th>
                 <th>배정</th>
                 <th>상태</th>
+                {result.isManager && <th className="wo-col-action"></th>}
               </tr>
             </thead>
             <tbody>
@@ -116,6 +118,17 @@ export default async function WorkOrdersPage({
                   <td data-label="장소">{row.location || "미입력"}</td>
                   <td data-label="배정">{row.assignee_count}명</td>
                   <td data-label="상태">{STATUS_LABEL[row.status]}</td>
+                  {result.isManager && (
+                    <td className="wo-col-action">
+                      {row.status === "DRAFT" && (
+                        <DeleteDraftButton
+                          id={row.id}
+                          revision={row.revision}
+                          name={row.name}
+                        />
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

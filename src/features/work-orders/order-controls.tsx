@@ -159,3 +159,59 @@ export function CopyLinkButton({ url }: { url: string }) {
     </form>
   );
 }
+
+/**
+ * 초안 삭제 버튼.
+ *
+ * 초안은 목록에서 골라 지우는 것이 자연스럽다 — 잘못 만든 게 여러 개 쌓였을 때
+ * 하나씩 상세로 들어갔다 나오게 만들 이유가 없다. 그래서 목록 행과 상세 액션
+ * 줄 양쪽에 같은 버튼을 둔다.
+ *
+ * 목록에서 지우면 그 줄만 사라지면 되므로 이동하지 않는다. 상세에서 지우면 그
+ * 자리가 404 가 되니 목록으로 보낸다 (next).
+ */
+export function DeleteDraftButton({
+  id,
+  revision,
+  name,
+  next,
+}: {
+  id: string;
+  revision: number;
+  name: string;
+  next?: string;
+}) {
+  const [state, action, pending] = useActionState(
+    orderCommandAction,
+    undefined,
+  );
+  return (
+    <form
+      action={action}
+      className="wo-delete"
+      onSubmit={(event) => {
+        if (!window.confirm(`초안 '${name}' 을 삭제할까요?`))
+          event.preventDefault();
+      }}
+    >
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="revision" value={revision} />
+      <input type="hidden" name="command" value="delete" />
+      {next && <input type="hidden" name="next" value={next} />}
+      <button
+        type="submit"
+        className="wo-delete-button"
+        disabled={pending}
+        aria-label={`초안 ${name} 삭제`}
+      >
+        <Trash2 size={14} />
+        {pending ? "삭제 중…" : "삭제"}
+      </button>
+      {state?.error && (
+        <p role="alert" className="form-error">
+          {state.error}
+        </p>
+      )}
+    </form>
+  );
+}

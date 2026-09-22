@@ -63,6 +63,7 @@ export type OrderSummary = {
   location: string;
   assignee_count: number;
   assessment_status: string | null;
+  revision: number;
 };
 export async function listOrders(
   actor: Actor,
@@ -107,7 +108,7 @@ export async function listOrders(
        work_period_end::text AS end_date,to_char(work_start_time,'HH24:MI') AS start_time,
        to_char(work_end_time,'HH24:MI') AS end_time,
        coalesce(location_free_text,draft_data->>'location','') AS location,
-       jsonb_array_length(draft_data->'assigneeIds') AS assignee_count, assessment_status
+       jsonb_array_length(draft_data->'assigneeIds') AS assignee_count, assessment_status, revision
        FROM visible WHERE can_read
          AND ($5='all' OR ($5='draft' AND display_status='DRAFT')
            OR ($5='active' AND display_status IN ('ISSUED','IN_PROGRESS')))
