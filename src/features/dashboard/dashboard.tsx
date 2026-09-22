@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { NavLink } from "@/components/ui/nav-link";
-import { NavSpinner } from "@/components/ui/nav-spinner";
 import type { Tier } from "@/components/shell/tier";
 import {
   ArrowRight,
@@ -135,7 +133,6 @@ function DashboardBody({
               </p>
               <span className="action-card-cta">
                 로그인 <ArrowRight size={14} />
-                <NavSpinner />
               </span>
             </Link>
             <Link href="/recognition-check" className="action-card">
@@ -149,7 +146,6 @@ function DashboardBody({
               </p>
               <span className="action-card-cta">
                 진단해 보기 <ArrowRight size={14} />
-                <NavSpinner />
               </span>
             </Link>
           </section>
@@ -190,7 +186,6 @@ function DashboardBody({
               <p>관리자와 작업자를 초대 링크로 연결합니다.</p>
               <span className="action-card-cta">
                 시작하기 <ArrowRight size={14} />
-                <NavSpinner />
               </span>
             </Link>
           )}
@@ -220,7 +215,7 @@ function DashboardBody({
             title="내가 처리할 안전조치"
             count={openFindingCount}
           />
-          <NavLink href="/inspections" className="row">
+          <Link href="/inspections" className="row">
             <span className="row-main">
               <strong>부적합 조치 확인</strong>
               <small>나에게 배정된 미조치 항목을 확인하세요.</small>
@@ -230,7 +225,7 @@ function DashboardBody({
               <span className="row-state">조치 대기</span>
             </span>
             <ChevronRight size={14} className="row-chev" />
-          </NavLink>
+          </Link>
         </section>
       )}
       {isAuthenticated && (
@@ -248,7 +243,7 @@ function DashboardBody({
             {displayedJobs.map(
               ({ title, place, time, people, status, href }) => (
                 <li key={href ?? title}>
-                  <NavLink href={href ?? "/work-orders"} className="row">
+                  <Link href={href ?? "/work-orders"} className="row">
                     <span className="row-main">
                       <strong>{title}</strong>
                       <small>{place}</small>
@@ -265,7 +260,7 @@ function DashboardBody({
                       </span>
                     </span>
                     <ChevronRight size={14} className="row-chev" />
-                  </NavLink>
+                  </Link>
                 </li>
               ),
             )}
