@@ -106,7 +106,27 @@ test("own profile saves, membership exit preserves history, last supervisor prot
         ])
       ).rows[0].active_headcount,
     ).toBe(1);
+    // 회사코드로 들어온 가입 신청은 홈에서 바로 보여야 한다. 관리자가
+    // 인원관리를 열어 보기 전에는 신청이 있는 줄도 몰랐던 자리다.
+    const applicant = randomUUID();
+    await pool.query(
+      "INSERT INTO users(id,display_name,email) VALUES($1,'신청자',$2)",
+      [applicant, applicant + "@example.com"],
+    );
+    await pool.query(
+      "INSERT INTO company_members(user_id,company_id,role,status,joined_via,snapshot_display_name) VALUES($1,$2,'WORKER','JOIN_PENDING','DIRECT_JOIN','신청자')",
+      [applicant, company],
+    );
     await login(manager);
+    await page.goto("/");
+    const pendingRow = page.getByRole("region", { name: "가입 승인 알림" });
+    await expect(pendingRow).toContainText("1명");
+    await pendingRow.getByRole("link").click();
+    await expect(page).toHaveURL(/\/company\/members$/);
+    await expect(
+      page.getByRole("tab", { name: /가입 승인 대기/ }),
+    ).toHaveAttribute("aria-selected", "true");
+
     await page.goto("/my-page");
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
     const navigation = page.getByRole("navigation", {

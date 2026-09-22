@@ -123,3 +123,16 @@ export async function listOpenInvites(
     [companyId],
   );
 }
+
+/**
+ * 승인 대기 인원 수. 홈에서 한 줄로 보여 주기 위한 가벼운 조회다.
+ * 관리자만 의미가 있으므로 호출부에서 역할을 먼저 거른다.
+ */
+export async function pendingJoinCount(companyId: string): Promise<number> {
+  const row = await queryOne<{ count: number }>(
+    `SELECT COUNT(*)::int AS count FROM company_members
+      WHERE company_id = $1 AND status = 'JOIN_PENDING' AND left_at IS NULL`,
+    [companyId],
+  );
+  return row?.count ?? 0;
+}

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { queryOne, withTransaction } from "@/server/db";
 import { lockCompany } from "@/server/membership-mutations";
+import { notifyJoinRequest } from "@/server/membership-notify";
 
 const SIZE_BANDS = [
   "UNDER_5",
@@ -165,8 +166,8 @@ export async function joinCompanyAction(
     return { error: "이미 소속·승인대기 중인 회사가 있습니다." };
   }
 
-  const company = await queryOne<{ id: string }>(
-    "SELECT id FROM companies WHERE company_code = $1 AND withdrawn_at IS NULL",
+  const company = await queryOne<{ id: string; name: string }>(
+    "SELECT id, name FROM companies WHERE company_code = $1 AND withdrawn_at IS NULL",
     [parsed.data.company_code],
   );
   if (!company) {
@@ -196,6 +197,17 @@ export async function joinCompanyAction(
     );
   });
   if (membershipError) return membershipError;
+
+  // 신청은 이미 저장됐다. 메일은 거들 뿐이라 실패해도 가입을 되돌리지 않는다.
+  try {
+    await notifyJoinRequest({
+      companyId: company.id,
+      companyName: company.name,
+      applicantName: parsed.data.display_name,
+    });
+  } catch {
+    /* 알림 실패는 신청을 막지 않는다 */
+  }
 
   redirect("/onboarding");
 }
