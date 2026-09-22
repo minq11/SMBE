@@ -73,6 +73,28 @@
   color: var(--brand-strong);
   font-weight: 700;
 }
+/* 작성 화면 머리 — 제목과 단계 탭. 좁은 화면에서는 위에 고정된다 (아래 @media). */
+.wo-editor-head .page-header {
+  margin-bottom: 20px;
+}
+.wo-editor-lead {
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 62ch;
+  margin: 0 0 24px;
+}
+/* 저장된 초안의 검토·발급 명령. 폼이 고쳐진 채면 fieldset 째로 잠긴다. */
+.wo-review {
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 24px 0 0;
+  margin: 24px 0 0;
+  min-width: 0;
+}
+.wo-review:disabled .wo-command {
+  opacity: 0.5;
+}
 
 /* 발급된 지시서 열람 탭. 작성 단계(.wo-steps)와 같은 모양을 쓰되 링크라
    URL 에 남는다 — 새로고침·뒤로가기·링크 공유가 그대로 된다.
@@ -488,6 +510,70 @@
   padding: 10px 0;
   font-size: 13px;
   border-bottom: 1px solid var(--line);
+}
+@media (max-width: 960px) {
+  /* 제목·단계 탭은 상단바 바로 아래에 붙어 따라온다. 상단바 높이 56px 은
+     globals.css 16. Responsive 의 값이다. 본문 여백(16px)만큼 밖으로 빼서
+     밑을 지나가는 내용이 옆으로 비치지 않게 한다. */
+  .wo-editor-head {
+    position: sticky;
+    top: calc(var(--banner-h) + 56px);
+    z-index: 10;
+    margin: 0 -16px;
+    padding: 0 16px 10px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .wo-editor-head .page-header {
+    margin-bottom: 8px;
+  }
+  .wo-editor-head .page-header-copy {
+    align-items: center;
+    overflow-wrap: normal;
+  }
+  .wo-editor-head .page-header-copy h1 {
+    font-size: 17px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .wo-editor-head .icon-button.back-button {
+    margin-top: 0;
+  }
+  /* 네 단계가 두 줄로 접히면 고정 머리가 너무 높다. 한 줄로 두고 옆으로 민다. */
+  .wo-editor-head .wo-steps {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 2px 16px;
+    gap: 6px;
+  }
+  .wo-editor-head .wo-steps::-webkit-scrollbar {
+    display: none;
+  }
+  .wo-editor-head .wo-steps button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  /* 이전·임시저장·다음은 화면 아래에 붙는다. 긴 단계를 다 내려가지 않아도 된다. */
+  .wo-editor .wo-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin: 24px -16px 0;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    flex-wrap: nowrap;
+  }
+  .wo-editor .wo-actions .btn-primary {
+    flex: 1;
+    justify-content: center;
+  }
+  .wo-editor .wo-actions .btn-secondary {
+    padding-inline: 14px;
+  }
 }
 @media (max-width: 900px) {
   .wo-editor-grid {

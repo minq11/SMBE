@@ -19,7 +19,6 @@ import {
   type StandardPickerOption,
 } from "@/features/work-orders/work-order-form";
 import { OrderShell } from "@/features/work-orders/order-shell";
-import { PageHeader } from "@/components/ui/page-header";
 
 export default async function NewOrderPage({
   searchParams,
@@ -120,17 +119,15 @@ export default async function NewOrderPage({
       session={session}
       title={copy ? "작업지시 복사" : "새 작업지시"}
     >
-      <PageHeader
+      <WorkOrderForm
+        id={randomUUID()}
+        revision={0}
         title={copy ? "작업지시 복사" : "새 작업지시"}
         description={
           copy
             ? "작업일과 승인·발급 정보는 초기화됩니다. 평가일·위험요인·참여자와 배정 인원을 다시 확인하세요."
             : "표준서에서 시작하는 것을 권장합니다. 표준서가 없으면 간이 위험성평가로 대체할 수 있습니다."
         }
-      />
-      <WorkOrderForm
-        id={randomUUID()}
-        revision={0}
         initial={initial}
         members={members}
         standards={standards}

@@ -3452,16 +3452,10 @@ button svg {
   gap: 8px;
   align-items: flex-start;
 }
-.wo-issue-button {
-  min-height: 44px;
-  padding: 12px 22px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
 .wo-issue-cta .wo-muted {
   font-size: 12px;
   line-height: 1.6;
+  margin: 0;
 }
 
 .wo-standard-chip {

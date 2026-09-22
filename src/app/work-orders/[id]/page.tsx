@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { ArrowLeft, Copy, Pencil } from "lucide-react";
-import { notFound } from "next/navigation";
+import { ArrowLeft, Copy } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { workSession, orderDetail, orderMembers } from "@/server/work-orders";
 import { workOrderOrigin } from "@/server/work-order-delivery";
@@ -71,6 +71,10 @@ export default async function OrderDetailPage({
     throw error;
   });
   const { order, isManager } = detail;
+  // 작성 중인 지시서는 볼 것이 아니라 고칠 것이다. 관리자에겐 편집 화면으로 바로
+  // 연다 — 검토·발급, 초안 삭제도 그쪽에 있다. 발급된 뒤에만 이 조회 화면이다.
+  if (isManager && order.status === "DRAFT")
+    redirect("/work-orders/" + id + "/edit");
   const d = order.draft_data;
   const permit = await withTransaction((c) => readPermit(c, actor, id));
   const issued = Boolean(order.issued_at);
@@ -166,9 +170,8 @@ export default async function OrderDetailPage({
     `${d.startDate || "미입력"} ~ ${d.endDate || "미입력"} · 매일 ${d.startTime} ~ ${d.endTime}` +
     (d.endTime <= d.startTime ? " (다음 날 종료)" : "");
   const printPtw = d.ptwRequired
-    ? PERMIT_LABEL[
-        permitStatus(permit?.status ?? "NONE", order.status, d)
-      ] ?? "미신청"
+    ? (PERMIT_LABEL[permitStatus(permit?.status ?? "NONE", order.status, d)] ??
+      "미신청")
     : "불필요";
   return (
     <OrderShell session={session} title="지시서 상세">
@@ -219,14 +222,6 @@ export default async function OrderDetailPage({
               <Link className="btn-secondary" href="/work-orders">
                 <ArrowLeft size={14} /> 목록
               </Link>
-              {isManager && order.status === "DRAFT" && (
-                <Link
-                  className="btn-secondary"
-                  href={"/work-orders/" + id + "/edit"}
-                >
-                  <Pencil size={14} /> 편집
-                </Link>
-              )}
               {isManager && (
                 <Link
                   className="btn-secondary"
@@ -453,66 +448,6 @@ export default async function OrderDetailPage({
             </div>
           ))}
         </section>
-        {isManager && order.status === "DRAFT" && (
-          <section {...panel("checklist", "wo-no-print")}>
-            <h2>검토 및 발급</h2>
-            {order.assessment_status !== "APPROVED" && !d.ptwRequired && (
-              <>
-                <p className="wo-muted">
-                  작성한 관리자도 내용을 검토한 뒤 직접 승인하고 발급할 수
-                  있습니다. 평가 승인자와 본인 승인 여부가 기록됩니다.
-                </p>
-                <OrderCommand
-                  id={id}
-                  revision={order.revision}
-                  command="approveIssue"
-                  label="평가 승인 후 발급"
-                  confirmText="위험요인·판단 기준·감소대책·참여자 기록을 검토했으며, 평가를 승인하고 작업지시를 발급하시겠습니까? 발급 후 내용이 고정되고 배정 인원에게 이메일 링크가 발송됩니다."
-                />
-              </>
-            )}
-            {!order.assessment_status && (
-              <OrderCommand
-                id={id}
-                revision={order.revision}
-                command="request"
-                label="평가 검토 요청"
-              />
-            )}
-            {order.assessment_status === "PENDING" && (
-              <>
-                <p className="wo-muted">
-                  다른 관리자가 평가만 먼저 승인할 수도 있습니다. 지시서
-                  자체에는 별도 승인 절차가 없습니다.
-                </p>
-                <OrderCommand
-                  id={id}
-                  revision={order.revision}
-                  command="approve"
-                  label="위험성평가 승인"
-                  confirmText="위험요인·판단 기준·대책·참여자 기록을 검토했으며, 이 평가를 승인하시겠습니까?"
-                />
-              </>
-            )}
-            {order.assessment_status === "APPROVED" && !d.ptwRequired && (
-              <OrderCommand
-                id={id}
-                revision={order.revision}
-                command="issue"
-                label="작업지시 발급"
-                confirmText="발급하면 내용이 고정되고 배정 인원에게 이메일 링크가 발송됩니다. 발급하시겠습니까?"
-              />
-            )}
-            {d.ptwRequired && (
-              <p className="wo-notice">
-                <Link href={"/work-orders/" + id + "/permit"}>
-                  위험성평가 검토 및 PTW 신청
-                </Link>{" "}
-                · 허가 승인 시 지시서가 자동 발급됩니다.
-              </p>
-            )}
-          </section>
-        )}
         {qr && (
           <section {...panel("qr")}>
             <h2>작업지시 QR</h2>
@@ -564,23 +499,6 @@ export default async function OrderDetailPage({
                 </p>
               </div>
             )}
-          </section>
-        )}
-        {isManager && order.status === "DRAFT" && (
-          <section className="wo-section wo-no-print">
-            <h2>초안 삭제</h2>
-            <p className="wo-muted">
-              아직 발급하지 않은 초안을 목록에서 없앱니다. 발급된 지시서는
-              삭제할 수 없고 <strong>취소</strong>로 처리합니다 — 회차·점검·부적합
-              기록이 딸려 있기 때문입니다.
-            </p>
-            <OrderCommand
-              id={id}
-              revision={order.revision}
-              command="delete"
-              label="초안 삭제"
-              confirmText="이 초안을 삭제하시겠습니까? 목록에서 사라지며 되돌리려면 운영자 문의가 필요합니다."
-            />
           </section>
         )}
         {isManager && active && (

@@ -86,7 +86,18 @@ export default async function WorkOrdersPage({
               {result.rows.map((row) => (
                 <tr key={row.id}>
                   <td data-label="작업명">
-                    <Link href={"/work-orders/" + row.id}>{row.name}</Link>
+                    {/* 작성 중인 지시서는 조회가 아니라 편집으로 연다. */}
+                    <Link
+                      href={
+                        "/work-orders/" +
+                        row.id +
+                        (result.isManager && row.status === "DRAFT"
+                          ? "/edit"
+                          : "")
+                      }
+                    >
+                      {row.name}
+                    </Link>
                     <small>
                       {row.assessment_status === "APPROVED"
                         ? "평가 승인 완료"

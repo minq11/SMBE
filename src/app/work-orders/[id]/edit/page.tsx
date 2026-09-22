@@ -18,7 +18,17 @@ import {
   type StandardPickerOption,
 } from "@/features/work-orders/work-order-form";
 import { OrderShell } from "@/features/work-orders/order-shell";
-import { PageHeader } from "@/components/ui/page-header";
+import { OrderCommand } from "@/features/work-orders/order-controls";
+import { DraftReview } from "@/features/work-orders/draft-review";
+
+const ACTIONS: Record<string, string> = {
+  CREATE: "초안 생성",
+  UPDATE: "초안 변경",
+  SUBMIT_ASSESSMENT: "평가 승인 요청",
+  APPROVE_ASSESSMENT: "평가 승인",
+};
+const dateTime = (value: string) =>
+  new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 
 export default async function EditOrderPage({
   params,
@@ -88,33 +98,87 @@ export default async function EditOrderPage({
     }),
   );
 
+  const { order } = detail;
+  // 작성 중인 지시서는 조회 화면을 거치지 않고 바로 이 편집 화면으로 열린다.
+  // 그래서 조회 화면에 있던 검토·발급, 초안 삭제, 변경 이력이 여기 딸려 온다.
   return (
-    <OrderShell session={session} title="작업지시 편집">
-      <PageHeader
-        title="작업지시 편집"
-        description="저장하면 기존 평가 승인 연결이 해제되며 다시 검토·승인해야 합니다."
-      />
-      {issueError && (
-        <div className="wo-issue-error-banner" role="alert">
-          <strong>발급이 완료되지 않았습니다</strong>
-          <p>{issueError}</p>
-          <p className="wo-muted">
-            초안은 저장되어 있으니 위 오류를 해결한 뒤 4단계에서 다시 발급을
-            시도하세요. 임시저장으로도 계속 이어서 작성할 수 있습니다.
-          </p>
-        </div>
-      )}
+    <OrderShell session={session} title={order.name || "작업지시 편집"}>
       <WorkOrderForm
         id={id}
-        revision={detail.order.revision}
+        revision={order.revision}
+        title="작업지시 편집"
+        description={
+          order.assessment_status
+            ? "평가가 " +
+              (order.assessment_status === "APPROVED"
+                ? "승인된"
+                : "검토 중인") +
+              " 초안입니다. 내용을 고쳐 저장하면 승인 연결이 해제되어 다시 검토·승인해야 합니다."
+            : undefined
+        }
+        notice={
+          issueError && (
+            <div className="wo-issue-error-banner" role="alert">
+              <strong>발급이 완료되지 않았습니다</strong>
+              <p>{issueError}</p>
+              <p className="wo-muted">
+                초안은 저장되어 있으니 위 오류를 해결한 뒤 4단계에서 다시 발급을
+                시도하세요. 임시저장으로도 계속 이어서 작성할 수 있습니다.
+              </p>
+            </div>
+          )
+        }
+        review={
+          <DraftReview
+            id={id}
+            revision={order.revision}
+            assessmentStatus={order.assessment_status}
+            performedOn={order.draft_data.performedOn}
+            approvedAt={order.approved_at}
+            ptwRequired={order.draft_data.ptwRequired}
+          />
+        }
+        footer={
+          <>
+            <section className="wo-section">
+              <h2>초안 삭제</h2>
+              <p className="wo-muted">
+                아직 발급하지 않은 초안을 목록에서 없앱니다. 발급된 지시서는
+                삭제할 수 없고 <strong>취소</strong>로 처리합니다 —
+                회차·점검·부적합 기록이 딸려 있기 때문입니다.
+              </p>
+              <OrderCommand
+                id={id}
+                revision={order.revision}
+                command="delete"
+                label="초안 삭제"
+                confirmText="이 초안을 삭제하시겠습니까? 목록에서 사라지며 되돌리려면 운영자 문의가 필요합니다."
+              />
+            </section>
+            <section className="wo-section">
+              <h2>변경 이력</h2>
+              <ul className="wo-history">
+                {detail.history.map((h, i) => (
+                  <li key={i}>
+                    <time>{dateTime(h.at)}</time>
+                    <span>
+                      {ACTIONS[h.action] || h.action}
+                      {h.is_self_approval ? " · 본인 승인" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </>
+        }
         initial={{
-          ...detail.order.draft_data,
+          ...order.draft_data,
           // 판단 기준은 회사가 정한 현재 값을 보여 준다 (초안에 박힌 옛 값이 아니라).
           criteria: companyCriteria,
         }}
         members={members}
         standards={standards}
-        initialStandardId={detail.order.draft_data.standardId ?? null}
+        initialStandardId={order.draft_data.standardId ?? null}
         locations={locations}
       />
     </OrderShell>
