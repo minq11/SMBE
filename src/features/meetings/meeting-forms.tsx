@@ -150,10 +150,12 @@ export function CompleteMeetingForm({
           placeholder="확인 위주로 짧게 적어도 됩니다."
         />
       </label>
-      <button className="btn-primary" disabled={pending}>
-        <CheckCircle2 size={14} />
-        {pending ? "저장 중…" : "회의 완료"}
-      </button>
+      <div className="form-actions sticky-actions">
+        <button className="btn-primary" disabled={pending}>
+          <CheckCircle2 size={14} />
+          {pending ? "저장 중…" : "회의 완료"}
+        </button>
+      </div>
     </form>
   );
 }

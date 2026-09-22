@@ -4,8 +4,15 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { joinCompanyAction, type FormState } from "./actions";
+import { ContactFields } from "./contact-fields";
 
-export function JoinForm({ defaultDisplayName }: { defaultDisplayName: string }) {
+export function JoinForm({
+  defaultDisplayName,
+  defaultEmail,
+}: {
+  defaultDisplayName: string;
+  defaultEmail: string;
+}) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     joinCompanyAction,
     undefined,
@@ -49,6 +56,8 @@ export function JoinForm({ defaultDisplayName }: { defaultDisplayName: string })
           style={{ fontFamily: "ui-monospace, monospace", letterSpacing: 2 }}
         />
       </div>
+
+      <ContactFields defaultEmail={defaultEmail} />
 
       <div className="form-actions">
         <Link href="/onboarding" className="btn-secondary">

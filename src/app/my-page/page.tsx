@@ -87,54 +87,48 @@ export default async function MyPage({
             <dd>{date(data.user.created_at)}</dd>
           </dl>
           <p className="account-muted">
-            이메일은 로그인 계정 정보이며 이 화면에서는 변경할 수 없습니다.
+            이 이메일은 로그인에 쓰는 계정 정보라 여기서 바꿀 수 없습니다.
+            알림을 다른 주소로 받으려면 아래 [내 정보] 의 &apos;알림 받을
+            메일&apos; 을 바꾸세요.
           </p>
         </section>
+        {/* 소속·역할과 이름·연락처는 따로 볼 일이 없다. "나는 이 회사의 무엇이고
+            연락은 이리로 온다" 는 한 덩어리라 한 칸에 둔다. */}
         <section className="account-panel">
-          <h2>소속·역할</h2>
+          <h2>내 정보</h2>
           {current ? (
             <>
               <dl>
                 <dt>회사</dt>
                 <dd>{current.company_name}</dd>
                 <dt>역할</dt>
-                <dd>{roles[current.role]}</dd>
-                <dt>소속 상태</dt>
                 <dd>
-                  {current.status === "JOIN_PENDING"
-                    ? "가입 승인 대기"
-                    : "재직 중"}
+                  {roles[current.role]}
+                  {current.status === "JOIN_PENDING" && " · 가입 승인 대기"}
                 </dd>
               </dl>
-              {current.status === "ACTIVE" && (
-                <p>
+              <p className="account-links">
+                {current.status === "ACTIVE" && (
                   <Link href="/work-orders">내 작업 확인</Link>
-                </p>
-              )}
-              {isManager && (
-                <p>
-                  <Link href="/company/members">인원관리</Link>
-                </p>
-              )}
+                )}
+                {isManager && <Link href="/company/members">인원관리</Link>}
+              </p>
             </>
           ) : (
-            <>
-              <p>현재 소속된 회사가 없습니다.</p>
-              <Link className="primary-button" href="/onboarding">
-                회사 가입·생성
-              </Link>
-            </>
+            <p>
+              현재 소속된 회사가 없습니다.{" "}
+              <Link href="/onboarding">회사 가입·생성</Link>
+            </p>
           )}
-        </section>
-        <section className="account-panel">
-          <h2>내 정보·연락처</h2>
           <ProfileForm
             name={data.user.display_name}
             phone={data.user.phone}
+            contactEmail={data.user.contact_email}
+            loginEmail={data.user.email}
             version={data.user.version}
           />
         </section>
-        <section className="account-panel">
+        <section className="account-panel account-panel--wide">
           <h2>소속 이력</h2>
           {!data.memberships.length ? (
             <p>소속 이력이 없습니다.</p>

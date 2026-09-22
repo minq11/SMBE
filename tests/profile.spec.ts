@@ -106,7 +106,78 @@ test("own profile saves, membership exit preserves history, last supervisor prot
         ])
       ).rows[0].active_headcount,
     ).toBe(1);
+
+    // 퇴사한 사람은 회사코드로 다시 들어올 수 있다. 그 화면에서 알림 받을
+    // 메일과 휴대폰을 함께 받는다 — 둘 다 선택이지만, 넣으면 저장돼야 한다.
+    // 데스크톱·모바일이 같은 스키마를 나눠 쓰므로 코드는 실행마다 새로 만든다.
+    const joinCode = randomUUID()
+      .replaceAll("-", "")
+      .slice(0, 10)
+      .toUpperCase();
+    await pool.query("UPDATE companies SET company_code=$2 WHERE id=$1", [
+      company,
+      joinCode,
+    ]);
+    await page.goto("/onboarding/join");
+    await page.locator("input[name=display_name]").fill("복귀자");
+    // 소문자로 넣어도 대문자로 맞춰 찾는다.
+    await page.locator("input[name=company_code]").fill(joinCode.toLowerCase());
+    // 기본값은 로그인에 연동된 메일이고, 바꿀 수 있어야 한다.
+    const contact = page.locator("input[name=contact_email]");
+    await expect(contact).toHaveValue(worker + "@example.com");
+    await contact.fill("site@example.com");
+    await page.locator("input[name=phone]").fill("010-9876-5432");
+    await page.getByRole("button", { name: /가입 요청/ }).click();
+    await expect(page).toHaveURL(/\/onboarding$/);
+    expect(
+      (
+        await pool.query(
+          "SELECT contact_email,phone,email FROM users WHERE id=$1",
+          [worker],
+        )
+      ).rows[0],
+    ).toEqual({
+      contact_email: "site@example.com",
+      phone: "01098765432",
+      // 로그인 계정의 메일은 그대로다.
+      email: worker + "@example.com",
+    });
+    // 승인 대기로 남아야 관리자 쪽 알림이 의미가 있다.
+    expect(
+      (
+        await pool.query(
+          "SELECT status FROM company_members WHERE user_id=$1 AND left_at IS NULL",
+          [worker],
+        )
+      ).rows[0].status,
+    ).toBe("JOIN_PENDING");
+    // 뒤 검증(관리자 화면)에 끼어들지 않게 이 신청은 거둔다.
+    await pool.query(
+      "UPDATE company_members SET left_at=now(),status='RESIGNED' WHERE user_id=$1 AND left_at IS NULL",
+      [worker],
+    );
+
+    // 회사코드로 들어온 가입 신청은 홈에서 바로 보여야 한다. 관리자가
+    // 인원관리를 열어 보기 전에는 신청이 있는 줄도 몰랐던 자리다.
+    const applicant = randomUUID();
+    await pool.query(
+      "INSERT INTO users(id,display_name,email) VALUES($1,'신청자',$2)",
+      [applicant, applicant + "@example.com"],
+    );
+    await pool.query(
+      "INSERT INTO company_members(user_id,company_id,role,status,joined_via,snapshot_display_name) VALUES($1,$2,'WORKER','JOIN_PENDING','DIRECT_JOIN','신청자')",
+      [applicant, company],
+    );
     await login(manager);
+    await page.goto("/");
+    const pendingRow = page.getByRole("region", { name: "가입 승인 알림" });
+    await expect(pendingRow).toContainText("1명");
+    await pendingRow.getByRole("link").click();
+    await expect(page).toHaveURL(/\/company\/members$/);
+    await expect(
+      page.getByRole("tab", { name: /가입 승인 대기/ }),
+    ).toHaveAttribute("aria-selected", "true");
+
     await page.goto("/my-page");
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
     const navigation = page.getByRole("navigation", {
@@ -114,6 +185,15 @@ test("own profile saves, membership exit preserves history, last supervisor prot
       exact: true,
     });
     const companyGroup = navigation.getByRole("group", { name: "회사정보" });
+    // 여러 화면을 묶은 메뉴는 접혀 있다. 눌러야 펴진다.
+    const companyToggle = companyGroup.getByRole("button", {
+      name: "회사정보",
+    });
+    await expect(companyToggle).toHaveAttribute("aria-expanded", "false");
+    await expect(
+      companyGroup.getByRole("link", { name: "인원관리" }),
+    ).toBeHidden();
+    await companyToggle.click();
     await expect(
       companyGroup.getByRole("link", { name: "인원관리" }),
     ).toBeVisible();
@@ -127,6 +207,8 @@ test("own profile saves, membership exit preserves history, last supervisor prot
     await companyGroup.getByRole("link", { name: "장소관리" }).click();
     await expect(page).toHaveURL(/\/company\/locations$/);
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
+    // 지금 보고 있는 화면이 든 메뉴는 처음부터 펴져 있어야 한다 — 내가 어디
+    // 있는지가 접혀 있으면 안 된다.
     await expect(
       page
         .getByRole("group", { name: "회사정보" })

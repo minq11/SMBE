@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   ClipboardList,
   FileText,
-  Plus,
 } from "lucide-react";
 import type { StandardListRow } from "@/features/standards/constants";
 
@@ -70,23 +69,16 @@ export function StandardsListView({ items }: { items: StandardListRow[] }) {
               <strong>표준서가 없어요</strong>
               <p>
                 반복 작업의 방법·체크리스트·위험성평가를 한 번 등록하면 이후
-                지시서 작성 시 바로 재사용할 수 있습니다.
+                지시서 작성 시 바로 재사용할 수 있습니다. 위 [표준서 만들기] 로
+                시작하세요.
               </p>
-              <div className="empty-state-action">
-                <Link href="/standards/new" className="primary-button">
-                  <Plus size={14} /> 표준서 만들기
-                </Link>
-              </div>
             </div>
           </div>
         ) : (
           <ul className="row-list" role="list">
             {filtered.map((item) => (
               <li key={item.standard_id}>
-                <Link
-                  href={`/standards/${item.standard_id}`}
-                  className="row"
-                >
+                <Link href={`/standards/${item.standard_id}`} className="row">
                   <span className="std-row-icon">
                     {item.status === "APPROVED" ? (
                       <CheckCircle2 size={16} />

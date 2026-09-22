@@ -81,6 +81,7 @@ export function Dashboard({
   openFindingCount = 0,
   today,
   worker,
+  pendingJoinCount = 0,
 }: {
   companyName?: string;
   tier?: Tier;
@@ -92,6 +93,7 @@ export function Dashboard({
   openFindingCount?: number;
   today?: Today;
   worker?: WorkerHome;
+  pendingJoinCount?: number;
 }) {
   return (
     <AppShell
@@ -109,6 +111,7 @@ export function Dashboard({
         openFindingCount={openFindingCount}
         today={today}
         worker={worker}
+        pendingJoinCount={pendingJoinCount}
       />
     </AppShell>
   );
@@ -121,6 +124,7 @@ function DashboardBody({
   openFindingCount,
   today,
   worker,
+  pendingJoinCount,
 }: {
   jobs?: Job[];
   isAuthenticated: boolean;
@@ -128,6 +132,7 @@ function DashboardBody({
   openFindingCount: number;
   today?: Today;
   worker?: WorkerHome;
+  pendingJoinCount: number;
 }) {
   const displayedJobs = jobs ?? [];
 
@@ -362,6 +367,24 @@ function DashboardBody({
         </section>
       )}
 
+      {/* 회사코드로 들어온 가입 신청은 메일로도 알리지만 메일은 묻힌다.
+          승인 전에는 작업에 배정할 수 없어 사람이 놀게 되므로 홈에 한 줄 띄운다. */}
+      {isAuthenticated && isManager && pendingJoinCount > 0 && (
+        <section className="stack" aria-label="가입 승인 알림">
+          <SectionHeading title="가입 승인 대기" count={pendingJoinCount} />
+          <Link href="/company/members" className="row">
+            <span className="row-main">
+              <strong>참여를 기다리는 사람이 있습니다</strong>
+              <small>승인해야 작업에 배정할 수 있습니다.</small>
+            </span>
+            <span className="row-meta">
+              <span className="row-count">{pendingJoinCount}명</span>
+              <span className="row-state">승인 대기</span>
+            </span>
+            <ChevronRight size={14} className="row-chev" />
+          </Link>
+        </section>
+      )}
       {isAuthenticated && isManager && openFindingCount > 0 && (
         <section className="stack" aria-label="내 부적합 알림">
           <SectionHeading

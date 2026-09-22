@@ -5,6 +5,12 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { queryOne, withTransaction } from "@/server/db";
 import { lockCompany } from "@/server/membership-mutations";
+import { notifyJoinRequest } from "@/server/membership-notify";
+import {
+  contactEmailField,
+  optionalText,
+  phoneField,
+} from "@/server/contact-input";
 
 const SIZE_BANDS = [
   "UNDER_5",
@@ -27,6 +33,8 @@ const createCompanySchema = z.object({
     .min(0, "0 이상이어야 합니다")
     .max(10_000_000_000, "값이 너무 큽니다"),
   display_name: z.string().trim().min(1, "이름을 입력하세요").max(60),
+  contact_email: contactEmailField,
+  phone: phoneField,
 });
 
 const joinSchema = z.object({
@@ -37,6 +45,8 @@ const joinSchema = z.object({
     .max(32)
     .transform((value) => value.toUpperCase()),
   display_name: z.string().trim().min(1).max(60),
+  contact_email: contactEmailField,
+  phone: phoneField,
 });
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/1/I/O
@@ -71,6 +81,8 @@ export async function createCompanyAction(
       "expected_annual_revenue_manwon",
     ),
     display_name: formData.get("display_name"),
+    contact_email: optionalText(formData.get("contact_email")),
+    phone: optionalText(formData.get("phone")),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "입력 값을 확인하세요" };
@@ -97,11 +109,16 @@ export async function createCompanyAction(
     );
     if (memberships.length)
       return { error: "이미 소속·승인대기 중인 회사가 있습니다." };
-    // Ensure display_name reflects the user's input in users
-    await client.query("UPDATE users SET display_name = $1 WHERE id = $2", [
-      parsed.data.display_name,
-      userId,
-    ]);
+    // 이름과 연락처는 이 화면에서 받은 값이 최신이다.
+    await client.query(
+      "UPDATE users SET display_name = $1, contact_email = $3, phone = $4 WHERE id = $2",
+      [
+        parsed.data.display_name,
+        userId,
+        parsed.data.contact_email || null,
+        parsed.data.phone || null,
+      ],
+    );
 
     // Retry a few times to avoid company_code collision
     let companyId: string | null = null;
@@ -152,6 +169,8 @@ export async function joinCompanyAction(
   const parsed = joinSchema.safeParse({
     company_code: formData.get("company_code"),
     display_name: formData.get("display_name"),
+    contact_email: optionalText(formData.get("contact_email")),
+    phone: optionalText(formData.get("phone")),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "입력 값을 확인하세요" };
@@ -165,8 +184,8 @@ export async function joinCompanyAction(
     return { error: "이미 소속·승인대기 중인 회사가 있습니다." };
   }
 
-  const company = await queryOne<{ id: string }>(
-    "SELECT id FROM companies WHERE company_code = $1 AND withdrawn_at IS NULL",
+  const company = await queryOne<{ id: string; name: string }>(
+    "SELECT id, name FROM companies WHERE company_code = $1 AND withdrawn_at IS NULL",
     [parsed.data.company_code],
   );
   if (!company) {
@@ -184,10 +203,15 @@ export async function joinCompanyAction(
     );
     if (memberships.length)
       return { error: "이미 소속·승인대기 중인 회사가 있습니다." };
-    await client.query("UPDATE users SET display_name = $1 WHERE id = $2", [
-      parsed.data.display_name,
-      userId,
-    ]);
+    await client.query(
+      "UPDATE users SET display_name = $1, contact_email = $3, phone = $4 WHERE id = $2",
+      [
+        parsed.data.display_name,
+        userId,
+        parsed.data.contact_email || null,
+        parsed.data.phone || null,
+      ],
+    );
     await client.query(
       `INSERT INTO company_members
          (user_id, company_id, role, status, joined_via, snapshot_display_name)
@@ -196,6 +220,17 @@ export async function joinCompanyAction(
     );
   });
   if (membershipError) return membershipError;
+
+  // 신청은 이미 저장됐다. 메일은 거들 뿐이라 실패해도 가입을 되돌리지 않는다.
+  try {
+    await notifyJoinRequest({
+      companyId: company.id,
+      companyName: company.name,
+      applicantName: parsed.data.display_name,
+    });
+  } catch {
+    /* 알림 실패는 신청을 막지 않는다 */
+  }
 
   redirect("/onboarding");
 }

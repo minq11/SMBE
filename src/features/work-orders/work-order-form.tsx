@@ -350,10 +350,13 @@ export function WorkOrderForm({
               type="button"
               key={label}
               aria-current={step === i ? "step" : undefined}
+              data-state={i < step ? "done" : i === step ? "current" : "todo"}
               onClick={() => goTo(i)}
             >
-              <span>{i + 1}</span>
-              {label}
+              <span className="wo-doc-tab-no" aria-hidden="true">
+                {i + 1}
+              </span>
+              <span className="wo-doc-tab-label">{label}</span>
             </button>
           ))}
         </nav>

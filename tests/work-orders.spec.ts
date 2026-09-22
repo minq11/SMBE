@@ -164,7 +164,8 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
         exact: false,
       }),
     ).toBeHidden();
-    await page.getByRole("link", { name: "2 위험성평가", exact: true }).click();
+    // 단계 띠의 번호는 aria-hidden 이라 이름에 들어가지 않는다.
+    await page.getByRole("link", { name: "위험성평가", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(id + "\\?tab=risk$"));
     await expect(
       page.getByText("관리자 본인 평가 승인 기록이 있습니다.", {

@@ -233,13 +233,15 @@ export function PermitRequestForm({
       )}
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
-      <button disabled={pending} className="primary-button">
-        {pending
-          ? "처리 중…"
-          : data.approverId === userId
-            ? "신청&승인"
-            : "평가 승인 후 허가 신청"}
-      </button>
+      <div className="form-actions sticky-actions">
+        <button disabled={pending} className="primary-button">
+          {pending
+            ? "처리 중…"
+            : data.approverId === userId
+              ? "신청&승인"
+              : "평가 승인 후 허가 신청"}
+        </button>
+      </div>
     </form>
   );
 }

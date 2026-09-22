@@ -1,6 +1,7 @@
 import type { PoolClient } from "@neondatabase/serverless";
 import { z } from "zod";
 import { lockCompany, refreshHeadcount } from "./membership-mutations";
+import { contactEmailField, phoneField } from "./contact-input";
 
 export class ProfileError extends Error {}
 const profileSchema = z.object({
@@ -13,15 +14,8 @@ const profileSchema = z.object({
       (v) => !/[\u0000-\u001f\u007f]/.test(v),
       "이름에 제어문자를 사용할 수 없습니다.",
     ),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .transform((v) => v.replace(/[\s()-]/g, ""))
-    .refine(
-      (v) => v === "" || /^\+?[0-9]{7,15}$/.test(v),
-      "전화번호는 7~15자리 숫자로 입력하세요.",
-    ),
+  phone: phoneField,
+  contactEmail: contactEmailField,
   version: z.string().min(1).max(60),
 });
 export async function updateOwnProfile(
@@ -45,11 +39,11 @@ export async function updateOwnProfile(
       "다른 화면에서 정보가 변경됐습니다. 새로고침 후 다시 입력하세요.",
     );
   const updated = await client.query(
-    `UPDATE users SET display_name=$2,phone=$3 WHERE id=$1 RETURNING updated_at::text AS version`,
-    [userId, d.displayName, d.phone || null],
+    `UPDATE users SET display_name=$2,phone=$3,contact_email=$4 WHERE id=$1 RETURNING updated_at::text AS version`,
+    [userId, d.displayName, d.phone || null, d.contactEmail || null],
   );
   await client.query(
-    `INSERT INTO audit_logs(actor_id,action,target_type,target_id,after_json) VALUES($1,'UPDATE_PROFILE','users',$1,'{"fields":["display_name","phone"]}'::jsonb)`,
+    `INSERT INTO audit_logs(actor_id,action,target_type,target_id,after_json) VALUES($1,'UPDATE_PROFILE','users',$1,'{"fields":["display_name","phone","contact_email"]}'::jsonb)`,
     [userId],
   );
   return updated.rows[0].version as string;

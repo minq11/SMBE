@@ -12,6 +12,7 @@ import {
   pendingFindingCount,
 } from "@/server/inspection-service";
 import { sessionState } from "@/features/inspections/model";
+import { pendingJoinCount } from "@/server/members";
 
 const at = (value: string) =>
   new Date(value).toLocaleTimeString("ko-KR", {
@@ -48,6 +49,8 @@ export default async function Home() {
     ? { companyId: session.membership.company_id, userId: session.user.id }
     : null;
   const isManager = session?.membership?.role !== "WORKER";
+  const joinRequestCount =
+    actor && isManager ? await pendingJoinCount(actor.companyId) : 0;
   const orders = actor ? await listOrders(actor, "active") : null;
   // 로그인한 홈은 오늘 할 일부터다. 오늘 작업 수, (유료면) TBM 미확인 인원,
   // 작성 중 초안 수를 위에 띄운다. 미조치 부적합은 위에서 이미 셌다.
@@ -115,6 +118,7 @@ export default async function Home() {
       isOperator={isOperator}
       isManager={isManager}
       openFindingCount={openFindingCount}
+      pendingJoinCount={joinRequestCount}
       worker={worker}
       today={
         actor

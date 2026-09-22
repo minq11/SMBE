@@ -292,14 +292,34 @@ html[data-banner-hidden] .preview-banner {
   flex-direction: column;
   gap: 2px;
 }
+/* 접었다 펴는 머리. 나머지 메뉴 줄과 같은 높이·여백이라 목록이 흔들리지 않는다. */
 .nav-group-label {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 11px 12px;
+  border-radius: var(--radius-sm);
   color: var(--ink-3);
+  font: inherit;
   font-size: 13px;
   font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.nav-group-label:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.nav-group-caret {
+  margin-left: auto;
+  transition: transform 0.15s;
+}
+.nav-group-label[aria-expanded="false"] .nav-group-caret {
+  transform: rotate(-90deg);
 }
 .nav-group-children {
   margin-left: 20px;
@@ -307,6 +327,11 @@ html[data-banner-hidden] .preview-banner {
   border-left: 1px solid var(--line);
   display: grid;
   gap: 4px;
+}
+/* display 를 직접 정한 요소에는 브라우저 기본 [hidden] 규칙이 밀린다. 접었을 때
+   정말로 사라지게 다시 적는다. */
+.nav-group-children[hidden] {
+  display: none;
 }
 .nav-item {
   display: flex;
@@ -4088,6 +4113,37 @@ html[data-banner-hidden] .preview-banner {
   font-weight: 600;
   color: var(--ink-2);
   margin-bottom: 6px;
+}
+
+/* =========================================================================
+   12l. 하단 고정 액션 바 (긴 폼 공용)
+   -------------------------------------------------------------------------
+   작업지시 작성 화면에서 먼저 쓰던 방식을 표준서·위험성평가 같은 긴 폼에도
+   그대로 편다. 좁은 화면에서 저장 버튼이 맨 아래에만 있으면, 위쪽을 고치다
+   저장하려고 몇 화면을 다시 내려가야 한다. 폼이 짧으면 sticky 는 제자리에
+   그려지므로 아무 일도 일어나지 않는다.
+   ========================================================================= */
+@media (max-width: 960px) {
+  .sticky-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin: 16px -16px 0;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    flex-wrap: nowrap;
+  }
+  /* 본 동작은 폭을 다 쓰고, 취소는 글자만큼만 차지한다. */
+  .sticky-actions .primary-button,
+  .sticky-actions .btn-primary {
+    flex: 1;
+    justify-content: center;
+  }
+  .sticky-actions .ghost-button,
+  .sticky-actions .btn-secondary {
+    flex-shrink: 0;
+  }
 }
 
 /* =========================================================================

@@ -101,6 +101,9 @@ export default async function OrderDetailPage({
   // 작업자에게 필요한 건 탭이 아니라 "내가 할 일" 이라, 탭은 관리자 화면에서만 쓴다.
   const tabbed = isManager;
   const tab = TABS.some((t) => t.key === query.tab) ? query.tab! : "info";
+  // 탭은 나란한 버튼이 아니라 작성 순서를 그린 띠다. 지나온 단계는 선에 색이
+  // 차서, 지금 어디를 보고 있는지가 번호를 세지 않아도 보인다.
+  const tabIndex = TABS.findIndex((t) => t.key === tab);
   const tabHref = (key: string) =>
     `/work-orders/${id}?tab=${key}` + (via !== "web" ? "&via=" + via : "");
   /**
@@ -325,9 +328,14 @@ export default async function OrderDetailPage({
                 key={t.key}
                 href={tabHref(t.key)}
                 aria-current={tab === t.key ? "page" : undefined}
+                data-state={
+                  i < tabIndex ? "done" : i === tabIndex ? "current" : "todo"
+                }
               >
-                <span>{i + 1}</span>
-                {t.label}
+                <span className="wo-doc-tab-no" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <span className="wo-doc-tab-label">{t.label}</span>
               </Link>
             ))}
           </nav>
