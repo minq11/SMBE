@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AddToHomeHint } from "@/components/pwa/add-to-home-hint";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { withTransaction } from "@/server/db";
@@ -87,6 +88,7 @@ export default async function WorkerLinkPage({
         </p>
         <h1>{data.order.name}</h1>
       </header>
+      <AddToHomeHint />
 
       {query.saved === "1" && (
         <p role="status" className="wo-notice">
@@ -201,8 +203,7 @@ export default async function WorkerLinkPage({
                 const rowAssigned = s.expected_assignees.some(
                   (a) => a.userId === actor.userId,
                 );
-                const showActions =
-                  state.canInput && !canceled && rowAssigned;
+                const showActions = state.canInput && !canceled && rowAssigned;
                 return (
                   <li
                     key={s.id}
@@ -222,8 +223,7 @@ export default async function WorkerLinkPage({
                       {at(s.starts_at)} ~ {at(s.ends_at)}
                     </p>
                     <p className="wo-muted">
-                      TBM{" "}
-                      {s.expected_assignees.length - state.missing.length}/
+                      TBM {s.expected_assignees.length - state.missing.length}/
                       {s.expected_assignees.length} · 작업 중 {s.during_count}건
                       {mine ? " · 내 TBM 확인 완료" : ""}
                     </p>
@@ -246,9 +246,7 @@ export default async function WorkerLinkPage({
                       </div>
                     )}
                     {!rowAssigned && (
-                      <p className="wo-muted">
-                        이 회차에 배정되지 않았습니다.
-                      </p>
+                      <p className="wo-muted">이 회차에 배정되지 않았습니다.</p>
                     )}
                   </li>
                 );

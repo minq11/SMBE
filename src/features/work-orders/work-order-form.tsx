@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { HelpTip } from "@/components/ui/help-tip";
 import { PageHeader } from "@/components/ui/page-header";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { PeoplePicker } from "@/components/ui/people-picker";
 import { PtwHelp } from "@/features/standards/ptw-help";
 import { saveOrderAction, saveAndIssueAction } from "./actions";
 import { shiftMinutes, type WorkDraft, type MemberOption } from "./model";
@@ -202,11 +204,89 @@ export function WorkOrderForm({
   const [state, action, pending] = useActionState(saveOrderAction, undefined);
   const [issuePending, startIssue] = useTransition();
   const [issueError, setIssueError] = useState<string | null>(null);
-  const submitIssue = () => {
+  const { confirm, dialog } = useConfirm();
+
+  /**
+   * 저장하지 않은 입력의 보관.
+   *
+   * 현장에서는 뒤로 스와이프, 앱 전환 중 종료, 전화 수신으로 화면이 사라진다.
+   * 고친 내용을 이 기기에 잠시 보관했다가, 같은 초안을 다시 열면 이어서 쓸지
+   * 묻는다. 서버에 저장하면(임시저장·발급) 보관본은 지운다 — 실패하면 아래
+   * effect 가 다시 보관한다. 새 지시서는 아직 id 가 없으므로 한 자리를 쓴다.
+   */
+  const backupKey = "smbe.wo-draft." + (revision === 0 ? "new" : id);
+  const [backup, setBackup] = useState<{
+    at: string;
+    data: WorkDraft;
+  } | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(backupKey);
+      if (!raw) return;
+      const stored = JSON.parse(raw) as { at: string; data: WorkDraft };
+      if (JSON.stringify(stored.data) === saved) {
+        localStorage.removeItem(backupKey);
+        return;
+      }
+      const timer = setTimeout(() => setBackup(stored), 0);
+      return () => clearTimeout(timer);
+    } catch {
+      /* 보관본이 깨졌으면 없는 것으로 */
+    }
+    // 처음 열릴 때 한 번만 본다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backupKey]);
+  useEffect(() => {
+    if (!dirty) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          backupKey,
+          JSON.stringify({ at: new Date().toISOString(), data }),
+        );
+      } catch {
+        /* 저장소가 막혀 있으면 보관하지 않는다 */
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [backupKey, data, dirty, state]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const clearBackup = () => {
+    try {
+      localStorage.removeItem(backupKey);
+    } catch {
+      /* ignore */
+    }
+  };
+  const restoreBackup = () => {
+    if (!backup) return;
+    setData({ ...backup.data, standardId: backup.data.standardId ?? null });
+    setStandardId(backup.data.standardId ?? null);
+    setSimpleOverride(Boolean(backup.data.name) && !backup.data.standardId);
+    setBackup(null);
+  };
+  const discardBackup = () => {
+    clearBackup();
+    setBackup(null);
+  };
+  const submitSave = (form: FormData) => {
+    clearBackup();
+    action(form);
+  };
+
+  const submitIssue = async () => {
     if (
-      !confirm(
-        "지금 발급하시겠어요? 저장 → 위험성평가 승인(본인) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다.",
-      )
+      !(await confirm(
+        "저장 → 위험성평가 승인(본인) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다.",
+        { title: "지금 발급할까요?", confirmLabel: "발급" },
+      ))
     )
       return;
     setIssueError(null);
@@ -214,6 +294,7 @@ export function WorkOrderForm({
     form.set("id", id);
     form.set("revision", String(revision));
     form.set("payload", JSON.stringify(data));
+    clearBackup();
     startIssue(async () => {
       const result = await saveAndIssueAction(undefined, form);
       if (result?.error) setIssueError(result.error);
@@ -270,10 +351,43 @@ export function WorkOrderForm({
         </nav>
       </div>
       {notice}
+      {backup && (
+        <div className="wo-restore" role="status">
+          <p>
+            <strong>저장하지 않은 입력이 있습니다.</strong>{" "}
+            {new Date(backup.at).toLocaleString("ko-KR", {
+              timeZone: "Asia/Seoul",
+              month: "numeric",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            에 이 기기에서 쓰던 내용
+            {backup.data.name ? ` (${backup.data.name})` : ""}
+            입니다.
+          </p>
+          <div className="wo-restore-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={restoreBackup}
+            >
+              이어서 작성
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={discardBackup}
+            >
+              버리기
+            </button>
+          </div>
+        </div>
+      )}
       {description && <p className="wo-editor-lead">{description}</p>}
       <div className="wo-editor-grid">
         <div className="wo-section">
-          <form action={action} className="wo-editor-form">
+          <form action={submitSave} className="wo-editor-form">
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="revision" value={revision} />
             <input type="hidden" name="payload" value={JSON.stringify(data)} />
@@ -634,19 +748,12 @@ export function WorkOrderForm({
                     />
                   </Field>
                 ))}
-                <fieldset className="wo-people">
-                  <legend>평가에 실제 참여한 근로자</legend>
-                  {members.map((m) => (
-                    <label key={m.user_id}>
-                      <input
-                        type="checkbox"
-                        checked={data.participantIds.includes(m.user_id)}
-                        onChange={() => toggle("participantIds", m.user_id)}
-                      />
-                      {m.display_name}
-                    </label>
-                  ))}
-                </fieldset>
+                <PeoplePicker
+                  legend="평가에 실제 참여한 근로자"
+                  members={members}
+                  selected={data.participantIds}
+                  onToggle={(id) => toggle("participantIds", id)}
+                />
               </>
             )}
             {step === 2 && (
@@ -712,19 +819,12 @@ export function WorkOrderForm({
                     ))}
                   </datalist>
                 )}
-                <fieldset className="wo-people">
-                  <legend>작업자 배정 ({data.assigneeIds.length}명)</legend>
-                  {members.map((m) => (
-                    <label key={m.user_id}>
-                      <input
-                        type="checkbox"
-                        checked={data.assigneeIds.includes(m.user_id)}
-                        onChange={() => toggle("assigneeIds", m.user_id)}
-                      />
-                      {m.display_name}
-                    </label>
-                  ))}
-                </fieldset>
+                <PeoplePicker
+                  legend={`작업자 배정 (${data.assigneeIds.length}명)`}
+                  members={members}
+                  selected={data.assigneeIds}
+                  onToggle={(id) => toggle("assigneeIds", id)}
+                />
                 <Link
                   href="/company/members"
                   target="_blank"
@@ -897,6 +997,7 @@ export function WorkOrderForm({
         </aside>
       </div>
       {footer}
+      {dialog}
     </div>
   );
 }

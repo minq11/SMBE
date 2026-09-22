@@ -26,6 +26,34 @@
   line-height: 1.8;
   margin: 24px 0;
 }
+.inspection-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0 0 8px;
+}
+.inspection-bulk .wo-muted {
+  margin: 0;
+}
+.inspection-form-actions {
+  margin-top: 16px;
+}
+@media (max-width: 960px) {
+  .inspection-form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin: 16px -16px 0;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+  }
+  .inspection-form-actions .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
 .inspection-record,
 .inspection-sessions details {
   padding: 16px 0;
@@ -83,6 +111,38 @@
   line-height: 1.7;
   max-width: 62ch;
   margin: 0 0 24px;
+}
+/* 이 기기에 남아 있던 미저장 입력을 이어 쓸지 묻는 띠 */
+.wo-restore {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--brand-soft);
+  background: var(--brand-softer);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.wo-restore p {
+  margin: 0;
+  min-width: 0;
+}
+.wo-restore-actions {
+  display: flex;
+  gap: 8px;
+}
+@media (max-width: 520px) {
+  .wo-restore-actions {
+    width: 100%;
+  }
+  .wo-restore-actions > * {
+    flex: 1;
+    justify-content: center;
+  }
 }
 /* 저장된 초안의 검토·발급 명령. 폼이 고쳐진 채면 fieldset 째로 잠긴다. */
 .wo-review {
@@ -197,31 +257,10 @@
   margin: 24px 0;
   min-width: 0;
 }
-.wo-risk legend,
-.wo-people legend {
+.wo-risk legend {
   font-size: 14px;
   font-weight: 700;
   padding: 0 6px;
-}
-.wo-people {
-  border: 0;
-  padding: 0;
-  margin: 24px 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-}
-.wo-people label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  min-height: 36px;
-}
-.wo-people input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--brand);
 }
 .wo-summary {
   position: sticky;
@@ -424,15 +463,89 @@
   border-color: var(--brand);
   font-weight: 700;
 }
+/* 검색은 한 줄이다 — 입력칸 안에 돋보기, 오른쪽에 버튼. */
 .wo-search {
   display: flex;
-  align-items: end;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 20px;
+  max-width: 480px;
 }
-.wo-search .wo-field {
+.wo-search-box {
   flex: 1;
-  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-3);
+}
+.wo-search-box input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 11px 0;
+  font: inherit;
+  color: var(--ink);
+}
+.wo-search-box input:focus {
+  outline: none;
+}
+.wo-search-box:focus-within {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.wo-search .btn-secondary {
+  flex-shrink: 0;
+  padding-inline: 14px;
+}
+/* 점검 기록의 빠른 필터 칩 */
+.wo-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.wo-presets a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px;
+  text-decoration: none;
+}
+.wo-presets a[aria-current] {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+.wo-filter-details {
+  margin-bottom: 16px;
+}
+.wo-filter-details > summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  font-size: 13px;
+  color: var(--ink-2);
+  list-style: none;
+}
+.wo-filter-details > summary::-webkit-details-marker {
+  display: none;
+}
+.wo-filter-details[open] > summary {
+  color: var(--ink);
 }
 .wo-table-wrap {
   overflow: auto;
@@ -665,8 +778,10 @@
     margin-top: 0;
   }
   .wo-search {
-    align-items: stretch;
-    flex-direction: column;
+    max-width: none;
+  }
+  .wo-search .btn-secondary span {
+    display: none;
   }
   /* 좁은 화면에서 표를 옆으로 굴리지 않고 카드로 접는다.
      한 행이 다섯 칸이라 가로 스크롤로는 한 건도 온전히 안 보였다.
@@ -684,6 +799,8 @@
   .wo-table thead {
     display: none;
   }
+  /* 카드는 제목 한 줄 + 사실 한 줄이다. 이름표를 다 붙이면 한 건이 화면의
+     반을 먹어 두세 건도 한눈에 안 들어온다. 상태는 오른쪽 위 배지. */
   .wo-table tr {
     position: relative;
     margin-bottom: 10px;
@@ -697,13 +814,44 @@
     border: 0;
   }
   .wo-table td[data-label="작업명"] {
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--line);
+    margin-bottom: 6px;
+    padding-right: 72px;
   }
   .wo-table td[data-label="작업명"] a {
     font-size: 15px;
     text-decoration: none;
+  }
+  .wo-table td[data-label="기간·시간"],
+  .wo-table td[data-label="장소"],
+  .wo-table td[data-label="배정"] {
+    display: inline;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .wo-table td[data-label="기간·시간"]::before,
+  .wo-table td[data-label="장소"]::before,
+  .wo-table td[data-label="배정"]::before {
+    content: none;
+  }
+  .wo-table td[data-label="장소"]::before,
+  .wo-table td[data-label="배정"]::before {
+    content: " · ";
+    color: var(--ink-4);
+  }
+  .wo-table td[data-label="상태"] {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .wo-table td[data-label="상태"]::before {
+    content: none;
   }
   /* 카드 전체가 눌리게 한다. 제목만 링크면 손가락으로 찾아 눌러야 한다. */
   .wo-table td[data-label="작업명"] a::after {
@@ -745,7 +893,8 @@
   }
   .wo-table td[data-label="작업명"] small {
     display: block;
-    margin: 4px 0 0;
+    margin: 2px 0 0;
+    font-size: 12px;
   }
 }
 /* =========================================================================

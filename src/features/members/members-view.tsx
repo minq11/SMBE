@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Check, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
 import type { MembershipRole } from "@/server/session";
 import type {
@@ -247,6 +248,7 @@ function MemberRowView({
   const [error, setError] = useState<string | null>(null);
 
   const isSelf = row.user_id === currentUserId;
+  const { confirm, dialog } = useConfirm();
   const runAction = (fn: () => Promise<{ error?: string } | undefined>) => {
     setError(null);
     startTransition(async () => {
@@ -312,11 +314,16 @@ function MemberRowView({
               type="button"
               className="ghost-button ghost-button--danger"
               disabled={pending}
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  !confirm(
+                  !(await confirm(
                     `${row.display_name} 님을 퇴사 처리할까요? 배정된 작업이 있으면 자동 해제되고 과거 기록은 보존됩니다.`,
-                  )
+                    {
+                      title: "퇴사 처리",
+                      confirmLabel: "퇴사 처리",
+                      danger: true,
+                    },
+                  ))
                 )
                   return;
                 runAction(() => resignMemberAction(row.member_id));
@@ -328,6 +335,7 @@ function MemberRowView({
         )}
       </span>
       {error && <span className="row-error">{error}</span>}
+      {dialog}
     </div>
   );
 }

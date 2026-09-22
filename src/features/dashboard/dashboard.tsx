@@ -23,6 +23,14 @@ export type Job = {
   people: number;
   status: string;
 };
+export type Today = {
+  /** YYYY-MM-DD (한국시간) */
+  date: string;
+  jobs: number;
+  /** 유료 회사만 센다. null 이면 칸을 비운다. */
+  tbmMissing: number | null;
+  drafts: number;
+};
 
 /**
  * 로그인 전 화면에 넣는 것.
@@ -64,6 +72,7 @@ export function Dashboard({
   jobs,
   isManager = true,
   openFindingCount = 0,
+  today,
 }: {
   companyName?: string;
   tier?: Tier;
@@ -73,6 +82,7 @@ export function Dashboard({
   jobs?: Job[];
   isManager?: boolean;
   openFindingCount?: number;
+  today?: Today;
 }) {
   return (
     <AppShell
@@ -88,6 +98,7 @@ export function Dashboard({
         isAuthenticated={isAuthenticated}
         isManager={isManager}
         openFindingCount={openFindingCount}
+        today={today}
       />
     </AppShell>
   );
@@ -98,26 +109,72 @@ function DashboardBody({
   isAuthenticated,
   isManager,
   openFindingCount,
+  today,
 }: {
   jobs?: Job[];
   isAuthenticated: boolean;
   isManager: boolean;
   openFindingCount: number;
+  today?: Today;
 }) {
   const displayedJobs = jobs ?? [];
 
   return (
     <>
-      <section className="hero">
-        <h1>
-          Safety must be <span>easy.</span>
-        </h1>
-        <p className="hero-lead">
-          {isAuthenticated
-            ? "안전관리, 쉽고 간편하게 시작하세요."
-            : "중소기업 안전관리를 표준서·지시서·현장점검 한 줄기로 묶습니다. 인원 제한 없이 무료로 시작하세요."}
-        </p>
-      </section>
+      {/* 로그인 전에만 구호를 크게 건다. 로그인한 사람에게 첫 화면의 절반을
+          구호에 주면 정작 할 일이 밀린다 — 오늘 할 일이 먼저다. */}
+      {!isAuthenticated && (
+        <section className="hero">
+          <h1>
+            Safety must be <span>easy.</span>
+          </h1>
+          <p className="hero-lead">
+            중소기업 안전관리를 표준서·지시서·현장점검 한 줄기로 묶습니다. 인원
+            제한 없이 무료로 시작하세요.
+          </p>
+        </section>
+      )}
+      {isAuthenticated && today && (
+        <section className="today" aria-label="오늘 할 일">
+          <h1 className="today-title">
+            오늘 ·{" "}
+            {new Date(today.date + "T00:00:00+09:00").toLocaleDateString(
+              "ko-KR",
+              { month: "long", day: "numeric", weekday: "short" },
+            )}
+          </h1>
+          <div className="today-grid">
+            <Link href="/work-orders?tab=active" className="today-tile">
+              <strong>{today.jobs}건</strong>
+              <small>오늘 작업</small>
+            </Link>
+            {isManager && today.tbmMissing !== null && (
+              <Link
+                href="/monitoring"
+                className={`today-tile${today.tbmMissing > 0 ? " is-alert" : ""}`}
+              >
+                <strong>{today.tbmMissing}명</strong>
+                <small>TBM 미확인</small>
+              </Link>
+            )}
+            {isManager && (
+              <Link
+                href="/inspections"
+                className={`today-tile${openFindingCount > 0 ? " is-alert" : ""}`}
+              >
+                <strong>{openFindingCount}건</strong>
+                <small>미조치 부적합</small>
+              </Link>
+            )}
+            {isManager && (
+              <Link href="/work-orders?tab=draft" className="today-tile">
+                <strong>{today.drafts}건</strong>
+                <small>작성 중 초안</small>
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
 
       {!isAuthenticated && (
         <>

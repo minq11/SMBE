@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { flushSync } from "react-dom";
 import {
   Ban,
@@ -52,14 +53,33 @@ export function OrderCommand({
     orderCommandAction,
     undefined,
   );
+  const { confirm, dialog } = useConfirm();
+  const formRef = useRef<HTMLFormElement>(null);
+  // 확인 창은 비동기라 제출을 한 번 막았다가, 확인되면 다시 제출한다.
+  const confirmed = useRef(false);
   return (
     <form
+      ref={formRef}
       action={action}
       className="wo-command"
       onSubmit={(event) => {
-        if (confirmText && !window.confirm(confirmText)) event.preventDefault();
+        if (!confirmText || confirmed.current) {
+          confirmed.current = false;
+          return;
+        }
+        event.preventDefault();
+        void confirm(confirmText, {
+          title: label,
+          confirmLabel: label,
+          danger: command === "cancel",
+        }).then((ok) => {
+          if (!ok) return;
+          confirmed.current = true;
+          formRef.current?.requestSubmit();
+        });
       }}
     >
+      {dialog}
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="revision" value={revision} />
       <input type="hidden" name="command" value={command} />
@@ -185,15 +205,32 @@ export function DeleteDraftButton({
     orderCommandAction,
     undefined,
   );
+  const { confirm, dialog } = useConfirm();
+  const formRef = useRef<HTMLFormElement>(null);
+  const confirmed = useRef(false);
   return (
     <form
+      ref={formRef}
       action={action}
       className="wo-delete"
       onSubmit={(event) => {
-        if (!window.confirm(`초안 '${name}' 을 삭제할까요?`))
-          event.preventDefault();
+        if (confirmed.current) {
+          confirmed.current = false;
+          return;
+        }
+        event.preventDefault();
+        void confirm(`초안 '${name}' 을 삭제할까요?`, {
+          title: "초안 삭제",
+          confirmLabel: "삭제",
+          danger: true,
+        }).then((ok) => {
+          if (!ok) return;
+          confirmed.current = true;
+          formRef.current?.requestSubmit();
+        });
       }}
     >
+      {dialog}
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="revision" value={revision} />
       <input type="hidden" name="command" value="delete" />

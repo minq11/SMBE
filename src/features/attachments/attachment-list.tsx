@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Loader2, Maximize2, Trash2, X } from "lucide-react";
-import {
-  deleteAttachmentAction,
-  getViewUrlAction,
-} from "./actions";
+import { deleteAttachmentAction, getViewUrlAction } from "./actions";
 
 export type AttachmentItem = {
   id: string;
@@ -67,8 +65,15 @@ export function AttachmentList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.map((i) => i.id).join(",")]);
 
-  const handleDelete = (id: string) => {
-    if (!confirm("이 사진을 삭제할까요?")) return;
+  const { confirm, dialog } = useConfirm();
+  const handleDelete = async (id: string) => {
+    if (
+      !(await confirm("이 사진을 삭제할까요?", {
+        confirmLabel: "삭제",
+        danger: true,
+      }))
+    )
+      return;
     startTransition(async () => {
       const res = await deleteAttachmentAction(id, invalidatePath);
       if (res.ok) onDeleted?.();
@@ -76,14 +81,14 @@ export function AttachmentList({
     });
   };
 
-  if (items.length === 0)
-    return <p className="attach-empty">{emptyLabel}</p>;
+  if (items.length === 0) return <p className="attach-empty">{emptyLabel}</p>;
 
   const openItem = items.find((it) => it.id === openId);
   const openUrl = openId ? urls[openId] : null;
 
   return (
     <>
+      {dialog}
       <ul
         className={`attach-grid${compact ? " attach-grid--compact" : ""}`}
         role="list"

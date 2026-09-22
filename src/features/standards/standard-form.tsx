@@ -1,4 +1,5 @@
 "use client";
+import { PeoplePicker } from "@/components/ui/people-picker";
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
@@ -105,7 +106,11 @@ export function StandardForm({
       return { ...d, [key]: d[key].filter((_, i) => i !== idx) };
     });
 
-  const updateRisk = <K extends keyof Risk>(idx: number, key: K, value: Risk[K]) =>
+  const updateRisk = <K extends keyof Risk>(
+    idx: number,
+    key: K,
+    value: Risk[K],
+  ) =>
     setDraft((d) => {
       const next = [...d.risks];
       next[idx] = { ...next[idx], [key]: value };
@@ -203,7 +208,15 @@ export function StandardForm({
 
       {state?.error && <div className="form-error">{state.error}</div>}
 
-      <section className="std-form-section">
+      {/* 긴 폼이라 구간으로 바로 간다. 좁은 화면에서는 위에 붙는다 (globals.css). */}
+      <nav className="std-jump" aria-label="구간 이동">
+        <a href="#std-basic">기본 정보</a>
+        <a href="#std-method-section">작업 방법</a>
+        <a href="#std-checklist">체크리스트</a>
+        <a href="#std-risk">위험성평가</a>
+      </nav>
+
+      <section className="std-form-section" id="std-basic">
         <h2>기본 정보</h2>
         <div className="form-field">
           <label htmlFor="std-name">표준서명</label>
@@ -230,7 +243,7 @@ export function StandardForm({
         </label>
       </section>
 
-      <section className="std-form-section">
+      <section className="std-form-section" id="std-method-section">
         <h2>작업 방법</h2>
         <div className="form-field">
           <label htmlFor="std-method">작업방법 요약</label>
@@ -278,7 +291,7 @@ export function StandardForm({
         </div>
       </section>
 
-      <section className="std-form-section">
+      <section className="std-form-section" id="std-checklist">
         <h2>체크리스트</h2>
         <ChecklistBlock
           title="작업 전 (TBM)"
@@ -296,7 +309,7 @@ export function StandardForm({
         />
       </section>
 
-      <section className="std-form-section">
+      <section className="std-form-section" id="std-risk">
         <h2>위험성평가 (최초평가)</h2>
         <p className="std-form-note">
           이 표준서를 사용하는 지시서에 자동으로 딸려가는 최초 회차 평가입니다.
@@ -467,41 +480,20 @@ export function StandardForm({
         </div>
 
         <div className="form-field">
-          <label>평가 참여자</label>
           <p className="std-form-note">
             실제 평가에 참여한 근로자를 선택합니다.
           </p>
-          <div className="std-participant-grid">
-            {members.length === 0 && (
-              <p className="std-form-note">
-                구성원이 없어요. 인원관리에서 초대해 주세요.
-              </p>
-            )}
-            {members.map((m) => {
-              const on = draft.participant_user_ids.includes(m.user_id);
-              return (
-                <button
-                  key={m.user_id}
-                  type="button"
-                  className={`std-participant${on ? " is-on" : ""}`}
-                  onClick={() => toggleParticipant(m.user_id)}
-                >
-                  <span className="std-participant-check">
-                    {on ? "✓" : ""}
-                  </span>
-                  {m.display_name}
-                </button>
-              );
-            })}
-          </div>
+          <PeoplePicker
+            legend="평가 참여자"
+            members={members}
+            selected={draft.participant_user_ids}
+            onToggle={toggleParticipant}
+          />
         </div>
       </section>
 
       <div className="std-form-actions">
-        <Link
-          href={returnHref ?? "/standards"}
-          className="ghost-button"
-        >
+        <Link href={returnHref ?? "/standards"} className="ghost-button">
           <X size={13} /> 취소
         </Link>
         <button type="submit" className="primary-button" disabled={pending}>

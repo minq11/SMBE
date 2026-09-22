@@ -5,8 +5,11 @@ import { Dashboard } from "@/features/dashboard/dashboard";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
 import { listOrders } from "@/server/work-orders";
-import { STATUS_LABEL } from "@/features/work-orders/model";
-import { pendingFindingCount } from "@/server/inspection-service";
+import { STATUS_LABEL, seoulToday } from "@/features/work-orders/model";
+import {
+  inspectionMonitor,
+  pendingFindingCount,
+} from "@/server/inspection-service";
 import { withTransaction } from "@/server/db";
 
 export default async function Home() {
@@ -31,15 +34,27 @@ export default async function Home() {
           }),
         )
       : 0;
-  const orders = session?.membership
-    ? await listOrders(
-        {
-          companyId: session.membership.company_id,
-          userId: session.user.id,
-        },
-        "active",
-      )
+  const actor = session?.membership
+    ? { companyId: session.membership.company_id, userId: session.user.id }
     : null;
+  const isManager = session?.membership?.role !== "WORKER";
+  const orders = actor ? await listOrders(actor, "active") : null;
+  // 로그인한 홈은 오늘 할 일부터다. 오늘 작업 수, (유료면) TBM 미확인 인원,
+  // 작성 중 초안 수를 위에 띄운다. 미조치 부적합은 위에서 이미 셌다.
+  const today = seoulToday();
+  const todayJobs =
+    orders?.rows.filter(
+      (row) =>
+        row.start_date &&
+        row.start_date <= today &&
+        (row.end_date ?? row.start_date) >= today,
+    ).length ?? 0;
+  const drafts =
+    actor && isManager ? (await listOrders(actor, "draft")).rows.length : 0;
+  const monitor =
+    actor && isManager
+      ? await withTransaction((client) => inspectionMonitor(client, actor))
+      : null;
 
   return (
     <Dashboard
@@ -48,8 +63,18 @@ export default async function Home() {
       userName={session?.user.displayName ?? undefined}
       isAuthenticated={Boolean(session)}
       isOperator={isOperator}
-      isManager={session?.membership?.role !== "WORKER"}
+      isManager={isManager}
       openFindingCount={openFindingCount}
+      today={
+        actor
+          ? {
+              date: today,
+              jobs: todayJobs,
+              tbmMissing: monitor?.paid ? monitor.summary.tbmMissing : null,
+              drafts,
+            }
+          : undefined
+      }
       jobs={orders?.rows.slice(0, 5).map((row) => ({
         href: "/work-orders/" + row.id,
         title: row.name,

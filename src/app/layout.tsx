@@ -38,8 +38,16 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body>
+        {/* 닫아 둔 공지 띠는 첫 그리기 전에 치운다. 하이드레이션 뒤에 치우면
+            한 번 보였다 사라진다. 키는 preview-banner.tsx 와 같아야 한다. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(localStorage.getItem("smbe.preview-banner.dismissed")==="1")document.documentElement.dataset.bannerHidden="1"}catch(e){}',
+          }}
+        />
         <ServiceWorkerRegistrar />
         <PreviewBanner />
         {children}

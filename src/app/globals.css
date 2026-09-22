@@ -165,14 +165,46 @@ button svg {
 .preview-banner-mail:hover {
   color: var(--brand);
 }
+.preview-banner-close {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.preview-banner-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+/* 닫은 뒤. 상단바·고정 머리가 보는 --banner-h 도 같이 0 이 된다. */
+html[data-banner-hidden] {
+  --banner-h: 0px;
+}
+html[data-banner-hidden] .preview-banner {
+  display: none;
+}
 @media (max-width: 640px) {
   :root {
-    --banner-h: 56px;
+    --banner-h: 36px;
   }
+  /* 한 줄에 다 들어가지 않으면 문장은 빼고 링크만 남긴다. */
   .preview-banner {
     font-size: 11px;
-    padding: 0 12px;
+    padding: 0 44px 0 12px;
     line-height: 1.4;
+  }
+  .preview-banner-copy {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .preview-banner-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -326,6 +358,25 @@ button svg {
 .sidebar-support:hover {
   background: var(--surface-2);
   color: var(--ink-2);
+}
+/* 좁은 화면의 메뉴 서랍에서만 보이는 로그아웃 (상단바에서 뺐다). */
+.sidebar-logout {
+  display: none;
+}
+.sidebar-logout button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--ink-3);
+  text-align: left;
+}
+.topbar-title {
+  display: none;
 }
 
 .sidebar-shade {
@@ -547,6 +598,61 @@ button svg {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* 로그인한 홈의 첫 화면 — 오늘 할 일. 숫자를 누르면 그 화면으로 간다. */
+.today-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-bottom: 14px;
+}
+.today-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.today-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.12s;
+}
+.today-tile:hover {
+  border-color: var(--brand);
+}
+.today-tile strong {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+}
+.today-tile small {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.today-tile.is-alert strong {
+  color: #b83a12;
+}
+@media (max-width: 960px) {
+  .today-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .today-tile {
+    padding: 12px 14px;
+    min-height: 64px;
+  }
+  .today-tile strong {
+    font-size: 20px;
+  }
 }
 
 /* 로그인 전 기능 소개. 숫자·목록이 아니라 무엇을 하는지만 적는다. */
@@ -3148,43 +3254,6 @@ button svg {
   }
 }
 
-.std-participant-grid {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.std-participant {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-2);
-  transition:
-    border-color 0.15s,
-    background 0.15s,
-    color 0.15s;
-}
-.std-participant:hover {
-  border-color: var(--line-strong);
-}
-.std-participant.is-on {
-  border-color: var(--brand);
-  background: var(--brand-soft);
-  color: var(--brand-strong);
-}
-.std-participant-check {
-  display: inline-grid;
-  place-items: center;
-  width: 16px;
-  color: var(--brand-strong);
-  font-weight: 900;
-}
-
 .std-form-actions {
   display: flex;
   justify-content: flex-end;
@@ -4148,6 +4217,26 @@ button svg {
   .profile-name {
     display: none;
   }
+  /* 로그아웃은 매 화면 상단에 둘 만큼 자주 쓰는 게 아니다. 메뉴 서랍 아래와
+     마이페이지에 있다. 비운 자리에는 현재 화면 제목이 온다. */
+  .topbar .logout-form {
+    display: none;
+  }
+  .topbar-title {
+    display: block;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar-left:has(.topbar-title) .topbar-brand {
+    display: none;
+  }
+  .sidebar-logout {
+    display: flex;
+  }
   .main-content {
     padding: 32px 16px max(64px, env(safe-area-inset-bottom, 0px));
     gap: 32px;
@@ -4579,6 +4668,247 @@ body.sidebar-lock {
   font-weight: 600;
   font-size: 14px;
   min-height: 44px;
+}
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  background: #b83a12;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  min-height: 44px;
+}
+.btn-danger:hover {
+  background: #99300f;
+}
+
+/* 사람 고르기 칩 (components/ui/people-picker.tsx). 속은 체크박스다. */
+.people-picker {
+  border: 0;
+  padding: 0;
+  margin: 24px 0;
+  min-width: 0;
+}
+.people-picker > legend {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0;
+  margin-bottom: 10px;
+}
+.people-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-3);
+}
+.people-picker-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 11px 0;
+  font: inherit;
+  color: var(--ink);
+}
+.people-picker-search input:focus {
+  outline: none;
+}
+.people-picker-search:focus-within {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.people-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.people-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+}
+.people-chip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+.people-chip-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong, var(--line));
+  color: #fff;
+  flex-shrink: 0;
+}
+.people-chip.is-on {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+.people-chip.is-on .people-chip-mark {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.people-chip:has(input:focus-visible) {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* 홈 화면에 추가 안내 (components/pwa/add-to-home-hint.tsx) */
+.a2hs {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 8px 12px 14px;
+  margin: 0 0 16px;
+  border: 1px solid var(--brand-soft);
+  background: var(--brand-softer);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.a2hs p {
+  flex: 1;
+  margin: 0;
+}
+.a2hs svg {
+  vertical-align: -2px;
+}
+.a2hs > button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: var(--ink-3);
+}
+
+/* 표준서 폼 구간 이동 (좁은 화면에서 위에 붙는다) */
+.std-jump {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.std-jump a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px;
+  text-decoration: none;
+}
+.std-jump a:hover {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+@media (max-width: 960px) {
+  .std-jump {
+    position: sticky;
+    top: calc(var(--banner-h) + 56px);
+    z-index: 10;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 8px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .std-jump::-webkit-scrollbar {
+    display: none;
+  }
+  .std-jump a {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .std-form-section {
+    scroll-margin-top: calc(var(--banner-h) + 56px + 64px);
+  }
+}
+
+/* 확인 창 (components/ui/confirm-dialog.tsx). 넓은 화면은 가운데 카드,
+   좁은 화면은 아래에서 올라오는 시트 — 엄지가 닿는 자리에 버튼이 온다. */
+.confirm-dialog {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  width: min(440px, calc(100vw - 32px));
+}
+.confirm-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+.confirm-dialog-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.confirm-dialog-body h2 {
+  font-size: 17px;
+  font-weight: 800;
+}
+.confirm-dialog-message {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .confirm-dialog {
+    width: 100%;
+    max-width: none;
+    margin: auto 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+  }
+  .confirm-dialog-body {
+    padding: 20px 16px max(20px, env(safe-area-inset-bottom, 0px));
+  }
+  .confirm-dialog-actions > * {
+    flex: 1;
+    justify-content: center;
+  }
 }
 .pending-notice {
   background: var(--surface);

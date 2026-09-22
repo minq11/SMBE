@@ -52,14 +52,23 @@ export default async function WorkOrdersPage({
           </Link>
         ))}
       </nav>
-      <form className="wo-search">
+      <form className="wo-search" role="search">
         <input type="hidden" name="tab" value={tab} />
-        <label className="wo-field">
-          <span>작업명 검색</span>
-          <input name="q" defaultValue={q} maxLength={120} />
+        <label className="wo-search-box">
+          <Search size={15} aria-hidden="true" />
+          <input
+            type="search"
+            name="q"
+            defaultValue={q}
+            maxLength={120}
+            placeholder="작업명 검색"
+            aria-label="작업명 검색"
+            enterKeyHint="search"
+            autoComplete="off"
+          />
         </label>
-        <button className="btn-secondary">
-          <Search size={14} /> 검색
+        <button className="btn-secondary" aria-label="검색">
+          <span>검색</span>
         </button>
       </form>
       {result.locked > 0 && (

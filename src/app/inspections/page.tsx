@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CalendarCheck, Search } from "lucide-react";
+import { CalendarCheck, ChevronDown, Search } from "lucide-react";
+import { seoulToday } from "@/features/work-orders/model";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import {
@@ -45,6 +46,53 @@ export default async function InspectionsPage({
 }) {
   const filters = await searchParams;
   const { session, actor } = await workSession("/inspections");
+  // 빠른 필터. 좁은 화면에서 날짜 두 개를 고르는 대신 한 번 누른다.
+  const today = seoulToday();
+  const weekStart = (() => {
+    const d = new Date(today + "T00:00:00+09:00");
+    const dow = (d.getUTCDay() + 6) % 7; // 월요일 = 0
+    d.setUTCDate(d.getUTCDate() - dow);
+    return d.toISOString().slice(0, 10);
+  })();
+  const PRESETS = [
+    {
+      key: "today",
+      label: "오늘",
+      href: `/inspections?from=${today}&to=${today}`,
+    },
+    {
+      key: "week",
+      label: "이번 주",
+      href: `/inspections?from=${weekStart}&to=${today}`,
+    },
+    { key: "missing", label: "미이행만", href: "/inspections?state=MISSING" },
+    { key: "fail", label: "미조치 있음", href: "/inspections?state=FAIL" },
+  ] as const;
+  const activePreset =
+    filters.from === today &&
+    filters.to === today &&
+    !filters.q &&
+    !filters.state
+      ? "today"
+      : filters.from === weekStart &&
+          filters.to === today &&
+          !filters.q &&
+          !filters.state
+        ? "week"
+        : filters.state === "MISSING" &&
+            !filters.from &&
+            !filters.to &&
+            !filters.q
+          ? "missing"
+          : filters.state === "FAIL" &&
+              !filters.from &&
+              !filters.to &&
+              !filters.q
+            ? "fail"
+            : null;
+  const customFilter =
+    !activePreset &&
+    Boolean(filters.from || filters.to || filters.q || filters.state);
   const isManager = session.membership?.role !== "WORKER";
   type LogState = (typeof STATE_OPTIONS)[number][0];
   const state: LogState = (STATE_OPTIONS.find(
@@ -90,41 +138,70 @@ export default async function InspectionsPage({
             배정 인원 전원 TBM + 작업 중 점검 1건 이상이면 이행 완료입니다.
             회차를 열면 작업자별 기록과 관리자 사후 입력·수정을 할 수 있습니다.
           </p>
-          <form className="account-form account-panel wo-log-filter">
-            <label>
-              시작일
-              <input type="date" name="from" defaultValue={filters.from ?? ""} />
-            </label>
-            <label>
-              종료일
-              <input type="date" name="to" defaultValue={filters.to ?? ""} />
-            </label>
-            <label>
-              작업명
-              <input
-                name="q"
-                maxLength={100}
-                defaultValue={filters.q ?? ""}
-                placeholder="작업명 일부"
-              />
-            </label>
-            <label>
-              상태
-              <select name="state" defaultValue={state}>
-                {STATE_OPTIONS.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className="btn-secondary" type="submit">
-              조회
-            </button>
-            <Link className="btn-secondary" href="/inspections">
-              초기화
+          <nav className="wo-presets" aria-label="빠른 필터">
+            {PRESETS.map((p) => (
+              <Link
+                key={p.key}
+                href={p.href}
+                aria-current={activePreset === p.key ? "page" : undefined}
+              >
+                {p.label}
+              </Link>
+            ))}
+            <Link
+              href="/inspections"
+              aria-current={!activePreset && !customFilter ? "page" : undefined}
+            >
+              전체
             </Link>
-          </form>
+          </nav>
+          <details className="wo-filter-details" open={customFilter}>
+            <summary>
+              <ChevronDown size={14} aria-hidden="true" /> 기간·작업명·상태로
+              자세히 찾기
+            </summary>
+            <form className="account-form account-panel wo-log-filter">
+              <label>
+                시작일
+                <input
+                  type="date"
+                  name="from"
+                  defaultValue={filters.from ?? ""}
+                />
+              </label>
+              <label>
+                종료일
+                <input type="date" name="to" defaultValue={filters.to ?? ""} />
+              </label>
+              <label>
+                작업명
+                <input
+                  type="search"
+                  name="q"
+                  maxLength={100}
+                  defaultValue={filters.q ?? ""}
+                  placeholder="작업명 일부"
+                  enterKeyHint="search"
+                />
+              </label>
+              <label>
+                상태
+                <select name="state" defaultValue={state}>
+                  {STATE_OPTIONS.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className="btn-secondary" type="submit">
+                조회
+              </button>
+              <Link className="btn-secondary" href="/inspections">
+                초기화
+              </Link>
+            </form>
+          </details>
 
           {!log.rows.length && <p>조건에 맞는 회차가 없습니다.</p>}
           {log.rows.map((r) => (

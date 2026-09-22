@@ -1,7 +1,8 @@
 "use client";
 import { useActionState, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, CheckCircle2, Save, X } from "lucide-react";
+import { Camera, CheckCheck, CheckCircle2, Save, X } from "lucide-react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { uploadImage } from "@/features/attachments/upload";
 import { submitInspectionAction, resolveFindingAction } from "./actions";
 import { RESULT_LABEL, type InspectionInput } from "./model";
@@ -47,6 +48,40 @@ export function InspectionForm({
     if (previousActions.length && !reviewed && !dialog.current?.open)
       dialog.current?.showModal();
   }, [previousActions.length, reviewed]);
+  // 저장 후에는 고칠 수 없으므로, 저장 전에 무엇을 저장하는지 한 번 보여 준다.
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const formRef = useRef<HTMLFormElement>(null);
+  const confirmed = useRef(false);
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (confirmed.current) {
+      confirmed.current = false;
+      return;
+    }
+    event.preventDefault();
+    const counts = { PASS: 0, FAIL: 0, NA: 0 } as Record<string, number>;
+    for (const c of checklist)
+      counts[answers[c.id] ?? ""] = (counts[answers[c.id] ?? ""] ?? 0) + 1;
+    const summary =
+      `${RESULT_LABEL.PASS} ${counts.PASS}건 · ${RESULT_LABEL.FAIL} ${counts.FAIL}건 · ${RESULT_LABEL.NA} ${counts.NA}건` +
+      (counts.FAIL > 0
+        ? "\n부적합은 선택한 관리자의 알림함에 등록됩니다."
+        : "") +
+      "\n저장 후에는 수정할 수 없습니다.";
+    void confirm(summary, {
+      title:
+        category === "TBM"
+          ? "TBM 확인을 저장할까요?"
+          : "작업 중 점검을 저장할까요?",
+      confirmLabel: "저장",
+    }).then((ok) => {
+      if (!ok) return;
+      confirmed.current = true;
+      formRef.current?.requestSubmit();
+    });
+  };
+  // 현장에서는 대부분 전부 적합이다. 항목마다 누르게 하면 그만큼 빠뜨린다.
+  const markAllPass = () =>
+    setAnswers(Object.fromEntries(checklist.map((c) => [c.id, "PASS"])));
 
   // 저장 성공 → 들고 있던 사진을 항목별 결과 행에 올리고 → 이동.
   // 사진이 실패해도 점검 기록은 이미 저장됐으므로 이동은 막지 않는다.
@@ -137,10 +172,31 @@ export function InspectionForm({
           </button>
         </dialog>
       )}
-      <form action={send} className="inspection-form">
+      {confirmDialog}
+      <form
+        ref={formRef}
+        action={send}
+        onSubmit={onSubmit}
+        className="inspection-form"
+      >
         {state?.error && (
           <p role="alert" className="wo-error">
             {state.error}
+          </p>
+        )}
+        {checklist.length > 1 && (
+          <p className="inspection-bulk">
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={pending}
+              onClick={markAllPass}
+            >
+              <CheckCheck size={14} /> 전부 {RESULT_LABEL.PASS}으로 표시
+            </button>
+            <span className="wo-muted">
+              표시한 뒤 부적합·해당없음인 항목만 바꾸면 됩니다.
+            </span>
           </p>
         )}
         {checklist.map((c, index) => (
@@ -157,6 +213,7 @@ export function InspectionForm({
                     value={value}
                     required
                     disabled={pending}
+                    checked={answers[c.id] === value}
                     onChange={() =>
                       setAnswers((old) => ({ ...old, [c.id]: value }))
                     }
@@ -184,9 +241,9 @@ export function InspectionForm({
                     hidden
                     disabled={pending}
                     onChange={(event) => {
-                      const picked = Array.from(event.target.files ?? []).filter(
-                        (f) => f.type.startsWith("image/"),
-                      );
+                      const picked = Array.from(
+                        event.target.files ?? [],
+                      ).filter((f) => f.type.startsWith("image/"));
                       if (picked.length)
                         setPhotos((old) => ({
                           ...old,
@@ -267,21 +324,22 @@ export function InspectionForm({
             : "사진 첨부는 유료 요금제에서 이용할 수 있습니다."}{" "}
           저장 후 수정은 아직 지원하지 않습니다.
         </p>
-        <button
-          className="btn-primary"
-          disabled={
-            pending || !!saved || !reviewed || checklist.length === 0
-          }
-        >
-          <Save size={14} />
-          {uploading
-            ? uploading
-            : pending || saved
-              ? "저장 중…"
-              : category === "TBM"
-                ? "TBM 확인 저장"
-                : "작업 중 점검 저장"}
-        </button>
+        {/* 좁은 화면에서 아래에 붙는다. 항목이 많아도 저장이 보인다. */}
+        <div className="inspection-form-actions">
+          <button
+            className="btn-primary"
+            disabled={pending || !!saved || !reviewed || checklist.length === 0}
+          >
+            <Save size={14} />
+            {uploading
+              ? uploading
+              : pending || saved
+                ? "저장 중…"
+                : category === "TBM"
+                  ? "TBM 확인 저장"
+                  : "작업 중 점검 저장"}
+          </button>
+        </div>
       </form>
     </>
   );

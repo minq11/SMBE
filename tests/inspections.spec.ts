@@ -159,6 +159,10 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await workerPage
       .getByRole("button", { name: "작업 중 점검 저장", exact: true })
       .click();
+    await workerPage
+      .getByRole("dialog")
+      .getByRole("button", { name: "저장", exact: true })
+      .click();
     await expect(workerPage.getByRole("status")).toContainText(
       "점검 기록을 저장했습니다.",
     );
@@ -223,6 +227,10 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await workerPage
       .getByRole("button", { name: "TBM 확인 저장", exact: true })
       .click();
+    await workerPage
+      .getByRole("dialog")
+      .getByRole("button", { name: "저장", exact: true })
+      .click();
     await expect(
       workerPage.getByText("내 TBM 확인 완료", { exact: true }),
     ).toBeVisible();
@@ -239,6 +247,10 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await workerPage
       .getByRole("button", { name: "작업 중 점검 저장", exact: true })
       .click();
+    await workerPage
+      .getByRole("dialog")
+      .getByRole("button", { name: "저장", exact: true })
+      .click();
     await expect(workerPage.getByText(/오늘 회차: .*오늘/)).toBeVisible();
     await workerPage.screenshot({
       path: testInfo.outputPath("inspection-complete.png"),
@@ -253,6 +265,8 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       hasText: "점검 흐름 검증",
     });
     await expect(logRow.first()).toBeVisible();
+    // 자세한 필터는 접혀 있다 — 빠른 필터 칩이 기본이다 (inspections/page.tsx).
+    await page.getByText("기간·작업명·상태로 자세히 찾기").click();
     await page.getByLabel("작업명").fill("있을 리 없는 작업");
     await page.getByRole("button", { name: "조회", exact: true }).click();
     await expect(page.getByText("조건에 맞는 회차가 없습니다.")).toBeVisible();
@@ -307,7 +321,10 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       page.getByRole("heading", { name: /작업 \d+건/ }),
     ).toBeVisible();
     await expect(
-      page.locator(".monitor-row").filter({ hasText: "점검 흐름 검증" }).first(),
+      page
+        .locator(".monitor-row")
+        .filter({ hasText: "점검 흐름 검증" })
+        .first(),
     ).toBeVisible();
     expect(
       await page.evaluate(

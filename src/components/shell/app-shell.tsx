@@ -139,6 +139,7 @@ function AppShellFrame({
         tier={tier}
         isOpen={drawerOpen}
         isMobile={isMobile}
+        isAuthenticated={isAuthenticated}
         onClose={closeMobile}
       />
       <div className="main-shell" inert={drawerOpen}>

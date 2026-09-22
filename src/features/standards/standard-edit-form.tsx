@@ -6,7 +6,10 @@ import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { HelpTip } from "@/components/ui/help-tip";
 import { PtwHelp } from "./ptw-help";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
-import { AttachmentList, type AttachmentItem } from "@/features/attachments/attachment-list";
+import {
+  AttachmentList,
+  type AttachmentItem,
+} from "@/features/attachments/attachment-list";
 import { updateStandardAction, type StandardActionState } from "./actions";
 
 type StepDraft = { id?: string; text: string };
@@ -104,7 +107,10 @@ export function StandardEditForm({
 
   return (
     <form action={formAction} onSubmit={handleSubmit} className="std-form">
-      <Link href={`/standards/${standardId}`} className="text-button std-back-link">
+      <Link
+        href={`/standards/${standardId}`}
+        className="text-button std-back-link"
+      >
         <ArrowLeft size={13} /> 표준서 상세
       </Link>
 
@@ -119,7 +125,13 @@ export function StandardEditForm({
 
       {state?.error && <div className="form-error">{state.error}</div>}
 
-      <section className="std-form-section">
+      <nav className="std-jump" aria-label="구간 이동">
+        <a href="#std-basic">기본 정보</a>
+        <a href="#std-steps">작업 단계</a>
+        <a href="#std-checklist">체크리스트</a>
+      </nav>
+
+      <section className="std-form-section" id="std-basic">
         <h2>기본 정보</h2>
         <div className="form-field">
           <label htmlFor="std-edit-name">표준서명</label>
@@ -144,7 +156,7 @@ export function StandardEditForm({
         </label>
       </section>
 
-      <section className="std-form-section">
+      <section className="std-form-section" id="std-steps">
         <h2>작업 단계</h2>
         <div className="form-field">
           <ol className="std-list std-list--with-attach">
@@ -208,7 +220,7 @@ export function StandardEditForm({
         </div>
       </section>
 
-      <section className="std-form-section">
+      <section className="std-form-section" id="std-checklist">
         <h2>체크리스트</h2>
         <ChecklistBlock
           title="작업 전 (TBM)"

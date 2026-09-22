@@ -12,12 +12,14 @@ import {
   ClipboardList,
   HelpCircle,
   Home,
+  LogOut,
   Settings2,
   ShieldCheck,
   TriangleAlert,
   type LucideIcon,
 } from "lucide-react";
 import { usePreview } from "./preview-dialog";
+import { logoutAction } from "@/features/auth/logout-action";
 
 export type NavKey =
   | "home"
@@ -119,6 +121,7 @@ export function Sidebar({
   tier = "무료",
   isOpen,
   isMobile = false,
+  isAuthenticated = false,
   onClose,
 }: {
   active: NavKey;
@@ -126,6 +129,7 @@ export function Sidebar({
   tier?: Tier;
   isOpen: boolean;
   isMobile?: boolean;
+  isAuthenticated?: boolean;
   onClose: () => void;
 }) {
   const preview = usePreview();
@@ -245,6 +249,14 @@ export function Sidebar({
           <HelpCircle size={15} />
           도움말
         </button>
+        {isAuthenticated && (
+          <form action={logoutAction} className="sidebar-logout">
+            <button type="submit">
+              <LogOut size={15} />
+              로그아웃
+            </button>
+          </form>
+        )}
       </div>
     </aside>
   );

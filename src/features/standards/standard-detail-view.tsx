@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import {
   Archive,
@@ -42,11 +43,13 @@ export function StandardDetailView({
   const [pending, startTransition] = useTransition();
   const invalidatePath = `/standards/${detail.standard_id}`;
 
-  const onArchive = () => {
+  const { confirm, dialog } = useConfirm();
+  const onArchive = async () => {
     if (
-      !confirm(
+      !(await confirm(
         `${detail.name} 을 폐기할까요? 폐기된 표준서는 새 지시서 작성에서 선택할 수 없습니다. 기존에 발급된 지시서에는 영향이 없습니다.`,
-      )
+        { title: "표준서 폐기", confirmLabel: "폐기", danger: true },
+      ))
     )
       return;
     startTransition(async () => {
@@ -63,6 +66,7 @@ export function StandardDetailView({
 
   return (
     <>
+      {dialog}
       <Link href="/standards" className="text-button std-back-link">
         <ArrowLeft size={13} /> 표준서 목록
       </Link>
@@ -75,8 +79,8 @@ export function StandardDetailView({
           </span>
           <h1>{detail.name}</h1>
           <p className="std-detail-meta">
-            생성 {new Date(detail.created_at).toLocaleDateString("ko-KR")} · 최근
-            수정 {new Date(detail.updated_at).toLocaleDateString("ko-KR")}
+            생성 {new Date(detail.created_at).toLocaleDateString("ko-KR")} ·
+            최근 수정 {new Date(detail.updated_at).toLocaleDateString("ko-KR")}
           </p>
         </div>
         <div className="std-detail-actions">
@@ -312,13 +316,11 @@ export function StandardDetailView({
                   {ASSESSMENT_KIND_LABEL[a.kind]}
                 </span>
                 <span className="std-assessment-date">
-                  실시일{" "}
-                  {new Date(a.performed_on).toLocaleDateString("ko-KR")}
+                  실시일 {new Date(a.performed_on).toLocaleDateString("ko-KR")}
                 </span>
                 {a.valid_until && (
                   <span className="std-assessment-valid">
-                    유효 ~{" "}
-                    {new Date(a.valid_until).toLocaleDateString("ko-KR")}
+                    유효 ~ {new Date(a.valid_until).toLocaleDateString("ko-KR")}
                   </span>
                 )}
                 <span

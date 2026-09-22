@@ -131,10 +131,14 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     for (let i = 0; i < 3; i++) {
       await page.getByRole("button", { name: "다음", exact: true }).click();
     }
-    page.on("dialog", (dialog) => dialog.accept());
     // 저장 → 본인 평가 승인 → 발급 → 링크 전송을 한 번에 처리한다.
+    // 확인은 브라우저 confirm 이 아니라 앱 안의 확인 창이다 (confirm-dialog.tsx).
     await page
       .getByRole("button", { name: "지금 발급하기", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "발급", exact: true })
       .click();
     // 발급 직후에는 할 일(QR·링크 전달)이 있는 탭으로 바로 간다.
     await expect(page).toHaveURL(new RegExp(id + "\\?tab=qr$"));
@@ -310,6 +314,10 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       await expect(reason).toHaveValue("화면검증 종료", { timeout: 1000 });
     }).toPass({ timeout: 15000 });
     await page
+      .getByRole("button", { name: "지시서 취소", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
       .getByRole("button", { name: "지시서 취소", exact: true })
       .click();
     await expect(

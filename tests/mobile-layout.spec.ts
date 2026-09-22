@@ -57,9 +57,9 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
             return (
               r.width > 0 &&
               (r.right > innerWidth + 1 || r.left < -1) &&
-              // .wo-steps: 작성 단계 탭은 좁은 화면에서 한 줄로 옆으로 미는 띠다.
+              // .wo-steps/.std-jump: 좁은 화면에서 한 줄로 옆으로 미는 띠다.
               !el.closest(
-                ".honeypot, [hidden], .wo-table-wrap, .tabs, .wo-steps",
+                ".honeypot, [hidden], .wo-table-wrap, .tabs, .wo-steps, .std-jump",
               )
             );
           })
@@ -71,6 +71,47 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
           })),
       );
       expect(overflow).toEqual([]);
+      // 손가락으로 누르는 것은 40px 은 돼야 한다 (iOS 44pt, Android 48dp 권고).
+      // 본문 속 글자 링크는 제외하고, 버튼·입력칸·카드형 링크만 본다.
+      const small = await page.evaluate(() =>
+        [
+          ...document.querySelectorAll(
+            [
+              "main button",
+              "main input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file])",
+              "main select",
+              "main textarea",
+              "main a.btn-primary",
+              "main a.btn-secondary",
+              "main a.row",
+              "main a.action-card",
+              "main a.today-tile",
+              "main .wo-tabs a",
+              "main .wo-doc-tabs a",
+              "main .wo-presets a",
+              ".topbar button",
+              ".topbar a",
+            ].join(","),
+          ),
+        ]
+          .filter((el) => {
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 || r.height === 0) return false;
+            if (el.closest("[hidden], .honeypot, [inert]")) return false;
+            return r.height < 40 || r.width < 40;
+          })
+          .slice(0, 8)
+          .map((el) => {
+            const r = el.getBoundingClientRect();
+            return {
+              tag: el.tagName,
+              cls: el.className,
+              text: el.textContent?.slice(0, 40),
+              size: `${Math.round(r.width)}x${Math.round(r.height)}`,
+            };
+          }),
+      );
+      expect(small).toEqual([]);
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));

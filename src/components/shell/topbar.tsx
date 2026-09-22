@@ -47,6 +47,12 @@ export function Topbar({
         <Link href="/" className="topbar-brand" aria-label="SMBE 홈">
           <BrandWordmark className="topbar-wordmark" />
         </Link>
+        {/* 좁은 화면: 안쪽 화면에서는 워드마크 대신 현재 화면 제목 (globals.css). */}
+        {breadcrumb.length > 0 && (
+          <span className="topbar-title" aria-hidden="true">
+            {breadcrumb[breadcrumb.length - 1].label}
+          </span>
+        )}
         {breadcrumb.length > 0 && (
           <nav className="breadcrumb" aria-label="현재 위치">
             {breadcrumb.map((crumb, index) => {
