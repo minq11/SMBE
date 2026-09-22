@@ -39,20 +39,20 @@ test("preview renders without secrets and only shows preparation dialogs", async
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "심플안전을 해야 하는 이유" }),
+    page.getByRole("heading", { name: "심플안전 해야하는 이유" }),
   ).toBeVisible();
   // 로그인 전 화면에는 가짜 데이터를 두지 않는다. 실제로 하는 일과 시작 경로만 있다.
   await expect(
-    page.getByRole("link", { name: /무료로 시작하기/ }),
+    page.getByRole("link", { name: /무료로 시작/ }),
   ).toHaveAttribute("href", "/login");
   await expect(
-    page.getByRole("link", { name: /우리 회사는 준비됐나/ }),
+    page.getByRole("link", { name: /우리회사 안전수준 진단/ }),
   ).toHaveAttribute("href", "/recognition-check");
   await expect(
     page.getByRole("heading", { name: /‘시작 요금’ 없는/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: /‘앱 설치 강요’ 없는/ }),
+    page.getByRole("heading", { name: /‘앱 설치’ 없는/ }),
   ).toBeVisible();
   for (const fake of [
     "오늘의 작업 (예시)",
