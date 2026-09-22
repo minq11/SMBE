@@ -49,10 +49,10 @@ test("preview renders without secrets and only shows preparation dialogs", async
     page.getByRole("link", { name: /우리 회사는 준비됐나/ }),
   ).toHaveAttribute("href", "/recognition-check");
   await expect(
-    page.getByRole("heading", { name: /인원 제한 없이 무료로 시작/ }),
+    page.getByRole("heading", { name: /‘시작 요금’ 없는/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: /QR만 찍으면 끝/ }),
+    page.getByRole("heading", { name: /‘앱 설치 강요’ 없는/ }),
   ).toBeVisible();
   for (const fake of [
     "오늘의 작업 (예시)",

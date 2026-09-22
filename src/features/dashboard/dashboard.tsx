@@ -52,20 +52,20 @@ export type Today = {
  */
 const REASONS = [
   {
-    title: "인원 제한 없이 무료로 시작",
-    body: "문의나 협의 없이 포털처럼 바로 가입해 씁니다. 먼저 써 보고, 추가 기능이 필요할 때만 유료 플랜으로 넘어갑니다.",
+    keyword: "시작 요금",
+    body: "인원 제한 없이 무료. 문의·협의 없이 바로 가입, 유료는 필요할 때만.",
   },
   {
-    title: "위험성평가부터 작업지시·허가서 발급·안전점검까지",
-    body: "한 흐름으로 이어집니다. 공단 인정을 받으면 3년간 감독 유예, 산재보험료 20% 인하, 중대재해처벌법 일부 대응이 됩니다.",
+    keyword: "걱정",
+    body: "위험성평가 → 작업지시 → 허가서 → 안전점검, 한 흐름. 공단 인정 시 3년 감독 유예 · 산재보험료 20% 인하 · 중처법 일부 대응.",
   },
   {
-    title: "작업자는 앱 설치 없이 QR만 찍으면 끝",
-    body: "설치도 로그인도 없이 본인 링크로 위험요인을 확인하고 TBM·작업 중 점검을 기록합니다.",
+    keyword: "앱 설치 강요",
+    body: "작업자는 QR 한 번. 설치도 로그인도 없이 TBM·점검 기록.",
   },
   {
-    title: "외국인 근로자도 자기 언어로",
-    body: "위험요인과 감소대책을 자기 언어로 확인하고 기록합니다.",
+    keyword: "국경",
+    body: "외국인 근로자도 자기 언어로 위험요인 확인·기록.",
     soon: true,
   },
 ];
@@ -244,8 +244,7 @@ function DashboardBody({
             <span>심플안전</span>을 해야 하는 이유
           </h1>
           <p className="hero-lead">
-            위험성평가부터 작업지시·허가서·안전점검까지. 문의 없이 오늘 바로
-            시작합니다.
+            위험성평가부터 작업지시·허가서·안전점검까지, 오늘 바로.
           </p>
           <div className="hero-actions">
             <Link href="/login" className="btn-primary">
@@ -307,14 +306,17 @@ function DashboardBody({
       {!isAuthenticated && (
         <section className="stack" aria-label="심플안전을 해야 하는 이유">
           <ol className="reasons">
-            {REASONS.map(({ title, body, soon }, i) => (
-              <li key={title}>
+            {REASONS.map(({ keyword, body, soon }, i) => (
+              <li key={keyword}>
                 <span className="reason-no" aria-hidden="true">
                   {i + 1}
                 </span>
                 <div>
                   <h2>
-                    {title}
+                    <span className="reason-keyword">
+                      &lsquo;{keyword}&rsquo;
+                    </span>{" "}
+                    없는
                     {soon && <span className="reason-badge">준비 중</span>}
                   </h2>
                   <p>{body}</p>
@@ -323,9 +325,7 @@ function DashboardBody({
             ))}
           </ol>
           <p className="hero-lead">
-            표준서·지시서·PTW·TBM·점검 같은 텍스트 기반 기능은 인원 제한 없이
-            무료입니다. 사진 첨부, 알림톡 발송, 지시서 출력물, 전체 기록 조회가
-            필요해질 때 유료로 전환합니다.{" "}
+            텍스트 기능은 전부 무료. 사진·알림톡·출력물·전체 기록은 유료.{" "}
             <Link className="text-button" href="/contact">
               요금·도입 문의 <ChevronRight size={13} />
             </Link>
