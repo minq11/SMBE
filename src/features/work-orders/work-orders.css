@@ -672,15 +672,16 @@
      밑을 지나가는 내용이 옆으로 비치지 않게 한다. */
   .wo-editor-head {
     position: sticky;
-    top: calc(var(--banner-h) + 56px);
+    top: 0;
     z-index: 10;
     margin: 0 -16px;
-    padding: 0 16px 10px;
+    padding: 6px 16px 10px;
     background: var(--bg);
     border-bottom: 1px solid var(--line);
   }
+  /* 제목은 상단바에 있다. 고정 머리에는 단계 탭만 남는다. */
   .wo-editor-head .page-header {
-    margin-bottom: 8px;
+    display: none;
   }
   .wo-editor-head .page-header-copy {
     align-items: center;
@@ -697,6 +698,10 @@
   }
   /* 네 단계가 두 줄로 접히면 고정 머리가 너무 높다. 한 줄로 두고 옆으로 민다. */
   .wo-editor-head .wo-steps {
+    position: relative;
+    /* 옆으로 미는 띠의 내용 너비가 문서의 최소 너비로 번지면 모바일 브라우저가
+       화면을 그 너비로 넓혀(축소해) 버린다. 띠의 크기는 내용과 무관하게 잡는다. */
+    contain: inline-size;
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;

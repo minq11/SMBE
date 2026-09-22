@@ -174,7 +174,7 @@ export default async function OrderDetailPage({
       "미신청")
     : "불필요";
   return (
-    <OrderShell session={session} title="지시서 상세">
+    <OrderShell session={session} title={order.name}>
       {qr && canPrint && (
         <PrintSheet
           name={order.name}

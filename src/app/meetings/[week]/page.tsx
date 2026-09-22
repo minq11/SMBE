@@ -28,18 +28,22 @@ export default async function MeetingPage({
   const { week } = await params;
   const { session, actor } = await workSession("/meetings/" + week, true);
   if (session.membership?.role === "WORKER") notFound();
-  const data = await withTransaction((c) =>
-    readMeeting(c, actor, week),
-  ).catch((error) => {
-    if (error instanceof WorkOrderError) notFound();
-    throw error;
-  });
+  const data = await withTransaction((c) => readMeeting(c, actor, week)).catch(
+    (error) => {
+      if (error instanceof WorkOrderError) notFound();
+      throw error;
+    },
+  );
 
   const done = data.meeting?.status === "COMPLETED";
   const unreviewed = data.items.filter((i) => !i.reviewed).length;
 
   return (
-    <OrderShell session={session} title="주간 안전점검 회의" active="meetings">
+    <OrderShell
+      session={session}
+      title={weekLabel(week) + " 주간 회의"}
+      active="meetings"
+    >
       <PageHeader
         title={weekLabel(week) + " 주간 회의"}
         description={

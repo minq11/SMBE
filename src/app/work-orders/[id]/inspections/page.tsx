@@ -90,10 +90,18 @@ export default async function InspectionPage({
     !!targetState?.canInput &&
     data.order.status !== "CANCELED" &&
     (data.isManager || targetAssigned);
-  const alreadyTBM =
-    kind === "TBM" && target?.tbm_users.includes(actor.userId);
+  const alreadyTBM = kind === "TBM" && target?.tbm_users.includes(actor.userId);
   return (
-    <OrderShell session={session} title="현장 점검">
+    <OrderShell
+      session={session}
+      title={
+        kind === "TBM"
+          ? "TBM 확인"
+          : kind === "DURING_WORK"
+            ? "작업 중 점검"
+            : "점검 기록"
+      }
+    >
       <PageHeader
         title={
           kind === "TBM"
@@ -194,65 +202,67 @@ export default async function InspectionPage({
           <p>무료 이용의 과거 열람 제한 회차: {data.lockedSessions}건</p>
         )}
         <div className="inspection-sessions">
-          {orderSessionsForDisplay(data.sessions, new Date(data.now)).map((s) => {
-            const state = sessionState(s, new Date(data.now));
-            const mineTBM = s.tbm_users.includes(actor.userId);
-            const rowAssigned = s.expected_assignees.some(
-              (a) => a.userId === actor.userId,
-            );
-            const showActions =
-              state.canInput &&
-              data.order.status !== "CANCELED" &&
-              (data.isManager || rowAssigned);
-            const sessionQ =
-              "&session=" + s.id + "&via=" + path.toLowerCase();
-            return (
-              <details key={s.id} open={s.id === data.current?.id}>
-                <summary>
-                  {s.work_date} ·{" "}
-                  {data.order.status === "CANCELED" ? "작업 취소 · " : ""}
-                  {SESSION_LABEL[state.state]} · TBM{" "}
-                  {s.expected_assignees.length - state.missing.length}/
-                  {s.expected_assignees.length} · 작업 중 {s.during_count}건
-                </summary>
-                <p>
-                  {at(s.starts_at)} ~ {at(s.ends_at)}
-                </p>
-                <p>
-                  TBM 미확인:{" "}
-                  {state.missing.map((a) => a.name).join(", ") || "없음"}
-                </p>
-                {showActions && (
-                  <div className="wo-actions">
-                    {!mineTBM && (
+          {orderSessionsForDisplay(data.sessions, new Date(data.now)).map(
+            (s) => {
+              const state = sessionState(s, new Date(data.now));
+              const mineTBM = s.tbm_users.includes(actor.userId);
+              const rowAssigned = s.expected_assignees.some(
+                (a) => a.userId === actor.userId,
+              );
+              const showActions =
+                state.canInput &&
+                data.order.status !== "CANCELED" &&
+                (data.isManager || rowAssigned);
+              const sessionQ =
+                "&session=" + s.id + "&via=" + path.toLowerCase();
+              return (
+                <details key={s.id} open={s.id === data.current?.id}>
+                  <summary>
+                    {s.work_date} ·{" "}
+                    {data.order.status === "CANCELED" ? "작업 취소 · " : ""}
+                    {SESSION_LABEL[state.state]} · TBM{" "}
+                    {s.expected_assignees.length - state.missing.length}/
+                    {s.expected_assignees.length} · 작업 중 {s.during_count}건
+                  </summary>
+                  <p>
+                    {at(s.starts_at)} ~ {at(s.ends_at)}
+                  </p>
+                  <p>
+                    TBM 미확인:{" "}
+                    {state.missing.map((a) => a.name).join(", ") || "없음"}
+                  </p>
+                  {showActions && (
+                    <div className="wo-actions">
+                      {!mineTBM && (
+                        <Link
+                          className="btn-primary"
+                          href={
+                            "/work-orders/" +
+                            id +
+                            "/inspections?type=TBM" +
+                            sessionQ
+                          }
+                        >
+                          TBM 확인
+                        </Link>
+                      )}
                       <Link
-                        className="btn-primary"
+                        className="btn-secondary"
                         href={
                           "/work-orders/" +
                           id +
-                          "/inspections?type=TBM" +
+                          "/inspections?type=DURING_WORK" +
                           sessionQ
                         }
                       >
-                        TBM 확인
+                        작업 중 점검
                       </Link>
-                    )}
-                    <Link
-                      className="btn-secondary"
-                      href={
-                        "/work-orders/" +
-                        id +
-                        "/inspections?type=DURING_WORK" +
-                        sessionQ
-                      }
-                    >
-                      작업 중 점검
-                    </Link>
-                  </div>
-                )}
-              </details>
-            );
-          })}
+                    </div>
+                  )}
+                </details>
+              );
+            },
+          )}
         </div>
       </section>
       <section className="wo-section">
@@ -270,7 +280,9 @@ export default async function InspectionPage({
               {at(r.submitted_at)}
               {/* 사후 입력은 펼치지 않아도 보여야 한다. 기록을 훑는 사람이
                   현장 입력과 구분하지 못하면 표시한 의미가 없다. */}
-              {r.backfilled && <span className="wo-backfill-tag">사후 입력</span>}
+              {r.backfilled && (
+                <span className="wo-backfill-tag">사후 입력</span>
+              )}
             </summary>
             <p>
               작업일자{" "}
@@ -289,7 +301,11 @@ export default async function InspectionPage({
                   {result.comment || "코멘트 없음"}
                 </p>
                 {result.photos.length > 0 && (
-                  <AttachmentList items={result.photos} canDelete={false} compact />
+                  <AttachmentList
+                    items={result.photos}
+                    canDelete={false}
+                    compact
+                  />
                 )}
               </div>
             ))}

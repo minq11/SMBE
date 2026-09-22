@@ -1,6 +1,13 @@
 "use client";
 
-import { ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  ReactNode,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { usePathname } from "next/navigation";
 import { PreviewDialogProvider } from "./preview-dialog";
 import { Sidebar, type NavKey } from "./sidebar";
 import { Topbar, type Crumb } from "./topbar";
@@ -79,6 +86,21 @@ function AppShellFrame({
   );
   const drawerOpen = mobileOpen && isMobile;
   const closeMobile = () => setMobileOpen(false);
+  // 좁은 화면에서는 문서가 아니라 본문(main)만 스크롤된다 (globals.css 앱 틀).
+  // 그러니 화면이 바뀌면 본문을 맨 위로 올리고, 스크롤됐는지를 상단바에 알린다.
+  const mainRef = useRef<HTMLElement>(null);
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [pathname]);
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    const onScroll = () => setScrolled(main.scrollTop > 4);
+    main.addEventListener("scroll", onScroll, { passive: true });
+    return () => main.removeEventListener("scroll", onScroll);
+  }, []);
 
   // 사이드바 열림 시 뒤 body 스크롤 잠금 (iOS 안드로이드 공통)
   useEffect(() => {
@@ -150,8 +172,9 @@ function AppShellFrame({
           isOperator={Boolean(isOperator)}
           onOpenMobileMenu={() => setMobileOpen(true)}
           mobileOpen={drawerOpen}
+          scrolled={scrolled}
         />
-        <main id="main" className="main-content">
+        <main id="main" className="main-content" ref={mainRef}>
           {children}
         </main>
       </div>

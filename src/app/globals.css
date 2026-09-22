@@ -642,16 +642,28 @@ html[data-banner-hidden] .preview-banner {
   color: #b83a12;
 }
 @media (max-width: 960px) {
+  /* 한 화면에 들어가야 한다. 타일 네 개를 한 줄에, 시작 카드 두 장은 버튼 한 줄로. */
+  .today-title {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
   .today-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
   }
   .today-tile {
-    padding: 12px 14px;
-    min-height: 64px;
+    padding: 10px 8px;
+    min-height: 56px;
+    align-items: center;
+    text-align: center;
+    gap: 2px;
   }
   .today-tile strong {
-    font-size: 20px;
+    font-size: 18px;
+  }
+  .today-tile small {
+    font-size: 11px;
+    white-space: nowrap;
   }
 }
 
@@ -4210,8 +4222,29 @@ html[data-banner-hidden] .preview-banner {
 }
 
 @media (max-width: 960px) {
+  /* 홈은 한 화면에 들어가야 한다. 시작 카드 두 장은 아이콘 붙은 버튼 한 줄로. */
   .action-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .action-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    min-height: 56px;
+  }
+  .action-card .action-card-icon {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .action-card h2 {
+    font-size: 14px;
+    margin: 0;
+  }
+  .action-card p,
+  .action-card .action-card-cta {
+    display: none;
   }
   .hero h1 {
     font-size: 40px;
@@ -4318,8 +4351,10 @@ html[data-banner-hidden] .preview-banner {
   .topbar-title {
     display: block;
     min-width: 0;
-    font-size: 15px;
-    font-weight: 700;
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4330,9 +4365,72 @@ html[data-banner-hidden] .preview-banner {
   .sidebar-logout {
     display: flex;
   }
+
+  /* ---- 앱 틀 ----
+     문서가 아니라 본문(main)만 스크롤된다. 상단바는 그 밖에 고정이고 본문과
+     같은 색이라 경계가 없다. 본문이 밑으로 들어가면 그림자만 살짝 켠다
+     (.is-scrolled, app-shell.tsx). 공지 띠는 이 틀에서는 접는다 — 상단바의
+     '개발 중' 표시로 충분하다. */
+  body:has(.app-shell) {
+    --banner-h: 0px;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body:has(.app-shell) .preview-banner {
+    display: none;
+  }
+  .app-shell {
+    height: 100dvh;
+    min-height: 0;
+  }
+  .main-shell {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .topbar {
+    position: static;
+    flex-shrink: 0;
+    background: var(--bg);
+    border-bottom-color: transparent;
+    transition: box-shadow 0.15s;
+  }
+  .topbar.is-scrolled {
+    box-shadow:
+      0 1px 0 var(--line),
+      0 6px 14px rgba(20, 22, 26, 0.05);
+  }
   .main-content {
-    padding: 32px 16px max(64px, env(safe-area-inset-bottom, 0px));
-    gap: 32px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+  /* 본문 안의 어떤 것도 화면보다 넓어질 최소 너비를 주장하지 못하게 한다. */
+  .main-content > * {
+    min-width: 0;
+  }
+  .main-content {
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 16px max(64px, env(safe-area-inset-bottom, 0px));
+    gap: 28px;
+  }
+  /* 제목·뒤로가기는 상단바 한 줄로 합쳤다. 본문 머리말은 설명과 버튼만 남긴다. */
+  .page-header .back-button,
+  .page-header-copy h1,
+  .std-form-hero h1 {
+    display: none;
+  }
+  .page-header:not(:has(.page-header-lead)):not(:has(.page-header-side)) {
+    display: none;
+  }
+  .page-header-lead {
+    margin-top: 0;
+  }
+  .loading-logo--fullscreen {
+    min-height: 70vh;
   }
   .hero h1 {
     font-size: 36px;
@@ -4957,7 +5055,8 @@ body.sidebar-lock {
 @media (max-width: 960px) {
   .std-jump {
     position: sticky;
-    top: calc(var(--banner-h) + 56px);
+    top: 0;
+    contain: inline-size;
     z-index: 10;
     flex-wrap: nowrap;
     overflow-x: auto;

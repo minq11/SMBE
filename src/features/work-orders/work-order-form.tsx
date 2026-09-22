@@ -191,14 +191,22 @@ export function WorkOrderForm({
   // 좁은 화면에서 단계 탭은 한 줄로 옆으로 밀린다. 현재 단계가 잘려 있지 않게 끌어온다.
   const stepsRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    stepsRef.current
-      ?.querySelector("[aria-current]")
-      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // scrollIntoView 는 조상 스크롤 영역(본문·문서)까지 밀어 버린다. 띠만 민다.
+    const nav = stepsRef.current;
+    const active = nav?.querySelector<HTMLElement>("[aria-current]");
+    if (!nav || !active) return;
+    const left = active.offsetLeft - 16;
+    const right = active.offsetLeft + active.offsetWidth + 16;
+    if (left < nav.scrollLeft) nav.scrollTo({ left });
+    else if (right > nav.scrollLeft + nav.clientWidth)
+      nav.scrollTo({ left: right - nav.clientWidth });
   }, [step]);
   // 단계가 바뀌면 새 단계의 머리부터 보여 준다. 아래 고정 바에서 '다음' 을 눌렀을 때
   // 스크롤이 지난 단계의 바닥에 남아 있으면 무엇이 바뀌었는지 알 수 없다.
   const goTo = (next: number) => {
     setStep(next);
+    // 좁은 화면에서는 본문(main)이 스크롤 영역이고, 넓은 화면에서는 문서다.
+    document.getElementById("main")?.scrollTo({ top: 0 });
     window.scrollTo({ top: 0 });
   };
   const [state, action, pending] = useActionState(saveOrderAction, undefined);

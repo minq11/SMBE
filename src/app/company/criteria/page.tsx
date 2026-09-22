@@ -17,7 +17,11 @@ export default async function CriteriaPage() {
   const readOnly = session.membership?.role === "WORKER";
 
   return (
-    <OrderShell session={session} title="위험성 판단 기준" active="criteria">
+    <OrderShell
+      session={session}
+      title="위험성 수준 판단 기준"
+      active="criteria"
+    >
       <PageHeader title="위험성 수준 판단 기준" />
       <section className="account-panel">
         <p className="wo-muted">

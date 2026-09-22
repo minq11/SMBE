@@ -21,6 +21,29 @@ import {
 import { usePreview } from "./preview-dialog";
 import { logoutAction } from "@/features/auth/logout-action";
 
+/**
+ * 좁은 화면 상단바가 뒤로가기(←)와 메뉴(☰) 중 무엇을 보일지 정하는 규칙.
+ * 메뉴에 있는 주소 그 자체면 구역의 첫 화면(☰), 그 아래 주소면 안쪽 화면(←)이고
+ * 뒤로 갈 곳은 그 메뉴 주소다. 메뉴에 없는 주소(마이페이지 등)는 홈으로 돌아간다.
+ */
+export function navRoot(pathname: string): {
+  isRoot: boolean;
+  parentHref: string;
+} {
+  const hrefs = NAV.flatMap((n) => [
+    ...(n.href ? [n.href] : []),
+    ...(n.children ?? []).flatMap((c) => (c.href ? [c.href] : [])),
+  ]);
+  if (hrefs.includes(pathname)) return { isRoot: true, parentHref: pathname };
+  const parent = hrefs
+    .filter((h) => h !== "/" && pathname.startsWith(h + "/"))
+    .sort((a, b) => b.length - a.length)[0];
+  // 어느 메뉴 아래에도 없는 화면(마이페이지 등)은 첫 화면으로 친다 — 돌아갈
+  // 상위가 없는데 ← 를 보이면 메뉴로 갈 길이 없어진다.
+  if (!parent) return { isRoot: true, parentHref: "/" };
+  return { isRoot: false, parentHref: parent };
+}
+
 export type NavKey =
   | "home"
   | "orders"

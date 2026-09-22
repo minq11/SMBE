@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronDown, Menu, Wrench } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowLeft, Bell, ChevronDown, Menu, Wrench } from "lucide-react";
 import { logoutAction } from "@/features/auth/logout-action";
 import { BrandWordmark } from "@/components/brand/wordmark";
 import { usePreview } from "./preview-dialog";
+import { navRoot } from "./sidebar";
 
 export type Crumb = {
   label: string;
@@ -18,6 +20,7 @@ export function Topbar({
   isOperator,
   onOpenMobileMenu,
   mobileOpen,
+  scrolled = false,
 }: {
   breadcrumb: Crumb[];
   userName?: string;
@@ -25,33 +28,55 @@ export function Topbar({
   isOperator: boolean;
   onOpenMobileMenu: () => void;
   mobileOpen: boolean;
+  /** 본문이 스크롤돼 상단바 밑으로 들어갔는가 (좁은 화면에서 그림자) */
+  scrolled?: boolean;
 }) {
   const preview = usePreview();
+  const pathname = usePathname();
+  const router = useRouter();
+  // 좁은 화면의 왼쪽 자리는 하나다. 구역의 첫 화면이면 ☰, 안쪽 화면이면 ←.
+  const { isRoot, parentHref } = navRoot(pathname);
+  const goBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.push(parentHref);
+  };
 
   return (
-    <header className="topbar">
+    <header className={`topbar${scrolled ? " is-scrolled" : ""}`}>
       <div className="topbar-left">
-        <button
-          type="button"
-          className="icon-button topbar-mobile"
-          id="mobile-menu-button"
-          aria-controls="mobile-navigation"
-          aria-label="메뉴 열기"
-          aria-expanded={mobileOpen}
-          onClick={onOpenMobileMenu}
-        >
-          <Menu size={19} />
-        </button>
+        {isRoot ? (
+          <button
+            type="button"
+            className="icon-button topbar-mobile"
+            id="mobile-menu-button"
+            aria-controls="mobile-navigation"
+            aria-label="메뉴 열기"
+            aria-expanded={mobileOpen}
+            onClick={onOpenMobileMenu}
+          >
+            <Menu size={19} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="icon-button topbar-mobile"
+            aria-label="뒤로 가기"
+            onClick={goBack}
+          >
+            <ArrowLeft size={19} />
+          </button>
+        )}
         {/* 좁은 화면에는 사이드바가 접혀 있어 브랜드가 아예 안 보였다.
             아이콘만 두면 무슨 서비스인지 모르므로 워드마크를 그대로 쓴다. */}
         <Link href="/" className="topbar-brand" aria-label="SMBE 홈">
           <BrandWordmark className="topbar-wordmark" />
         </Link>
-        {/* 좁은 화면: 안쪽 화면에서는 워드마크 대신 현재 화면 제목 (globals.css). */}
+        {/* 좁은 화면: 제목은 여기 한 줄뿐이다. 본문 머리말의 제목·뒤로가기는
+            숨긴다 (globals.css). 넓은 화면에서는 이 h1 이 보이지 않는다. */}
         {breadcrumb.length > 0 && (
-          <span className="topbar-title" aria-hidden="true">
+          <h1 className="topbar-title">
             {breadcrumb[breadcrumb.length - 1].label}
-          </span>
+          </h1>
         )}
         {breadcrumb.length > 0 && (
           <nav className="breadcrumb" aria-label="현재 위치">
