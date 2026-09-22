@@ -11,6 +11,7 @@ import {
   approveAndIssueOrder,
   issueOrder,
   cancelOrder,
+  deleteDraftOrder,
 } from "@/server/work-order-service";
 import { deliverOrder } from "@/server/work-order-delivery";
 import { WorkOrderError } from "./model";
@@ -156,6 +157,7 @@ export async function orderCommandAction(
   // 발급이면 QR 탭으로 보낸다. redirect() 는 예외로 동작하므로 try 밖에서 던져야
   // 아래 catch 가 "처리하지 못했습니다" 로 삼키지 않는다.
   let issuedId: string | null = null;
+  let deleted = false;
   let result: WorkActionState;
   try {
     const target = targetSchema.parse({
@@ -164,7 +166,15 @@ export async function orderCommandAction(
     });
     const context = await actor();
     const command = z
-      .enum(["request", "approve", "approveIssue", "issue", "cancel", "send"])
+      .enum([
+        "request",
+        "approve",
+        "approveIssue",
+        "issue",
+        "cancel",
+        "send",
+        "delete",
+      ])
       .parse(form.get("command"));
     if (command === "send") await deliverOrder(context, target.id);
     else
@@ -190,6 +200,8 @@ export async function orderCommandAction(
             target.id,
             target.revision,
           );
+        if (command === "delete")
+          await deleteDraftOrder(client, context, target.id, target.revision);
         if (command === "cancel")
           await cancelOrder(
             client,
@@ -211,11 +223,14 @@ export async function orderCommandAction(
     refresh(target.id);
     if (command === "issue" || command === "approveIssue")
       issuedId = target.id;
+    if (command === "delete") deleted = true;
     result = { message };
   } catch (error) {
     result = safeError(error);
   }
   // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 탭으로 바로 보낸다.
   if (issuedId) redirect("/work-orders/" + issuedId + "?tab=qr");
+  // 지운 초안의 상세로 돌아가면 404 다. 목록으로 보낸다.
+  if (deleted) redirect("/work-orders?tab=draft");
   return result;
 }

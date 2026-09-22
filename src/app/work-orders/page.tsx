@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Plus, Search } from "lucide-react";
 import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
+import { NavSpinner } from "@/components/ui/nav-spinner";
 import { STATUS_LABEL } from "@/features/work-orders/model";
 
 export default async function WorkOrdersPage({
@@ -32,6 +33,7 @@ export default async function WorkOrdersPage({
           result.isManager && (
             <Link className="btn-primary" href="/work-orders/new">
               <Plus size={14} /> 작업 지시하기
+              <NavSpinner />
             </Link>
           )
         }
@@ -48,6 +50,7 @@ export default async function WorkOrdersPage({
             aria-current={tab === key ? "page" : undefined}
           >
             {title}
+            <NavSpinner />
           </Link>
         ))}
       </nav>
@@ -124,12 +127,14 @@ export default async function WorkOrdersPage({
         {page > 1 && (
           <Link className="btn-secondary" href={href(page - 1)}>
             <ArrowLeft size={14} /> 이전
+            <NavSpinner />
           </Link>
         )}
         <span>{page}페이지</span>
         {result.hasMore && (
           <Link className="btn-secondary" href={href(page + 1)}>
             다음 <ArrowRight size={14} />
+            <NavSpinner />
           </Link>
         )}
       </nav>

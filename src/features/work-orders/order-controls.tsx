@@ -11,20 +11,28 @@ import {
   Mail,
   Printer,
   Send,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 import { orderCommandAction } from "./actions";
 
-const COMMAND_ICON: Record<
-  "request" | "approve" | "approveIssue" | "issue" | "cancel" | "send",
-  LucideIcon
-> = {
+type Command =
+  | "request"
+  | "approve"
+  | "approveIssue"
+  | "issue"
+  | "cancel"
+  | "send"
+  | "delete";
+
+const COMMAND_ICON: Record<Command, LucideIcon> = {
   request: Eye,
   approve: CheckCircle2,
   approveIssue: Send,
   issue: Send,
   cancel: Ban,
   send: Mail,
+  delete: Trash2,
 };
 
 export function OrderCommand({
@@ -36,7 +44,7 @@ export function OrderCommand({
 }: {
   id: string;
   revision: number;
-  command: "request" | "approve" | "approveIssue" | "issue" | "cancel" | "send";
+  command: Command;
   label: string;
   confirmText?: string;
 }) {

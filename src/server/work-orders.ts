@@ -81,7 +81,8 @@ export async function listOrders(
           WHEN now() >= ((w.work_period_start + w.work_start_time - interval '2 hours') AT TIME ZONE 'Asia/Seoul')
             THEN 'IN_PROGRESS' ELSE 'ISSUED' END ELSE w.status END AS display_status
       FROM work_orders w LEFT JOIN risk_assessments a ON a.id=w.risk_assessment_id
-      WHERE w.company_id=$1 AND ($2::boolean OR (w.status <> 'DRAFT' AND EXISTS (
+      WHERE w.company_id=$1 AND w.deleted_at IS NULL
+        AND ($2::boolean OR (w.status <> 'DRAFT' AND EXISTS (
         SELECT 1 FROM work_order_assignments wa WHERE wa.work_order_id=w.id
         AND wa.user_id=$3 AND wa.status <> 'UNASSIGNED')))
     ), visible AS (

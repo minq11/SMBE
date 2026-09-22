@@ -77,4 +77,8 @@ docker compose --profile tools run --rm migrate
   회의가 없는 주에는 `safety_meetings` 행이 없어 "알렸다"를 적을 자리가 없으므로
   따로 둡니다. `(company_id, week_start)` 가 유일해 같은 주를 두 번 알리지 않습니다.
 
+- `0017_work_order_soft_delete.sql` — 작성 중 초안 삭제(`deleted_at`·`deleted_by`).
+  발급된 지시서에는 삭제 표시가 서지 않도록 CHECK 로 막습니다 — 그 경우의 수단은
+  '취소'입니다. 물리 삭제는 하지 않고 목록에서만 감춥니다.
+
 후속 페이즈(안전사고·과금 등)는 새 파일로 추가합니다.

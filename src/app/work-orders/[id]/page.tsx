@@ -19,6 +19,7 @@ import {
   CopyLinkButton,
 } from "@/features/work-orders/order-controls";
 import { PageHeader } from "@/components/ui/page-header";
+import { NavSpinner } from "@/components/ui/nav-spinner";
 import { PrintSheet } from "@/features/work-orders/print-sheet";
 import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
 import { InspectionSummary } from "@/features/inspections/inspection-summary";
@@ -218,6 +219,7 @@ export default async function OrderDetailPage({
             <div className="wo-actions wo-no-print">
               <Link className="btn-secondary" href="/work-orders">
                 <ArrowLeft size={14} /> 목록
+                <NavSpinner />
               </Link>
               {isManager && order.status === "DRAFT" && (
                 <Link
@@ -225,6 +227,7 @@ export default async function OrderDetailPage({
                   href={"/work-orders/" + id + "/edit"}
                 >
                   <Pencil size={14} /> 편집
+                  <NavSpinner />
                 </Link>
               )}
               {isManager && (
@@ -233,6 +236,7 @@ export default async function OrderDetailPage({
                   href={"/work-orders/new?copy=" + id}
                 >
                   <Copy size={14} /> 복사
+                  <NavSpinner />
                 </Link>
               )}
             </div>
@@ -333,6 +337,7 @@ export default async function OrderDetailPage({
               >
                 <span>{i + 1}</span>
                 {t.label}
+                <NavSpinner />
               </Link>
             ))}
           </nav>
@@ -564,6 +569,23 @@ export default async function OrderDetailPage({
                 </p>
               </div>
             )}
+          </section>
+        )}
+        {isManager && order.status === "DRAFT" && (
+          <section className="wo-section wo-no-print">
+            <h2>초안 삭제</h2>
+            <p className="wo-muted">
+              아직 발급하지 않은 초안을 목록에서 없앱니다. 발급된 지시서는
+              삭제할 수 없고 <strong>취소</strong>로 처리합니다 — 회차·점검·부적합
+              기록이 딸려 있기 때문입니다.
+            </p>
+            <OrderCommand
+              id={id}
+              revision={order.revision}
+              command="delete"
+              label="초안 삭제"
+              confirmText="이 초안을 삭제하시겠습니까? 목록에서 사라지며 되돌리려면 운영자 문의가 필요합니다."
+            />
           </section>
         )}
         {isManager && active && (

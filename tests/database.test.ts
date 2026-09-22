@@ -60,6 +60,7 @@ import {
 } from "../src/server/safety-meeting-reminders";
 import {
   saveOrder,
+  deleteDraftOrder,
   requestAssessment,
   approveAssessment,
   approveAndIssueOrder,
@@ -1784,6 +1785,70 @@ test("work order: PTW cannot be bypassed; departed assignees block issue", async
     /활성 구성원/,
   );
 });
+test("work order: only drafts are deletable, and a deleted draft leaves every view", async () => {
+  const f = await orderFixture();
+  // 작업자는 지울 수 없다.
+  const worker = { ...f.actor, userId: f.worker };
+  await assert.rejects(
+    transaction((c) => deleteDraftOrder(c, worker, f.id, 1)),
+    /권한/,
+  );
+  // 다른 화면에서 바뀌었으면 거절한다 (다른 명령과 같은 낙관적 잠금).
+  await assert.rejects(
+    transaction((c) => deleteDraftOrder(c, f.actor, f.id, 99)),
+    /새로고침/,
+  );
+  await transaction((c) => deleteDraftOrder(c, f.actor, f.id, 1));
+  // 행은 남되 모든 조회에서 사라진다.
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT deleted_by IS NOT NULL AS gone FROM work_orders WHERE id=$1",
+        [f.id],
+      )
+    ).rows[0].gone,
+    true,
+  );
+  await assert.rejects(
+    transaction((c) => readOrder(c, f.actor, f.id)),
+    /찾을 수 없습니다/,
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM work_orders WHERE id=$1 AND deleted_at IS NULL",
+        [f.id],
+      )
+    ).rows[0].n,
+    0,
+  );
+  // 두 번 지울 수 없다 — 조회 자체가 막히므로.
+  await assert.rejects(
+    transaction((c) => deleteDraftOrder(c, f.actor, f.id, 2)),
+    /찾을 수 없습니다/,
+  );
+
+  // 발급된 지시서는 지울 수 없다. 앱이 실수해도 DB 가 막는다.
+  const issued = await approvedOrder();
+  await transaction((c) => issueOrder(c, issued.actor, issued.id, 3));
+  const current = (
+    await pool.query("SELECT revision FROM work_orders WHERE id=$1", [
+      issued.id,
+    ])
+  ).rows[0].revision;
+  await assert.rejects(
+    transaction((c) => deleteDraftOrder(c, issued.actor, issued.id, current)),
+    /초안만/,
+  );
+  await assert.rejects(
+    pool.query(
+      "UPDATE work_orders SET deleted_at=now(),deleted_by=created_by WHERE id=$1",
+      [issued.id],
+    ),
+    /work_orders_delete_draft_only/,
+  );
+});
+
 test("work order: cancellation requires reason, preserves records, and blocks later mutation", async () => {
   const { actor, id, d } = await approvedOrder();
   await transaction((c) => issueOrder(c, actor, id, 3));

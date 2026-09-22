@@ -117,6 +117,15 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(page).toHaveURL(/\/work-orders\/[a-f0-9-]{36}\/edit$/);
     const id = new URL(page.url()).pathname.split("/")[2];
     const path = "/work-orders/" + id;
+    // 초안에는 삭제가 있고 취소가 없다. 발급 뒤에는 반대가 된다.
+    await page.goto(path);
+    await expect(
+      page.getByRole("heading", { name: "초안 삭제", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "지시서 취소", exact: true }),
+    ).toHaveCount(0);
+    await page.goto(path + "/edit");
     // 편집 화면은 첫 단계부터 다시 시작하므로 검토 단계까지 이동한다.
     for (let i = 0; i < 3; i++) {
       await page.getByRole("button", { name: "다음", exact: true }).click();
@@ -162,6 +171,10 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     ).toBeHidden();
     await expect(
       page.getByRole("link", { name: "편집", exact: true }),
+    ).toHaveCount(0);
+    // 발급된 지시서는 지울 수 없다. 수단은 취소뿐이다.
+    await expect(
+      page.getByRole("heading", { name: "초안 삭제", exact: true }),
     ).toHaveCount(0);
     expect(
       await page.evaluate(

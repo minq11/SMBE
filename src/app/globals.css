@@ -4938,6 +4938,15 @@ body.sidebar-lock {
 .spin {
   animation: spin 0.9s linear infinite;
 }
+/* 이동 중 표시. 누른 자리에서 돌고, 그 링크를 살짝 죽여 두 번 누르는 것을 막는다. */
+.nav-spinner {
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+a:has(> .nav-spinner) {
+  opacity: 0.65;
+  pointer-events: none;
+}
 @keyframes spin {
   to {
     transform: rotate(360deg);

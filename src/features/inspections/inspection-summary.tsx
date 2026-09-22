@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavSpinner } from "@/components/ui/nav-spinner";
 import { CheckCircle2, Search } from "lucide-react";
 import { sessionState, SESSION_LABEL, type SessionRow } from "./model";
 
@@ -47,6 +48,7 @@ export function InspectionSummary({
                 href={root + "?type=TBM&via=" + path}
               >
                 <CheckCircle2 size={14} /> TBM 확인하기
+                <NavSpinner />
               </Link>
             )}
             <Link
@@ -54,6 +56,7 @@ export function InspectionSummary({
               href={root + "?type=DURING_WORK&via=" + path}
             >
               <Search size={14} /> 작업 중 점검하기
+              <NavSpinner />
             </Link>
           </div>
         </>

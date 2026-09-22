@@ -123,7 +123,7 @@ async function rawOrder(
   const { rows } = await client.query<OrderRow>(
     `SELECT w.*, a.status AS assessment_status, a.created_by AS assessment_created_by, a.approved_by, a.approved_at::text
      FROM work_orders w LEFT JOIN risk_assessments a ON a.id=w.risk_assessment_id
-     WHERE w.id=$1 AND w.company_id=$2 ${lock ? "FOR UPDATE OF w" : ""}`,
+     WHERE w.id=$1 AND w.company_id=$2 AND w.deleted_at IS NULL ${lock ? "FOR UPDATE OF w" : ""}`,
     [id, actor.companyId],
   );
   if (!rows[0]) throw new WorkOrderError("지시서를 찾을 수 없습니다.");
@@ -476,6 +476,35 @@ export async function approveAndIssueOrder(
   // Approval and issue share the caller's transaction. A failed issue also
   // rolls back approval, snapshots and delivery records.
   await issueOrder(client, actor, id, nextRevision);
+}
+
+/**
+ * 작성 중 초안 삭제.
+ *
+ * 발급된 지시서는 지우지 않는다. 법정 기록이고 회차·점검·부적합이 딸려 있어
+ * 지우면 증빙에 구멍이 난다 — 그 경우의 수단은 '취소'다. 지울 수 있는 것은
+ * 아무도 본 적 없는 초안뿐이고, 목적은 잘못 만든 초안이 목록에 쌓이지 않게
+ * 하는 것이다.
+ *
+ * 행을 지우지 않고 감춘다. 초안에도 간이 위험성평가·배정이 딸려 있어 물리
+ * 삭제하면 정리할 것이 줄줄이 나오고, 실수로 지운 것을 되돌릴 방법이 없어진다.
+ */
+export async function deleteDraftOrder(
+  client: PoolClient,
+  actor: Actor,
+  id: string,
+  revision: number,
+) {
+  const row = await writable(client, actor, id, revision);
+  if (row.status !== "DRAFT")
+    throw new WorkOrderError(
+      "작성 중인 초안만 삭제할 수 있습니다. 발급된 지시서는 취소로 처리하세요.",
+    );
+  await client.query(
+    "UPDATE work_orders SET deleted_at=now(),deleted_by=$2,revision=revision+1 WHERE id=$1",
+    [id, actor.userId],
+  );
+  await auditOrder(client, actor, id, "DELETE_DRAFT", { name: row.name });
 }
 
 export async function cancelOrder(
