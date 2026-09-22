@@ -39,6 +39,7 @@ export type MeetingRow = {
   created_by_name: string | null;
   item_count: number;
   reviewed_count: number;
+  reminded_at: string | null;
 };
 
 function assertWeek(raw: string): string {
@@ -58,28 +59,24 @@ export async function listMeetings(
 ): Promise<MeetingRow[]> {
   await memberAccess(client, actor, true);
   const wanted = recentWeeks(weeks);
+  // 주를 먼저 세우고 회의를 붙인다. 회의 행만 나열하면 미실시 주가 목록에서
+  // 사라져, 정작 봐야 할 "빠진 주" 가 안 보인다.
   const { rows } = await client.query<MeetingRow>(
-    `SELECT m.week_start::text, m.id AS meeting_id, m.status, m.completed_at::text,
+    `SELECT w.week_start::text, m.id AS meeting_id, m.status, m.completed_at::text,
             u.display_name AS created_by_name,
-            (SELECT count(*)::int FROM safety_meeting_items i WHERE i.meeting_id=m.id) AS item_count,
-            (SELECT count(*)::int FROM safety_meeting_items i WHERE i.meeting_id=m.id AND i.reviewed) AS reviewed_count
-       FROM safety_meetings m JOIN users u ON u.id = m.created_by
-      WHERE m.company_id=$1 AND m.week_start = ANY($2::date[])`,
+            coalesce((SELECT count(*)::int FROM safety_meeting_items i WHERE i.meeting_id=m.id),0) AS item_count,
+            coalesce((SELECT count(*)::int FROM safety_meeting_items i WHERE i.meeting_id=m.id AND i.reviewed),0) AS reviewed_count,
+            r.sent_at::text AS reminded_at
+       FROM unnest($2::date[]) AS w(week_start)
+       LEFT JOIN safety_meetings m
+              ON m.company_id=$1 AND m.week_start = w.week_start
+       LEFT JOIN users u ON u.id = m.created_by
+       LEFT JOIN safety_meeting_reminders r
+              ON r.company_id=$1 AND r.week_start = w.week_start
+      ORDER BY w.week_start DESC`,
     [actor.companyId, wanted],
   );
-  const byWeek = new Map(rows.map((r) => [r.week_start, r]));
-  return wanted.map(
-    (week_start) =>
-      byWeek.get(week_start) ?? {
-        week_start,
-        meeting_id: null,
-        status: null,
-        completed_at: null,
-        created_by_name: null,
-        item_count: 0,
-        reviewed_count: 0,
-      },
-  );
+  return rows;
 }
 
 /**

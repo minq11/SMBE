@@ -51,7 +51,12 @@ import {
   completeMeeting,
   monthlyTally,
 } from "../src/server/safety-meeting";
-import { weekStartKst } from "../src/features/meetings/model";
+import { weekStartKst, weekEnd } from "../src/features/meetings/model";
+import {
+  reportableWeeks,
+  findMissedWeeks,
+  sendMissedMeetingReminders,
+} from "../src/server/safety-meeting-reminders";
 import {
   saveOrder,
   requestAssessment,
@@ -1210,6 +1215,70 @@ test("safety meeting: collects the week, keeps notes on recollect, and locks on 
   assert.equal(weeks[1].meeting_id, null);
   const tally = await transaction((c) => monthlyTally(c, f.actor));
   assert.ok(tally.found >= 1);
+});
+
+test("meeting reminders: only finished weeks, only managers, and never the same week twice", async () => {
+  // 진행 중인 주는 아직 미실시가 아니다.
+  const weeks = reportableWeeks(4);
+  assert.equal(weeks.includes(weekStartKst()), false);
+  assert.ok(weeks.length >= 1 && weeks.length <= 4);
+  assert.ok(weeks.every((w) => weekEnd(w) < seoulToday()));
+
+  const f = await fixture();
+  const worker = await user();
+  await member(f.companyId, worker);
+  const safety = await user();
+  await member(f.companyId, safety, "MANAGER_SAFETY");
+  // 관리감독자·안전관리자에게만 간다. 작업자에게 보내면 자기가 할 수 없는 일을 알리는 셈이다.
+  for (const [id, email] of [
+    [f.userId, "supervisor@example.test"],
+    [safety, "safety@example.test"],
+    [worker, "worker@example.test"],
+  ])
+    await pool.query("UPDATE users SET email=$2 WHERE id=$1", [id, email]);
+
+  const week = weeks[0];
+  let missed = await transaction((c) => findMissedWeeks(c, [week]));
+  assert.ok(missed.some((m) => m.company_id === f.companyId));
+
+  await transaction((c) => sendMissedMeetingReminders(c, { lookback: 4 }));
+  const ledger = (
+    await pool.query(
+      "SELECT week_start::text, recipients FROM safety_meeting_reminders WHERE company_id=$1 ORDER BY week_start",
+      [f.companyId],
+    )
+  ).rows;
+  assert.ok(ledger.length >= 1);
+  // 관리자 둘만 받는다 (작업자 제외). 메일 자체는 키가 없어 스킵된다.
+  assert.equal(ledger[0].recipients, 2);
+
+  // 같은 주를 두 번 알리지 않는다 — 장부가 막는다.
+  missed = await transaction((c) => findMissedWeeks(c, [week]));
+  assert.equal(
+    missed.some((m) => m.company_id === f.companyId),
+    false,
+  );
+  const again = await transaction((c) =>
+    sendMissedMeetingReminders(c, { lookback: 4 }),
+  );
+  assert.equal(again.weeks, 0);
+
+  // 완료된 회의가 있는 주는 애초에 대상이 아니다.
+  const other = await fixture();
+  await transaction((c) => openMeeting(c, other, week));
+  await transaction((c) =>
+    completeMeeting(c, other, {
+      week,
+      attendeeIds: [other.userId],
+      discussion: "",
+    }),
+  );
+  assert.equal(
+    (await transaction((c) => findMissedWeeks(c, [week]))).some(
+      (m) => m.company_id === other.companyId,
+    ),
+    false,
+  );
 });
 
 test("session state: derives from work_date vs today KST; only FUTURE blocks input; done is independent", () => {

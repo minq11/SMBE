@@ -73,4 +73,8 @@ docker compose --profile tools run --rm migrate
   (`attachments.target_type` 에 `inspection_result` 추가). 부적합 증거뿐 아니라
   적합 판정의 근거도 사진이 가장 빠른데 붙일 자리가 없었습니다.
 
+- `0016_safety_meeting_reminders.sql` — 미실시 주 회의 메일 알림의 발송 장부.
+  회의가 없는 주에는 `safety_meetings` 행이 없어 "알렸다"를 적을 자리가 없으므로
+  따로 둡니다. `(company_id, week_start)` 가 유일해 같은 주를 두 번 알리지 않습니다.
+
 후속 페이즈(안전사고·과금 등)는 새 파일로 추가합니다.

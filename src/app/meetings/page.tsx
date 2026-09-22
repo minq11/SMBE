@@ -41,8 +41,8 @@ export default async function MeetingsPage() {
         <h2>최근 12주</h2>
         <p className="wo-muted">
           회의에서 항목을 확인해도 원본 부적합·평가 대책은 종결되지 않습니다.
-          종결은 각 처리 화면에서 합니다. 미실시 주 메일 알림은 아직 제공하지
-          않습니다.
+          종결은 각 처리 화면에서 합니다. 주가 끝났는데 회의 기록이 없으면
+          관리감독자·안전관리자에게 메일로 한 번 알립니다.
         </p>
         <ul className="meeting-weeks">
           {weeks.map((w) => (
@@ -70,6 +70,11 @@ export default async function MeetingsPage() {
                   <span className="wo-muted">
                     수집 {w.item_count}건 · 확인 {w.reviewed_count}건
                     {w.created_by_name ? ` · 작성 ${w.created_by_name}` : ""}
+                  </span>
+                )}
+                {!w.meeting_id && w.reminded_at && (
+                  <span className="wo-muted">
+                    미실시 알림 발송 {w.reminded_at.slice(0, 10)}
                   </span>
                 )}
               </div>

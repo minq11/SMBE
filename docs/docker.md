@@ -119,6 +119,7 @@ docker compose logs --tail=100 app proxy
 | 서버 직접 빌드 (비상용)   | `smbe-deploy --local-build` — 스왑 필수                                                      |
 | DB 마이그레이션 적용      | `docker compose --profile tools run --rm migrate`                                            |
 | 배포 + 마이그레이션       | `./scripts/deploy.sh --migrate`                                                              |
+| 미실시 회의 알림 수동 실행 | `curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" http://127.0.0.1:3000/api/cron/meeting-reminders` |
 | 상태                      | `docker compose ps`                                                                          |
 | 앱 로그                   | `docker compose logs -f --tail=100 app`                                                      |
 | 프록시·인증서 로그        | `docker compose logs -f --tail=100 proxy`                                                    |
@@ -141,6 +142,31 @@ docker compose exec app node scripts/container-readiness.mjs
 ```
 
 단일 서버이므로 재배포 중 잠깐 중단될 수 있습니다. 서버에서 이미지를 빌드하다 메모리가 부족하면 별도 빌드 환경을 사용하거나 인스턴스 메모리를 늘립니다.
+
+### 주간 배치 (미실시 회의 알림)
+
+앱 안에 스케줄러를 두지 않습니다. 컨테이너가 여러 개로 늘어나면 각자 타이머를 돌려 같은
+메일을 여러 번 보내기 때문입니다. 대신 **호스트 cron 이 주 1회 엔드포인트를 때리고**,
+중복 방지는 DB 의 `(company_id, week_start)` 유일 제약이 맡습니다 (`0016`).
+
+`.env` 에 `CRON_SECRET`(32자 이상)을 채운 뒤 서버에서:
+
+```sh
+crontab -e
+```
+
+```cron
+# 매주 월요일 09:05 KST — 막 끝난 주를 대상으로 미실시 회의 알림
+5 0 * * 1 curl -fsS -m 60 -X POST -H "Authorization: Bearer <CRON_SECRET>" http://127.0.0.1:3000/api/cron/meeting-reminders >> /var/log/smbe-cron.log 2>&1
+```
+
+- 서버 시간이 UTC 이면 위 `0 0`(UTC) = 월요일 09:00 KST 입니다. `timedatectl` 로 확인하세요.
+- 컨테이너 내부 포트로 때리므로 프록시·인증서와 무관합니다. 외부에서 도메인으로 때려도 됩니다.
+- **배치가 몇 주 멈췄다가 돌아도** 밀린 주를 한 통으로 묶어 보냅니다. 같은 주는 두 번
+  알리지 않습니다.
+- `CRON_SECRET` 이 비어 있으면 엔드포인트는 항상 401 이고 알림이 나가지 않습니다.
+- 수동 실행·확인: 위 `curl` 을 그대로 실행하면 `{"companies":n,"weeks":n,"sent":n,...}` 가
+  돌아옵니다. `sent` 가 0 이고 `skipped` 가 크면 `RESEND_API_KEY`·`EMAIL_FROM` 을 보세요.
 
 ## 5. 로컬에서 운영 모드로 확인 (선택)
 
