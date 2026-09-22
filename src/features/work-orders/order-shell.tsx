@@ -11,7 +11,13 @@ export async function OrderShell({
   session: CurrentSession;
   title: string;
   children: React.ReactNode;
-  active?: "orders" | "inspection" | "meetings" | "locations" | "criteria";
+  active?:
+    | "orders"
+    | "inspection"
+    | "meetings"
+    | "monitoring"
+    | "locations"
+    | "criteria";
 }) {
   return (
     <AppShell
@@ -24,7 +30,9 @@ export async function OrderShell({
       breadcrumb={[
         active === "locations" || active === "criteria"
           ? { label: "회사정보", href: "/company/members" }
-          : active === "inspection" || active === "meetings"
+          : active === "inspection" ||
+              active === "meetings" ||
+              active === "monitoring"
             ? { label: "안전점검", href: "/inspections" }
             : { label: "작업지시", href: "/work-orders" },
         { label: title },

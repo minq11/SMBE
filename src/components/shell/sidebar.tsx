@@ -26,6 +26,7 @@ export type NavKey =
   | "assessment"
   | "inspection"
   | "meetings"
+  | "monitoring"
   | "incident"
   | "company"
   | "billing"
@@ -68,6 +69,12 @@ const NAV: ReadonlyArray<NavEntry> = [
         title: "주간 안전점검 회의",
         icon: ClipboardCheck,
         href: "/meetings",
+      },
+      {
+        key: "monitoring",
+        title: "점검 모니터링",
+        icon: ClipboardCheck,
+        href: "/monitoring",
       },
     ],
   },

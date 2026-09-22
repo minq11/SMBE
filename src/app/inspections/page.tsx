@@ -17,6 +17,7 @@ const at = (value: string) =>
     timeZone: "Asia/Seoul",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 
 const STATE_OPTIONS = [

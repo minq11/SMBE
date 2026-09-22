@@ -33,6 +33,7 @@ import {
   reviseInspection,
   inspectionRevisions,
   companyInspectionLog,
+  inspectionMonitor,
   resolveFinding,
   inspectionOverview,
   pendingFindings,
@@ -1079,6 +1080,72 @@ test("inspection: previous resolved actions are shared on next TBM and old open 
   const open = (await transaction((c) => pendingFindings(c, g.actor)))[0];
   await transaction((c) =>
     resolveFinding(c, g.actor, open.id, "늦은 조치 완료"),
+  );
+});
+
+test("monitoring: paid only, shows who is missing today, and keeps open findings whole", async () => {
+  const f = await inspectionFixture();
+  // 무료 회사에는 행을 주지 않는다. 다만 다른 화면의 회차 상태는 그대로다.
+  const free = await transaction((c) => inspectionMonitor(c, f.actor, {}));
+  assert.equal(free.paid, false);
+  assert.equal(free.rows.length, 0);
+
+  await pool.query(
+    "UPDATE companies SET pro_state='PRO_VOLUNTARY',plan='BASIC',plan_started_at=now() WHERE id=$1",
+    [f.actor.companyId],
+  );
+  let view = await transaction((c) => inspectionMonitor(c, f.actor, {}));
+  assert.equal(view.paid, true);
+  const row = view.rows.find((r) => r.session_id === f.session.id)!;
+  assert.ok(row, "오늘 도는 작업이 목록에 선다");
+  // 아직 아무도 TBM 을 찍지 않았으므로 배정 작업자가 미확인으로 뜬다.
+  assert.equal(row.missing.length, 1);
+  assert.equal(view.summary.tbmMissing, 1);
+  assert.equal(view.summary.duringMissing, 1);
+
+  // 부적합을 하나 만들고 나면 요약의 미조치가 잡힌다.
+  const input = f.input("DURING_WORK");
+  input.results[0].result = "FAIL";
+  input.results[0].managerId = f.actor.userId;
+  await transaction((c) => submitInspection(c, f.workerActor, input));
+  await transaction((c) => submitInspection(c, f.workerActor, f.input()));
+  view = await transaction((c) => inspectionMonitor(c, f.actor, {}));
+  const after = view.rows.find((r) => r.session_id === f.session.id)!;
+  assert.equal(after.missing.length, 0);
+  assert.equal(after.during_count, 1);
+  assert.equal(view.summary.tbmMissing, 0);
+  assert.equal(view.summary.duringMissing, 0);
+  assert.ok(view.summary.openFindings >= 1);
+
+  // 장소 필터와 다른 날짜는 이 작업을 걸러 낸다.
+  assert.equal(
+    (
+      await transaction((c) =>
+        inspectionMonitor(c, f.actor, { location: "없는 장소" }),
+      )
+    ).rows.length,
+    0,
+  );
+  assert.equal(
+    (
+      await transaction((c) =>
+        inspectionMonitor(c, f.actor, { date: "2020-01-01" }),
+      )
+    ).rows.length,
+    0,
+  );
+  // 미조치 부적합은 날짜와 무관하게 남는다 — 지난 날짜를 봐도 사라지지 않는다.
+  assert.ok(
+    (
+      await transaction((c) =>
+        inspectionMonitor(c, f.actor, { date: "2020-01-01" }),
+      )
+    ).summary.openFindings >= 1,
+  );
+  // 작업자는 볼 수 없다.
+  await assert.rejects(
+    transaction((c) => inspectionMonitor(c, f.workerActor, {})),
+    /권한/,
   );
 });
 

@@ -848,3 +848,138 @@ export async function companyInspectionLog(
     limited: rows.length > 200,
   };
 }
+
+/* =========================================================================
+   점검 모니터링 (I-04) — 지금 무엇이 빠졌는가
+   ========================================================================= */
+
+export type MonitorRow = {
+  session_id: string;
+  order_id: string;
+  order_name: string;
+  location: string | null;
+  starts_at: string;
+  ends_at: string;
+  expected_assignees: Array<{ userId: string; name: string }>;
+  tbm_users: string[];
+  during_count: number;
+  open_findings: number;
+  ptw_required: boolean;
+  permit_status: string | null;
+};
+export type MonitorView = {
+  date: string;
+  paid: boolean;
+  locations: string[];
+  rows: Array<MonitorRow & { missing: string[] }>;
+  summary: {
+    sessions: number;
+    tbmMissing: number;
+    duringMissing: number;
+    openFindings: number;
+  };
+};
+
+/**
+ * 점검 모니터링.
+ *
+ * 점검 기록(I-01)과 보는 방향이 반대다. 기록은 지나간 것을 조회하고, 모니터링은
+ * **오늘 지금 무엇이 빠졌는가**를 본다. 그래서 기간 필터가 아니라 날짜 하나를
+ * 고르고, 회차가 아니라 "그 날 도는 작업"을 행으로 놓는다.
+ *
+ * 추이 그래프·재해율 통계는 넣지 않았다. 첫 화면이 답해야 하는 질문은 "누가
+ * 아직 TBM 을 안 찍었나" 하나다.
+ *
+ * 유료 기능이다. 무료 회사에는 행을 돌려주지 않는다 — 다만 홈과 지시서 상세의
+ * 회차 상태는 무료에서도 그대로 보인다. 이 메뉴가 그것을 빼앗지 않는다.
+ */
+export async function inspectionMonitor(
+  client: PoolClient,
+  actor: Actor,
+  filters: { date?: string; location?: string } = {},
+): Promise<MonitorView> {
+  const access = await memberAccess(client, actor, true);
+  const paid = access.pro_state !== "FREE";
+  const now = await databaseNow(client);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(filters.date ?? "")
+    ? filters.date!
+    : seoulToday(now);
+  if (!paid)
+    return {
+      date,
+      paid,
+      locations: [],
+      rows: [],
+      summary: {
+        sessions: 0,
+        tbmMissing: 0,
+        duringMissing: 0,
+        openFindings: 0,
+      },
+    };
+
+  const params: unknown[] = [actor.companyId, date];
+  let locationClause = "";
+  if (filters.location) {
+    params.push(filters.location);
+    locationClause = " AND w.location_free_text = $3";
+  }
+  const { rows } = await client.query<MonitorRow>(
+    `SELECT s.id AS session_id, s.work_order_id AS order_id, w.name AS order_name,
+            w.location_free_text AS location, s.starts_at::text, s.ends_at::text,
+            s.expected_assignees, w.ptw_required, p.status AS permit_status,
+            coalesce((SELECT array_agg(i.inspector_id::text) FROM inspections i
+               WHERE i.session_id=s.id AND i.category='TBM'),ARRAY[]::text[]) AS tbm_users,
+            (SELECT count(*)::int FROM inspections i
+               WHERE i.session_id=s.id AND i.category='DURING_WORK') AS during_count,
+            (SELECT count(*)::int FROM inspection_findings f
+               JOIN inspection_results r ON r.id=f.result_id
+               JOIN inspections i ON i.id=r.inspection_id
+              WHERE i.session_id=s.id AND f.status='OPEN') AS open_findings
+       FROM work_sessions s
+       JOIN work_orders w ON w.id = s.work_order_id
+       LEFT JOIN work_permits p ON p.work_order_id = w.id
+      WHERE s.company_id=$1 AND s.work_date=$2::date AND w.status <> 'CANCELED'
+      ${locationClause}
+      ORDER BY s.starts_at, w.name LIMIT 200`,
+    params,
+  );
+
+  const withMissing = rows.map((r) => ({
+    ...r,
+    missing: r.expected_assignees
+      .filter((a) => !r.tbm_users.includes(a.userId))
+      .map((a) => a.name),
+  }));
+  // 미조치 부적합은 그 날짜가 아니라 회사 전체의 열린 건이다. 조치는 작업일과
+  // 무관하게 남아 있으므로, 날짜로 걸러 버리면 밀린 것이 화면에서 사라진다.
+  const { rows: open } = await client.query<{ n: number }>(
+    `SELECT count(*)::int AS n FROM inspection_findings f
+       JOIN inspection_results r ON r.id=f.result_id
+       JOIN inspections i ON i.id=r.inspection_id
+       JOIN work_sessions s ON s.id=i.session_id
+      WHERE s.company_id=$1 AND f.status='OPEN'`,
+    [actor.companyId],
+  );
+  const { rows: places } = await client.query<{ location: string }>(
+    `SELECT DISTINCT w.location_free_text AS location
+       FROM work_sessions s JOIN work_orders w ON w.id = s.work_order_id
+      WHERE s.company_id=$1 AND w.location_free_text IS NOT NULL
+        AND s.work_date >= ($2::date - 30)
+      ORDER BY 1 LIMIT 100`,
+    [actor.companyId, date],
+  );
+
+  return {
+    date,
+    paid,
+    locations: places.map((p) => p.location),
+    rows: withMissing,
+    summary: {
+      sessions: withMissing.length,
+      tbmMissing: withMissing.reduce((sum, r) => sum + r.missing.length, 0),
+      duringMissing: withMissing.filter((r) => r.during_count === 0).length,
+      openFindings: open[0].n,
+    },
+  };
+}

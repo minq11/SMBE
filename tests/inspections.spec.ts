@@ -289,6 +289,40 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       fullPage: true,
     });
 
+    // 점검 모니터링 (I-04) — 유료 기능이라 무료 회사에는 안내만 뜬다.
+    await page.goto("/monitoring");
+    await expect(
+      page.getByRole("heading", { name: "유료 요금제 기능입니다" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("무료 요금제에서도 막히지 않는 것", { exact: false }),
+    ).toBeVisible();
+    await pool.query(
+      "UPDATE companies SET pro_state='PRO_VOLUNTARY',plan='BASIC',plan_started_at=now() WHERE id=$1",
+      [company],
+    );
+    await page.reload();
+    await expect(page.getByText("TBM 미확인", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /작업 \d+건/ }),
+    ).toBeVisible();
+    await expect(
+      page.locator(".monitor-row").filter({ hasText: "점검 흐름 검증" }).first(),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath("inspection-monitoring.png"),
+      fullPage: true,
+    });
+    await pool.query(
+      "UPDATE companies SET pro_state='FREE',plan=NULL,plan_started_at=NULL WHERE id=$1",
+      [company],
+    );
+
     // 주간 안전점검 회의 (I-03) — 열기 → 참석자 기록 → 완료 → 잠금.
     await page.goto("/meetings");
     await expect(

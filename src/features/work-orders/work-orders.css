@@ -282,6 +282,86 @@
   font-weight: 600;
 }
 
+/* 점검 모니터링 (I-04) */
+.monitor-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 20px 0 8px;
+}
+.monitor-summary > div {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.monitor-summary-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+.monitor-summary strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.monitor-summary small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.monitor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.monitor-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+/* 이행 완료는 조용히, 미이행은 눈에 띄게. 이 화면은 빠진 것을 찾는 용도다. */
+.monitor-row.is-done {
+  border-left-color: var(--line);
+}
+.monitor-row.is-pending {
+  border-left-color: var(--brand);
+}
+.monitor-row-main {
+  min-width: 0;
+  flex: 1;
+}
+.monitor-row-main > a {
+  font-size: 15px;
+  font-weight: 700;
+}
+.monitor-row-main p {
+  font-size: 13px;
+  margin-top: 2px;
+}
+.monitor-missing {
+  color: var(--brand-strong);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .wo-check-edit {
   display: flex;
   gap: 10px;
@@ -437,6 +517,34 @@
   .wo-doc-tabs a {
     font-size: 12px;
     padding: 9px;
+  }
+  .monitor-summary {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  /* 좁은 화면에서 버튼이 본문 옆에 끼면 글줄이 버튼을 감싸 읽기 어렵다. */
+  .monitor-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .monitor-row > .btn-secondary {
+    justify-content: center;
+  }
+  .monitor-summary > div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .monitor-summary-icon {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+  .monitor-summary strong {
+    font-size: 18px;
+  }
+  .monitor-summary small {
+    margin-top: 0;
   }
   .wo-search {
     align-items: stretch;
