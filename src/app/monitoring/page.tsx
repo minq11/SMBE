@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavLink } from "@/components/ui/nav-link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, ClipboardCheck, Users } from "lucide-react";
 import { withTransaction } from "@/server/db";
@@ -139,9 +140,9 @@ export default async function MonitoringPage({
                     }
                   >
                     <div className="monitor-row-main">
-                      <Link href={"/work-orders/" + row.order_id}>
+                      <NavLink href={"/work-orders/" + row.order_id}>
                         {row.order_name}
-                      </Link>
+                      </NavLink>
                       <p className="wo-muted">
                         {at(row.starts_at)} ~ {at(row.ends_at)} ·{" "}
                         {row.location || "장소 미입력"}
@@ -170,7 +171,7 @@ export default async function MonitoringPage({
                         </p>
                       )}
                     </div>
-                    <Link
+                    <NavLink
                       className="btn-secondary"
                       href={
                         "/work-orders/" +
@@ -180,7 +181,7 @@ export default async function MonitoringPage({
                       }
                     >
                       점검 보기
-                    </Link>
+                    </NavLink>
                   </li>
                 );
               })}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavLink } from "@/components/ui/nav-link";
 import { ArrowLeft, ArrowRight, Plus, Search } from "lucide-react";
 import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
@@ -89,7 +90,7 @@ export default async function WorkOrdersPage({
               {result.rows.map((row) => (
                 <tr key={row.id}>
                   <td data-label="작업명">
-                    <Link href={"/work-orders/" + row.id}>{row.name}</Link>
+                    <NavLink href={"/work-orders/" + row.id}>{row.name}</NavLink>
                     <small>
                       {row.assessment_status === "APPROVED"
                         ? "평가 승인 완료"

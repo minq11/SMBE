@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavLink } from "@/components/ui/nav-link";
 import { CalendarCheck, Search } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
@@ -130,7 +131,7 @@ export default async function InspectionsPage({
           {log.rows.map((r) => (
             <article className="wo-risk wo-log-row" key={r.session_id}>
               <h3>
-                <Link
+                <NavLink
                   href={
                     "/work-orders/" +
                     r.order_id +
@@ -139,7 +140,7 @@ export default async function InspectionsPage({
                   }
                 >
                   {r.work_date} · {r.order_name}
-                </Link>
+                </NavLink>
               </h3>
               <p className="wo-muted">
                 {at(r.starts_at)} ~ {at(r.ends_at)}
@@ -189,9 +190,9 @@ export default async function InspectionsPage({
               </p>
               <p className="wo-detail-text">{f.comment || "코멘트 없음"}</p>
               <p>
-                <Link href={"/work-orders/" + f.order_id + "/inspections"}>
+                <NavLink href={"/work-orders/" + f.order_id + "/inspections"}>
                   원본 점검 보기 (열람 권한 적용)
-                </Link>
+                </NavLink>
               </p>
               <FindingResolution id={f.id} />
             </article>

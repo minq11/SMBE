@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink } from "@/components/ui/nav-link";
 import { notFound } from "next/navigation";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
@@ -79,9 +79,12 @@ export default async function MeetingsPage() {
                 )}
               </div>
               {w.meeting_id ? (
-                <Link className="btn-secondary" href={"/meetings/" + w.week_start}>
+                <NavLink
+                  className="btn-secondary"
+                  href={"/meetings/" + w.week_start}
+                >
                   {w.status === "COMPLETED" ? "회의록 보기" : "이어서 작성"}
-                </Link>
+                </NavLink>
               ) : (
                 <OpenMeetingButton week={w.week_start} />
               )}

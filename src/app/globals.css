@@ -4943,7 +4943,8 @@ body.sidebar-lock {
   margin-left: 6px;
   flex-shrink: 0;
 }
-a:has(> .nav-spinner) {
+/* 자손 어디에 있든 잡는다 — 카드 안쪽 span 에 들어가는 자리도 있다. */
+a:has(.nav-spinner) {
   opacity: 0.65;
   pointer-events: none;
 }

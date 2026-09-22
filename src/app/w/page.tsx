@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavLink } from "@/components/ui/nav-link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { withTransaction } from "@/server/db";
@@ -230,19 +231,19 @@ export default async function WorkerLinkPage({
                     {showActions && (
                       <div className="wo-actions">
                         {!mine && (
-                          <Link
+                          <NavLink
                             className="btn-primary"
                             href={`/w?session=${s.id}&type=TBM`}
                           >
                             TBM 확인
-                          </Link>
+                          </NavLink>
                         )}
-                        <Link
+                        <NavLink
                           className="btn-secondary"
                           href={`/w?session=${s.id}&type=DURING_WORK`}
                         >
                           작업 중 점검
-                        </Link>
+                        </NavLink>
                       </div>
                     )}
                     {!rowAssigned && (
