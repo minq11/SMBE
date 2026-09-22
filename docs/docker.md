@@ -119,7 +119,8 @@ docker compose logs --tail=100 app proxy
 | 서버 직접 빌드 (비상용)   | `smbe-deploy --local-build` — 스왑 필수                                                      |
 | DB 마이그레이션 적용      | `docker compose --profile tools run --rm migrate`                                            |
 | 배포 + 마이그레이션       | `./scripts/deploy.sh --migrate`                                                              |
-| 미실시 회의 알림 수동 실행 | `curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" http://127.0.0.1:3000/api/cron/meeting-reminders` |
+| 정기 배치 최초 설치       | `./scripts/setup-cron.sh` (CRON_SECRET 생성 + cron 등록)                                     |
+| 정기 배치 수동 실행       | `./scripts/run-cron.sh`                                                                      |
 | 상태                      | `docker compose ps`                                                                          |
 | 앱 로그                   | `docker compose logs -f --tail=100 app`                                                      |
 | 프록시·인증서 로그        | `docker compose logs -f --tail=100 proxy`                                                    |
@@ -143,30 +144,48 @@ docker compose exec app node scripts/container-readiness.mjs
 
 단일 서버이므로 재배포 중 잠깐 중단될 수 있습니다. 서버에서 이미지를 빌드하다 메모리가 부족하면 별도 빌드 환경을 사용하거나 인스턴스 메모리를 늘립니다.
 
-### 주간 배치 (미실시 회의 알림)
+### 정기 배치 (미실시 회의 알림) — 최초 1회 설치
 
-앱 안에 스케줄러를 두지 않습니다. 컨테이너가 여러 개로 늘어나면 각자 타이머를 돌려 같은
-메일을 여러 번 보내기 때문입니다. 대신 **호스트 cron 이 주 1회 엔드포인트를 때리고**,
-중복 방지는 DB 의 `(company_id, week_start)` 유일 제약이 맡습니다 (`0016`).
-
-`.env` 에 `CRON_SECRET`(32자 이상)을 채운 뒤 서버에서:
+주가 끝났는데 안전점검 회의 기록이 없으면 관리감독자·안전관리자에게 메일이 갑니다.
+서버에서 **한 줄만** 실행하면 끝납니다.
 
 ```sh
-crontab -e
+cd ~/SMBE && ./scripts/setup-cron.sh
 ```
 
-```cron
-# 매주 월요일 09:05 KST — 막 끝난 주를 대상으로 미실시 회의 알림
-5 0 * * 1 curl -fsS -m 60 -X POST -H "Authorization: Bearer <CRON_SECRET>" http://127.0.0.1:3000/api/cron/meeting-reminders >> /var/log/smbe-cron.log 2>&1
+이 스크립트가 세 가지를 합니다.
+
+1. `.env` 에 `CRON_SECRET` 이 없으면 만들어 넣습니다 (`openssl rand -hex 32`, 기존 파일은 `.bak` 백업).
+2. 앱 컨테이너를 새 환경변수로 다시 띄웁니다 (`env_file` 변경은 재생성해야 반영됩니다).
+3. `crontab` 에 **매일 09:00(서버 시간)** 실행 한 줄을 넣고, 마지막에 한 번 실제로 돌려 결과를 보여줍니다.
+
+여러 번 실행해도 안전합니다. crontab 줄은 하나만 남고, 같은 주를 두 번 알리지 않도록
+DB 가 막습니다 (`0016`).
+
+**왜 매일인가** — 주가 끝났는지는 앱이 한국시간으로 판정합니다. cron 시각은 "메일이 언제
+도착하는가" 만 정하므로 서버 시간대를 계산할 필요가 없고, 하루 놓쳐도 다음 날 따라잡습니다.
+
+설치 후 확인:
+
+| 하고 싶은 것 | 명령 |
+| --- | --- |
+| 등록됐는지 보기 | `crontab -l` |
+| 로그 보기 | `tail -f ~/smbe-cron.log` |
+| 지금 한 번 실행 | `cd ~/SMBE && ./scripts/run-cron.sh` |
+
+실행 결과는 이런 JSON 입니다.
+
+```
+HTTP 200 {"companies":1,"weeks":2,"sent":2,"skipped":0,"failed":0}
 ```
 
-- 서버 시간이 UTC 이면 위 `0 0`(UTC) = 월요일 09:00 KST 입니다. `timedatectl` 로 확인하세요.
-- 컨테이너 내부 포트로 때리므로 프록시·인증서와 무관합니다. 외부에서 도메인으로 때려도 됩니다.
-- **배치가 몇 주 멈췄다가 돌아도** 밀린 주를 한 통으로 묶어 보냅니다. 같은 주는 두 번
-  알리지 않습니다.
-- `CRON_SECRET` 이 비어 있으면 엔드포인트는 항상 401 이고 알림이 나가지 않습니다.
-- 수동 실행·확인: 위 `curl` 을 그대로 실행하면 `{"companies":n,"weeks":n,"sent":n,...}` 가
-  돌아옵니다. `sent` 가 0 이고 `skipped` 가 크면 `RESEND_API_KEY`·`EMAIL_FROM` 을 보세요.
+- `companies` 알림 보낸 회사 수 · `weeks` 알린 주 수
+- `sent` 발송 성공 · `skipped` 메일 설정 없음(`RESEND_API_KEY`·`EMAIL_FROM` 확인) · `failed` 발송 실패
+- **두 번째 실행부터 `weeks` 가 0** 입니다. 같은 주를 다시 알리지 않는 게 정상입니다.
+
+호스트에서 `curl localhost:3000` 은 닿지 않습니다 — 앱의 3000 번 포트는 호스트에 공개하지
+않고 프록시만 앞에 둡니다(`compose.yaml` 의 `expose`). 그래서 배치는 컨테이너 안에서
+호출하며, `CRON_SECRET` 도 호스트 명령줄에 노출되지 않습니다.
 
 ## 5. 로컬에서 운영 모드로 확인 (선택)
 

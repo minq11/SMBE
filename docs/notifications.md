@@ -117,8 +117,10 @@ SMS는 90바이트를 넘으면 LMS로 전환되어 단가가 오른다. 토큰 
 일을 통보받는 셈이 된다.
 
 **앱 안에 스케줄러를 두지 않는다.** 컨테이너가 여러 개로 늘어나면 각자 타이머를 돌려 같은
-메일을 여러 번 보낸다. 호스트 cron 이 주 1회 `POST /api/cron/meeting-reminders` 를 때리고
-(`CRON_SECRET` 인증), 중복 방지는 DB 가 맡는다. 설정은 [docker.md](docker.md) §4.
+메일을 여러 번 보낸다. 호스트 cron 이 **매일** `POST /api/cron/meeting-reminders` 를 때리고
+(`CRON_SECRET` 인증), 중복 방지는 DB 가 맡는다. 매일 도는 이유는 주가 끝났는지를 앱이
+한국시간으로 판정하기 때문이다 — cron 시각은 도착 시간만 정하고, 하루 놓쳐도 따라잡는다.
+설치는 서버에서 `./scripts/setup-cron.sh` 한 줄이다 ([docker.md](docker.md) §4).
 
 발송 실패도 장부에는 기록한다. 실패했다고 매번 다시 보내면 같은 주를 반복해 알리게 되고,
 그건 알림이 아니라 소음이다.
