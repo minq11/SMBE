@@ -19,6 +19,8 @@ import {
   CopyLinkButton,
 } from "@/features/work-orders/order-controls";
 import { PageHeader } from "@/components/ui/page-header";
+import { PrintSheet } from "@/features/work-orders/print-sheet";
+import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
 import { InspectionSummary } from "@/features/inspections/inspection-summary";
 import { sessionState } from "@/features/inspections/model";
 import { withTransaction } from "@/server/db";
@@ -101,6 +103,8 @@ export default async function OrderDetailPage({
    * 안 보이는 탭도 DOM 에는 남긴다. 지시서는 법정 서류라 인쇄는 언제나 전체가
    * 한 장으로 나와야 하고, 그건 hidden 을 print 에서만 푸는 것으로 해결된다.
    */
+  // 출력물은 유료 기능이다. 무료 회사는 버튼을 눌렀을 때 안내로 막는다.
+  const canPrint = (session.membership?.pro_state ?? "FREE") !== "FREE";
   const panel = (key: string, extra = "") => ({
     className: "wo-section wo-tabpanel" + (extra ? " " + extra : ""),
     hidden: tabbed && tab !== key,
@@ -158,8 +162,50 @@ export default async function OrderDetailPage({
       responsibleName: names.get(r.responsibleId) ?? "",
     }));
   const safety = riskSnapshot?.safety_info ?? d.safetyInfo;
+  const printPeriod =
+    `${d.startDate || "미입력"} ~ ${d.endDate || "미입력"} · 매일 ${d.startTime} ~ ${d.endTime}` +
+    (d.endTime <= d.startTime ? " (다음 날 종료)" : "");
+  const printPtw = d.ptwRequired
+    ? PERMIT_LABEL[
+        permitStatus(permit?.status ?? "NONE", order.status, d)
+      ] ?? "미신청"
+    : "불필요";
   return (
     <OrderShell session={session} title="지시서 상세">
+      {qr && canPrint && (
+        <PrintSheet
+          name={order.name}
+          period={printPeriod}
+          location={d.location}
+          groupLabel={d.groupLabel}
+          ptw={printPtw}
+          assignees={detail.assignments
+            .map((m) => m.snapshot_display_name)
+            .join(", ")}
+          risks={risks.map((r) => ({
+            hazard: r.hazard,
+            level: LEVELS[r.level] ?? "-",
+            measure: r.measure,
+          }))}
+          tbm={detail.checklist
+            .filter((c) => c.category === "TBM")
+            .map((c) => c.text)}
+          during={detail.checklist
+            .filter((c) => c.category === "DURING_WORK")
+            .map((c) => c.text)}
+          qr={qr}
+          url={url}
+          issueVersion={order.issue_version}
+          issuedAt={order.issued_at ? dateTime(order.issued_at) : null}
+          printedAt={dateTime(new Date().toISOString())}
+        />
+      )}
+      {qr && !canPrint && (
+        <p className="wo-sheet-blocked" aria-hidden="true">
+          무료 요금제에서는 지시서 출력물을 만들 수 없습니다. 화면의 QR 과
+          이메일 링크로 전달하세요.
+        </p>
+      )}
       <div className="wo-print">
         <PageHeader
           title={order.name}
@@ -485,12 +531,13 @@ export default async function OrderDetailPage({
             </p>
             {isManager && (
               <div className="wo-no-print">
-                {/* 인쇄는 탭과 무관하게 지시서 전체가 한 장으로 나간다
-                    (globals.css @media print 에서 숨긴 탭을 모두 편다). */}
-                <PrintButton />
+                {/* 인쇄물은 화면 문서 전체가 아니라 현장 게시용 A4 한 장이다. */}
+                <PrintButton allowed={canPrint} />
                 <p className="wo-muted">
+                  작업 정보·위험요인·체크리스트와 QR 이 A4 한 장으로 나옵니다.
                   인쇄 창에서 대상을 &lsquo;PDF로 저장&rsquo; 으로 바꾸면 PDF
-                  파일이 됩니다. 어느 탭을 보고 있든 지시서 전체가 출력됩니다.
+                  파일이 됩니다. 작업 장소에 붙여 두면 작업자가 QR 로 바로
+                  들어옵니다.
                 </p>
                 <CopyLinkButton url={url} />
                 <h3>이메일 전달 상태</h3>

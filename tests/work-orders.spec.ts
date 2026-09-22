@@ -132,6 +132,18 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       page.getByRole("heading", { name: "작업지시 QR", exact: true }),
     ).toBeVisible();
     await expect(page.getByAltText("이 작업지시를 여는 QR 코드")).toBeVisible();
+    // 무료 회사: 출력 버튼은 보이지만 눌러도 안내만 뜨고 출력물이 만들어지지 않는다.
+    // 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전 클릭은 삼켜진다.
+    const notice = page.getByRole("alert").filter({
+      hasText: "지시서 출력물은 유료 요금제에서",
+    });
+    await expect(async () => {
+      await page
+        .getByRole("button", { name: "지시서 인쇄 / PDF 저장", exact: true })
+        .click();
+      await expect(notice).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 15000 });
+    await expect(page.locator(".wo-sheet")).toHaveCount(0);
     // 다른 탭의 내용은 화면에서 접혀 있다.
     await expect(
       page.getByText("관리자 본인 평가 승인 기록이 있습니다.", {
@@ -160,20 +172,34 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       path: testInfo.outputPath("work-order-issued.png"),
       fullPage: true,
     });
+    // 유료로 바꾸면 현장 게시용 A4 한 장이 생긴다. 인쇄물은 화면 문서 전체가
+    // 아니라 이 한 장이며, 어느 탭을 보고 있든 같은 것이 나간다.
+    await pool.query(
+      "UPDATE companies SET pro_state='PRO_VOLUNTARY',plan='BASIC',plan_started_at=now() WHERE id=$1",
+      [company],
+    );
+    await page.reload();
     await page.emulateMedia({ media: "print" });
     await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
-    await expect(page.locator(".sidebar")).toBeHidden();
-    // 지시서는 법정 서류라, 어느 탭을 보고 있든 인쇄에는 전체가 나온다.
-    await expect(page.getByAltText("이 작업지시를 여는 QR 코드")).toBeVisible();
+    const sheet = page.locator(".wo-sheet");
+    await expect(sheet).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "체크리스트", exact: true }),
+      sheet.getByAltText("이 작업지시를 여는 QR 코드"),
     ).toBeVisible();
-    await expect(page.locator(".wo-tabs")).toBeHidden();
+    await expect(sheet.getByText("테스트 TBM", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("테스트 점검", { exact: true })).toBeVisible();
+    await expect(page.locator(".wo-print")).toBeHidden();
+    await expect(page.locator(".sidebar")).toBeHidden();
     await page.screenshot({
       path: testInfo.outputPath("work-order-print.png"),
       fullPage: true,
     });
     await page.emulateMedia({ media: "screen" });
+    // 이후 흐름은 무료 회사 기준을 그대로 쓴다.
+    await pool.query(
+      "UPDATE companies SET pro_state='FREE',plan=NULL,plan_started_at=NULL WHERE id=$1",
+      [company],
+    );
     const row = (
       await pool.query("SELECT status,revision FROM work_orders WHERE id=$1", [
         id,

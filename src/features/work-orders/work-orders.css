@@ -404,12 +404,22 @@
     min-width: 600px;
   }
 }
+/* =========================================================================
+   현장 게시용 A4 출력물 — 화면에는 없고 인쇄에만 나온다
+   ========================================================================= */
+.wo-sheet,
+.wo-sheet-blocked {
+  display: none;
+}
+
 @media print {
-  /* 지시서는 법정 서류라 어느 탭을 보고 있든 전체가 한 장으로 나가야 한다.
-     탭은 화면에서만 문서를 나눈다. */
-  .wo-tabpanel[hidden] {
-    display: block !important;
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
   }
+  /* 인쇄물은 화면 문서 전체가 아니라 A4 한 장짜리 게시물이다.
+     화면 문서(.wo-print)는 통째로 빠지고 .wo-sheet 만 나간다. */
+  .wo-print,
   .wo-tabs,
   .sidebar,
   .topbar,
@@ -443,8 +453,107 @@
   .wo-link-input {
     border: 0;
   }
-  .wo-print {
+  .wo-sheet,
+  .wo-sheet-blocked {
+    display: block;
     color: #000;
     background: #fff;
   }
+  .wo-sheet-blocked {
+    font-size: 11pt;
+  }
+}
+
+/* A4 한 장 안에 들어가도록 고른 활자 크기. 항목이 아주 많은 지시서는 두 장이
+   될 수 있으므로 각 블록은 페이지 중간에서 잘리지 않게만 막는다. */
+.wo-sheet {
+  color: #000;
+  font-size: 9.5pt;
+  line-height: 1.45;
+}
+.wo-sheet h1 {
+  font-size: 19pt;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 2mm 0;
+}
+.wo-sheet h2 {
+  font-size: 10pt;
+  font-weight: 700;
+  margin-bottom: 1mm;
+  padding-bottom: 0.8mm;
+  border-bottom: 1px solid #000;
+}
+.wo-sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8mm;
+  padding-bottom: 3mm;
+  border-bottom: 2px solid #000;
+}
+.wo-sheet-kicker {
+  font-size: 9pt;
+  letter-spacing: 3px;
+}
+.wo-sheet-meta {
+  font-size: 10pt;
+}
+.wo-sheet-qr {
+  flex-shrink: 0;
+  text-align: center;
+}
+.wo-sheet-qr p {
+  margin-top: 1mm;
+  font-size: 8pt;
+}
+.wo-sheet-row,
+.wo-sheet-risks,
+.wo-sheet-checks {
+  margin-top: 4mm;
+  break-inside: avoid;
+}
+.wo-sheet-risks table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.wo-sheet-risks th,
+.wo-sheet-risks td {
+  border-bottom: 1px solid #999;
+  padding: 1.2mm 2mm 1.2mm 0;
+  text-align: left;
+  vertical-align: top;
+}
+.wo-sheet-risks th {
+  font-size: 8.5pt;
+  font-weight: 700;
+}
+.wo-sheet-level {
+  width: 12mm;
+  white-space: nowrap;
+}
+.wo-sheet-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6mm;
+}
+.wo-sheet-checks ol {
+  margin: 0;
+  padding-left: 5mm;
+}
+.wo-sheet-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 4mm;
+  margin-top: 5mm;
+  padding-top: 2mm;
+  border-top: 1px solid #000;
+  font-size: 8pt;
+}
+.wo-sheet-url {
+  overflow-wrap: anywhere;
+}
+.wo-sheet-note {
+  margin-top: 1.5mm;
+  font-size: 8pt;
 }

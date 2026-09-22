@@ -1,4 +1,6 @@
 "use client";
+
+import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
@@ -83,16 +85,32 @@ export function OrderCommand({
     </form>
   );
 }
-export function PrintButton() {
+/**
+ * 지시서 출력물(A4 한 장)은 유료 기능이다. 무료 회사에서는 버튼을 숨기지 않고
+ * 눌렀을 때 안내한다 — 버튼이 없으면 "이 제품에는 출력이 없다" 로 읽히지만,
+ * 안내가 뜨면 무엇을 얻는지 알고 결정할 수 있다.
+ */
+export function PrintButton({ allowed = true }: { allowed?: boolean }) {
+  const [blocked, setBlocked] = useState(false);
   return (
-    <button
-      type="button"
-      className="btn-primary wo-no-print"
-      onClick={() => window.print()}
-    >
-      <Printer size={14} />
-      지시서 인쇄 / PDF 저장
-    </button>
+    <div className="wo-no-print">
+      <button
+        type="button"
+        className="btn-primary"
+        onClick={() => (allowed ? window.print() : setBlocked(true))}
+      >
+        <Printer size={14} />
+        지시서 인쇄 / PDF 저장
+      </button>
+      {blocked && (
+        <p role="alert" className="wo-notice">
+          지시서 출력물은 유료 요금제에서 이용할 수 있습니다. 작업 정보와 QR 이
+          A4 한 장으로 정리되어, 작업 장소에 붙여 두면 작업자가 QR 로 바로
+          들어옵니다. 무료 요금제에서는 화면의 QR 과 이메일 링크로 전달하세요.{" "}
+          <Link href="/billing">요금제 보기</Link>
+        </p>
+      )}
+    </div>
   );
 }
 export function PrintTimestamp({ initial }: { initial: string }) {
