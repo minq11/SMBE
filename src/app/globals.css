@@ -4583,7 +4583,7 @@ html[data-banner-hidden] .preview-banner {
   /* 로그인 전 홈도 한 화면이다 (390×844 기준). 머리·이유 넷·요금 한 줄이 스크롤
      없이 들어가도록 줄인다. 더 작은 화면에서는 본문이 스크롤된다. */
   .hero {
-    padding: 16px 16px 14px;
+    padding: 14px 16px 12px;
   }
   .hero-eyebrow {
     font-size: 13px;
@@ -4614,10 +4614,10 @@ html[data-banner-hidden] .preview-banner {
   }
   .reasons {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 5px;
   }
   .reasons li {
-    padding: 8px 10px;
+    padding: 7px 10px;
     gap: 10px;
     border-radius: var(--radius-sm);
   }

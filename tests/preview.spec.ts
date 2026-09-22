@@ -39,14 +39,15 @@ test("preview renders without secrets and only shows preparation dialogs", async
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "심플안전을 해야 하는 이유" }),
+    page.getByRole("heading", { name: "심플안전 해야하는 이유" }),
   ).toBeVisible();
   // 로그인 전 화면에는 가짜 데이터를 두지 않는다. 실제로 하는 일과 시작 경로만 있다.
+  // 상단바에도 같은 이름의 링크가 있어 본문으로 좁힌다.
   await expect(
-    page.getByRole("link", { name: /무료로 시작하기/ }),
+    page.locator("#main").getByRole("link", { name: /무료로 시작/ }),
   ).toHaveAttribute("href", "/login");
   await expect(
-    page.getByRole("link", { name: /인정 준비도 진단/ }),
+    page.getByRole("link", { name: /우리회사 안전수준 진단/ }),
   ).toHaveAttribute("href", "/recognition-check");
   // 로그인 전 홈도 한 화면에 들어간다 — 본문이 스크롤될 만큼 길지 않다.
   if (test.info().project.name === "mobile") {
@@ -59,7 +60,7 @@ test("preview renders without secrets and only shows preparation dialogs", async
     page.getByRole("heading", { name: /‘시작 요금’ 없는/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: /‘앱 설치 강요’ 없는/ }),
+    page.getByRole("heading", { name: /‘앱 설치’ 없는/ }),
   ).toBeVisible();
   for (const fake of [
     "오늘의 작업 (예시)",

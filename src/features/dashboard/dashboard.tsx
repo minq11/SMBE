@@ -61,8 +61,8 @@ const REASONS = [
     chips: ["인정 시 3년 감독 유예", "산재보험료 20% 인하", "중처법 일부 대응"],
   },
   {
-    keyword: "앱 설치 강요",
-    body: "작업자는 QR 한 번. 설치도 로그인도 없이.",
+    keyword: "앱 설치",
+    body: "작업자는 QR 한 번, 로그인만으로 TBM·점검 기록.",
   },
   {
     keyword: "국경",
@@ -240,19 +240,17 @@ function DashboardBody({
           구호에 주면 정작 할 일이 밀린다 — 오늘 할 일이 먼저다. */}
       {!isAuthenticated && (
         <section className="hero">
-          <p className="hero-eyebrow">제조업 중소기업 사장님이</p>
+          <p className="hero-eyebrow">우리가</p>
           <h1>
-            <span>심플안전</span>을 해야 하는 이유
+            <span>심플안전</span> 해야하는 이유
           </h1>
-          <p className="hero-lead">
-            위험성평가부터 작업지시·허가서·안전점검까지, 오늘 바로.
-          </p>
+          <p className="hero-lead">당장 오늘부터 심플하게 시작해요</p>
           <div className="hero-actions">
             <Link href="/login" className="btn-primary">
-              무료로 시작하기 <ArrowRight size={15} />
+              무료로 시작 <ArrowRight size={15} />
             </Link>
             <Link href="/recognition-check" className="btn-secondary">
-              <ShieldCheck size={15} /> 인정 준비도 진단
+              <ShieldCheck size={15} /> 우리회사 안전수준 진단
             </Link>
           </div>
         </section>
@@ -305,7 +303,7 @@ function DashboardBody({
       )}
 
       {!isAuthenticated && (
-        <section className="stack" aria-label="심플안전을 해야 하는 이유">
+        <section className="stack" aria-label="심플안전 해야하는 이유">
           <ol className="reasons">
             {REASONS.map(({ keyword, body, soon, chips }, i) => (
               <li key={keyword}>
