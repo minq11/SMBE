@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import type { Tier } from "./tier";
 import { BrandWordmark } from "@/components/brand/wordmark";
 import {
@@ -138,6 +139,59 @@ const NAV: ReadonlyArray<NavEntry> = [
   },
 ];
 
+/**
+ * 여러 화면을 묶은 메뉴(안전점검·회사정보)는 접어 둔다. 다 펴 놓으면 좁은
+ * 화면에서 목록이 길어져 정작 자주 쓰는 작업지시·표준서가 스크롤 밖으로 밀린다.
+ * 단, 지금 보고 있는 화면이 그 안에 있으면 처음부터 펴 둔다 — 내가 어디 있는지
+ * 가 접혀 있으면 안 된다.
+ */
+function NavGroup({
+  title,
+  icon: Icon,
+  items,
+  active,
+  onClose,
+}: {
+  title: string;
+  icon: LucideIcon;
+  items: ReadonlyArray<NavEntry>;
+  active: NavKey;
+  onClose: () => void;
+}) {
+  const holdsActive = items.some((item) => item.key === active);
+  const [open, setOpen] = useState(holdsActive);
+  const id = "nav-group-" + title;
+
+  return (
+    <div role="group" aria-label={title} className="nav-group">
+      <button
+        type="button"
+        className="nav-group-label"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <Icon size={17} />
+        <span>{title}</span>
+        <ChevronDown size={14} className="nav-group-caret" aria-hidden="true" />
+      </button>
+      <div className="nav-group-children" id={id} hidden={!open}>
+        {items.map((child) => (
+          <Link
+            key={child.key}
+            href={child.href!}
+            className={`nav-item${child.key === active ? " is-active" : ""}`}
+            aria-current={child.key === active ? "page" : undefined}
+            onClick={onClose}
+          >
+            <span>{child.title}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Sidebar({
   active,
   companyName,
@@ -195,30 +249,14 @@ export function Sidebar({
         {NAV.map(({ key, title, icon: Icon, href, children }) => {
           if (children) {
             return (
-              <div
+              <NavGroup
                 key={key}
-                role="group"
-                aria-label={title}
-                className="nav-group"
-              >
-                <div className="nav-group-label">
-                  <Icon size={17} />
-                  <span>{title}</span>
-                </div>
-                <div className="nav-group-children">
-                  {children.map((child) => (
-                    <Link
-                      key={child.key}
-                      href={child.href!}
-                      className={`nav-item${child.key === active ? " is-active" : ""}`}
-                      aria-current={child.key === active ? "page" : undefined}
-                      onClick={onClose}
-                    >
-                      <span>{child.title}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
+                title={title}
+                icon={Icon}
+                items={children}
+                active={active}
+                onClose={onClose}
+              />
             );
           }
           const isActive = key === active;

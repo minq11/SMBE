@@ -86,6 +86,16 @@
   background: var(--brand-softer);
   line-height: 1.8;
 }
+/* 칸이 세 개라 마지막 하나가 반쪽으로 남는다. 이력은 줄글이 길어 가로로
+   넓은 편이 읽기 좋으니 아래 줄을 통째로 쓴다. */
+.account-panel--wide {
+  grid-column: 1 / -1;
+}
+.account-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
 .account-history {
   list-style: none;
   margin: 0;

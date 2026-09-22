@@ -138,6 +138,13 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
             .locator(".std-risk-field input[type=date]")
             .first();
           expect((await dueDate.boundingBox())!.width).toBeGreaterThan(180);
+          // 긴 폼의 저장 줄은 작업지시 작성과 같이 화면 아래에 붙어 있어야
+          // 한다 — 맨 위에 있어도 저장 버튼이 보여야 다시 내려가지 않는다.
+          const save = page.locator(".std-form-actions");
+          const box = (await save.boundingBox())!;
+          expect(box.y + box.height).toBeLessThanOrEqual(
+            (await page.evaluate(() => innerHeight)) + 1,
+          );
         }
         const tips = page.locator(".help-tip-button");
         if (await tips.count()) {
@@ -190,6 +197,8 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
     expect(
       await drawer.evaluate((el) => el.scrollHeight > el.clientHeight),
     ).toBe(true);
+    // 회사정보는 접힌 채로 열린다. 펴야 그 안의 화면으로 갈 수 있다.
+    await drawer.getByRole("button", { name: "회사정보" }).click();
     await drawer.getByRole("link", { name: "이용·관리" }).click();
     await expect(page).toHaveURL(/billing/);
     await expect(page.locator("body")).not.toHaveClass(/sidebar-lock/);

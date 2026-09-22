@@ -134,6 +134,15 @@ test("own profile saves, membership exit preserves history, last supervisor prot
       exact: true,
     });
     const companyGroup = navigation.getByRole("group", { name: "회사정보" });
+    // 여러 화면을 묶은 메뉴는 접혀 있다. 눌러야 펴진다.
+    const companyToggle = companyGroup.getByRole("button", {
+      name: "회사정보",
+    });
+    await expect(companyToggle).toHaveAttribute("aria-expanded", "false");
+    await expect(
+      companyGroup.getByRole("link", { name: "인원관리" }),
+    ).toBeHidden();
+    await companyToggle.click();
     await expect(
       companyGroup.getByRole("link", { name: "인원관리" }),
     ).toBeVisible();
@@ -147,6 +156,8 @@ test("own profile saves, membership exit preserves history, last supervisor prot
     await companyGroup.getByRole("link", { name: "장소관리" }).click();
     await expect(page).toHaveURL(/\/company\/locations$/);
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
+    // 지금 보고 있는 화면이 든 메뉴는 처음부터 펴져 있어야 한다 — 내가 어디
+    // 있는지가 접혀 있으면 안 된다.
     await expect(
       page
         .getByRole("group", { name: "회사정보" })

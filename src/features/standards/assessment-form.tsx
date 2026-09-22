@@ -402,7 +402,7 @@ export function AssessmentForm({
         </div>
       </section>
 
-      <div className="std-form-actions">
+      <div className="std-form-actions sticky-actions">
         <Link href={`/standards/${standardId}`} className="ghost-button">
           <X size={13} /> 취소
         </Link>
