@@ -2,8 +2,10 @@
 import {
   cloneElement,
   useActionState,
+  useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type ReactElement,
@@ -184,6 +186,13 @@ export function WorkOrderForm({
       ? "simple"
       : "idle";
   const [step, setStep] = useState(0);
+  // 좁은 화면에서 단계 탭은 한 줄로 옆으로 밀린다. 현재 단계가 잘려 있지 않게 끌어온다.
+  const stepsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    stepsRef.current
+      ?.querySelector("[aria-current]")
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [step]);
   // 단계가 바뀌면 새 단계의 머리부터 보여 준다. 아래 고정 바에서 '다음' 을 눌렀을 때
   // 스크롤이 지난 단계의 바닥에 남아 있으면 무엇이 바뀌었는지 알 수 없다.
   const goTo = (next: number) => {
@@ -246,7 +255,7 @@ export function WorkOrderForm({
     <div className="wo-editor">
       <div className="wo-editor-head">
         <PageHeader title={data.name || title} />
-        <nav className="wo-steps" aria-label="작성 단계">
+        <nav className="wo-steps" aria-label="작성 단계" ref={stepsRef}>
           {STEPS.map((label, i) => (
             <button
               type="button"

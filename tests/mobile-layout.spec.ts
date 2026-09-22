@@ -57,7 +57,10 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
             return (
               r.width > 0 &&
               (r.right > innerWidth + 1 || r.left < -1) &&
-              !el.closest(".honeypot, [hidden], .wo-table-wrap, .tabs")
+              // .wo-steps: 작성 단계 탭은 좁은 화면에서 한 줄로 옆으로 미는 띠다.
+              !el.closest(
+                ".honeypot, [hidden], .wo-table-wrap, .tabs, .wo-steps",
+              )
             );
           })
           .slice(0, 8)
