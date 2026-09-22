@@ -42,11 +42,11 @@
   --topbar-h: 64px;
   --banner-h: 40px;
 
-  /* System font stack for English display */
-  --font-display:
-    "Söhne", "Inter", -apple-system, BlinkMacSystemFont,
-    "Segoe UI Variable Display", "Segoe UI", "Helvetica Neue", Helvetica, Arial,
-    sans-serif;
+  /* 글꼴은 하나다 — Pretendard (가변). 제목도 같은 글꼴의 굵기로만 구분한다. */
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
 
   /* Legacy tokens for auth/onboarding */
   --orange: var(--brand);
@@ -64,7 +64,10 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--bg);
-  font-family: "Noto Sans KR", Arial, sans-serif;
+  font-family: var(--font-sans);
+  /* 한국어는 어절 단위로 줄을 바꾼다. 긴 주소·식별자는 필요할 때만 자른다. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
   font-size: 14px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -4577,22 +4580,73 @@ html[data-banner-hidden] .preview-banner {
   .loading-logo--fullscreen {
     min-height: 70vh;
   }
+  /* 로그인 전 홈도 한 화면이다 (390×844 기준). 머리·이유 넷·요금 한 줄이 스크롤
+     없이 들어가도록 줄인다. 더 작은 화면에서는 본문이 스크롤된다. */
+  .hero {
+    padding: 16px 16px 14px;
+  }
+  .hero-eyebrow {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
   .hero h1 {
-    font-size: 28px;
-    letter-spacing: -0.8px;
+    font-size: 23px;
+    letter-spacing: -0.7px;
+    line-height: 1.25;
+  }
+  /* 제목이 이미 말한다. 좁은 화면에서는 한 줄 설명을 뺀다. */
+  .hero .hero-lead {
+    display: none;
+  }
+  .hero-actions {
+    margin-top: 12px;
+    gap: 8px;
+  }
+  .hero + .stack {
+    margin-top: -12px;
+  }
+  .hero-actions > * {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+    padding-inline: 10px;
+    font-size: 14px;
   }
   .reasons {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 6px;
   }
   .reasons li {
-    padding: 16px;
+    padding: 8px 10px;
+    gap: 10px;
+    border-radius: var(--radius-sm);
   }
-  .hero-actions {
-    flex-direction: column;
+  .reason-no {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    border-radius: 8px;
   }
-  .hero-actions > * {
-    justify-content: center;
+  .reasons h2 {
+    font-size: 15px;
+    gap: 5px;
+  }
+  .reasons p {
+    margin-top: 1px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .reason-chips {
+    margin-top: 5px;
+    gap: 4px;
+  }
+  .reason-chips span {
+    padding: 2px 7px;
+    font-size: 11px;
+  }
+  .hero-lead.landing-note {
+    font-size: 12px;
+    margin: -8px 0 0;
   }
   .hero-lead {
     font-size: 14px;

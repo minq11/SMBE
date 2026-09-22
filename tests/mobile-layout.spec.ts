@@ -60,7 +60,9 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
               // .wo-steps/.std-jump: 좁은 화면에서 한 줄로 옆으로 미는 띠다.
               !el.closest(
                 ".honeypot, [hidden], .wo-table-wrap, .tabs, .wo-steps, .std-jump",
-              )
+              ) &&
+              // 접힌 <details> 속은 그려지지 않는데도 크기가 잡힌다.
+              !(el.closest("details:not([open])") && !el.closest("summary"))
             );
           })
           .slice(0, 8)

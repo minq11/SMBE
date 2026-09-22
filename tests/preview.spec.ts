@@ -46,8 +46,15 @@ test("preview renders without secrets and only shows preparation dialogs", async
     page.getByRole("link", { name: /무료로 시작하기/ }),
   ).toHaveAttribute("href", "/login");
   await expect(
-    page.getByRole("link", { name: /우리 회사는 준비됐나/ }),
+    page.getByRole("link", { name: /인정 준비도 진단/ }),
   ).toHaveAttribute("href", "/recognition-check");
+  // 로그인 전 홈도 한 화면에 들어간다 — 본문이 스크롤될 만큼 길지 않다.
+  if (test.info().project.name === "mobile") {
+    const main = page.locator("main");
+    expect(
+      await main.evaluate((el) => el.scrollHeight - el.clientHeight),
+    ).toBeLessThanOrEqual(0);
+  }
   await expect(
     page.getByRole("heading", { name: /‘시작 요금’ 없는/ }),
   ).toBeVisible();

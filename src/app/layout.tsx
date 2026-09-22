@@ -1,10 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource/noto-sans-kr/400.css";
-import "@fontsource/noto-sans-kr/500.css";
-import "@fontsource/noto-sans-kr/600.css";
-import "@fontsource/noto-sans-kr/700.css";
-import "@fontsource/noto-sans-kr/800.css";
-import "@fontsource/noto-sans-kr/900.css";
+// 글꼴은 Pretendard 하나(가변). 글자 범위별로 잘라 둔 파일이라 쓰는 글자만 받는다.
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 import { PreviewBanner } from "@/components/preview-banner";
 import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";

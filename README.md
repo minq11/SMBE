@@ -113,3 +113,7 @@ npm run test:e2e
 ```
 
 Lightsail 실행 절차는 [배포 안내](docs/lightsail.md), 서버 운영은 [운영 안내](docs/operations.md), 구조 결정은 [개발 뼈대](docs/architecture.md)를 참고하세요.
+
+## 디자인
+
+화면을 만들거나 고칠 때의 규칙은 [docs/design-constitution.md](docs/design-constitution.md)(디자인 헌법)에 있다.

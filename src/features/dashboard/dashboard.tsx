@@ -53,16 +53,16 @@ export type Today = {
 const REASONS = [
   {
     keyword: "시작 요금",
-    body: "인원 제한 없이 무료. 문의·협의 없이 바로 가입, 유료는 필요할 때만.",
+    body: "인원 제한 없이 무료. 유료는 필요할 때만.",
   },
   {
     keyword: "걱정",
-    body: "위험성평가 → 작업지시 → 허가서 → 안전점검, 한 흐름. 쌓인 기록으로 공단 인정 준비.",
+    body: "위험성평가 → 작업지시 → 허가서 → 안전점검, 한 흐름.",
     chips: ["인정 시 3년 감독 유예", "산재보험료 20% 인하", "중처법 일부 대응"],
   },
   {
     keyword: "앱 설치 강요",
-    body: "작업자는 QR 한 번. 설치도 로그인도 없이 TBM·점검 기록.",
+    body: "작업자는 QR 한 번. 설치도 로그인도 없이.",
   },
   {
     keyword: "국경",
@@ -252,7 +252,7 @@ function DashboardBody({
               무료로 시작하기 <ArrowRight size={15} />
             </Link>
             <Link href="/recognition-check" className="btn-secondary">
-              <ShieldCheck size={15} /> 우리 회사는 준비됐나 · 진단
+              <ShieldCheck size={15} /> 인정 준비도 진단
             </Link>
           </div>
         </section>
@@ -332,7 +332,7 @@ function DashboardBody({
               </li>
             ))}
           </ol>
-          <p className="hero-lead">
+          <p className="hero-lead landing-note">
             텍스트 기능은 전부 무료. 사진·알림톡·출력물·전체 기록은 유료.{" "}
             <Link className="text-button" href="/contact">
               요금·도입 문의 <ChevronRight size={13} />
