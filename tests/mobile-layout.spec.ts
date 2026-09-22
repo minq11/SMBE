@@ -98,6 +98,9 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
             const r = el.getBoundingClientRect();
             if (r.width === 0 || r.height === 0) return false;
             if (el.closest("[hidden], .honeypot, [inert]")) return false;
+            // 접힌 <details> 속은 그려지지 않는데도 크기가 잡힌다.
+            const closed = el.closest("details:not([open])");
+            if (closed && !el.closest("summary")) return false;
             return r.height < 40 || r.width < 40;
           })
           .slice(0, 8)
@@ -167,9 +170,10 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
       await expect(
         drawer.getByRole("button", { name: /메뉴 닫기/ }),
       ).toBeFocused();
+      // 서랍의 마지막 조작은 로그아웃이다 (상단바에서 서랍 아래로 옮겼다).
       await page.keyboard.press("Shift+Tab");
       await expect(
-        drawer.getByRole("button", { name: "도움말" }),
+        drawer.getByRole("button", { name: "로그아웃", exact: true }),
       ).toBeFocused();
       await page.keyboard.press("Escape");
       await expect(

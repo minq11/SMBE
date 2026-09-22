@@ -140,7 +140,12 @@ function DashboardBody({
             오늘 ·{" "}
             {new Date(today.date + "T00:00:00+09:00").toLocaleDateString(
               "ko-KR",
-              { month: "long", day: "numeric", weekday: "short" },
+              {
+                timeZone: "Asia/Seoul",
+                month: "long",
+                day: "numeric",
+                weekday: "short",
+              },
             )}
           </h1>
           <div className="today-grid">

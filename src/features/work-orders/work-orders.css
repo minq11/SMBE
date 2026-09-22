@@ -317,6 +317,16 @@
   font-size: 12px;
   color: var(--ink-3);
 }
+.wo-log-filter input,
+.wo-log-filter select {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
 .wo-log-row h3 {
   font-size: 15px;
 }
@@ -779,6 +789,12 @@
   }
   .wo-search {
     max-width: none;
+  }
+  /* 좁은 화면에서는 돋보기만 남긴다. */
+  .wo-search .btn-secondary {
+    min-width: 44px;
+    justify-content: center;
+    padding-inline: 12px;
   }
   .wo-search .btn-secondary span {
     display: none;

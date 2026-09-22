@@ -4205,6 +4205,9 @@ html[data-banner-hidden] .preview-banner {
   }
   .topbar-brand {
     display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 4px;
     flex-shrink: 0;
   }
   .topbar-wordmark {
@@ -4263,6 +4266,26 @@ html[data-banner-hidden] .preview-banner {
   .logout-button {
     min-height: 44px;
     min-width: 44px;
+  }
+  .primary-button,
+  .secondary-button,
+  .ghost-button,
+  .text-button,
+  .invite-form-actions .primary-button,
+  .tabs button,
+  .wo-steps button,
+  .wo-tabs a {
+    min-height: 44px;
+  }
+  .wo-tabs a {
+    display: inline-flex;
+    align-items: center;
+  }
+  /* 도움말 ? 와 닫기 × 는 작은 그림이지만 누르는 자리는 40px 로 넓힌다. */
+  .help-tip-button,
+  .help-tip-close {
+    width: 40px;
+    height: 40px;
   }
   /* iOS Safari 는 16px 미만 input 포커스 시 자동 확대 → 항상 16px 이상 */
   input,
@@ -4749,13 +4772,20 @@ body.sidebar-lock {
     border-color 0.12s,
     background 0.12s;
 }
+/* 체크박스가 칩 전체를 덮는다. 눌리는 건 체크박스 자신이라 label 의 되돌이
+   토글이 없고, 자동화 도구도 체크박스를 그대로 누른다. */
 .people-chip input {
   position: absolute;
-  opacity: 0;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   margin: 0;
-  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+.people-chip {
+  scroll-margin-bottom: 96px;
 }
 .people-chip-mark {
   display: inline-grid;

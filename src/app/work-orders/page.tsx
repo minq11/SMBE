@@ -68,6 +68,7 @@ export default async function WorkOrdersPage({
           />
         </label>
         <button className="btn-secondary" aria-label="검색">
+          <Search size={15} aria-hidden="true" />
           <span>검색</span>
         </button>
       </form>
