@@ -2,31 +2,35 @@
    1. Tokens
    ========================================================================= */
 :root {
-  /* Brand */
-  --brand: #e96935;
-  --brand-strong: #cf5624;
-  --brand-soft: #fdf1e9;
-  --brand-softer: #fff7f1;
+  /* Brand — 주조색 초록. 포스터(심플안전 포스터)의 --g 와 같다. */
+  --brand: #0f5b3c;
+  --brand-strong: #0b482f;
+  --brand-soft: #e4efe8;
+  --brand-softer: #f1f7f3;
+  /* 보조색 노랑 — 강조 단어, 알림 상자, 준비 중 표시처럼 눈길을 끄는 자리. */
+  --accent: #f2b705;
+  --accent-soft: #fcf1cf;
+  --accent-ink: #6b4e00;
 
-  /* Ink (text) */
-  --ink: #1b2126;
-  --ink-2: #4a545e;
-  --ink-3: #7a838d;
-  --ink-4: #b0b7bf;
-  --ink-5: #d5d9de;
+  /* Ink (text) — 초록에 어울리는 약간 따뜻한 검정 */
+  --ink: #15201b;
+  --ink-2: #48534d;
+  --ink-3: #737d77;
+  --ink-4: #adb5b0;
+  --ink-5: #d4d9d5;
 
-  /* Surfaces & lines */
+  /* Surfaces & lines — 종이색에 가까운 배경 */
   --surface: #ffffff;
-  --surface-2: #fafbfc;
-  --bg: #f6f7f9;
-  --line: #e8eaee;
-  --line-soft: #eef0f3;
-  --line-strong: #d9dde2;
+  --surface-2: #f8f8f5;
+  --bg: #f3f3ee;
+  --line: #e4e6e0;
+  --line-soft: #ecede8;
+  --line-strong: #d3d6cf;
 
   /* Semantic accents (used sparingly for real state) */
-  --ok: #4b8a71;
-  --ok-soft: #eef5f1;
-  --muted-soft: #f2f3f5;
+  --ok: #2f7d5a;
+  --ok-soft: #e4efe8;
+  --muted-soft: #eeefeb;
 
   /* Shape */
   --radius-sm: 8px;
@@ -149,7 +153,7 @@ button svg {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--accent);
   flex-shrink: 0;
 }
 .preview-banner-mail {
@@ -756,8 +760,8 @@ html[data-banner-hidden] .preview-banner {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
-  border: 1px solid var(--brand-soft);
-  background: var(--brand-softer);
+  border: 1px solid var(--accent-soft);
+  background: var(--accent-soft);
   border-radius: var(--radius);
   color: var(--ink);
   text-decoration: none;
@@ -805,8 +809,8 @@ html[data-banner-hidden] .preview-banner {
   height: 34px;
   flex-shrink: 0;
   border-radius: 10px;
-  background: var(--brand);
-  color: #fff;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 800;
@@ -820,6 +824,7 @@ html[data-banner-hidden] .preview-banner {
   font-weight: 900;
   letter-spacing: -0.4px;
   line-height: 1.3;
+  word-break: keep-all;
 }
 .reason-keyword {
   color: var(--brand);
@@ -835,15 +840,31 @@ html[data-banner-hidden] .preview-banner {
   align-items: center;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--ink-3);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   font-size: 11px;
+  font-weight: 700;
+}
+/* 이유 안의 혜택 칩 — 포스터와 같은 연노랑 */
+.reason-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.reason-chips span {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 12px;
   font-weight: 700;
 }
 .hero-eyebrow {
   font-size: 15px;
   font-weight: 700;
-  color: var(--brand-strong);
   margin-bottom: 6px;
 }
 .hero-actions {
@@ -858,7 +879,7 @@ html[data-banner-hidden] .preview-banner {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--ink);
+  color: var(--brand);
   font-weight: 900;
   font-size: 20px;
   letter-spacing: -0.6px;
@@ -869,18 +890,41 @@ html[data-banner-hidden] .preview-banner {
 /* =========================================================================
    7. Hero
    ========================================================================= */
+/* 로그인 전 머리 — 포스터의 초록 상단처럼. 강조 단어와 시작 버튼은 노랑. */
 .hero {
-  padding-top: 4px;
+  padding: 32px 32px 30px;
+  border-radius: var(--radius-lg);
+  background: var(--brand);
+  color: #fff;
 }
 .hero h1 {
   font-size: 40px;
   letter-spacing: -1.4px;
   font-weight: 900;
   line-height: 1.15;
-  color: var(--ink);
+  color: #fff;
+  word-break: keep-all;
 }
 .hero h1 span {
-  color: var(--brand);
+  color: var(--accent);
+}
+.hero .hero-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+.hero .hero-lead {
+  color: rgba(255, 255, 255, 0.85);
+}
+.hero .btn-primary {
+  background: var(--accent);
+  color: var(--ink);
+}
+.hero .btn-primary:hover {
+  background: #e0a800;
+}
+.hero .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
 }
 .hero-lead {
   color: var(--ink-2);
@@ -961,7 +1005,7 @@ html[data-banner-hidden] .preview-banner {
 .action-card--primary:hover {
   border-color: var(--brand-strong);
   background: var(--brand-strong);
-  box-shadow: 0 10px 24px rgba(233, 105, 53, 0.22);
+  box-shadow: 0 10px 24px rgba(15, 91, 60, 0.22);
 }
 .action-card--primary .action-card-icon {
   background: rgba(255, 255, 255, 0.16);
@@ -1363,7 +1407,7 @@ html[data-banner-hidden] .preview-banner {
 .invite-field select:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(233, 105, 53, 0.12);
+  box-shadow: 0 0 0 3px rgba(15, 91, 60, 0.14);
 }
 .invite-form-hint {
   font-size: 12px;
@@ -1773,7 +1817,7 @@ html[data-banner-hidden] .preview-banner {
 .admin-edit-row input:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(233, 105, 53, 0.12);
+  box-shadow: 0 0 0 3px rgba(15, 91, 60, 0.14);
 }
 .admin-edit-hint {
   font-size: 12px;
@@ -3296,7 +3340,7 @@ html[data-banner-hidden] .preview-banner {
 .std-list li input[type="text"]:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(233, 105, 53, 0.12);
+  box-shadow: 0 0 0 3px rgba(15, 91, 60, 0.14);
 }
 .std-list-remove {
   color: var(--ink-4);
@@ -3354,7 +3398,7 @@ html[data-banner-hidden] .preview-banner {
 .std-risk-hazard:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(233, 105, 53, 0.12);
+  box-shadow: 0 0 0 3px rgba(15, 91, 60, 0.14);
 }
 .std-risk-grid {
   display: grid;
@@ -3389,7 +3433,7 @@ html[data-banner-hidden] .preview-banner {
 .std-risk-field textarea:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(233, 105, 53, 0.12);
+  box-shadow: 0 0 0 3px rgba(15, 91, 60, 0.14);
 }
 .std-risk-field--full {
   grid-column: 1 / -1;
@@ -4510,8 +4554,13 @@ html[data-banner-hidden] .preview-banner {
   }
   .main-content {
     -webkit-overflow-scrolling: touch;
-    padding: 16px 16px max(64px, env(safe-area-inset-bottom, 0px));
+    /* 위 여백은 padding 이 아니라 첫 자식의 margin 이다. 스크롤 영역의 padding
+       위로는 고정(sticky) 머리가 올라가지 못해, 그 띠에 지나가는 내용이 비친다. */
+    padding: 0 16px max(64px, env(safe-area-inset-bottom, 0px));
     gap: 28px;
+  }
+  .main-content > :first-child {
+    margin-top: 16px;
   }
   /* 제목·뒤로가기는 상단바 한 줄로 합쳤다. 본문 머리말은 설명과 버튼만 남긴다. */
   .page-header .back-button,
@@ -4539,8 +4588,10 @@ html[data-banner-hidden] .preview-banner {
   .reasons li {
     padding: 16px;
   }
+  .hero-actions {
+    flex-direction: column;
+  }
   .hero-actions > * {
-    flex: 1;
     justify-content: center;
   }
   .hero-lead {
@@ -4676,7 +4727,7 @@ body.sidebar-lock {
 }
 .loading-logo-mark {
   animation: logo-pulse 1.6s ease-in-out infinite;
-  filter: drop-shadow(0 6px 18px rgba(233, 105, 53, 0.16));
+  filter: drop-shadow(0 6px 18px rgba(15, 91, 60, 0.18));
 }
 .loading-logo-label {
   font-size: 12px;
@@ -4939,7 +4990,7 @@ body.sidebar-lock {
 .form-field select:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(233, 105, 53, 0.12);
+  box-shadow: 0 0 0 3px rgba(15, 91, 60, 0.14);
 }
 .form-field .hint {
   font-size: 12px;
@@ -5114,8 +5165,8 @@ body.sidebar-lock {
   gap: 10px;
   padding: 12px 8px 12px 14px;
   margin: 0 0 16px;
-  border: 1px solid var(--brand-soft);
-  background: var(--brand-softer);
+  border: 1px solid var(--accent-soft);
+  background: var(--accent-soft);
   border-radius: var(--radius);
   font-size: 13px;
   line-height: 1.7;
@@ -5289,7 +5340,7 @@ body.sidebar-lock {
 .form-field textarea:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(233, 105, 53, 0.12);
+  box-shadow: 0 0 0 3px rgba(15, 91, 60, 0.14);
 }
 .form-field legend {
   font-size: 13px;

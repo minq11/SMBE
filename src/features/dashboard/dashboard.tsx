@@ -57,7 +57,8 @@ const REASONS = [
   },
   {
     keyword: "걱정",
-    body: "위험성평가 → 작업지시 → 허가서 → 안전점검, 한 흐름. 공단 인정 시 3년 감독 유예 · 산재보험료 20% 인하 · 중처법 일부 대응.",
+    body: "위험성평가 → 작업지시 → 허가서 → 안전점검, 한 흐름. 쌓인 기록으로 공단 인정 준비.",
+    chips: ["인정 시 3년 감독 유예", "산재보험료 20% 인하", "중처법 일부 대응"],
   },
   {
     keyword: "앱 설치 강요",
@@ -306,7 +307,7 @@ function DashboardBody({
       {!isAuthenticated && (
         <section className="stack" aria-label="심플안전을 해야 하는 이유">
           <ol className="reasons">
-            {REASONS.map(({ keyword, body, soon }, i) => (
+            {REASONS.map(({ keyword, body, soon, chips }, i) => (
               <li key={keyword}>
                 <span className="reason-no" aria-hidden="true">
                   {i + 1}
@@ -320,6 +321,13 @@ function DashboardBody({
                     {soon && <span className="reason-badge">준비 중</span>}
                   </h2>
                   <p>{body}</p>
+                  {chips && (
+                    <div className="reason-chips">
+                      {chips.map((c) => (
+                        <span key={c}>{c}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

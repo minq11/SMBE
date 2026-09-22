@@ -97,7 +97,7 @@ export function inviteEmailTemplate(input: {
             <tr>
               <td style="padding-bottom:20px;">
                 <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;color:#1e2429;">
-                  Safety must be <span style="color:#e96935;font-style:italic;">easy.</span>
+                  Safety must be <span style="color:#f2b705;font-style:italic;">easy.</span>
                 </div>
               </td>
             </tr>
@@ -115,7 +115,7 @@ export function inviteEmailTemplate(input: {
             <tr>
               <td style="padding-bottom:24px;">
                 <a href="${escapeAttr(acceptUrl)}"
-                   style="display:inline-block;padding:12px 22px;background:#e96935;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px;">
+                   style="display:inline-block;padding:12px 22px;background:#0f5b3c;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px;">
                   초대 수락하고 시작하기
                 </a>
               </td>

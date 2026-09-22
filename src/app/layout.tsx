@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 export const viewport: Viewport = {
   // 상태 표시줄이 상단바·본문과 한 면이 되게 배경색과 맞춘다.
-  themeColor: "#f6f7f9",
+  themeColor: "#f3f3ee",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
