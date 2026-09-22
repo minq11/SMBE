@@ -33,6 +33,7 @@ docker compose --env-file .env.local -f compose.dev.yaml up --build --watch
 http://localhost:3001 에서 확인합니다. 시크릿 없이 메인 화면을 볼 수 있습니다.
 서버는 `.env.template`을 `.env`로 복사해 값을 설정한 뒤 `docker compose up -d --build`로 실행합니다.
 
+**[서버 운영 안내 — 배포·마이그레이션·정기 배치](docs/operations.md)** ← 서버에서 뭘 해야 하는지
 **[로컬·서버 Docker 명령어 전체 안내](docs/docker.md)**
 
 ## Node.js로 직접 실행 (선택)
@@ -91,11 +92,11 @@ ready 요청에는 `Authorization: Bearer <HEALTHCHECK_TOKEN>`이 필요합니�
 src/app/                 화면 라우트, 공통 스타일, health API
 src/features/dashboard/  관리자 홈 UI와 예시 데이터
 src/server/              서버 연결·환경변수 검증 (클라이언트에서 import 금지)
-scripts/                 개발자용 연결 확인 명령
-db/                      향후 버전 관리 SQL 마이그레이션
+scripts/                 배포·운영·연결 확인 스크립트
+db/                      버전 관리 SQL 마이그레이션 (NNNN_설명.sql)
 infra/                   Caddy·IAM 정책 예시
 tests/                   PC·모바일 미리보기 및 API 경계 테스트
-docs/                    배포와 구조 결정 기록
+docs/                    운영 안내·설계 문서·개발일지
 ```
 
 업무를 추가할 때 `src/features/<업무>/`와 `src/server/<업무>/`로 분리합니다.
@@ -111,4 +112,4 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Lightsail 실행 절차는 [배포 안내](docs/lightsail.md), 구조 결정은 [개발 뼈대](docs/architecture.md)를 참고하세요.
+Lightsail 실행 절차는 [배포 안내](docs/lightsail.md), 서버 운영은 [운영 안내](docs/operations.md), 구조 결정은 [개발 뼈대](docs/architecture.md)를 참고하세요.
