@@ -73,6 +73,36 @@
   color: var(--brand-strong);
   font-weight: 700;
 }
+
+/* 발급된 지시서 열람 탭. 작성 단계(.wo-steps)와 같은 모양을 쓰되 링크라
+   URL 에 남는다 — 새로고침·뒤로가기·링크 공유가 그대로 된다. */
+.wo-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.wo-tabs a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.wo-tabs a:hover {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+.wo-tabs [aria-current] {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+  font-weight: 700;
+}
 .wo-editor-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
@@ -359,6 +389,13 @@
     font-size: 12px;
     padding: 9px;
   }
+  .wo-tabs {
+    gap: 6px;
+  }
+  .wo-tabs a {
+    font-size: 12px;
+    padding: 9px;
+  }
   .wo-search {
     align-items: stretch;
     flex-direction: column;
@@ -368,6 +405,12 @@
   }
 }
 @media print {
+  /* 지시서는 법정 서류라 어느 탭을 보고 있든 전체가 한 장으로 나가야 한다.
+     탭은 화면에서만 문서를 나눈다. */
+  .wo-tabpanel[hidden] {
+    display: block !important;
+  }
+  .wo-tabs,
   .sidebar,
   .topbar,
   .preview-banner,

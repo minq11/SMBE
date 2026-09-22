@@ -130,7 +130,8 @@ export async function saveAndIssueAction(
 
   if (issued) {
     refresh(id);
-    redirect("/work-orders/" + id);
+    // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 탭으로 바로 보낸다.
+    redirect("/work-orders/" + id + "?tab=qr");
   }
   // 저장은 성공했으나 이후 단계(승인·발급)에서 실패한 경우:
   // 브라우저는 여전히 /new (revision=0) 라 재시도 시 "이미 저장된 요청" 에 갇힘.
@@ -152,6 +153,10 @@ export async function orderCommandAction(
   _prev: WorkActionState,
   form: FormData,
 ): Promise<WorkActionState> {
+  // 발급이면 QR 탭으로 보낸다. redirect() 는 예외로 동작하므로 try 밖에서 던져야
+  // 아래 catch 가 "처리하지 못했습니다" 로 삼키지 않는다.
+  let issuedId: string | null = null;
+  let result: WorkActionState;
   try {
     const target = targetSchema.parse({
       id: form.get("id"),
@@ -204,8 +209,13 @@ export async function orderCommandAction(
       }
     }
     refresh(target.id);
-    return { message };
+    if (command === "issue" || command === "approveIssue")
+      issuedId = target.id;
+    result = { message };
   } catch (error) {
-    return safeError(error);
+    result = safeError(error);
   }
+  // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 탭으로 바로 보낸다.
+  if (issuedId) redirect("/work-orders/" + issuedId + "?tab=qr");
+  return result;
 }

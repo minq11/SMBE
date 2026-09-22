@@ -126,16 +126,28 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await page
       .getByRole("button", { name: "지금 발급하기", exact: true })
       .click();
-    await expect(page).toHaveURL(new RegExp(id + "$"));
+    // 발급 직후에는 할 일(QR·링크 전달)이 있는 탭으로 바로 간다.
+    await expect(page).toHaveURL(new RegExp(id + "\\?tab=qr$"));
     await expect(
       page.getByRole("heading", { name: "작업지시 QR", exact: true }),
     ).toBeVisible();
     await expect(page.getByAltText("이 작업지시를 여는 QR 코드")).toBeVisible();
+    // 다른 탭의 내용은 화면에서 접혀 있다.
+    await expect(
+      page.getByText("관리자 본인 평가 승인 기록이 있습니다.", {
+        exact: false,
+      }),
+    ).toBeHidden();
+    await page.getByRole("link", { name: "2 위험성평가", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(id + "\\?tab=risk$"));
     await expect(
       page.getByText("관리자 본인 평가 승인 기록이 있습니다.", {
         exact: false,
       }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "작업지시 QR", exact: true }),
+    ).toBeHidden();
     await expect(
       page.getByRole("link", { name: "편집", exact: true }),
     ).toHaveCount(0);
@@ -151,7 +163,12 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await page.emulateMedia({ media: "print" });
     await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
     await expect(page.locator(".sidebar")).toBeHidden();
+    // 지시서는 법정 서류라, 어느 탭을 보고 있든 인쇄에는 전체가 나온다.
     await expect(page.getByAltText("이 작업지시를 여는 QR 코드")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "체크리스트", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".wo-tabs")).toBeHidden();
     await page.screenshot({
       path: testInfo.outputPath("work-order-print.png"),
       fullPage: true,

@@ -55,7 +55,7 @@ export default async function OrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ via?: string }>;
+  searchParams: Promise<{ via?: string; tab?: string }>;
 }) {
   const { id } = await params;
   const query = await searchParams;
@@ -79,6 +79,32 @@ export default async function OrderDetailPage({
       ? await QRCode.toDataURL(url + "?via=qr", { width: 240, margin: 2 })
       : null;
   const members = !issued && isManager ? await orderMembers(actor) : [];
+  /**
+   * 발급된 지시서는 한 장짜리 긴 문서가 아니라 작성할 때와 같은 단계로 읽는다.
+   * "3번에 뭘 넣었더라" 를 같은 자리에서 찾게 하려는 것이고, 발급 직후 정작
+   * 할 일(QR 붙이기·링크 전달)이 스크롤 맨 아래 있던 문제도 같이 풀린다.
+   * QR 탭은 발급 후에만 생긴다 — 없는 QR 자리를 미리 만들지 않는다.
+   */
+  const TABS = [
+    { key: "info", label: "작업 정보" },
+    { key: "risk", label: "위험성평가" },
+    { key: "schedule", label: "일정·인원" },
+    { key: "checklist", label: "체크리스트" },
+    ...(qr ? [{ key: "qr", label: "QR·전달" }] : []),
+  ];
+  // 작업자에게 필요한 건 탭이 아니라 "내가 할 일" 이라, 탭은 관리자 화면에서만 쓴다.
+  const tabbed = isManager;
+  const tab = TABS.some((t) => t.key === query.tab) ? query.tab! : "info";
+  const tabHref = (key: string) =>
+    `/work-orders/${id}?tab=${key}` + (via !== "web" ? "&via=" + via : "");
+  /**
+   * 안 보이는 탭도 DOM 에는 남긴다. 지시서는 법정 서류라 인쇄는 언제나 전체가
+   * 한 장으로 나와야 하고, 그건 hidden 을 print 에서만 푸는 것으로 해결된다.
+   */
+  const panel = (key: string, extra = "") => ({
+    className: "wo-section wo-tabpanel" + (extra ? " " + extra : ""),
+    hidden: tabbed && tab !== key,
+  });
   const names = new Map([
     ...members.map((m) => [m.user_id, m.display_name] as const),
     ...detail.assignments.map(
@@ -163,7 +189,6 @@ export default async function OrderDetailPage({
                   <Copy size={14} /> 복사
                 </Link>
               )}
-              {isManager && qr && <PrintButton />}
             </div>
           }
         />
@@ -252,17 +277,34 @@ export default async function OrderDetailPage({
             via={via}
           />
         )}
-        <section className="wo-section">
+        {tabbed && (
+          <nav className="wo-tabs wo-no-print" aria-label="지시서 구성">
+            {TABS.map((t, i) => (
+              <Link
+                key={t.key}
+                href={tabHref(t.key)}
+                aria-current={tab === t.key ? "page" : undefined}
+              >
+                <span>{i + 1}</span>
+                {t.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+        <section {...panel("info")}>
           <h2>작업 정보</h2>
-          <p>
-            {d.startDate || "미입력"} ~ {d.endDate || "미입력"} · 매일{" "}
-            {d.startTime} ~ {d.endTime}
-            {d.endTime <= d.startTime ? " (다음 날 종료)" : ""}
-          </p>
           <p className="wo-detail-text">
             {typeof method === "string"
               ? method
               : d.method || "작업방법 미입력"}
+          </p>
+        </section>
+        <section {...panel("schedule")}>
+          <h2>일정·인원</h2>
+          <p>
+            {d.startDate || "미입력"} ~ {d.endDate || "미입력"} · 매일{" "}
+            {d.startTime} ~ {d.endTime}
+            {d.endTime <= d.startTime ? " (다음 날 종료)" : ""}
           </p>
           <h3>배정 인원</h3>
           <p>
@@ -275,7 +317,7 @@ export default async function OrderDetailPage({
                   .join(", ") || "배정 없음"}
           </p>
         </section>
-        <section className="wo-section">
+        <section {...panel("risk")}>
           <h2>간이 위험성평가</h2>
           <p>
             {order.assessment_status === "APPROVED"
@@ -342,7 +384,7 @@ export default async function OrderDetailPage({
                   .join(", ") || "미선택"}
           </p>
         </section>
-        <section className="wo-section">
+        <section {...panel("checklist")}>
           <h2>체크리스트</h2>
           {(
             [
@@ -366,7 +408,7 @@ export default async function OrderDetailPage({
           ))}
         </section>
         {isManager && order.status === "DRAFT" && (
-          <section className="wo-section wo-no-print">
+          <section {...panel("checklist", "wo-no-print")}>
             <h2>검토 및 발급</h2>
             {order.assessment_status !== "APPROVED" && !d.ptwRequired && (
               <>
@@ -426,7 +468,7 @@ export default async function OrderDetailPage({
           </section>
         )}
         {qr && (
-          <section className="wo-section">
+          <section {...panel("qr")}>
             <h2>작업지시 QR</h2>
             <Image
               src={qr}
@@ -443,6 +485,13 @@ export default async function OrderDetailPage({
             </p>
             {isManager && (
               <div className="wo-no-print">
+                {/* 인쇄는 탭과 무관하게 지시서 전체가 한 장으로 나간다
+                    (globals.css @media print 에서 숨긴 탭을 모두 편다). */}
+                <PrintButton />
+                <p className="wo-muted">
+                  인쇄 창에서 대상을 &lsquo;PDF로 저장&rsquo; 으로 바꾸면 PDF
+                  파일이 됩니다. 어느 탭을 보고 있든 지시서 전체가 출력됩니다.
+                </p>
                 <CopyLinkButton url={url} />
                 <h3>이메일 전달 상태</h3>
                 <ul className="wo-detail-list">
