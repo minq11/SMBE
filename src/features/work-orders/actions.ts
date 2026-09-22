@@ -158,6 +158,7 @@ export async function orderCommandAction(
   // 아래 catch 가 "처리하지 못했습니다" 로 삼키지 않는다.
   let issuedId: string | null = null;
   let deleted = false;
+  let deletedNext: string | null = null;
   let result: WorkActionState;
   try {
     const target = targetSchema.parse({
@@ -223,14 +224,19 @@ export async function orderCommandAction(
     refresh(target.id);
     if (command === "issue" || command === "approveIssue")
       issuedId = target.id;
-    if (command === "delete") deleted = true;
+    if (command === "delete") {
+      deleted = true;
+      const next = String(form.get("next") ?? "");
+      deletedNext = next.startsWith("/work-orders") ? next : null;
+    }
     result = { message };
   } catch (error) {
     result = safeError(error);
   }
   // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 탭으로 바로 보낸다.
   if (issuedId) redirect("/work-orders/" + issuedId + "?tab=qr");
-  // 지운 초안의 상세로 돌아가면 404 다. 목록으로 보낸다.
-  if (deleted) redirect("/work-orders?tab=draft");
+  // 상세에서 지웠으면 그 자리가 404 이므로 목록으로 보낸다.
+  // 목록에서 지웠으면 그 줄만 사라지면 되니 이동하지 않는다.
+  if (deleted && deletedNext) redirect(deletedNext);
   return result;
 }

@@ -13,6 +13,7 @@ import {
 } from "@/features/work-orders/model";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import {
+  DeleteDraftButton,
   OrderCommand,
   PrintButton,
   PrintTimestamp,
@@ -234,6 +235,14 @@ export default async function OrderDetailPage({
                 >
                   <Copy size={14} /> 복사
                 </Link>
+              )}
+              {isManager && order.status === "DRAFT" && (
+                <DeleteDraftButton
+                  id={id}
+                  revision={order.revision}
+                  name={order.name}
+                  next="/work-orders?tab=draft"
+                />
               )}
             </div>
           }
@@ -564,23 +573,6 @@ export default async function OrderDetailPage({
                 </p>
               </div>
             )}
-          </section>
-        )}
-        {isManager && order.status === "DRAFT" && (
-          <section className="wo-section wo-no-print">
-            <h2>초안 삭제</h2>
-            <p className="wo-muted">
-              아직 발급하지 않은 초안을 목록에서 없앱니다. 발급된 지시서는
-              삭제할 수 없고 <strong>취소</strong>로 처리합니다 — 회차·점검·부적합
-              기록이 딸려 있기 때문입니다.
-            </p>
-            <OrderCommand
-              id={id}
-              revision={order.revision}
-              command="delete"
-              label="초안 삭제"
-              confirmText="이 초안을 삭제하시겠습니까? 목록에서 사라지며 되돌리려면 운영자 문의가 필요합니다."
-            />
           </section>
         )}
         {isManager && active && (

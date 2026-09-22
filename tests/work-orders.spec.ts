@@ -117,10 +117,10 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(page).toHaveURL(/\/work-orders\/[a-f0-9-]{36}\/edit$/);
     const id = new URL(page.url()).pathname.split("/")[2];
     const path = "/work-orders/" + id;
-    // 초안에는 삭제가 있고 취소가 없다. 발급 뒤에는 반대가 된다.
+    // 초안에는 삭제 버튼이 있고 취소가 없다. 발급 뒤에는 반대가 된다.
     await page.goto(path);
     await expect(
-      page.getByRole("heading", { name: "초안 삭제", exact: true }),
+      page.getByRole("button", { name: /초안 .* 삭제/ }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "지시서 취소", exact: true }),
@@ -174,7 +174,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     ).toHaveCount(0);
     // 발급된 지시서는 지울 수 없다. 수단은 취소뿐이다.
     await expect(
-      page.getByRole("heading", { name: "초안 삭제", exact: true }),
+      page.getByRole("button", { name: /초안 .* 삭제/ }),
     ).toHaveCount(0);
     expect(
       await page.evaluate(
