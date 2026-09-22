@@ -81,3 +81,32 @@ export const RESULT_LABEL = { PASS: "적합", FAIL: "부적합", NA: "해당없�
 export function entryPath(value?: string) {
   return value === "qr" ? "QR" : value === "link" ? "LINK" : "WEB";
 }
+
+/**
+ * 관리자 대리 입력(사후 입력). 현장 입력과 같은 내용을 넣되 "누구의 점검인가"
+ * (inspectorId)와 "누가 입력했는가"(서버가 actor 로 채움)가 갈라진다.
+ * 경로는 항상 WEB 이다 — QR·링크로 들어온 현장 기록으로 위장할 수 없다 (0014).
+ */
+export const backfillSchema = inspectionSchema.extend({
+  inspectorId: z.string().uuid(),
+  entryPath: z.literal("WEB"),
+});
+export type BackfillInput = z.infer<typeof backfillSchema>;
+
+/** 저장된 점검 결과 수정. 원본은 지우지 않고 수정 전·후를 통째로 남긴다. */
+export const reviseSchema = z.object({
+  inspectionId: z.string().uuid(),
+  reason: z.string().trim().min(1).max(500),
+  results: z
+    .array(
+      z.object({
+        resultId: z.string().uuid(),
+        result: z.enum(["PASS", "FAIL", "NA"]),
+        comment: z.string().trim().max(2000),
+        managerId: z.union([z.literal(""), z.string().uuid()]),
+      }),
+    )
+    .min(1)
+    .max(100),
+});
+export type ReviseInput = z.infer<typeof reviseSchema>;

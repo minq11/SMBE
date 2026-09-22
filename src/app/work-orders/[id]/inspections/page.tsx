@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
-import { inspectionOverview } from "@/server/inspection-service";
+import {
+  inspectionOverview,
+  inspectionRevisions,
+} from "@/server/inspection-service";
 import { readPermit } from "@/server/ptw-service";
 import { WorkOrderError } from "@/features/work-orders/model";
 import { OrderShell } from "@/features/work-orders/order-shell";
@@ -15,6 +18,11 @@ import {
 } from "@/features/inspections/inspection-form";
 import { InspectionSummary } from "@/features/inspections/inspection-summary";
 import { AttachmentList } from "@/features/attachments/attachment-list";
+import {
+  BackfillForm,
+  ReviseForm,
+  RevisionLog,
+} from "@/features/inspections/admin-forms";
 import {
   sessionState,
   SESSION_LABEL,
@@ -66,6 +74,9 @@ export default async function InspectionPage({
   const permit = data.order.ptw_required
     ? await withTransaction((c) => readPermit(c, actor, id))
     : null;
+  const revisions = data.isManager
+    ? await withTransaction((c) => inspectionRevisions(c, actor, id))
+    : [];
   const target =
     (query.session
       ? data.sessions.find((s) => s.id === query.session)
@@ -257,11 +268,17 @@ export default async function InspectionPage({
               {r.category === "TBM" ? "TBM" : "작업 중"} · {r.inspector_name} (
               {r.inspector_role === "WORKER" ? "작업자" : "관리자"}) ·{" "}
               {at(r.submitted_at)}
+              {/* 사후 입력은 펼치지 않아도 보여야 한다. 기록을 훑는 사람이
+                  현장 입력과 구분하지 못하면 표시한 의미가 없다. */}
+              {r.backfilled && <span className="wo-backfill-tag">사후 입력</span>}
             </summary>
             <p>
               작업일자{" "}
               {data.sessions.find((s) => s.id === r.session_id)?.work_date} ·
-              진입경로 {r.entry_path} · 본인 직접 입력
+              진입경로 {r.entry_path} ·{" "}
+              {r.backfilled
+                ? `사후 입력 · 입력자 ${r.recorded_by_name}`
+                : "본인 직접 입력"}
             </p>
             {r.results.map((result, i) => (
               <div className="wo-risk" key={i}>
@@ -276,9 +293,64 @@ export default async function InspectionPage({
                 )}
               </div>
             ))}
+            {data.isManager && (
+              <details className="wo-revise">
+                <summary>결과 수정</summary>
+                <p className="wo-muted">
+                  원본을 덮어쓰지 않습니다. 수정 전·후와 사유가 이력으로
+                  남습니다. 이미 조치완료된 부적합은 되돌릴 수 없습니다 — 조치
+                  내용까지 사라지기 때문입니다.
+                </p>
+                <ReviseForm
+                  inspectionId={r.id}
+                  results={r.results}
+                  managers={data.managers}
+                />
+              </details>
+            )}
           </details>
         ))}
       </section>
+      {data.isManager && target && (
+        <section className="wo-section">
+          <h2>관리자 사후 입력</h2>
+          <p className="wo-muted">
+            {target.work_date} 회차 · 현장에서 기록하지 못한 점검을 대신
+            넣습니다. 기록이 비어 있는 것보다 누가 언제 대신 넣었는지 드러난
+            기록이 낫습니다.
+          </p>
+          <BackfillForm
+            key={target.id}
+            orderId={id}
+            sessionId={target.id}
+            candidates={[
+              ...target.expected_assignees.map((a) => ({
+                user_id: a.userId,
+                display_name: a.name,
+              })),
+              ...data.managers.filter(
+                (m) =>
+                  !target.expected_assignees.some(
+                    (a) => a.userId === m.user_id,
+                  ),
+              ),
+            ]}
+            managers={data.managers}
+            checklist={{
+              TBM: data.checklist.filter((c) => c.category === "TBM"),
+              DURING_WORK: data.checklist.filter(
+                (c) => c.category === "DURING_WORK",
+              ),
+            }}
+          />
+        </section>
+      )}
+      {data.isManager && (
+        <section className="wo-section">
+          <h2>점검 수정 이력</h2>
+          <RevisionLog items={revisions} />
+        </section>
+      )}
       <section className="wo-section">
         <h2>부적합 조치 · 미조치 {data.openCount}건</h2>
         <p className="wo-muted">

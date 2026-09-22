@@ -244,6 +244,51 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       path: testInfo.outputPath("inspection-complete.png"),
       fullPage: true,
     });
+    // 회사 전체 점검 기록 (I-01) — 작업지시를 하나씩 열지 않고 누락을 찾는다.
+    await page.goto("/inspections");
+    await expect(
+      page.getByRole("heading", { name: /점검 기록 · 회차/ }),
+    ).toBeVisible();
+    const logRow = page.locator(".wo-log-row").filter({
+      hasText: "점검 흐름 검증",
+    });
+    await expect(logRow.first()).toBeVisible();
+    await page.getByLabel("작업명").fill("있을 리 없는 작업");
+    await page.getByRole("button", { name: "조회", exact: true }).click();
+    await expect(page.getByText("조건에 맞는 회차가 없습니다.")).toBeVisible();
+    await page.getByRole("link", { name: "초기화", exact: true }).click();
+
+    // 관리자 사후 입력: 어제 회차의 작업자 TBM 을 대신 넣는다.
+    await logRow.first().getByRole("link").click();
+    await expect(page).toHaveURL(/\/inspections\?session=/);
+    // 이 회차의 작업자 TBM 은 이미 있으므로, 순회점검으로 참여한 관리자 기록을 넣는다.
+    const backfill = page.locator("form.wo-backfill");
+    await backfill.getByLabel("누구의 점검인가").selectOption(manager);
+    await backfill.getByRole("radio", { name: "적합", exact: true }).check();
+    await expect(async () => {
+      await backfill
+        .getByRole("button", { name: "사후 입력으로 저장", exact: true })
+        .click();
+      await expect(backfill.getByRole("status")).toContainText("사후 입력", {
+        timeout: 2000,
+      });
+    }).toPass({ timeout: 20000 });
+    await page.reload();
+    // 현장 입력으로 위장되지 않는다 — 펼치지 않아도 사후 입력이라고 보인다.
+    const record = page
+      .locator("details.inspection-record")
+      .filter({ hasText: "사후 입력" })
+      .first();
+    await expect(record.locator(".wo-backfill-tag")).toBeVisible();
+    await record.locator("summary").first().click();
+    await expect(
+      record.getByText("사후 입력 · 입력자", { exact: false }),
+    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath("inspection-backfill.png"),
+      fullPage: true,
+    });
+
     await workerContext.clearCookies();
     await workerContext.addCookies([await cookie(outsider)]);
     await workerPage.goto(path + "/inspections?type=TBM");

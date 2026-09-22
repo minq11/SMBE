@@ -11,6 +11,8 @@ import {
 import { withTransaction } from "@/server/db";
 import {
   submitInspection,
+  backfillInspection,
+  reviseInspection,
   resolveFinding,
   type SavedInspectionItem,
 } from "@/server/inspection-service";
@@ -117,6 +119,47 @@ export async function resolveFindingAction(
     );
     refresh(orderId);
     return { message: "조치완료 처리했습니다." };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+/** 관리자 대리 입력. 현장 입력과 달리 누구의 점검인지를 폼에서 고른다. */
+export async function backfillInspectionAction(
+  _prev: InspectionActionState,
+  form: FormData,
+): Promise<InspectionActionState> {
+  try {
+    const raw = form.get("payload");
+    if (typeof raw !== "string" || raw.length > 300000)
+      throw new WorkOrderError("입력 데이터가 너무 큽니다.");
+    const data = JSON.parse(raw) as { orderId?: string };
+    const context = await actor();
+    await withTransaction((client) =>
+      backfillInspection(client, context, data),
+    );
+    if (typeof data.orderId === "string") refresh(data.orderId);
+    return { message: "사후 입력으로 기록했습니다." };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+/** 저장된 결과 수정. 사유가 필수이고 수정 전·후가 통째로 남는다. */
+export async function reviseInspectionAction(
+  _prev: InspectionActionState,
+  form: FormData,
+): Promise<InspectionActionState> {
+  try {
+    const raw = form.get("payload");
+    if (typeof raw !== "string" || raw.length > 300000)
+      throw new WorkOrderError("입력 데이터가 너무 큽니다.");
+    const context = await actor();
+    const orderId = await withTransaction((client) =>
+      reviseInspection(client, context, JSON.parse(raw)),
+    );
+    refresh(orderId);
+    return { message: "수정하고 이력을 남겼습니다." };
   } catch (error) {
     return errorState(error);
   }

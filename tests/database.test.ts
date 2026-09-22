@@ -29,6 +29,10 @@ import {
 } from "../src/server/worker-access";
 import {
   submitInspection,
+  backfillInspection,
+  reviseInspection,
+  inspectionRevisions,
+  companyInspectionLog,
   resolveFinding,
   inspectionOverview,
   pendingFindings,
@@ -612,6 +616,194 @@ test("inspection: field entry is its own author and backfill stays a web action"
     ]),
     /inspections_backfill_is_web/,
   );
+});
+
+test("backfill: a manager records for a worker, and it never passes as field entry", async () => {
+  const f = await inspectionFixture();
+  const input = {
+    ...f.input(),
+    id: randomUUID(),
+    inspectorId: f.worker,
+    entryPath: "WEB" as const,
+  };
+  // 작업자는 대리 입력을 할 수 없다 — 관리자 권한이 필요하다.
+  await assert.rejects(
+    transaction((c) => backfillInspection(c, f.workerActor, input)),
+    /권한/,
+  );
+  await transaction((c) => backfillInspection(c, f.actor, input));
+  const row = (
+    await pool.query(
+      "SELECT inspector_id,recorded_by,backfilled,entry_path FROM inspections WHERE id=$1",
+      [input.id],
+    )
+  ).rows[0];
+  // 누구의 점검인가와 누가 입력했는가가 갈라지고, 경로는 WEB 으로 고정된다.
+  assert.equal(row.inspector_id, f.worker);
+  assert.equal(row.recorded_by, f.actor.userId);
+  assert.equal(row.backfilled, true);
+  assert.equal(row.entry_path, "WEB");
+  // 같은 회차의 TBM 은 한 번뿐이다 — 현장 입력이든 대리 입력이든.
+  await assert.rejects(
+    transaction((c) =>
+      backfillInspection(c, f.actor, { ...input, id: randomUUID() }),
+    ),
+    /이미/,
+  );
+  await assert.rejects(
+    transaction((c) => submitInspection(c, f.workerActor, f.input())),
+    /이미/,
+  );
+  // 배정되지 않은 작업자의 기록은 만들어 낼 수 없다.
+  const outsider = await user();
+  await member(f.actor.companyId, outsider);
+  await assert.rejects(
+    transaction((c) =>
+      backfillInspection(c, f.actor, {
+        ...input,
+        id: randomUUID(),
+        inspectorId: outsider,
+        category: "DURING_WORK",
+        results: f.input("DURING_WORK").results,
+      }),
+    ),
+    /배정/,
+  );
+});
+
+test("revise: results change with a reason and a full before/after trail", async () => {
+  const f = await inspectionFixture();
+  const input = f.input("DURING_WORK");
+  await transaction((c) => submitInspection(c, f.workerActor, input));
+  const saved = (
+    await pool.query(
+      "SELECT id,result FROM inspection_results WHERE inspection_id=$1",
+      [input.id],
+    )
+  ).rows;
+  const revise = (result: string, reason = "현장에서 잘못 눌렀습니다") => ({
+    inspectionId: input.id,
+    reason,
+    results: saved.map((r) => ({
+      resultId: r.id,
+      result,
+      comment: "수정된 코멘트",
+      managerId: result === "FAIL" ? f.actor.userId : "",
+    })),
+  });
+  // 작업자는 수정할 수 없다.
+  await assert.rejects(
+    transaction((c) => reviseInspection(c, f.workerActor, revise("FAIL"))),
+    /권한/,
+  );
+  // 사유 없는 수정은 거부된다.
+  await assert.rejects(
+    transaction((c) => reviseInspection(c, f.actor, revise("FAIL", " "))),
+    /사유/,
+  );
+  await transaction((c) => reviseInspection(c, f.actor, revise("FAIL")));
+  assert.equal(
+    (
+      await pool.query(
+        `SELECT count(*)::int AS n FROM inspection_findings f
+         JOIN inspection_results r ON r.id=f.result_id WHERE r.inspection_id=$1`,
+        [input.id],
+      )
+    ).rows[0].n,
+    saved.length,
+  );
+  const log = await transaction((c) =>
+    inspectionRevisions(c, f.actor, f.id),
+  );
+  assert.equal(log.length, 1);
+  assert.equal(log[0].before_json[0].result, "PASS");
+  assert.equal(log[0].after_json[0].result, "FAIL");
+
+  // 부적합을 되돌리면 조치 건도 사라진다 — 단 아직 조치되지 않았을 때만.
+  await transaction((c) => reviseInspection(c, f.actor, revise("PASS")));
+  assert.equal(
+    (
+      await pool.query(
+        `SELECT count(*)::int AS n FROM inspection_findings f
+         JOIN inspection_results r ON r.id=f.result_id WHERE r.inspection_id=$1`,
+        [input.id],
+      )
+    ).rows[0].n,
+    0,
+  );
+  await transaction((c) => reviseInspection(c, f.actor, revise("FAIL")));
+  const finding = (
+    await pool.query(
+      `SELECT f.id FROM inspection_findings f
+       JOIN inspection_results r ON r.id=f.result_id WHERE r.inspection_id=$1 LIMIT 1`,
+      [input.id],
+    )
+  ).rows[0];
+  await transaction((c) =>
+    resolveFinding(c, f.actor, finding.id, "조치했습니다"),
+  );
+  await assert.rejects(
+    transaction((c) => reviseInspection(c, f.actor, revise("PASS"))),
+    /조치완료/,
+  );
+});
+
+test("inspection log: the company view counts each session and honours the free window", async () => {
+  const f = await inspectionFixture();
+  await transaction((c) => submitInspection(c, f.workerActor, f.input()));
+  const log = await transaction((c) => companyInspectionLog(c, f.actor, {}));
+  const row = log.rows.find((r) => r.session_id === f.session.id)!;
+  assert.equal(row.tbm_done, 1);
+  assert.equal(row.expected, 1);
+  assert.equal(row.during_count, 0);
+  // 필터는 집계 결과에 걸린다 — 아직 작업 중 점검이 없으므로 누락이다.
+  assert.equal(
+    (await transaction((c) => companyInspectionLog(c, f.actor, { state: "DONE" })))
+      .rows.length,
+    0,
+  );
+  assert.ok(
+    (
+      await transaction((c) =>
+        companyInspectionLog(c, f.actor, { state: "MISSING" }),
+      )
+    ).rows.some((r) => r.session_id === f.session.id),
+  );
+  // 이름이 맞지 않으면 걸러진다.
+  assert.equal(
+    (
+      await transaction((c) =>
+        companyInspectionLog(c, f.actor, { q: "존재하지 않는 작업" }),
+      )
+    ).rows.length,
+    0,
+  );
+  // 작업자는 회사 전체 기록을 조회할 수 없다.
+  await assert.rejects(
+    transaction((c) => companyInspectionLog(c, f.workerActor, {})),
+    /권한/,
+  );
+  // 무료는 최근 1주일만 본다. 그보다 오래된 회차는 목록에서 빠지고 건수만 남는다.
+  await pool.query(
+    `UPDATE work_sessions SET work_date=work_date-30,
+       starts_at=starts_at-interval '30 days', ends_at=ends_at-interval '30 days'
+     WHERE id=$1`,
+    [f.session.id],
+  );
+  const free = await transaction((c) => companyInspectionLog(c, f.actor, {}));
+  assert.equal(
+    free.rows.some((r) => r.session_id === f.session.id),
+    false,
+  );
+  assert.equal(free.locked, 1);
+  // 유료로 올리면 같은 회차가 다시 보인다.
+  await pool.query(
+    "UPDATE companies SET pro_state='PRO_VOLUNTARY',plan='BASIC',plan_started_at=now() WHERE id=$1",
+    [f.actor.companyId],
+  );
+  const opened = await transaction((c) => companyInspectionLog(c, f.actor, {}));
+  assert.ok(opened.rows.some((r) => r.session_id === f.session.id));
+  assert.equal(opened.locked, 0);
 });
 
 test("inspection: concurrent retries are idempotent; different TBM requests have one winner", async () => {
