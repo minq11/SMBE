@@ -371,6 +371,7 @@ button svg {
   justify-content: center;
   padding: 2px;
   margin-right: 4px;
+  flex-shrink: 0;
   border-radius: 8px;
   transition: transform 0.12s;
 }
@@ -546,6 +547,44 @@ button svg {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* 로그인 전 기능 소개. 숫자·목록이 아니라 무엇을 하는지만 적는다. */
+.landing-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.landing-features li {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.landing-feature-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+.landing-features strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.landing-features p {
+  margin-top: 6px;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 /* =========================================================================
@@ -4105,6 +4144,11 @@ button svg {
     display: inline-flex;
     flex-shrink: 0;
   }
+  .topbar-wordmark {
+    display: block;
+    width: 68px;
+    height: 19px;
+  }
   .topbar-tag,
   .topbar-divider,
   .profile-name {
@@ -4182,6 +4226,9 @@ body.sidebar-lock {
   .row:has(.row-meta--wide) .row-chev {
     grid-column: 2;
     grid-row: 1 / 3;
+  }
+  .landing-features {
+    grid-template-columns: 1fr;
   }
   .page-header-side,
   .page-header-actions {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Tier } from "./tier";
+import { BrandWordmark } from "@/components/brand/wordmark";
 import {
   BookOpen,
   Building2,
@@ -135,14 +136,7 @@ export function Sidebar({
         메뉴 닫기 ×
       </button>
       <Link href="/" className="brand" aria-label="SMBE 홈">
-        <svg
-          className="brand-logo"
-          viewBox="320 170 1430 400"
-          role="img"
-          aria-label="SMBE 로고"
-        >
-          <image href="/brand/smbe-original.png" width="2073" height="758" />
-        </svg>
+        <BrandWordmark className="brand-logo" />
       </Link>
 
       <button

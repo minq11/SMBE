@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Bell, ChevronDown, Menu, Wrench } from "lucide-react";
 import { logoutAction } from "@/features/auth/logout-action";
-import { AppIcon } from "@/components/brand/app-icon";
+import { BrandWordmark } from "@/components/brand/wordmark";
 import { usePreview } from "./preview-dialog";
 
 export type Crumb = {
@@ -42,8 +42,10 @@ export function Topbar({
         >
           <Menu size={19} />
         </button>
+        {/* 좁은 화면에는 사이드바가 접혀 있어 브랜드가 아예 안 보였다.
+            아이콘만 두면 무슨 서비스인지 모르므로 워드마크를 그대로 쓴다. */}
         <Link href="/" className="topbar-brand" aria-label="SMBE 홈">
-          <AppIcon size={26} />
+          <BrandWordmark className="topbar-wordmark" />
         </Link>
         {breadcrumb.length > 0 && (
           <nav className="breadcrumb" aria-label="현재 위치">

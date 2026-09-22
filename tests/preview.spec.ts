@@ -41,14 +41,27 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await expect(
     page.getByRole("heading", { name: "Safety must be easy." }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: /구성원 초대/ })).toHaveAttribute(
+  // 로그인 전 화면에는 가짜 데이터를 두지 않는다. 실제로 하는 일과 시작 경로만 있다.
+  await expect(page.getByRole("link", { name: /무료로 시작하기/ })).toHaveAttribute(
     "href",
-    "/company/members",
+    "/login",
   );
   await expect(
-    page.getByRole("link", { name: /오늘의 작업 지시하기/ }),
-  ).toHaveAttribute("href", "/work-orders/new");
-  await page.getByRole("button", { name: /위험작업허가 승인/ }).click();
+    page.getByRole("link", { name: /우리 회사는 준비됐나/ }),
+  ).toHaveAttribute("href", "/recognition-check");
+  await expect(
+    page.getByRole("heading", { name: "무엇을 하는 서비스인가" }),
+  ).toBeVisible();
+  await expect(page.getByText("TBM · 작업 중 점검")).toBeVisible();
+  for (const fake of [
+    "오늘의 작업 (예시)",
+    "오늘 처리할 일",
+    "제1공장 프레스 설비 점검",
+    "김민수",
+  ])
+    await expect(page.getByText(fake, { exact: false })).toHaveCount(0);
+  // 준비 중 안내는 아직 없는 기능(상단바 알림)에만 뜬다.
+  await page.getByRole("button", { name: "알림", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByRole("dialog")).toContainText(
     "데이터는 저장·변경되지 않습니다",

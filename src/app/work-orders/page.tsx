@@ -63,8 +63,9 @@ export default async function WorkOrdersPage({
       </form>
       {result.locked > 0 && (
         <p className="wo-notice">
-          최근 1주일보다 오래된 지난 기록 {result.locked}건은 Pro에서 열람할 수
-          있습니다. 발급·진행 중인 작업은 기간 제한 없이 확인할 수 있습니다.
+          최근 1주일보다 오래된 지난 기록 {result.locked}건은 유료 요금제에서
+          열람할 수 있습니다. 발급·진행 중인 작업은 기간 제한 없이 확인할 수
+          있습니다.
         </p>
       )}
       {result.rows.length ? (
@@ -80,9 +81,11 @@ export default async function WorkOrdersPage({
               </tr>
             </thead>
             <tbody>
+              {/* data-label 은 좁은 화면에서 이 표가 카드로 접힐 때
+                  각 칸 앞에 붙는 이름표다 (work-orders.css @media). */}
               {result.rows.map((row) => (
                 <tr key={row.id}>
-                  <td>
+                  <td data-label="작업명">
                     <Link href={"/work-orders/" + row.id}>{row.name}</Link>
                     <small>
                       {row.assessment_status === "APPROVED"
@@ -92,16 +95,16 @@ export default async function WorkOrdersPage({
                           : "평가 작성 중"}
                     </small>
                   </td>
-                  <td>
+                  <td data-label="기간·시간">
                     {row.start_date ?? "일정 미확정"}
                     {row.end_date && " ~ " + row.end_date}
                     <small>
                       {row.start_time && row.start_time + " ~ " + row.end_time}
                     </small>
                   </td>
-                  <td>{row.location || "미입력"}</td>
-                  <td>{row.assignee_count}명</td>
-                  <td>{STATUS_LABEL[row.status]}</td>
+                  <td data-label="장소">{row.location || "미입력"}</td>
+                  <td data-label="배정">{row.assignee_count}명</td>
+                  <td data-label="상태">{STATUS_LABEL[row.status]}</td>
                 </tr>
               ))}
             </tbody>

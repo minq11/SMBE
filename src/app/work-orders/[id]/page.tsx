@@ -324,7 +324,7 @@ export default async function OrderDetailPage({
           />
         )}
         {tabbed && (
-          <nav className="wo-tabs wo-no-print" aria-label="지시서 구성">
+          <nav className="wo-doc-tabs wo-no-print" aria-label="지시서 구성">
             {TABS.map((t, i) => (
               <Link
                 key={t.key}

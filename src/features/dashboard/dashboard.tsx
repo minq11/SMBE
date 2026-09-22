@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import type { Tier } from "@/components/shell/tier";
-import { ArrowRight, ChevronRight, ClipboardList, Users } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarCheck,
+  ChevronRight,
+  ClipboardCheck,
+  ClipboardList,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
-import { usePreview } from "@/components/shell/preview-dialog";
 import { SectionHeading } from "@/components/ui/section-heading";
-
-type Task = {
-  title: string;
-  detail: string;
-  count: string;
-  state: string;
-};
 
 export type Job = {
   href?: string;
@@ -23,48 +24,34 @@ export type Job = {
   status: string;
 };
 
-const PREVIEW_TASKS: Task[] = [
+/**
+ * 로그인 전 화면에 넣는 것.
+ *
+ * 전에는 "오늘 처리할 일 3건", "제1공장 프레스 설비 점검" 같은 가짜 데이터를
+ * 깔아 두고 누르면 준비 중 안내를 띄웠다. 처음 온 사람에게는 이미 돌아가는
+ * 회사의 화면처럼 보이고, 누르면 아무 일도 없어 신뢰를 깎는다. 그래서 숫자를
+ * 다 빼고 **실제로 하는 일**만 적는다.
+ */
+const FEATURES = [
   {
-    title: "위험작업허가 승인",
-    detail: "용접 작업 외 1건",
-    count: "2건",
-    state: "승인 대기",
+    icon: BookOpen,
+    title: "작업표준서 · 위험성평가",
+    body: "반복 작업은 표준서로 한 번 만들어 재사용합니다. 표준서가 없어도 간이 위험성평가로 바로 시작할 수 있습니다.",
   },
   {
-    title: "구성원 가입 승인",
-    detail: "김민수 님이 참여를 요청했어요",
-    count: "1명",
-    state: "가입 대기",
+    icon: ClipboardList,
+    title: "작업지시 발급 · QR",
+    body: "승인된 평가를 바탕으로 지시서를 발급하면 내용이 고정됩니다. 작업 정보와 QR 이 담긴 A4 한 장을 현장에 붙입니다.",
   },
   {
-    title: "부적합 조치 확인",
-    detail: "내가 담당하는 개선 조치",
-    count: "3건",
-    state: "조치 대기",
-  },
-];
-
-const PREVIEW_JOBS: Job[] = [
-  {
-    title: "제1공장 프레스 설비 점검",
-    place: "제1공장 · 프레스 구역",
-    time: "09:00 - 17:00",
-    people: 5,
-    status: "작업 중",
+    icon: ClipboardCheck,
+    title: "TBM · 작업 중 점검",
+    body: "배정된 작업자에게 본인 전용 링크가 갑니다. 설치도 로그인도 없이 열어 TBM 과 순회점검을 기록합니다.",
   },
   {
-    title: "배관 용접 및 보수 작업",
-    place: "제2공장 · 설비실",
-    time: "10:00 - 16:00",
-    people: 3,
-    status: "작업 중",
-  },
-  {
-    title: "출하장 지게차 상하차",
-    place: "물류동 · 출하장",
-    time: "13:00 - 17:00",
-    people: 2,
-    status: "예정",
+    icon: CalendarCheck,
+    title: "주간 안전점검 회의",
+    body: "그 주의 부적합과 기한이 지난 감소대책을 모아 줍니다. 상시 위험성평가의 매주 기록 요건을 채웁니다.",
   },
 ];
 
@@ -117,8 +104,7 @@ function DashboardBody({
   isManager: boolean;
   openFindingCount: number;
 }) {
-  const preview = usePreview();
-  const displayedJobs = jobs ?? PREVIEW_JOBS;
+  const displayedJobs = jobs ?? [];
 
   return (
     <>
@@ -126,40 +112,102 @@ function DashboardBody({
         <h1>
           Safety must be <span>easy.</span>
         </h1>
-        <p className="hero-lead">안전관리, 쉽고 간편하게 시작하세요.</p>
+        <p className="hero-lead">
+          {isAuthenticated
+            ? "안전관리, 쉽고 간편하게 시작하세요."
+            : "중소기업 안전관리를 표준서·지시서·현장점검 한 줄기로 묶습니다. 인원 제한 없이 무료로 시작하세요."}
+        </p>
       </section>
 
-      <section className="action-grid" aria-label="빠른 시작">
-        {isManager && (
-          <Link href="/company/members" className="action-card">
+      {!isAuthenticated && (
+        <>
+          <section className="action-grid" aria-label="시작하기">
+            <Link href="/login" className="action-card action-card--primary">
+              <span className="action-card-icon">
+                <ArrowRight size={17} />
+              </span>
+              <h2>무료로 시작하기</h2>
+              <p>
+                구글·네이버·카카오 계정으로 로그인하고 회사를 만들면 바로
+                씁니다. 인원 제한 없이 무료입니다.
+              </p>
+              <span className="action-card-cta">
+                로그인 <ArrowRight size={14} />
+              </span>
+            </Link>
+            <Link href="/recognition-check" className="action-card">
+              <span className="action-card-icon">
+                <ShieldCheck size={17} />
+              </span>
+              <h2>우리 회사는 준비됐나</h2>
+              <p>
+                위험성평가 인정 준비도를 로그인 없이 진단합니다. 부족한 항목과
+                다음 행동을 알려 줍니다.
+              </p>
+              <span className="action-card-cta">
+                진단해 보기 <ArrowRight size={14} />
+              </span>
+            </Link>
+          </section>
+
+          <section className="stack" aria-label="주요 기능">
+            <SectionHeading title="무엇을 하는 서비스인가" />
+            <ul className="landing-features" role="list">
+              {FEATURES.map(({ icon: Icon, title, body }) => (
+                <li key={title}>
+                  <span className="landing-feature-icon">
+                    <Icon size={16} />
+                  </span>
+                  <strong>{title}</strong>
+                  <p>{body}</p>
+                </li>
+              ))}
+            </ul>
+            <p className="hero-lead">
+              표준서·지시서·PTW·TBM·점검 같은 텍스트 기반 기능은 인원 제한 없이
+              무료입니다. 사진 첨부, 알림톡 발송, 지시서 출력물, 전체 기록
+              조회가 필요해질 때 유료로 전환합니다.{" "}
+              <Link className="text-button" href="/contact">
+                요금·도입 문의 <ChevronRight size={13} />
+              </Link>
+            </p>
+          </section>
+        </>
+      )}
+
+      {isAuthenticated && (
+        <section className="action-grid" aria-label="빠른 시작">
+          {isManager && (
+            <Link href="/company/members" className="action-card">
+              <span className="action-card-icon">
+                <Users size={17} />
+              </span>
+              <h2>구성원 초대하기</h2>
+              <p>관리자와 작업자를 초대 링크로 연결합니다.</p>
+              <span className="action-card-cta">
+                시작하기 <ArrowRight size={14} />
+              </span>
+            </Link>
+          )}
+          <Link
+            href={isManager ? "/work-orders/new" : "/work-orders"}
+            className="action-card action-card--primary"
+          >
             <span className="action-card-icon">
-              <Users size={17} />
+              <ClipboardList size={17} />
             </span>
-            <h2>구성원 초대하기</h2>
-            <p>관리자와 작업자를 초대 링크로 연결합니다.</p>
+            <h2>{isManager ? "오늘의 작업 지시하기" : "내 작업 확인하기"}</h2>
+            <p>
+              {isManager
+                ? "표준서 없이도 간이평가로 시작합니다."
+                : "배정된 작업의 위험요인과 대책을 확인하세요."}
+            </p>
             <span className="action-card-cta">
               시작하기 <ArrowRight size={14} />
             </span>
           </Link>
-        )}
-        <Link
-          href={isManager ? "/work-orders/new" : "/work-orders"}
-          className="action-card action-card--primary"
-        >
-          <span className="action-card-icon">
-            <ClipboardList size={17} />
-          </span>
-          <h2>{isManager ? "오늘의 작업 지시하기" : "내 작업 확인하기"}</h2>
-          <p>
-            {isManager
-              ? "표준서 없이도 간이평가로 시작합니다."
-              : "배정된 작업의 위험요인과 대책을 확인하세요."}
-          </p>
-          <span className="action-card-cta">
-            시작하기 <ArrowRight size={14} />
-          </span>
-        </Link>
-      </section>
+        </section>
+      )}
 
       {isAuthenticated && isManager && openFindingCount > 0 && (
         <section className="stack" aria-label="내 부적합 알림">
@@ -180,74 +228,51 @@ function DashboardBody({
           </Link>
         </section>
       )}
-      {!isAuthenticated && (
+      {isAuthenticated && (
         <section className="stack">
-          <SectionHeading title="오늘 처리할 일" count={PREVIEW_TASKS.length} />
+          <SectionHeading
+            title="예정·진행 작업"
+            count={displayedJobs.length}
+            action={
+              <Link href="/work-orders" className="text-button">
+                전체 보기 <ChevronRight size={13} />
+              </Link>
+            }
+          />
           <ul className="row-list" role="list">
-            {PREVIEW_TASKS.map(({ title, detail, count, state }) => (
-              <li key={title}>
-                <button
-                  type="button"
-                  className="row"
-                  onClick={() => preview(title)}
-                >
-                  <span className="row-main">
-                    <strong>{title}</strong>
-                    <small>{detail}</small>
-                  </span>
-                  <span className="row-meta">
-                    <span className="row-count">{count}</span>
-                    <span className="row-state">{state}</span>
-                  </span>
-                  <ChevronRight size={14} className="row-chev" />
-                </button>
-              </li>
-            ))}
+            {displayedJobs.map(
+              ({ title, place, time, people, status, href }) => (
+                <li key={href ?? title}>
+                  <Link href={href ?? "/work-orders"} className="row">
+                    <span className="row-main">
+                      <strong>{title}</strong>
+                      <small>{place}</small>
+                    </span>
+                    <span className="row-meta row-meta--wide">
+                      <span className="row-fact">{time}</span>
+                      <span className="row-fact">{people}명 배정</span>
+                      <span
+                        className={`row-status${
+                          status === "작업 중" ? " row-status--live" : ""
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    </span>
+                    <ChevronRight size={14} className="row-chev" />
+                  </Link>
+                </li>
+              ),
+            )}
           </ul>
+          {!displayedJobs.length && (
+            <p className="hero-lead">
+              예정·진행 중인 작업이 없습니다. 작성 중인 지시서는 작업지시
+              메뉴에서 확인하세요.
+            </p>
+          )}
         </section>
       )}
-
-      <section className="stack">
-        <SectionHeading
-          title={isAuthenticated ? "예정·진행 작업" : "오늘의 작업 (예시)"}
-          count={displayedJobs.length}
-          action={
-            <Link href="/work-orders" className="text-button">
-              전체 보기 <ChevronRight size={13} />
-            </Link>
-          }
-        />
-        <ul className="row-list" role="list">
-          {displayedJobs.map(({ title, place, time, people, status, href }) => (
-            <li key={href ?? title}>
-              <Link href={href ?? "/work-orders"} className="row">
-                <span className="row-main">
-                  <strong>{title}</strong>
-                  <small>{place}</small>
-                </span>
-                <span className="row-meta row-meta--wide">
-                  <span className="row-fact">{time}</span>
-                  <span className="row-fact">{people}명 배정</span>
-                  <span
-                    className={`row-status${
-                      status === "작업 중" ? " row-status--live" : ""
-                    }`}
-                  >
-                    {status}
-                  </span>
-                </span>
-                <ChevronRight size={14} className="row-chev" />
-              </Link>
-            </li>
-          ))}
-        </ul>
-        {isAuthenticated && !displayedJobs.length && (
-          <p className="hero-lead">
-            예정·진행 중인 작업이 없습니다. 작성 중인 지시서는 작업지시 메뉴에서
-            확인하세요.
-          </p>
-        )}
-      </section>
     </>
   );
 }

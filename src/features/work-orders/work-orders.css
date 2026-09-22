@@ -75,14 +75,15 @@
 }
 
 /* 발급된 지시서 열람 탭. 작성 단계(.wo-steps)와 같은 모양을 쓰되 링크라
-   URL 에 남는다 — 새로고침·뒤로가기·링크 공유가 그대로 된다. */
-.wo-tabs {
+   URL 에 남는다 — 새로고침·뒤로가기·링크 공유가 그대로 된다.
+   목록 화면의 상태 탭(.wo-tabs)과는 다른 물건이므로 클래스를 나눈다. */
+.wo-doc-tabs {
   display: flex;
   gap: 8px;
   margin-bottom: 24px;
   flex-wrap: wrap;
 }
-.wo-tabs a {
+.wo-doc-tabs a {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -94,11 +95,11 @@
   color: var(--ink-2);
   font-size: 13px;
 }
-.wo-tabs a:hover {
+.wo-doc-tabs a:hover {
   border-color: var(--brand);
   color: var(--brand-strong);
 }
-.wo-tabs [aria-current] {
+.wo-doc-tabs [aria-current] {
   border-color: var(--brand);
   color: var(--brand-strong);
   font-weight: 700;
@@ -430,10 +431,10 @@
     font-size: 12px;
     padding: 9px;
   }
-  .wo-tabs {
+  .wo-doc-tabs {
     gap: 6px;
   }
-  .wo-tabs a {
+  .wo-doc-tabs a {
     font-size: 12px;
     padding: 9px;
   }
@@ -441,8 +442,69 @@
     align-items: stretch;
     flex-direction: column;
   }
-  .wo-table {
-    min-width: 600px;
+  /* 좁은 화면에서 표를 옆으로 굴리지 않고 카드로 접는다.
+     한 행이 다섯 칸이라 가로 스크롤로는 한 건도 온전히 안 보였다.
+     헤더를 숨기고 각 칸 앞에 data-label 을 이름표로 붙인다. */
+  .wo-table-wrap {
+    overflow: visible;
+  }
+  .wo-table,
+  .wo-table tbody,
+  .wo-table tr,
+  .wo-table td {
+    display: block;
+    width: auto;
+  }
+  .wo-table thead {
+    display: none;
+  }
+  .wo-table tr {
+    position: relative;
+    margin-bottom: 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+  }
+  .wo-table td {
+    padding: 0;
+    border: 0;
+  }
+  .wo-table td[data-label="작업명"] {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .wo-table td[data-label="작업명"] a {
+    font-size: 15px;
+    text-decoration: none;
+  }
+  /* 카드 전체가 눌리게 한다. 제목만 링크면 손가락으로 찾아 눌러야 한다. */
+  .wo-table td[data-label="작업명"] a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .wo-table td:not([data-label="작업명"]) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 3px 0;
+  }
+  .wo-table td:not([data-label="작업명"])::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    color: var(--ink-3);
+    font-size: 12px;
+  }
+  .wo-table td small {
+    display: inline;
+    margin: 0 0 0 6px;
+  }
+  .wo-table td[data-label="작업명"] small {
+    display: block;
+    margin: 4px 0 0;
   }
 }
 /* =========================================================================
@@ -461,7 +523,7 @@
   /* 인쇄물은 화면 문서 전체가 아니라 A4 한 장짜리 게시물이다.
      화면 문서(.wo-print)는 통째로 빠지고 .wo-sheet 만 나간다. */
   .wo-print,
-  .wo-tabs,
+  .wo-doc-tabs,
   .sidebar,
   .topbar,
   .preview-banner,

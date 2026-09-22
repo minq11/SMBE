@@ -229,6 +229,16 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
         exact: true,
       }),
     ).toBeVisible();
+    // 좁은 화면에서 목록은 가로 스크롤이 아니라 카드로 접힌다.
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath("work-order-list.png"),
+      fullPage: true,
+    });
     await page.goto("/");
     await expect(
       page.getByRole("link", { name: /화면검증 작업/ }),
