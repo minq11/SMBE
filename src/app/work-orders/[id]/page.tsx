@@ -19,7 +19,6 @@ import {
   CopyLinkButton,
 } from "@/features/work-orders/order-controls";
 import { PageHeader } from "@/components/ui/page-header";
-import { NavSpinner } from "@/components/ui/nav-spinner";
 import { PrintSheet } from "@/features/work-orders/print-sheet";
 import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
 import { InspectionSummary } from "@/features/inspections/inspection-summary";
@@ -219,7 +218,6 @@ export default async function OrderDetailPage({
             <div className="wo-actions wo-no-print">
               <Link className="btn-secondary" href="/work-orders">
                 <ArrowLeft size={14} /> 목록
-                <NavSpinner />
               </Link>
               {isManager && order.status === "DRAFT" && (
                 <Link
@@ -227,7 +225,6 @@ export default async function OrderDetailPage({
                   href={"/work-orders/" + id + "/edit"}
                 >
                   <Pencil size={14} /> 편집
-                  <NavSpinner />
                 </Link>
               )}
               {isManager && (
@@ -236,7 +233,6 @@ export default async function OrderDetailPage({
                   href={"/work-orders/new?copy=" + id}
                 >
                   <Copy size={14} /> 복사
-                  <NavSpinner />
                 </Link>
               )}
             </div>
@@ -337,7 +333,6 @@ export default async function OrderDetailPage({
               >
                 <span>{i + 1}</span>
                 {t.label}
-                <NavSpinner />
               </Link>
             ))}
           </nav>

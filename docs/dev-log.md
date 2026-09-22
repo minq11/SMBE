@@ -1,5 +1,25 @@
 # SMBE 개발일지
 
+## 2026-09-22 이동 중 표시를 전체화면 로고로 통일
+
+**버튼마다 스피너를 붙이는 방식은 걷어냈다.** 홈에서 작업 지시하기를 누르면 루트
+`loading.tsx` 의 전체화면 로고가 뜨는데, 작업지시 목록에서 카드를 누르면 버튼
+안에서만 돌아 화면마다 표시가 달랐다. 둘 중 전체화면 로고로 맞춘다.
+
+원인은 `loading.tsx` 가 **같은 폴더의 자식 세그먼트가 새로 들어올 때만** 뜬다는
+것이다. 홈 → `/work-orders/new` 는 루트 아래에 `work-orders` 가 새로 들어오니
+루트 파일이 걸리지만, `/work-orders` → `/work-orders/[id]` 는 `work-orders` 안쪽만
+바뀌어 루트 경계는 반응하지 않고, 그 폴더엔 파일이 없었다.
+
+- 자식 화면을 가진 폴더(admin, company, guide, invite, meetings, onboarding,
+  standards, w, work-orders 와 그 하위 `[id]`·assessments·companies)마다 루트
+  `loading.tsx` 를 재수출하는 `loading.tsx` 를 뒀다. 어디서 어디로 가든 같은 로고.
+- `NavSpinner`·`NavLink` 와 그 CSS 는 지웠고 링크는 다시 `<Link>` 다. 뒤로가기
+  버튼의 `useTransition` 표시는 링크가 아니라 남겨 뒀다(캐시된 화면이면 즉시
+  돌아가고, 아니면 전체화면 로고가 곧바로 덮는다).
+
+---
+
 ## 2026-09-22 초안 삭제 · 이동 중 표시
 
 **지시서 삭제는 초안에만 연다.** 발급된 지시서는 법정 기록이고 회차·점검·

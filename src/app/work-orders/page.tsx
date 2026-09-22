@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { NavLink } from "@/components/ui/nav-link";
 import { ArrowLeft, ArrowRight, Plus, Search } from "lucide-react";
 import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
-import { NavSpinner } from "@/components/ui/nav-spinner";
 import { STATUS_LABEL } from "@/features/work-orders/model";
 
 export default async function WorkOrdersPage({
@@ -34,7 +32,6 @@ export default async function WorkOrdersPage({
           result.isManager && (
             <Link className="btn-primary" href="/work-orders/new">
               <Plus size={14} /> 작업 지시하기
-              <NavSpinner />
             </Link>
           )
         }
@@ -51,7 +48,6 @@ export default async function WorkOrdersPage({
             aria-current={tab === key ? "page" : undefined}
           >
             {title}
-            <NavSpinner />
           </Link>
         ))}
       </nav>
@@ -90,7 +86,7 @@ export default async function WorkOrdersPage({
               {result.rows.map((row) => (
                 <tr key={row.id}>
                   <td data-label="작업명">
-                    <NavLink href={"/work-orders/" + row.id}>{row.name}</NavLink>
+                    <Link href={"/work-orders/" + row.id}>{row.name}</Link>
                     <small>
                       {row.assessment_status === "APPROVED"
                         ? "평가 승인 완료"
@@ -128,14 +124,12 @@ export default async function WorkOrdersPage({
         {page > 1 && (
           <Link className="btn-secondary" href={href(page - 1)}>
             <ArrowLeft size={14} /> 이전
-            <NavSpinner />
           </Link>
         )}
         <span>{page}페이지</span>
         {result.hasMore && (
           <Link className="btn-secondary" href={href(page + 1)}>
             다음 <ArrowRight size={14} />
-            <NavSpinner />
           </Link>
         )}
       </nav>
