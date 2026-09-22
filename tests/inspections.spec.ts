@@ -127,6 +127,17 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     const path = "/work-orders/" + orderId;
     await workerContext.addCookies([await cookie(worker)]);
     const workerPage = await workerContext.newPage();
+    // 작업자 홈은 오늘 작업 카드다. 카드에서 바로 TBM·작업 중 점검으로 간다.
+    await workerPage.goto("/");
+    await expect(
+      workerPage.getByRole("heading", { name: /^오늘 ·/ }),
+    ).toBeVisible();
+    await expect(
+      workerPage.getByRole("link", { name: "TBM 확인", exact: true }),
+    ).toBeVisible();
+    await expect(
+      workerPage.getByRole("link", { name: /^작업 중 점검/ }),
+    ).toBeVisible();
     await workerPage.goto(path + "?via=qr");
     await expect(
       workerPage.getByText("TBM 0/1명 확인", { exact: false }),
@@ -234,6 +245,14 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await expect(
       workerPage.getByText("내 TBM 확인 완료", { exact: true }),
     ).toBeVisible();
+    // 홈의 오늘 카드도 확인 완료로 바뀐다.
+    await workerPage.goto("/");
+    await expect(
+      workerPage.getByText("TBM 확인 완료", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      workerPage.getByRole("link", { name: "TBM 확인", exact: true }),
+    ).toHaveCount(0);
     await workerPage.goto(path + "/inspections?type=TBM");
     await expect(
       workerPage.getByRole("button", { name: "TBM 확인 저장", exact: true }),

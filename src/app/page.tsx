@@ -1,15 +1,25 @@
 import { connection } from "next/server";
 import { tierOf } from "@/components/shell/tier";
 import { redirect } from "next/navigation";
-import { Dashboard } from "@/features/dashboard/dashboard";
+import { Dashboard, type WorkerHome } from "@/features/dashboard/dashboard";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
 import { listOrders } from "@/server/work-orders";
 import { STATUS_LABEL, seoulToday } from "@/features/work-orders/model";
 import {
   inspectionMonitor,
+  inspectionSessions,
   pendingFindingCount,
 } from "@/server/inspection-service";
+import { sessionState } from "@/features/inspections/model";
+
+const at = (value: string) =>
+  new Date(value).toLocaleTimeString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 import { withTransaction } from "@/server/db";
 
 export default async function Home() {
@@ -55,6 +65,46 @@ export default async function Home() {
     actor && isManager
       ? await withTransaction((client) => inspectionMonitor(client, actor))
       : null;
+  // 작업자의 홈은 오늘 회차의 TBM·작업 중 점검으로 바로 가는 카드다. 배정된 작업의
+  // 회차를 훑어 오늘 것, 놓친 것, 다음 날짜를 고른다. 회차 상태 판정은 점검 화면과
+  // 같은 sessionState 를 쓴다 (야간조의 자정 넘김도 거기서 처리한다).
+  const worker: WorkerHome | undefined =
+    actor && !isManager && orders
+      ? await withTransaction(async (client) => {
+          const now = new Date();
+          const home: WorkerHome = { today: [], missed: 0, next: null };
+          for (const row of orders.rows.slice(0, 30)) {
+            const sessions = await inspectionSessions(client, row.id);
+            for (const s of sessions) {
+              const mine = s.tbm_users.includes(actor.userId);
+              const assigned =
+                mine ||
+                s.expected_assignees.some((a) => a.userId === actor.userId);
+              if (!assigned) continue;
+              const st = sessionState(s, now);
+              if (st.state === "TODAY") {
+                home.today.push({
+                  id: row.id,
+                  name: row.name,
+                  location: row.location,
+                  time: at(s.starts_at) + " ~ " + at(s.ends_at),
+                  tbmDone: mine,
+                  duringCount: s.during_count,
+                });
+              } else if (st.state === "PAST" && !mine) {
+                home.missed += 1;
+                home.missedOrderId ??= row.id;
+              } else if (
+                st.state === "FUTURE" &&
+                (!home.next || s.work_date < home.next)
+              ) {
+                home.next = s.work_date;
+              }
+            }
+          }
+          return home;
+        })
+      : undefined;
 
   return (
     <Dashboard
@@ -65,6 +115,7 @@ export default async function Home() {
       isOperator={isOperator}
       isManager={isManager}
       openFindingCount={openFindingCount}
+      worker={worker}
       today={
         actor
           ? {

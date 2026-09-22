@@ -6,6 +6,7 @@ import {
   ArrowRight,
   BookOpen,
   CalendarCheck,
+  CheckCircle2,
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
@@ -22,6 +23,21 @@ export type Job = {
   time: string;
   people: number;
   status: string;
+};
+export type WorkerHome = {
+  today: Array<{
+    id: string;
+    name: string;
+    location: string;
+    time: string;
+    tbmDone: boolean;
+    duringCount: number;
+  }>;
+  /** 내 TBM 이 빠진 지난 회차 수 */
+  missed: number;
+  missedOrderId?: string;
+  /** 다음 회차 작업일 (YYYY-MM-DD), 없으면 null */
+  next: string | null;
 };
 export type Today = {
   /** YYYY-MM-DD (한국시간) */
@@ -73,6 +89,7 @@ export function Dashboard({
   isManager = true,
   openFindingCount = 0,
   today,
+  worker,
 }: {
   companyName?: string;
   tier?: Tier;
@@ -83,6 +100,7 @@ export function Dashboard({
   isManager?: boolean;
   openFindingCount?: number;
   today?: Today;
+  worker?: WorkerHome;
 }) {
   return (
     <AppShell
@@ -99,6 +117,7 @@ export function Dashboard({
         isManager={isManager}
         openFindingCount={openFindingCount}
         today={today}
+        worker={worker}
       />
     </AppShell>
   );
@@ -110,14 +129,113 @@ function DashboardBody({
   isManager,
   openFindingCount,
   today,
+  worker,
 }: {
   jobs?: Job[];
   isAuthenticated: boolean;
   isManager: boolean;
   openFindingCount: number;
   today?: Today;
+  worker?: WorkerHome;
 }) {
   const displayedJobs = jobs ?? [];
+
+  // 작업자의 홈은 다르다. 할 일은 오늘 회차의 TBM 하나라, 오늘 작업 카드가
+  // 화면 전체이고 그 안에서 점검 폼으로 바로 간다. 미래 작업은 '다른 작업 보기'
+  // 뒤로, 숫자 타일이나 안내 카드는 두지 않는다.
+  if (isAuthenticated && !isManager && worker && today) {
+    return (
+      <>
+        <section className="today" aria-label="오늘 할 일">
+          <h1 className="today-title">
+            오늘 ·{" "}
+            {new Date(today.date + "T00:00:00+09:00").toLocaleDateString(
+              "ko-KR",
+              {
+                timeZone: "Asia/Seoul",
+                month: "long",
+                day: "numeric",
+                weekday: "short",
+              },
+            )}
+          </h1>
+          {worker.today.length ? (
+            <ul className="worker-jobs" role="list">
+              {worker.today.map((job) => {
+                const root = "/work-orders/" + job.id + "/inspections";
+                return (
+                  <li key={job.id} className="worker-job">
+                    <Link
+                      href={"/work-orders/" + job.id}
+                      className="worker-job-head"
+                    >
+                      <h2>{job.name}</h2>
+                      <p>
+                        {job.time}
+                        {job.location ? " · " + job.location : ""}
+                      </p>
+                    </Link>
+                    <div className="worker-job-actions">
+                      {job.tbmDone ? (
+                        <span className="worker-job-done">
+                          <CheckCircle2 size={16} /> TBM 확인 완료
+                        </span>
+                      ) : (
+                        <Link
+                          className="btn-primary"
+                          href={root + "?type=TBM&via=web"}
+                        >
+                          <CheckCircle2 size={16} /> TBM 확인
+                        </Link>
+                      )}
+                      <Link
+                        className="btn-secondary"
+                        href={root + "?type=DURING_WORK&via=web"}
+                      >
+                        <ClipboardCheck size={16} /> 작업 중 점검
+                        {job.duringCount > 0 ? ` (${job.duringCount})` : ""}
+                      </Link>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="worker-empty">
+              오늘 배정된 작업이 없습니다.
+              {worker.next && (
+                <>
+                  <br />
+                  다음 작업은 {worker.next} 입니다.
+                </>
+              )}
+            </p>
+          )}
+        </section>
+        {worker.missed > 0 && (
+          <Link
+            className="worker-missed"
+            href={
+              worker.missedOrderId
+                ? "/work-orders/" + worker.missedOrderId + "/inspections"
+                : "/work-orders"
+            }
+          >
+            <span>
+              <strong>지난 회차 미입력 {worker.missed}건</strong>
+              <small>놓친 TBM 을 이어서 입력할 수 있습니다.</small>
+            </span>
+            <ChevronRight size={16} className="row-chev" />
+          </Link>
+        )}
+        <p className="worker-more">
+          <Link href="/work-orders" className="text-button">
+            다른 작업 보기 <ChevronRight size={13} />
+          </Link>
+        </p>
+      </>
+    );
+  }
 
   return (
     <>
