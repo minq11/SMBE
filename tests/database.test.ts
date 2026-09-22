@@ -44,6 +44,15 @@ import {
   type SessionRow,
 } from "../src/features/inspections/model";
 import {
+  listMeetings,
+  openMeeting,
+  readMeeting,
+  saveMeetingItem,
+  completeMeeting,
+  monthlyTally,
+} from "../src/server/safety-meeting";
+import { weekStartKst } from "../src/features/meetings/model";
+import {
   saveOrder,
   requestAssessment,
   approveAssessment,
@@ -1066,6 +1075,141 @@ test("inspection: previous resolved actions are shared on next TBM and old open 
   await transaction((c) =>
     resolveFinding(c, g.actor, open.id, "늦은 조치 완료"),
   );
+});
+
+test("safety meeting: collects the week, keeps notes on recollect, and locks on completion", async () => {
+  const f = await inspectionFixture();
+  // 부적합 하나를 만들어 수집 대상을 세운다.
+  const input = f.input("DURING_WORK");
+  input.results[0].result = "FAIL";
+  input.results[0].managerId = f.actor.userId;
+  await transaction((c) => submitInspection(c, f.workerActor, input));
+
+  const week = weekStartKst();
+  // 작업자는 회의를 열 수 없다.
+  await assert.rejects(
+    transaction((c) => openMeeting(c, f.workerActor, week)),
+    /권한/,
+  );
+  // 월요일이 아닌 날짜와 오지 않은 주는 거부된다.
+  await assert.rejects(
+    transaction((c) =>
+      openMeeting(
+        c,
+        f.actor,
+        new Date(Date.parse(week + "T00:00:00Z") + 86400_000)
+          .toISOString()
+          .slice(0, 10),
+      ),
+    ),
+    /월요일/,
+  );
+  await assert.rejects(
+    transaction((c) =>
+      openMeeting(
+        c,
+        f.actor,
+        weekStartKst(new Date(Date.now() + 14 * 86400_000)),
+      ),
+    ),
+    /아직 오지 않은/,
+  );
+
+  const id = await transaction((c) => openMeeting(c, f.actor, week));
+  let read = await transaction((c) => readMeeting(c, f.actor, week));
+  assert.equal(read.meeting?.status, "DRAFT");
+  const item = read.items.find((i) => i.source_type === "INSPECTION_FINDING")!;
+  assert.ok(item, "그 주의 부적합이 수집된다");
+  // 기한이 이번 주까지인 감소대책도 함께 모인다.
+  assert.ok(read.items.some((i) => i.source_type === "RISK_MEASURE"));
+  const collected = read.items.length;
+
+  await transaction((c) =>
+    saveMeetingItem(c, f.actor, {
+      itemId: item.id,
+      reviewed: true,
+      note: "다음 주까지 교체",
+    }),
+  );
+  // 다시 수집해도 확인·비고는 보존된다 (중복 삽입이 아니다).
+  assert.equal(await transaction((c) => openMeeting(c, f.actor, week)), id);
+  read = await transaction((c) => readMeeting(c, f.actor, week));
+  assert.equal(read.items.length, collected);
+  const again = read.items.find((i) => i.id === item.id)!;
+  assert.equal(again.reviewed, true);
+  assert.equal(again.note, "다음 주까지 교체");
+
+  // 참석자 없이 완료할 수 없고, 다른 회사 사람은 참석자가 될 수 없다.
+  await assert.rejects(
+    transaction((c) =>
+      completeMeeting(c, f.actor, { week, attendeeIds: [], discussion: "" }),
+    ),
+    /./,
+  );
+  const stranger = await fixture();
+  await assert.rejects(
+    transaction((c) =>
+      completeMeeting(c, f.actor, {
+        week,
+        attendeeIds: [stranger.userId],
+        discussion: "",
+      }),
+    ),
+    /활성 구성원/,
+  );
+
+  await transaction((c) =>
+    completeMeeting(c, f.actor, {
+      week,
+      attendeeIds: [f.actor.userId, f.worker],
+      discussion: "가드 교체 일정 공유",
+    }),
+  );
+  read = await transaction((c) => readMeeting(c, f.actor, week));
+  assert.equal(read.meeting?.status, "COMPLETED");
+  assert.equal(read.attendees.length, 2);
+  // 완료 후에는 항목을 고칠 수 없고 두 번 완료되지 않는다.
+  await assert.rejects(
+    transaction((c) =>
+      saveMeetingItem(c, f.actor, {
+        itemId: item.id,
+        reviewed: false,
+        note: "",
+      }),
+    ),
+    /완료/,
+  );
+  await assert.rejects(
+    transaction((c) =>
+      completeMeeting(c, f.actor, {
+        week,
+        attendeeIds: [f.actor.userId],
+        discussion: "",
+      }),
+    ),
+    /이미 완료/,
+  );
+  // 회의에서 확인해도 원본 부적합은 종결되지 않는다.
+  assert.equal(
+    (
+      await pool.query(
+        `SELECT f.status FROM inspection_findings f
+           JOIN inspection_results r ON r.id=f.result_id
+          WHERE r.inspection_id=$1`,
+        [input.id],
+      )
+    ).rows[0].status,
+    "OPEN",
+  );
+
+  // 목록에는 최근 12주가 모두 서고, 회의가 없는 주는 미실시로 남는다.
+  const weeks = await transaction((c) => listMeetings(c, f.actor));
+  assert.equal(weeks.length, 12);
+  assert.equal(weeks[0].week_start, week);
+  assert.equal(weeks[0].status, "COMPLETED");
+  assert.equal(weeks[1].meeting_id, null);
+  const tally = await transaction((c) => monthlyTally(c, f.actor));
+  assert.ok(tally.found >= 1);
 });
 
 test("session state: derives from work_date vs today KST; only FUTURE blocks input; done is independent", () => {

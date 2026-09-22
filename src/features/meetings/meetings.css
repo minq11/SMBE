@@ -1,0 +1,91 @@
+/* 주간 안전점검 회의 (I-03) */
+.meeting-weeks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.meeting-week {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.meeting-week.is-done {
+  border-left-color: var(--brand);
+}
+.meeting-week.is-draft {
+  border-left-color: var(--ink-3);
+}
+.meeting-week.is-missing {
+  border-left-color: var(--line);
+}
+.meeting-week-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.meeting-week-state {
+  font-size: 13px;
+  font-weight: 600;
+}
+.meeting-week.is-done .meeting-week-state {
+  color: var(--brand-strong);
+}
+.meeting-week.is-missing .meeting-week-state {
+  color: var(--ink-3);
+}
+.meeting-source {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.meeting-item-form,
+.meeting-open {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+.meeting-item-form .wo-field {
+  flex: 1;
+  min-width: 180px;
+}
+.meeting-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 13px;
+}
+.meeting-attendees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  border: 0;
+  padding: 0;
+  margin: 0 0 8px;
+}
+.meeting-attendees legend {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+.meeting-recollect {
+  margin-top: 12px;
+}

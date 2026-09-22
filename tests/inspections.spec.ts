@@ -289,6 +289,41 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       fullPage: true,
     });
 
+    // 주간 안전점검 회의 (I-03) — 열기 → 참석자 기록 → 완료 → 잠금.
+    await page.goto("/meetings");
+    await expect(
+      page.getByRole("heading", { name: "주간 안전점검 회의" }),
+    ).toBeVisible();
+    await expect(page.getByText(/발굴 \d+건/)).toBeVisible();
+    const thisWeek = page.locator(".meeting-week").first();
+    await expect(thisWeek).toContainText("미실시");
+    await expect(async () => {
+      await thisWeek.getByRole("button", { name: "회의 열기" }).click();
+      await expect(page).toHaveURL(/\/meetings\/\d{4}-\d{2}-\d{2}$/, {
+        timeout: 2000,
+      });
+    }).toPass({ timeout: 20000 });
+    await expect(
+      page.getByRole("heading", { name: /수집 항목/ }),
+    ).toBeVisible();
+    await page.getByRole("checkbox", { name: "점검 관리자" }).check();
+    await expect(async () => {
+      await page
+        .getByRole("button", { name: "회의 완료", exact: true })
+        .click();
+      await expect(
+        page.getByText("완료한 회의는 수정할 수 없습니다.", { exact: false }),
+      ).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 20000 });
+    await page.screenshot({
+      path: testInfo.outputPath("safety-meeting.png"),
+      fullPage: true,
+    });
+    await page.goto("/meetings");
+    await expect(page.locator(".meeting-week").first()).toContainText(
+      "실시 완료",
+    );
+
     await workerContext.clearCookies();
     await workerContext.addCookies([await cookie(outsider)]);
     await workerPage.goto(path + "/inspections?type=TBM");

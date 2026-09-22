@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { CalendarCheck, Search } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import {
@@ -71,10 +71,15 @@ export default async function InspectionsPage({
         title="안전점검"
         description="회사 전체의 회차별 점검 이행 현황과 나에게 배정된 부적합 조치"
       />
-      <p>
+      <p className="wo-actions">
         <Link className="btn-primary" href="/work-orders">
           <Search size={14} /> 작업 선택 · TBM 및 작업 중 점검
         </Link>
+        {isManager && (
+          <Link className="btn-secondary" href="/meetings">
+            <CalendarCheck size={14} /> 주간 안전점검 회의
+          </Link>
+        )}
       </p>
 
       {isManager && (
