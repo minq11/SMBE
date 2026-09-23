@@ -9,7 +9,6 @@ import {
   Building2,
   ChevronDown,
   ChevronRight,
-  CircleCheck,
   ClipboardCheck,
   ClipboardPenLine,
   FolderOpen,
@@ -21,6 +20,7 @@ import {
   Settings2,
   ShieldCheck,
   Speech,
+  SquareCheckBig,
   TriangleAlert,
   X,
   type LucideIcon,
@@ -123,7 +123,7 @@ const NAV: ReadonlyArray<NavEntry> = [
   {
     key: "inspection",
     title: "안전점검",
-    icon: CircleCheck,
+    icon: SquareCheckBig,
     children: [
       {
         key: "inspection",
@@ -330,6 +330,19 @@ export function Sidebar({
       </nav>
 
       <div className="sidebar-foot">
+        {/* 다국어는 아직 없다. 자리만 미리 둔다 — 나중에 실제로 바뀌는 언어
+            선택으로 채운다. */}
+        <button
+          type="button"
+          className="sidebar-support"
+          onClick={() => {
+            onClose();
+            preview("언어 선택");
+          }}
+        >
+          <span aria-hidden="true">🇰🇷</span>
+          한국어
+        </button>
         <button
           type="button"
           className="sidebar-support"
