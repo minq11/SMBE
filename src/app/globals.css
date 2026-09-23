@@ -939,6 +939,7 @@ html[data-banner-hidden] .preview-banner {
   font-size: 15.5px;
   line-height: 1.8;
   color: var(--ink-2);
+  white-space: pre-line;
 }
 .reason-dialog .btn-primary {
   align-self: stretch;
