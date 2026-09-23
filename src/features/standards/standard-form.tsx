@@ -145,7 +145,11 @@ export function StandardForm({
     const cleaned = {
       name: draft.name.trim(),
       ptw_required: draft.ptw_required,
-      steps: draft.steps.map((s) => s.trim()).filter(Boolean),
+      // 편집 폼과 같은 모양({ id?, text }). 새 표준서라 id 는 없다.
+      steps: draft.steps
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((text) => ({ text })),
       checklist_tbm: draft.checklist_tbm.map((s) => s.trim()).filter(Boolean),
       checklist_during: draft.checklist_during
         .map((s) => s.trim())
@@ -191,9 +195,9 @@ export function StandardForm({
       <header className="std-form-hero">
         <h1>새 표준서 만들기</h1>
         <p>
-          작업방법 · 체크리스트 · 위험성평가를 한 흐름으로 등록합니다. 저장 시
-          곧바로 승인·사용 가능한 상태가 됩니다. 나중에 변경이 필요하면 폐기 후
-          새로 등록하세요 (개정 기능은 후속 지원).
+          작업방법 · 체크리스트 · 위험성평가를 한 번에 등록합니다. 저장하면 바로
+          지시서에 쓸 수 있습니다. 나중에 바뀌면 상세 화면의 수정으로 고치고,
+          작업이 크게 바뀌면 수시평가 회차를 추가하세요.
         </p>
       </header>
 

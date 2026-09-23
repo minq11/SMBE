@@ -515,7 +515,7 @@ export async function createStandardWithFirstAssessment(input: {
       await client.query(
         `INSERT INTO standard_steps (standard_id, order_no, step_text)
          VALUES ($1, $2, $3)`,
-        [standardId, i + 1, payload.steps[i]],
+        [standardId, i + 1, payload.steps[i].text],
       );
     }
     for (let i = 0; i < payload.checklist_tbm.length; i++) {

@@ -24,6 +24,7 @@
 npm run lint        # eslint + scripts/check-constitution.mjs (헌법 기계 검사)
 npm run typecheck
 npm run test:orders-ui -- tests/<관련>.spec.ts tests/mobile-layout.spec.ts tests/preview.spec.ts
+# 폼·스키마를 건드렸으면 그 흐름을 화면으로 도는 spec 도 (work-orders, standards, board, …)
 ```
 
 `test:orders-ui` 는 일회성 PostgreSQL(127.0.0.1:55439, 비밀번호 `smbe-test-only`)
