@@ -298,7 +298,9 @@ export async function getStandardDetail(
     const items = await query<RiskItem>(
       `SELECT id, order_no, hazard, initial_risk_level, initial_allowable,
               reduction_measure, responsible_user_id,
-              planned_completion_date::text AS planned_completion_date
+              planned_completion_date::text AS planned_completion_date,
+              actual_action, actual_completion_date::text AS actual_completion_date,
+              post_risk_level, post_allowable
          FROM risk_assessment_items
         WHERE assessment_id = $1 ORDER BY order_no`,
       [currentApproved.assessment_id],

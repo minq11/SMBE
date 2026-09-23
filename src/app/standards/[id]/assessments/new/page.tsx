@@ -10,6 +10,7 @@ import {
 import { withTransaction } from "@/server/db";
 import { readRiskCriteria } from "@/server/company-settings";
 import { AssessmentForm } from "@/features/standards/assessment-form";
+import { riskSeedFromItem } from "@/features/standards/constants";
 
 export const metadata = { title: "평가 회차 추가 · 심플안전" };
 
@@ -36,20 +37,13 @@ export default async function NewAssessmentPage({
   if (detail.status === "ARCHIVED") redirect(`/standards/${id}`);
 
   // 정기평가는 지난 평가를 다시 보는 일이다. 지난 회차의 위험요인·대책까지
-  // 채워 두고 바뀐 것만 고치게 한다.
+  // 채워 두고 바뀐 것만 고치게 한다 (조치 끝난 항목은 조치 후 판정으로).
   const cur = detail.current_assessment;
   const seed = cur
     ? {
         work_method: cur.work_method,
         safety_info: cur.safety_info,
-        risks: cur.risks.map((r) => ({
-          hazard: r.hazard,
-          level: r.initial_risk_level,
-          allowable: (r.initial_allowable ? "yes" : "no") as "yes" | "no",
-          measure: r.reduction_measure,
-          responsibleId: r.responsible_user_id ?? "",
-          dueDate: r.planned_completion_date ?? "",
-        })),
+        risks: cur.risks.map(riskSeedFromItem),
       }
     : undefined;
 

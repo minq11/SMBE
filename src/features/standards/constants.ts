@@ -68,7 +68,40 @@ export type RiskItem = {
   reduction_measure: string;
   responsible_user_id: string | null;
   planned_completion_date: string | null;
+  /** 조치 이행 (관리자가 적기 전엔 null) */
+  actual_action: string | null;
+  actual_completion_date: string | null;
+  post_risk_level: "HIGH" | "MID" | "LOW" | null;
+  post_allowable: boolean | null;
 };
+
+/**
+ * 다음 회차 폼에 미리 채울 값. 조치가 끝난 항목은 처음 판정이 아니라 조치 후
+ * 판정으로 채운다 — 덮개를 단 끼임을 올해 또 "허용 불가" 로 띄우면 매번 바꿔
+ * 눌러야 한다. 담당·예정일은 끝난 조치의 것이라 비운다. 감소대책은 지금 서
+ * 있는 통제이므로 그대로 둔다.
+ */
+export function riskSeedFromItem(r: RiskItem): {
+  hazard: string;
+  level: "HIGH" | "MID" | "LOW";
+  allowable: "yes" | "no";
+  measure: string;
+  responsibleId: string;
+  dueDate: string;
+} {
+  const done = r.actual_completion_date !== null;
+  const level = (done && r.post_risk_level) || r.initial_risk_level;
+  const allowable =
+    done && r.post_allowable !== null ? r.post_allowable : r.initial_allowable;
+  return {
+    hazard: r.hazard,
+    level,
+    allowable: allowable ? "yes" : "no",
+    measure: r.reduction_measure,
+    responsibleId: done ? "" : (r.responsible_user_id ?? ""),
+    dueDate: done ? "" : (r.planned_completion_date ?? ""),
+  };
+}
 
 export type SafetyInfo = {
   equipment: string;
