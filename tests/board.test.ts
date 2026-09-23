@@ -67,9 +67,10 @@ after(async () => {
 
 async function user(name = "test") {
   return (
-    await pool.query("INSERT INTO users (display_name) VALUES ($1) RETURNING id", [
-      name,
-    ])
+    await pool.query(
+      "INSERT INTO users (display_name) VALUES ($1) RETURNING id",
+      [name],
+    )
   ).rows[0].id as string;
 }
 async function company(pro = false) {
@@ -107,10 +108,7 @@ async function member(companyId: string, userId: string, role = "WORKER") {
 
 const doc = (text: string, extra: BoardDoc["content"] = []): BoardDoc => ({
   type: "doc",
-  content: [
-    { type: "paragraph", content: [{ type: "text", text }] },
-    ...extra,
-  ],
+  content: [{ type: "paragraph", content: [{ type: "text", text }] }, ...extra],
 });
 
 test("renderDoc: whitelist only, escapes text, attachments by id", () => {
@@ -139,7 +137,7 @@ test("renderDoc: whitelist only, escapes text, attachments by id", () => {
             },
           ],
         },
-        { type: "attachmentImage", attrs: { id, alt: "x\"y" } },
+        { type: "attachmentImage", attrs: { id, alt: 'x"y' } },
         { type: "attachmentVideo", attrs: { id } },
       ],
     }),
@@ -163,7 +161,9 @@ test("renderDoc: whitelist only, escapes text, attachments by id", () => {
               {
                 type: "text",
                 text: "x",
-                marks: [{ type: "link", attrs: { href: "javascript:alert(1)" } }],
+                marks: [
+                  { type: "link", attrs: { href: "javascript:alert(1)" } },
+                ],
               },
             ],
           },
@@ -199,12 +199,17 @@ test("board: draft → publish, visibility by role, popup window, delete", async
     /권한/,
   );
   // 초안은 관리자에게만 보인다.
-  const beforePublish = await transaction((c) => listPosts(c, worker, "NOTICE"));
+  const beforePublish = await transaction((c) =>
+    listPosts(c, worker, "NOTICE"),
+  );
   assert.equal(beforePublish.published.length, 0);
   assert.equal(beforePublish.drafts.length, 0);
   const asManager = await transaction((c) => listPosts(c, manager, "NOTICE"));
   assert.equal(asManager.drafts.length, 1);
-  await assert.rejects(transaction((c) => readPost(c, worker, id)), /찾을 수/);
+  await assert.rejects(
+    transaction((c) => readPost(c, worker, id)),
+    /찾을 수/,
+  );
 
   // 제목 없이 발행 불가.
   await assert.rejects(
@@ -265,7 +270,9 @@ test("board: draft → publish, visibility by role, popup window, delete", async
     /시작일/,
   );
   // 자료실 글은 팝업이 될 수 없다 (조용히 false).
-  const resource = await transaction((c) => createDraft(c, manager, "RESOURCE"));
+  const resource = await transaction((c) =>
+    createDraft(c, manager, "RESOURCE"),
+  );
   await transaction((c) =>
     savePost(c, manager, {
       id: resource,
@@ -282,7 +289,10 @@ test("board: draft → publish, visibility by role, popup window, delete", async
 
   // 삭제하면 목록·조회에서 사라진다.
   await transaction((c) => deletePost(c, manager, id));
-  await assert.rejects(transaction((c) => readPost(c, manager, id)), /찾을 수/);
+  await assert.rejects(
+    transaction((c) => readPost(c, manager, id)),
+    /찾을 수/,
+  );
   assert.equal(
     (await transaction((c) => listPosts(c, worker, "NOTICE"))).published.length,
     0,
@@ -307,7 +317,9 @@ test("board: paid company publishes once with push, attachments must belong to t
       savePost(c, manager, {
         id,
         title: "x",
-        body: doc("본문", [{ type: "attachmentImage", attrs: { id: foreign } }]),
+        body: doc("본문", [
+          { type: "attachmentImage", attrs: { id: foreign } },
+        ]),
         publish: false,
       }),
     ),
@@ -325,7 +337,9 @@ test("board: paid company publishes once with push, attachments must belong to t
     savePost(c, manager, {
       id,
       title: "지게차 교육 영상",
-      body: doc("시청 후 서명", [{ type: "attachmentVideo", attrs: { id: mine } }]),
+      body: doc("시청 후 서명", [
+        { type: "attachmentVideo", attrs: { id: mine } },
+      ]),
       publish: true,
     }),
   );

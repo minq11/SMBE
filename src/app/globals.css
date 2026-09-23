@@ -6295,6 +6295,43 @@ body.sidebar-lock {
 .criteria-form > .primary-button {
   align-self: flex-start;
 }
+/* 실시규정 (features/company/policy-form.tsx) */
+.policy-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.policy-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.7;
+  resize: vertical;
+}
+.policy-form > .primary-button {
+  align-self: flex-start;
+}
+.policy-readonly {
+  white-space: pre-wrap;
+  font: inherit;
+  line-height: 1.7;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.std-detail-risk-control {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 2px 0 0;
+}
 
 /* TBM 화면: 위험성 수준 배지와 접어 둔 판단 기준 안내 */
 .wo-risk-level {

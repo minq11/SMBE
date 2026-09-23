@@ -427,9 +427,10 @@ test("invite acceptance stores the contact details entered on the way in", async
     }),
   );
   const row = (
-    await pool.query("SELECT contact_email,phone,email FROM users WHERE id=$1", [
-      id,
-    ])
+    await pool.query(
+      "SELECT contact_email,phone,email FROM users WHERE id=$1",
+      [id],
+    )
   ).rows[0];
   assert.equal(row.contact_email, "site@example.com");
   assert.equal(row.phone, "01012345678");
@@ -439,12 +440,14 @@ test("invite acceptance stores the contact details entered on the way in", async
   // 빈 값으로 들어오면 지운다 (선택 입력이라 비우는 것도 뜻이 있다).
   const second = await invitation(actor.companyId, actor.userId);
   const other = await user();
-  await pool.query("UPDATE users SET contact_email='old@example.com' WHERE id=$1", [
-    other,
-  ]);
-  await pool.query("UPDATE company_members SET left_at=now(),status='RESIGNED' WHERE user_id=$1", [
-    id,
-  ]);
+  await pool.query(
+    "UPDATE users SET contact_email='old@example.com' WHERE id=$1",
+    [other],
+  );
+  await pool.query(
+    "UPDATE company_members SET left_at=now(),status='RESIGNED' WHERE user_id=$1",
+    [id],
+  );
   await transaction((c) =>
     acceptInvite(c, second, other, { contactEmail: "", phone: "" }),
   );
@@ -565,6 +568,7 @@ async function orderFixture(ptw = false) {
     risks: [
       {
         hazard: "테스트 위험",
+        currentControl: "덮개 있음",
         level: "LOW",
         allowable: "yes",
         measure: "테스트 대책",
@@ -788,9 +792,7 @@ test("revise: results change with a reason and a full before/after trail", async
     ).rows[0].n,
     saved.length,
   );
-  const log = await transaction((c) =>
-    inspectionRevisions(c, f.actor, f.id),
-  );
+  const log = await transaction((c) => inspectionRevisions(c, f.actor, f.id));
   assert.equal(log.length, 1);
   assert.equal(log[0].before_json[0].result, "PASS");
   assert.equal(log[0].after_json[0].result, "FAIL");
@@ -834,8 +836,11 @@ test("inspection log: the company view counts each session and honours the free 
   assert.equal(row.during_count, 0);
   // 필터는 집계 결과에 걸린다 — 아직 작업 중 점검이 없으므로 누락이다.
   assert.equal(
-    (await transaction((c) => companyInspectionLog(c, f.actor, { state: "DONE" })))
-      .rows.length,
+    (
+      await transaction((c) =>
+        companyInspectionLog(c, f.actor, { state: "DONE" }),
+      )
+    ).rows.length,
     0,
   );
   assert.ok(
@@ -1436,10 +1441,7 @@ test("session state: derives from work_date vs today KST; only FUTURE blocks inp
     true,
   );
   // After the work_date: PAST, still allowed for late entry.
-  const afterDay = sessionState(
-    session,
-    new Date("2026-09-20T00:00:00+09:00"),
-  );
+  const afterDay = sessionState(session, new Date("2026-09-20T00:00:00+09:00"));
   assert.equal(afterDay.state, "PAST");
   assert.equal(afterDay.canInput, true);
   // done is decoupled from state and driven by TBM + at least one patrol.

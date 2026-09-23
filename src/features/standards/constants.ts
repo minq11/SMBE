@@ -66,6 +66,8 @@ export type RiskItem = {
   hazard: string;
   initial_risk_level: "HIGH" | "MID" | "LOW";
   initial_allowable: boolean;
+  /** 평가 시점에 이미 하던 안전조치 */
+  current_control: string | null;
   reduction_measure: string;
   responsible_user_id: string | null;
   planned_completion_date: string | null;
@@ -84,6 +86,7 @@ export type RiskItem = {
  */
 export function riskSeedFromItem(r: RiskItem): {
   hazard: string;
+  currentControl: string;
   level: "HIGH" | "MID" | "LOW";
   allowable: "yes" | "no";
   measure: string;
@@ -96,6 +99,11 @@ export function riskSeedFromItem(r: RiskItem): {
     done && r.post_allowable !== null ? r.post_allowable : r.initial_allowable;
   return {
     hazard: r.hazard,
+    // 조치가 끝났으면 그 조치가 지금 서 있는 안전조치다.
+    currentControl:
+      done && r.actual_action
+        ? [r.current_control, r.actual_action].filter(Boolean).join(" / ")
+        : (r.current_control ?? ""),
     level,
     allowable: allowable ? "yes" : "no",
     measure: r.reduction_measure,

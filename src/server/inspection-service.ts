@@ -94,8 +94,7 @@ export async function submitInspection(
   const now = await databaseNow(client);
   const sessions = await inspectionSessions(client, data.orderId);
   const session = sessions.find((s) => s.id === data.sessionId);
-  if (!session)
-    throw new WorkOrderError("존재하지 않는 회차입니다.");
+  if (!session) throw new WorkOrderError("존재하지 않는 회차입니다.");
   if (!sessionState(session, now).canInput)
     throw new WorkOrderError(
       "아직 시작하지 않은 회차입니다. 작업일이 되면 입력할 수 있습니다.",
@@ -320,6 +319,7 @@ export async function inspectionOverview(
       criteria_snapshot?: RiskCriteria;
       items: Array<{
         hazard: string;
+        current_control?: string | null;
         reduction_measure: string;
         initial_risk_level: "HIGH" | "MID" | "LOW";
         initial_allowable: boolean;
@@ -784,7 +784,9 @@ export async function companyInspectionLog(
   const free = access.pro_state === "FREE";
   const now = await databaseNow(client);
   // 무료는 최근 1주일만 본다 (기존 열람 제한과 같은 규칙).
-  const cutoff = free ? seoulToday(new Date(now.getTime() - 7 * 86400000)) : null;
+  const cutoff = free
+    ? seoulToday(new Date(now.getTime() - 7 * 86400000))
+    : null;
 
   const where: string[] = ["s.company_id = $1"];
   const params: unknown[] = [actor.companyId];

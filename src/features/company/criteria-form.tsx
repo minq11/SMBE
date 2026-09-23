@@ -44,10 +44,9 @@ export function RiskCriteriaForm({
   );
   const [acceptance, setAcceptance] = useState(
     () =>
-      Object.fromEntries(criteria.map((c) => [c.level, c.acceptance])) as Record<
-        string,
-        RiskAcceptance
-      >,
+      Object.fromEntries(
+        criteria.map((c) => [c.level, c.acceptance]),
+      ) as Record<string, RiskAcceptance>,
   );
   if (readOnly)
     return (

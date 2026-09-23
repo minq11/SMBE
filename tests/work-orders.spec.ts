@@ -91,6 +91,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await page
       .getByLabel("유해·위험요인", { exact: true })
       .fill("테스트 위험요인");
+    await page.getByLabel("현재 안전조치", { exact: true }).fill("없음");
     await page
       .getByRole("radiogroup", { name: "위험성 수준" })
       .getByLabel("하", { exact: true })

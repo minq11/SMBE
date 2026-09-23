@@ -77,6 +77,7 @@ export function AssessmentForm({
     seed?.risks.length ? seed.risks : [blankRiskCard()],
   );
   const [participants, setParticipants] = useState<string[]>([]);
+  const [workerOpinion, setWorkerOpinion] = useState("");
   const [state, formAction, pending] = useActionState<
     StandardActionState,
     FormData
@@ -94,8 +95,10 @@ export function AssessmentForm({
         environment: safety.environment.trim(),
         history: safety.history.trim(),
       },
+      worker_opinion: workerOpinion.trim(),
       risks: risks.map((r) => ({
         hazard: r.hazard.trim(),
+        current_control: r.currentControl.trim(),
         initial_risk_level: r.level as "HIGH" | "MID" | "LOW",
         initial_allowable: r.allowable === "yes",
         reduction_measure: r.measure.trim(),
@@ -241,6 +244,17 @@ export function AssessmentForm({
 
       <section className="std-form-section" id="asmt-people">
         <h2>참여자</h2>
+        <div className="form-field">
+          <label htmlFor="asmt-worker-opinion">근로자 의견 (선택)</label>
+          <textarea
+            id="asmt-worker-opinion"
+            rows={2}
+            maxLength={2000}
+            value={workerOpinion}
+            onChange={(e) => setWorkerOpinion(e.target.value)}
+            placeholder="위험요인을 찾을 때 작업자가 말한 것"
+          />
+        </div>
         {members.length === 0 ? (
           <p className="std-form-note">
             구성원이 없어요. 인원관리에서 초대해 주세요.

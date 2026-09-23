@@ -50,6 +50,7 @@ export type StandardPickerOption = {
     };
     risks: Array<{
       hazard: string;
+      currentControl: string;
       level: "HIGH" | "MID" | "LOW";
       allowable: "yes" | "no";
       measure: string;
@@ -89,6 +90,7 @@ function mergeStandardIntoDraft(
       prefill.risks.length > 0
         ? prefill.risks.map((r) => ({
             hazard: r.hazard,
+            currentControl: r.currentControl,
             level: r.level,
             allowable: r.allowable,
             measure: r.measure,
@@ -405,6 +407,7 @@ export function WorkOrderForm({
             ...data.risks,
             {
               hazard: "",
+              currentControl: "",
               level: "",
               allowable: "",
               measure: "",
@@ -437,6 +440,15 @@ export function WorkOrderForm({
           />
         </Field>
       ))}
+      <Field label="근로자 의견 (선택)">
+        <textarea
+          rows={2}
+          maxLength={2000}
+          value={data.workerOpinion}
+          onChange={(e) => set("workerOpinion", e.target.value)}
+          placeholder="위험요인을 찾을 때 작업자가 말한 것"
+        />
+      </Field>
       {/* 판단 기준은 회사가 한 번 정하는 값이다. 위험요인 카드의 수준 옆
           물음표가 보여 주고, 저장 시 사본으로 함께 보관된다. */}
       <PeoplePicker

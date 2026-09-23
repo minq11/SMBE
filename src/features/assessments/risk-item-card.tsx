@@ -7,6 +7,8 @@ import { AllowablePicker, RiskLevelPicker } from "./risk-level-picker";
 
 export type RiskCardValue = {
   hazard: string;
+  /** 지금 이미 하고 있는 안전조치. 3단계 판단법 양식의 둘째 칸. */
+  currentControl: string;
   level: "" | "HIGH" | "MID" | "LOW";
   allowable: "" | "yes" | "no";
   measure: string;
@@ -19,8 +21,8 @@ export type RiskCardMember = { user_id: string; display_name: string };
 /**
  * 위험요인 한 장. 표준서 최초평가·평가 회차·지시서 간이평가가 같은 카드를 쓴다.
  *
- * 순서는 현장에서 생각하는 순서다: 무엇이 위험한가 → 얼마나 → 그대로 둬도 되나 →
- * 어떻게 줄일까. 담당·예정일은 허용 불가일 때만 의미가 있어 접어 둔다.
+ * 순서는 현장에서 생각하는 순서이자 3단계 판단법 양식의 순서다: 무엇이 위험한가
+ * → 지금 뭘 하고 있나 → 얼마나 → 그대로 둬도 되나 → 어떻게 줄일까. 담당·예정일은 허용 불가일 때만 의미가 있어 접어 둔다.
  * 선택은 전부 한 번 누르면 끝나는 단추(상·중·하, 허용 가능·불가)다.
  */
 export function RiskItemCard({
@@ -70,6 +72,17 @@ export function RiskItemCard({
           value={value.hazard}
           onChange={(e) => set("hazard", e.target.value)}
           placeholder="예: 절단기 회전날에 손이 닿을 수 있음"
+        />
+      </div>
+      <div className="risk-card-field">
+        <label htmlFor={id + "-control"}>현재 안전조치</label>
+        <textarea
+          id={id + "-control"}
+          rows={2}
+          maxLength={1000}
+          value={value.currentControl}
+          onChange={(e) => set("currentControl", e.target.value)}
+          placeholder="지금 하고 있는 것. 예: 방호덮개 있음, 2인 1조. 없으면 '없음'"
         />
       </div>
       <RiskLevelPicker
@@ -130,6 +143,7 @@ export function RiskItemCard({
 
 export const blankRiskCard = (): RiskCardValue => ({
   hazard: "",
+  currentControl: "",
   level: "",
   allowable: "",
   measure: "",

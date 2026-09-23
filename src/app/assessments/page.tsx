@@ -2,7 +2,12 @@ import Link from "next/link";
 import { CircleAlert, Plus } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
-import { assessmentOverview, listAssessments } from "@/server/assessments";
+import {
+  assessmentOverview,
+  listAssessments,
+  readHalfYearReview,
+} from "@/server/assessments";
+import { HalfYearReviewCard } from "@/features/assessments/half-year-review";
 import { AppShell } from "@/components/shell/app-shell";
 import { tierOf } from "@/components/shell/tier";
 import { isCurrentUserOperator } from "@/server/operator";
@@ -19,9 +24,10 @@ export const metadata = { title: "위험성평가 · 심플안전" };
  */
 export default async function AssessmentsPage() {
   const { session, actor } = await workSession("/assessments", true);
-  const [overview, items, isOperator] = await Promise.all([
+  const [overview, items, review, isOperator] = await Promise.all([
     withTransaction((c) => assessmentOverview(c, actor)),
     withTransaction((c) => listAssessments(c, actor)),
+    withTransaction((c) => readHalfYearReview(c, actor)),
     isCurrentUserOperator(),
   ]);
   const year = new Date().getFullYear();
@@ -64,6 +70,8 @@ export default async function AssessmentsPage() {
           <small>평가 필요 표준서</small>
         </div>
       </div>
+
+      <HalfYearReviewCard review={review} />
 
       {(overview.needs_assessment.length > 0 ||
         overview.expiring_soon.length > 0) && (

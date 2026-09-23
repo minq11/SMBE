@@ -108,6 +108,10 @@ test("standard: create, edit, add a seeded assessment round", async ({
       .fill("전원 차단 확인");
     await page.getByPlaceholder("예: 회전부 덮개 유지").fill("잠금장치 유지");
     await page.getByLabel("유해·위험요인", { exact: true }).fill("끼임");
+    // 3단계 판단법 양식의 둘째 칸: 지금 하고 있는 것.
+    await page
+      .getByLabel("현재 안전조치", { exact: true })
+      .fill("작업자 주의, 장갑 착용");
     // 수준 옆 물음표가 회사 판단 기준을 보여 준다.
     const levelHelp = page
       .getByRole("button", { name: "위험성 판단 기준 안내" })
@@ -157,6 +161,9 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.locator("#main")).toContainText("프레스 금형 교체");
     await expect(page.locator("#main")).toContainText("전원 차단");
     await expect(page.locator("#main")).toContainText("끼임");
+    await expect(page.locator("#main")).toContainText(
+      "현재 조치: 작업자 주의, 장갑 착용",
+    );
     // 상세의 판단 기준은 평가에 복사된 사본이다.
     await expect(page.locator("#main .criteria-list")).toContainText(
       "병원 치료가 필요한 부상",
@@ -190,9 +197,40 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await page
       .getByRole("checkbox", { name: "표준 작업자", exact: true })
       .check();
+    // 지난 회차의 현재 안전조치도 채워져 온다.
+    await expect(page.getByLabel("현재 안전조치", { exact: true })).toHaveValue(
+      "작업자 주의, 장갑 착용",
+    );
     await page.getByRole("button", { name: "평가 저장", exact: true }).click();
     await expect(page).toHaveURL(new RegExp("/standards/" + id + "$"));
     await expect(page.locator("#main")).toContainText("회차 이력 (2건)");
+
+    // 4) 경영책임자 반기 점검 (중처법 시행령 4조 3호): 숫자를 보고 서명한다.
+    await page.goto("/assessments");
+    const review = page.getByRole("region", { name: "경영책임자 반기 점검" });
+    await expect(review).toContainText("아직 점검 전");
+    await expect(review).toContainText("남은 조치");
+    await review.getByRole("button", { name: "점검 확인 서명" }).click();
+    await review.getByLabel("점검 의견 (선택)").fill("끼임 조치는 이달 안에");
+    await review.getByRole("button", { name: "서명", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "서명", exact: true })
+      .click();
+    await expect(review).toContainText("점검 완료");
+    await expect(review).toContainText("끼임 조치는 이달 안에");
+
+    // 5) 실시규정: 기본 문안이 있고 고쳐 저장된다.
+    await page.goto("/company/criteria");
+    const policy = page.getByLabel("실시규정", { exact: true });
+    await expect(policy).toHaveValue(/3단계 판단법/);
+    await policy.fill("1. 목적: 테스트 규정");
+    await page
+      .getByRole("button", { name: "실시규정 저장", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toContainText(
+      "실시규정을 저장했습니다",
+    );
   } finally {
     await pool.end();
   }

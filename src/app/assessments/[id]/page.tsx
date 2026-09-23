@@ -128,6 +128,10 @@ export default async function AssessmentPage({
             <dt>재해·아차사고 이력</dt>
             <dd>{detail.safety_info.history || "—"}</dd>
           </div>
+          <div>
+            <dt>근로자 의견</dt>
+            <dd>{detail.worker_opinion || "—"}</dd>
+          </div>
         </dl>
       </section>
 

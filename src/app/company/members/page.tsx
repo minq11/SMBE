@@ -32,13 +32,14 @@ export default async function CompanyMembersPage() {
   }
 
   const companyId = session.membership.company_id;
-  const [overview, members, openInvites, origin, isOperator] = await Promise.all([
-    getCompanyOverview(companyId),
-    listMembers(companyId),
-    listOpenInvites(companyId),
-    currentOrigin(),
-    isCurrentUserOperator(),
-  ]);
+  const [overview, members, openInvites, origin, isOperator] =
+    await Promise.all([
+      getCompanyOverview(companyId),
+      listMembers(companyId),
+      listOpenInvites(companyId),
+      currentOrigin(),
+      isCurrentUserOperator(),
+    ]);
 
   if (!overview) redirect("/onboarding");
 

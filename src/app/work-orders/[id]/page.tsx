@@ -135,6 +135,7 @@ export default async function OrderDetailPage({
           hazard: string;
           initial_risk_level: string;
           initial_allowable: boolean;
+          current_control?: string | null;
           reduction_measure: string;
           responsible_user_id: string | null;
           responsible_name?: string | null;
@@ -164,6 +165,7 @@ export default async function OrderDetailPage({
   const risks =
     riskSnapshot?.items.map((r) => ({
       hazard: r.hazard,
+      currentControl: r.current_control ?? "",
       level: r.initial_risk_level,
       allowable: r.initial_allowable ? "yes" : "no",
       measure: r.reduction_measure,
@@ -406,6 +408,11 @@ export default async function OrderDetailPage({
                     ? "허용 불가 · 조치 필요"
                     : "허용 여부 미선택"}
               </p>
+              {r.currentControl && (
+                <p className="wo-detail-text">
+                  현재 안전조치: {r.currentControl}
+                </p>
+              )}
               <p className="wo-detail-text">{r.measure || "감소대책 미입력"}</p>
               {r.responsibleId && (
                 <p>조치 담당자: {r.responsibleName || "소속 변경된 구성원"}</p>

@@ -122,9 +122,7 @@ export default async function MonitoringPage({
               미조치 부적합은 작업일과 무관하게 남으므로 요약에서는 전체 기간을
               셉니다.
             </p>
-            {!data.summary.sessions && (
-              <p>이 날짜에 도는 작업이 없습니다.</p>
-            )}
+            {!data.summary.sessions && <p>이 날짜에 도는 작업이 없습니다.</p>}
             <ul className="monitor-list" role="list">
               {data.rows.map((row) => {
                 const done =
@@ -147,11 +145,9 @@ export default async function MonitoringPage({
                         {row.location || "장소 미입력"}
                       </p>
                       <p>
-                        TBM{" "}
-                        {row.expected_assignees.length - row.missing.length}/
-                        {row.expected_assignees.length}명 · 작업 중{" "}
-                        {row.during_count}건 ·{" "}
-                        {done ? "이행 완료" : "미이행"}
+                        TBM {row.expected_assignees.length - row.missing.length}
+                        /{row.expected_assignees.length}명 · 작업 중{" "}
+                        {row.during_count}건 · {done ? "이행 완료" : "미이행"}
                         {row.open_findings > 0 &&
                           ` · 미조치 ${row.open_findings}건`}
                       </p>

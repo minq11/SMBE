@@ -373,3 +373,113 @@
     min-height: 44px;
   }
 }
+
+/* 위험요인의 현재 안전조치 (3단계 판단법 양식 둘째 칸) */
+.asmt-item-control {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 4px 0 0;
+}
+
+/* 경영책임자 반기 점검 (half-year-review.tsx) */
+.asmt-review {
+  border: 1px solid var(--accent-soft);
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.asmt-review.is-done {
+  border-color: var(--line);
+  background: var(--surface);
+}
+.asmt-review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.asmt-review-head h2 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+.asmt-review-lead {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin: 0;
+}
+.asmt-review-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.asmt-review-stats > div {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.asmt-review-stats > div.is-alert {
+  border-color: var(--danger);
+}
+.asmt-review-stats dt {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.asmt-review-stats dd {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+.asmt-review-stats > div.is-alert dd {
+  color: var(--danger);
+}
+.asmt-review-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  white-space: pre-line;
+}
+.asmt-review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.asmt-review-form .form-field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font: inherit;
+  font-size: 16px;
+}
+.asmt-review-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.asmt-review-history ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+@media (max-width: 520px) {
+  .asmt-review-actions > * {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+  }
+}

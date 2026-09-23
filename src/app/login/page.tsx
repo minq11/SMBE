@@ -42,7 +42,8 @@ export default async function LoginPage({
           <ProviderButtons redirectTo={redirectTo} />
           <p className="auth-fine">
             계속하면 <Link href="/terms">이용약관</Link>과{" "}
-            <Link href="/privacy">개인정보 처리방침</Link>에 동의한 것으로 봅니다.
+            <Link href="/privacy">개인정보 처리방침</Link>에 동의한 것으로
+            봅니다.
           </p>
         </div>
       </main>

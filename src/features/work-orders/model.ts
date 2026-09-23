@@ -7,6 +7,8 @@ const ids = z
   .transform((values) => [...new Set(values)]);
 export const riskSchema = z.object({
   hazard: text,
+  // 옛 초안에는 없던 칸. 없으면 빈 글로 읽는다.
+  currentControl: text.optional().default(""),
   level: z.enum(["", "HIGH", "MID", "LOW"]),
   allowable: z.enum(["", "yes", "no"]),
   measure: text,
@@ -32,6 +34,7 @@ export const draftSchema = z.object({
     environment: text,
     history: text,
   }),
+  workerOpinion: text.optional().default(""),
   risks: z.array(riskSchema).min(1).max(50),
   participantIds: ids,
   assigneeIds: ids,
@@ -144,9 +147,11 @@ export function blankDraft(): WorkDraft {
     assessmentKind: "AD_HOC",
     performedOn: seoulToday(),
     safetyInfo: { equipment: "", materials: "", environment: "", history: "" },
+    workerOpinion: "",
     risks: [
       {
         hazard: "",
+        currentControl: "",
         level: "",
         allowable: "",
         measure: "",

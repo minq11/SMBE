@@ -79,6 +79,7 @@ export default async function EditOrderPage({
               safetyInfo: prefill.safety_info,
               risks: prefill.risks.map((r) => ({
                 hazard: r.hazard,
+                currentControl: r.current_control ?? "",
                 level: r.initial_risk_level,
                 allowable: r.initial_allowable ? "yes" : "no",
                 measure: r.reduction_measure,

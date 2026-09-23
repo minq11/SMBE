@@ -28,6 +28,7 @@ import { createStandardAction, type StandardActionState } from "./actions";
 
 type Risk = {
   hazard: string;
+  current_control: string;
   initial_risk_level: "" | "HIGH" | "MID" | "LOW";
   initial_allowable: "" | "yes" | "no";
   reduction_measure: string;
@@ -50,6 +51,7 @@ type Draft = {
     history: string;
   };
   risks: Risk[];
+  worker_opinion: string;
   participant_user_ids: string[];
 };
 
@@ -72,6 +74,7 @@ function blankDraft(): Draft {
     risks: [
       {
         hazard: "",
+        current_control: "",
         initial_risk_level: "",
         initial_allowable: "",
         reduction_measure: "",
@@ -79,6 +82,7 @@ function blankDraft(): Draft {
         planned_completion_date: "",
       },
     ],
+    worker_opinion: "",
     participant_user_ids: [],
   };
 }
@@ -136,6 +140,7 @@ export function StandardForm({
         ...d.risks,
         {
           hazard: "",
+          current_control: "",
           initial_risk_level: "",
           initial_allowable: "",
           reduction_measure: "",
@@ -187,8 +192,10 @@ export function StandardForm({
           environment: draft.safety_info.environment.trim(),
           history: draft.safety_info.history.trim(),
         },
+        worker_opinion: draft.worker_opinion.trim(),
         risks: draft.risks.map((r) => ({
           hazard: r.hazard.trim(),
+          current_control: r.current_control.trim(),
           initial_risk_level: r.initial_risk_level as "HIGH" | "MID" | "LOW",
           initial_allowable: r.initial_allowable === "yes",
           reduction_measure: r.reduction_measure.trim(),
@@ -417,6 +424,18 @@ export function StandardForm({
         </div>
 
         <div className="form-field">
+          <label htmlFor="std-worker-opinion">근로자 의견 (선택)</label>
+          <textarea
+            id="std-worker-opinion"
+            rows={2}
+            maxLength={2000}
+            value={draft.worker_opinion}
+            onChange={(e) => setField("worker_opinion", e.target.value)}
+            placeholder="위험요인을 찾을 때 작업자가 말한 것. 예: 야간엔 조명이 어둡다"
+          />
+        </div>
+
+        <div className="form-field">
           <label>위험요인 · 감소대책</label>
           <ol className="risk-card-list">
             {draft.risks.map((r, i) => (
@@ -425,6 +444,7 @@ export function StandardForm({
                   index={i}
                   value={{
                     hazard: r.hazard,
+                    currentControl: r.current_control,
                     level: r.initial_risk_level,
                     allowable: r.initial_allowable,
                     measure: r.reduction_measure,
@@ -438,6 +458,7 @@ export function StandardForm({
                       const next = [...d.risks];
                       next[i] = {
                         hazard: v.hazard,
+                        current_control: v.currentControl,
                         initial_risk_level: v.level,
                         initial_allowable: v.allowable,
                         reduction_measure: v.measure,

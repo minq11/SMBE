@@ -1,6 +1,10 @@
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
-import { readRiskCriteria } from "@/server/company-settings";
+import {
+  readAssessmentPolicy,
+  readRiskCriteria,
+} from "@/server/company-settings";
+import { AssessmentPolicyForm } from "@/features/company/policy-form";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { RiskCriteriaForm } from "@/features/company/criteria-form";
 import "@/features/profile/profile.css";
@@ -10,9 +14,10 @@ export const metadata = { title: "위험성 판단 기준 · 심플안전" };
 
 export default async function CriteriaPage() {
   const { session, actor } = await workSession("/company/criteria");
-  const criteria = await withTransaction((c) =>
-    readRiskCriteria(c, actor.companyId),
-  );
+  const [criteria, policy] = await withTransaction(async (c) => [
+    await readRiskCriteria(c, actor.companyId),
+    await readAssessmentPolicy(c, actor.companyId),
+  ]);
   const readOnly = session.membership?.role === "WORKER";
 
   return (
@@ -29,6 +34,14 @@ export default async function CriteriaPage() {
           자동으로 적용됩니다.
         </p>
         <RiskCriteriaForm criteria={criteria} readOnly={readOnly} />
+      </section>
+      <section className="account-panel">
+        <h2>위험성평가 실시규정</h2>
+        <p className="wo-muted">
+          평가를 무엇 때문에, 어떤 방법으로, 언제, 누가 하는지 회사가 정해 둔
+          글입니다. 감독이 오면 판단 기준과 함께 먼저 보는 문서입니다.
+        </p>
+        <AssessmentPolicyForm policy={policy} readOnly={readOnly} />
       </section>
     </OrderShell>
   );

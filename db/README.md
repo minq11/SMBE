@@ -88,4 +88,8 @@ docker compose --profile tools run --rm migrate
 - `0021_risk_level_defaults_soften.sql` — 기본 기준의 어감 완화, 상도 감소대책 후 허용.
   0020 기본값을 그대로 둔 행만 바꿉니다.
 
+- `0022_assessment_compliance.sql` — 법정 기록 빈칸 넷: 위험요인의 현재 안전조치,
+  조치 후 허용 불가 시 추가 대책, 평가의 근로자 의견, 회사의 실시규정(기본 문안),
+  경영책임자 반기 점검 기록(`assessment_reviews`).
+
 후속 페이즈(안전사고·과금 등)는 새 파일로 추가합니다.

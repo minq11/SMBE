@@ -40,6 +40,8 @@ export {
 
 const riskItemSchema = z.object({
   hazard: z.string().trim().min(1).max(500),
+  // 평가 시점에 이미 하던 안전조치. 3단계 판단법 양식의 둘째 칸. 비워도 된다.
+  current_control: z.string().trim().max(1000).optional().default(""),
   initial_risk_level: z.enum(["HIGH", "MID", "LOW"]),
   initial_allowable: z.boolean(),
   reduction_measure: z.string().trim().min(1).max(1000),
@@ -95,6 +97,8 @@ export const assessmentRoundSchema = z.object({
   // 판단 기준은 회사가 정한 값이 원본이다. 클라이언트 값은 받지 않고 서버가
   // 회사 기준을 사본으로 남긴다 (0013, 0020). 스키마에 없으니 보내도 버려진다.
   safety_info: safetyInfoSchema,
+  // 위험요인을 찾을 때 근로자가 말한 것 (고시 제6조 참여의 흔적). 비워도 된다.
+  worker_opinion: z.string().trim().max(2000).optional().default(""),
   risks: z.array(riskItemSchema).min(1).max(30),
   participant_user_ids: z
     .array(z.string().uuid())
@@ -297,7 +301,7 @@ export async function getStandardDetail(
     );
     const items = await query<RiskItem>(
       `SELECT id, order_no, hazard, initial_risk_level, initial_allowable,
-              reduction_measure, responsible_user_id,
+              current_control, reduction_measure, responsible_user_id,
               planned_completion_date::text AS planned_completion_date,
               actual_action, actual_completion_date::text AS actual_completion_date,
               post_risk_level, post_allowable
@@ -437,11 +441,12 @@ async function insertRiskAssessmentRound(
     `INSERT INTO risk_assessments
        (company_id, is_simple, name, assessment_kind, performed_on, status,
         criteria_snapshot, work_method_snapshot, safety_info,
-        created_by, approved_by, approved_at, retention_until, standard_id)
+        created_by, approved_by, approved_at, retention_until, standard_id,
+        worker_opinion)
      VALUES ($1, false,
              (SELECT name FROM standards WHERE id = $2),
              $3, $4::date, 'APPROVED',
-             $5::jsonb, $6, $7::jsonb, $8, $8, now(), $9::date, $2)
+             $5::jsonb, $6, $7::jsonb, $8, $8, now(), $9::date, $2, $10)
      RETURNING id`,
     [
       companyId,
@@ -453,6 +458,7 @@ async function insertRiskAssessmentRound(
       JSON.stringify(payload.safety_info),
       actorId,
       retentionUntilFromToday(),
+      payload.worker_opinion || null,
     ],
   );
   const raId = raRow.rows[0].id;
@@ -462,8 +468,8 @@ async function insertRiskAssessmentRound(
     await client.query(
       `INSERT INTO risk_assessment_items
          (assessment_id, order_no, hazard, initial_risk_level, initial_allowable,
-          reduction_measure, responsible_user_id, planned_completion_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date)`,
+          reduction_measure, responsible_user_id, planned_completion_date, current_control)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date, $9)`,
       [
         raId,
         i + 1,
@@ -473,6 +479,7 @@ async function insertRiskAssessmentRound(
         r.reduction_measure,
         r.responsible_user_id,
         r.planned_completion_date,
+        r.current_control || null,
       ],
     );
   }

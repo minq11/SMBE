@@ -262,8 +262,8 @@ export async function requestAssessment(
   );
   const { rows } = await client.query<{ id: string }>(
     `INSERT INTO risk_assessments(company_id,name,assessment_kind,performed_on,criteria_snapshot,work_method_snapshot,
-      safety_info,created_by,retention_until,is_simple,standard_id)
-      VALUES ($1,$2,$3,$4::date,$5::jsonb,$6,$7::jsonb,$8,($4::date + interval '3 years')::date,$9,$10) RETURNING id`,
+      safety_info,created_by,retention_until,is_simple,standard_id,worker_opinion)
+      VALUES ($1,$2,$3,$4::date,$5::jsonb,$6,$7::jsonb,$8,($4::date + interval '3 years')::date,$9,$10,$11) RETURNING id`,
     [
       actor.companyId,
       d.name,
@@ -275,13 +275,14 @@ export async function requestAssessment(
       actor.userId,
       linkedStandardId === null, // 표준서 없으면 간이평가
       linkedStandardId,
+      d.workerOpinion?.trim() || null,
     ],
   );
   const assessmentId = rows[0].id;
   for (const [i, risk] of d.risks.entries()) {
     await client.query(
       `INSERT INTO risk_assessment_items(assessment_id,order_no,hazard,initial_risk_level,initial_allowable,
-        reduction_measure,responsible_user_id,planned_completion_date) VALUES ($1,$2,$3,$4,$5,$6,$7,$8::date)`,
+        reduction_measure,responsible_user_id,planned_completion_date,current_control) VALUES ($1,$2,$3,$4,$5,$6,$7,$8::date,$9)`,
       [
         assessmentId,
         i,
@@ -291,6 +292,7 @@ export async function requestAssessment(
         risk.measure,
         risk.responsibleId || null,
         risk.dueDate || null,
+        risk.currentControl?.trim() || null,
       ],
     );
   }

@@ -261,6 +261,11 @@ export function StandardDetailView({
                       {r.initial_allowable ? "허용 가능" : "허용 불가"}
                     </span>
                   </p>
+                  {r.current_control && (
+                    <p className="std-detail-risk-control">
+                      현재 조치: {r.current_control}
+                    </p>
+                  )}
                   <p className="std-detail-risk-measure">
                     → {r.reduction_measure}
                   </p>

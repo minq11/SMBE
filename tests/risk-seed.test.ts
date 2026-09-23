@@ -11,6 +11,7 @@ const base: RiskItem = {
   hazard: "끼임",
   initial_risk_level: "HIGH",
   initial_allowable: false,
+  current_control: "작업자 주의",
   reduction_measure: "방호덮개 설치",
   responsible_user_id: "u1",
   planned_completion_date: "2026-01-31",
@@ -23,6 +24,7 @@ const base: RiskItem = {
 test("risk seed: open action keeps initial verdict, owner and due date", () => {
   assert.deepEqual(riskSeedFromItem(base), {
     hazard: "끼임",
+    currentControl: "작업자 주의",
     level: "HIGH",
     allowable: "no",
     measure: "방호덮개 설치",
@@ -42,6 +44,8 @@ test("risk seed: completed action seeds the post-action verdict and clears owner
     }),
     {
       hazard: "끼임",
+      // 끝난 조치가 지금 서 있는 안전조치가 된다.
+      currentControl: "작업자 주의 / 덮개 설치 완료",
       level: "LOW",
       allowable: "yes",
       measure: "방호덮개 설치",

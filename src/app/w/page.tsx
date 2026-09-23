@@ -160,6 +160,9 @@ export default async function WorkerLinkPage({
                   {r.initial_allowable ? "허용 가능" : "허용 불가"}
                 </span>
               </h3>
+              {r.current_control && (
+                <p className="wo-detail-text">현재 조치: {r.current_control}</p>
+              )}
               <p className="wo-detail-text">{r.reduction_measure}</p>
             </article>
           ))}

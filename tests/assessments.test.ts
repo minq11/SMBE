@@ -8,6 +8,8 @@ import {
   assessmentOverview,
   listAssessments,
   readAssessment,
+  readHalfYearReview,
+  recordHalfYearReview,
   recordRiskAction,
 } from "../src/server/assessments";
 
@@ -218,6 +220,96 @@ test("assessments: overview counts, needs-assessment standards, expiring soon", 
     transaction((c) => listAssessments(c, worker)),
     /권한/,
   );
+});
+
+test("assessments: post-action 허용 불가 needs a follow-up and stays open (고시 제13조)", async () => {
+  const { manager } = await company();
+  const std = await standard(manager.companyId, manager.userId, "프레스");
+  const id = await assessment(manager.companyId, manager.userId, {
+    standardId: std,
+    performedOn: daysAgo(2),
+    items: [{ hazard: "끼임", allowable: false }],
+  });
+  const item = (await transaction((c) => readAssessment(c, manager, id)))
+    .items[0];
+  // 조치 뒤에도 허용 불가인데 추가 대책이 없으면 거부.
+  await assert.rejects(
+    transaction((c) =>
+      recordRiskAction(c, manager, {
+        assessmentId: id,
+        itemId: item.id,
+        actualAction: "임시 덮개",
+        actualCompletionDate: daysAgo(0),
+        postRiskLevel: "MID",
+        postAllowable: false,
+      }),
+    ),
+    /추가 대책/,
+  );
+  await transaction((c) =>
+    recordRiskAction(c, manager, {
+      assessmentId: id,
+      itemId: item.id,
+      actualAction: "임시 덮개",
+      actualCompletionDate: daysAgo(0),
+      postRiskLevel: "MID",
+      postAllowable: false,
+      followUpMeasure: "고정 덮개 발주, 다음 달 설치",
+    }),
+  );
+  let detail = await transaction((c) => readAssessment(c, manager, id));
+  assert.equal(
+    detail.items[0].follow_up_measure,
+    "고정 덮개 발주, 다음 달 설치",
+  );
+  // 조치를 적었지만 아직 "남은 조치" 다.
+  assert.equal(detail.open_action_count, 1);
+  const list = await transaction((c) => listAssessments(c, manager));
+  assert.equal(list.find((r) => r.id === id)!.open_action_count, 1);
+
+  await transaction((c) =>
+    recordRiskAction(c, manager, {
+      assessmentId: id,
+      itemId: item.id,
+      actualAction: "고정 덮개 설치",
+      actualCompletionDate: daysAgo(0),
+      postRiskLevel: "LOW",
+      postAllowable: true,
+    }),
+  );
+  detail = await transaction((c) => readAssessment(c, manager, id));
+  assert.equal(detail.open_action_count, 0);
+  // 허용 가능이 되면 추가 대책은 지운다.
+  assert.equal(detail.items[0].follow_up_measure, null);
+});
+
+test("assessments: half-year review records the numbers the boss signed off on", async () => {
+  const { manager, worker } = await company();
+  const std = await standard(manager.companyId, manager.userId, "프레스");
+  await assessment(manager.companyId, manager.userId, {
+    standardId: std,
+    performedOn: daysAgo(1),
+    items: [{ hazard: "끼임", allowable: false }],
+  });
+  const before = await transaction((c) => readHalfYearReview(c, manager));
+  assert.equal(before.current, null);
+  assert.equal(before.stats.assessments, 1);
+  assert.equal(before.stats.actions_open, 1);
+  assert.equal(before.stats.standards_expired, 0);
+
+  await assert.rejects(
+    transaction((c) => recordHalfYearReview(c, worker, "")),
+    /권한/,
+  );
+  await transaction((c) =>
+    recordHalfYearReview(c, manager, "남은 조치 1건은 이달 안에"),
+  );
+  const after = await transaction((c) => readHalfYearReview(c, manager));
+  assert.ok(after.current);
+  assert.equal(after.current!.note, "남은 조치 1건은 이달 안에");
+  assert.equal(after.current!.reviewed_by_name, "관리자");
+  assert.deepEqual(after.current!.stats, before.stats);
+  assert.equal(after.history.length, 1);
 });
 
 test("assessments: read detail and record action on an approved item", async () => {

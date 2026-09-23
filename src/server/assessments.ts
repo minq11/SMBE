@@ -35,7 +35,10 @@ export type AssessmentRow = {
   work_order_id: string | null;
   created_by_name: string;
   item_count: number;
-  /** 허용 불가로 판정됐는데 아직 조치 완료가 적히지 않은 항목 수 */
+  /**
+   * 허용 불가로 판정됐는데 아직 허용 수준에 못 이른 항목 수 — 조치 기록이 없거나,
+   * 조치 뒤에도 허용 불가라 추가 대책이 남은 것 (고시 제13조).
+   */
   open_action_count: number;
   valid_until: string | null;
   expired: boolean;
@@ -96,7 +99,7 @@ export async function listAssessments(
             (SELECT count(*)::int FROM risk_assessment_items i WHERE i.assessment_id = ra.id) AS item_count,
             (SELECT count(*)::int FROM risk_assessment_items i
               WHERE i.assessment_id = ra.id AND NOT i.initial_allowable
-                AND i.actual_completion_date IS NULL) AS open_action_count
+                AND (i.actual_completion_date IS NULL OR i.post_allowable = false)) AS open_action_count
        FROM risk_assessments ra JOIN users u ON u.id = ra.created_by
       WHERE ra.company_id = $1
       ORDER BY ra.performed_on DESC, ra.created_at DESC
@@ -107,32 +110,9 @@ export async function listAssessments(
   return rows.map((r) => withValidity(r, today));
 }
 
-export async function assessmentOverview(
-  client: PoolClient,
-  actor: Actor,
-): Promise<AssessmentOverview> {
-  await memberAccess(client, actor, true);
+/** 사용 중 표준서마다 가장 최근 승인 평가 하나. 없거나 만료면 "평가 필요". */
+async function standardsStatus(client: PoolClient, companyId: string) {
   const today = seoulToday();
-  const year = today.slice(0, 4);
-  const counts = await client.query<{
-    this_year_count: number;
-    pending_count: number;
-    open_action_count: number;
-  }>(
-    `SELECT
-       (SELECT count(*)::int FROM risk_assessments ra
-         WHERE ra.company_id = $1 AND ra.status = 'APPROVED'
-           AND ra.performed_on >= ($2 || '-01-01')::date
-           AND ra.assessment_kind IN ('FIRST','PERIODIC','CONTINUOUS')) AS this_year_count,
-       (SELECT count(*)::int FROM risk_assessments ra
-         WHERE ra.company_id = $1 AND ra.status = 'PENDING') AS pending_count,
-       (SELECT count(*)::int FROM risk_assessment_items i
-          JOIN risk_assessments ra ON ra.id = i.assessment_id
-         WHERE ra.company_id = $1 AND ra.status = 'APPROVED'
-           AND NOT i.initial_allowable AND i.actual_completion_date IS NULL) AS open_action_count`,
-    [actor.companyId, year],
-  );
-  // 사용 중 표준서마다 가장 최근 승인 평가 하나. 없거나 만료면 "평가 필요".
   const standards = await client.query<{
     standard_id: string;
     name: string;
@@ -148,7 +128,7 @@ export async function assessmentOverview(
        ) ra ON true
       WHERE s.company_id = $1 AND s.status = 'APPROVED'
       ORDER BY s.name`,
-    [actor.companyId],
+    [companyId],
   );
   const soon = new Date(today + "T00:00:00Z");
   soon.setUTCDate(soon.getUTCDate() + 30);
@@ -173,6 +153,36 @@ export async function assessmentOverview(
         valid_until: validUntil,
       });
   }
+  return { needs, expiring };
+}
+
+export async function assessmentOverview(
+  client: PoolClient,
+  actor: Actor,
+): Promise<AssessmentOverview> {
+  await memberAccess(client, actor, true);
+  const today = seoulToday();
+  const year = today.slice(0, 4);
+  const counts = await client.query<{
+    this_year_count: number;
+    pending_count: number;
+    open_action_count: number;
+  }>(
+    `SELECT
+       (SELECT count(*)::int FROM risk_assessments ra
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED'
+           AND ra.performed_on >= ($2 || '-01-01')::date
+           AND ra.assessment_kind IN ('FIRST','PERIODIC','CONTINUOUS')) AS this_year_count,
+       (SELECT count(*)::int FROM risk_assessments ra
+         WHERE ra.company_id = $1 AND ra.status = 'PENDING') AS pending_count,
+       (SELECT count(*)::int FROM risk_assessment_items i
+          JOIN risk_assessments ra ON ra.id = i.assessment_id
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED'
+           AND NOT i.initial_allowable
+           AND (i.actual_completion_date IS NULL OR i.post_allowable = false)) AS open_action_count`,
+    [actor.companyId, year],
+  );
+  const { needs, expiring } = await standardsStatus(client, actor.companyId);
   return {
     ...counts.rows[0],
     needs_assessment: needs,
@@ -186,6 +196,8 @@ export type AssessmentItemDetail = {
   hazard: string;
   initial_risk_level: "HIGH" | "MID" | "LOW";
   initial_allowable: boolean;
+  /** 평가 시점에 이미 하고 있던 안전조치 */
+  current_control: string | null;
   reduction_measure: string;
   responsible_name: string | null;
   planned_completion_date: string | null;
@@ -193,6 +205,8 @@ export type AssessmentItemDetail = {
   actual_completion_date: string | null;
   post_risk_level: "HIGH" | "MID" | "LOW" | null;
   post_allowable: boolean | null;
+  /** 조치 뒤에도 허용 불가일 때의 추가 대책 */
+  follow_up_measure: string | null;
 };
 
 export type AssessmentDetail = AssessmentRow & {
@@ -204,6 +218,7 @@ export type AssessmentDetail = AssessmentRow & {
     environment: string;
     history: string;
   };
+  worker_opinion: string | null;
   approved_by_name: string | null;
   approved_at: string | null;
   standard_name: string | null;
@@ -226,13 +241,13 @@ export async function readAssessment(
             wo.id AS work_order_id, wo.name AS work_order_name,
             u.display_name AS created_by_name,
             ra.criteria_snapshot AS criteria, ra.work_method_snapshot AS work_method,
-            ra.safety_info,
+            ra.safety_info, ra.worker_opinion,
             a.display_name AS approved_by_name, ra.approved_at::text,
             s.name AS standard_name,
             (SELECT count(*)::int FROM risk_assessment_items i WHERE i.assessment_id = ra.id) AS item_count,
             (SELECT count(*)::int FROM risk_assessment_items i
               WHERE i.assessment_id = ra.id AND NOT i.initial_allowable
-                AND i.actual_completion_date IS NULL) AS open_action_count
+                AND (i.actual_completion_date IS NULL OR i.post_allowable = false)) AS open_action_count
        FROM risk_assessments ra
        JOIN users u ON u.id = ra.created_by
        LEFT JOIN users a ON a.id = ra.approved_by
@@ -246,9 +261,10 @@ export async function readAssessment(
   if (!rows[0]) throw new WorkOrderError("평가를 찾을 수 없습니다.");
   const items = await client.query<AssessmentItemDetail>(
     `SELECT i.id, i.order_no, i.hazard, i.initial_risk_level, i.initial_allowable,
-            i.reduction_measure, r.display_name AS responsible_name,
+            i.current_control, i.reduction_measure, r.display_name AS responsible_name,
             i.planned_completion_date::text, i.actual_action,
-            i.actual_completion_date::text, i.post_risk_level, i.post_allowable
+            i.actual_completion_date::text, i.post_risk_level, i.post_allowable,
+            i.follow_up_measure
        FROM risk_assessment_items i
        LEFT JOIN users r ON r.id = i.responsible_user_id
       WHERE i.assessment_id = $1 ORDER BY i.order_no`,
@@ -265,19 +281,26 @@ export async function readAssessment(
   };
 }
 
-const actionSchema = z.object({
-  actualAction: z
-    .string()
-    .trim()
-    .min(1, "실제 조치 내용을 적으세요.")
-    .max(1000),
-  actualCompletionDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "완료일을 선택하세요."),
-  postRiskLevel: z.enum(["HIGH", "MID", "LOW"]),
-  postAllowable: z.boolean(),
-});
-export type RiskActionInput = z.infer<typeof actionSchema>;
+const actionSchema = z
+  .object({
+    actualAction: z
+      .string()
+      .trim()
+      .min(1, "실제 조치 내용을 적으세요.")
+      .max(1000),
+    actualCompletionDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "완료일을 선택하세요."),
+    postRiskLevel: z.enum(["HIGH", "MID", "LOW"]),
+    postAllowable: z.boolean(),
+    followUpMeasure: z.string().trim().max(1000).optional().default(""),
+  })
+  // 고시 제13조: 대책을 실행했는데도 허용 수준이 아니면 추가 대책을 세운다.
+  .refine((v) => v.postAllowable || v.followUpMeasure.length > 0, {
+    message: "조치 뒤에도 허용 불가면 추가 대책을 적으세요.",
+    path: ["followUpMeasure"],
+  });
+export type RiskActionInput = z.input<typeof actionSchema>;
 
 /**
  * 위험요인 하나의 조치 이행을 적는다. 승인된 평가에만, 관리자만. 다시 적으면
@@ -306,7 +329,7 @@ export async function recordRiskAction(
   await client.query(
     `UPDATE risk_assessment_items
         SET actual_action = $2, actual_completion_date = $3::date,
-            post_risk_level = $4, post_allowable = $5
+            post_risk_level = $4, post_allowable = $5, follow_up_measure = $6
       WHERE id = $1`,
     [
       input.itemId,
@@ -314,6 +337,7 @@ export async function recordRiskAction(
       parsed.data.actualCompletionDate,
       parsed.data.postRiskLevel,
       parsed.data.postAllowable,
+      parsed.data.postAllowable ? null : parsed.data.followUpMeasure,
     ],
   );
   await client.query(
@@ -325,6 +349,140 @@ export async function recordRiskAction(
       input.assessmentId,
       JSON.stringify({ item_id: input.itemId, ...parsed.data }),
     ],
+  );
+}
+
+export type HalfYearStats = {
+  /** 이 반기에 승인된 평가 수 */
+  assessments: number;
+  /** 회사 전체의 허용 불가 항목 가운데 허용 수준에 이른 것 */
+  actions_done: number;
+  /** 아직 남은 것 (조치 기록 없음 또는 조치 뒤에도 허용 불가) */
+  actions_open: number;
+  /** 사용 중 표준서 가운데 유효한 평가가 없는 것 */
+  standards_expired: number;
+  pending: number;
+};
+export type HalfYearReviewRow = {
+  id: string;
+  period_year: number;
+  period_half: 1 | 2;
+  reviewed_at: string;
+  reviewed_by_name: string;
+  stats: HalfYearStats;
+  note: string | null;
+};
+export type HalfYearReview = {
+  year: number;
+  half: 1 | 2;
+  /** 이 반기의 지금 숫자 — 서명하면 이대로 남는다 */
+  stats: HalfYearStats;
+  /** 이 반기의 점검 기록 (있으면 점검 완료) */
+  current: HalfYearReviewRow | null;
+  /** 최근 기록 몇 건 (이번 반기 포함) */
+  history: HalfYearReviewRow[];
+};
+
+const halfOf = (isoDate: string): { year: number; half: 1 | 2 } => ({
+  year: Number(isoDate.slice(0, 4)),
+  half: Number(isoDate.slice(5, 7)) <= 6 ? 1 : 2,
+});
+const halfRange = (year: number, half: 1 | 2) =>
+  half === 1
+    ? [`${year}-01-01`, `${year}-06-30`]
+    : [`${year}-07-01`, `${year}-12-31`];
+
+async function halfYearStats(
+  client: PoolClient,
+  companyId: string,
+  year: number,
+  half: 1 | 2,
+): Promise<HalfYearStats> {
+  const [from, to] = halfRange(year, half);
+  const { rows } = await client.query<HalfYearStats>(
+    `SELECT
+       (SELECT count(*)::int FROM risk_assessments ra
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED'
+           AND ra.performed_on BETWEEN $2::date AND $3::date) AS assessments,
+       (SELECT count(*)::int FROM risk_assessment_items i
+          JOIN risk_assessments ra ON ra.id = i.assessment_id
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT i.initial_allowable
+           AND i.actual_completion_date IS NOT NULL AND i.post_allowable = true) AS actions_done,
+       (SELECT count(*)::int FROM risk_assessment_items i
+          JOIN risk_assessments ra ON ra.id = i.assessment_id
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT i.initial_allowable
+           AND (i.actual_completion_date IS NULL OR i.post_allowable = false)) AS actions_open,
+       (SELECT count(*)::int FROM risk_assessments ra
+         WHERE ra.company_id = $1 AND ra.status = 'PENDING') AS pending`,
+    [companyId, from, to],
+  );
+  const { needs } = await standardsStatus(client, companyId);
+  return { ...rows[0], standards_expired: needs.length };
+}
+
+/**
+ * 경영책임자 반기 점검 (중처법 시행령 제4조 제3호). 위험성평가 결과를 보고받고
+ * 확인했다는 기록이다. 판례가 "형식적 외관" 을 미이행으로 보므로 점검 시점의
+ * 숫자를 같이 남긴다 — 무엇을 보고 서명했는지.
+ */
+export async function readHalfYearReview(
+  client: PoolClient,
+  actor: Actor,
+): Promise<HalfYearReview> {
+  await memberAccess(client, actor, true);
+  const { year, half } = halfOf(seoulToday());
+  const stats = await halfYearStats(client, actor.companyId, year, half);
+  const { rows } = await client.query<HalfYearReviewRow>(
+    `SELECT r.id, r.period_year, r.period_half, r.reviewed_at::text,
+            u.display_name AS reviewed_by_name, r.stats, r.note
+       FROM assessment_reviews r JOIN users u ON u.id = r.reviewed_by
+      WHERE r.company_id = $1
+      ORDER BY r.period_year DESC, r.period_half DESC, r.reviewed_at DESC
+      LIMIT 6`,
+    [actor.companyId],
+  );
+  return {
+    year,
+    half,
+    stats,
+    current:
+      rows.find((r) => r.period_year === year && r.period_half === half) ??
+      null,
+    history: rows,
+  };
+}
+
+export async function recordHalfYearReview(
+  client: PoolClient,
+  actor: Actor,
+  rawNote: unknown,
+): Promise<void> {
+  await memberAccess(client, actor, true);
+  const note = z
+    .string()
+    .trim()
+    .max(2000)
+    .safeParse(rawNote ?? "");
+  if (!note.success) throw new WorkOrderError("점검 의견이 너무 깁니다.");
+  const { year, half } = halfOf(seoulToday());
+  const stats = await halfYearStats(client, actor.companyId, year, half);
+  await client.query(
+    `INSERT INTO assessment_reviews
+       (company_id, period_year, period_half, reviewed_by, stats, note)
+     VALUES ($1, $2, $3, $4, $5::jsonb, $6)`,
+    [
+      actor.companyId,
+      year,
+      half,
+      actor.userId,
+      JSON.stringify(stats),
+      note.data || null,
+    ],
+  );
+  await client.query(
+    `INSERT INTO audit_logs (company_id, actor_id, action, target_type, target_id, path, after_json)
+     VALUES ($1, $2, 'ASSESSMENT_HALF_YEAR_REVIEW', 'company', $1, 'WEB', $3::jsonb)`,
+    [actor.companyId, actor.userId, JSON.stringify({ year, half, stats })],
   );
 }
 

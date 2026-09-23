@@ -1,4 +1,5 @@
 import type { PoolClient } from "@neondatabase/serverless";
+import { z } from "zod";
 import { WorkOrderError } from "../features/work-orders/model";
 import {
   RISK_LEVELS,
@@ -33,6 +34,41 @@ export async function readRiskCriteria(
   if (rows.length !== RISK_LEVELS.length)
     throw new WorkOrderError("회사의 위험성 판단 기준을 찾을 수 없습니다.");
   return rows;
+}
+
+const policySchema = z
+  .string()
+  .trim()
+  .min(1, "실시규정을 입력하세요.")
+  .max(4000, "실시규정이 너무 깁니다.");
+
+/** 고시 제9조의 실시규정. 회사에 하나, 기본 문안은 0022 가 넣는다. */
+export async function readAssessmentPolicy(
+  client: PoolClient,
+  companyId: string,
+): Promise<string> {
+  const { rows } = await client.query<{ risk_assessment_policy: string }>(
+    "SELECT risk_assessment_policy FROM companies WHERE id = $1",
+    [companyId],
+  );
+  if (!rows[0]) throw new WorkOrderError("회사를 찾을 수 없습니다.");
+  return rows[0].risk_assessment_policy;
+}
+
+export async function updateAssessmentPolicy(
+  client: PoolClient,
+  companyId: string,
+  raw: unknown,
+): Promise<void> {
+  const parsed = policySchema.safeParse(raw);
+  if (!parsed.success)
+    throw new WorkOrderError(
+      parsed.error.issues[0]?.message ?? "실시규정을 확인하세요.",
+    );
+  await client.query(
+    "UPDATE companies SET risk_assessment_policy = $2 WHERE id = $1",
+    [companyId, parsed.data],
+  );
 }
 
 export async function updateRiskCriteria(

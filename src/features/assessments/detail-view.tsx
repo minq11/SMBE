@@ -43,6 +43,11 @@ export function AssessmentItems({
               {item.initial_allowable ? "허용 가능" : "허용 불가 · 조치 필요"}
             </span>
           </div>
+          {item.current_control && (
+            <p className="asmt-item-control">
+              현재 조치: {item.current_control}
+            </p>
+          )}
           <p className="asmt-item-measure">→ {item.reduction_measure}</p>
           {(item.responsible_name || item.planned_completion_date) && (
             <p className="asmt-item-plan">
@@ -90,6 +95,9 @@ function ActionBlock({
   const [allowable, setAllowable] = useState<"" | "yes" | "no">(
     item.post_allowable === null ? "" : item.post_allowable ? "yes" : "no",
   );
+  const [followUp, setFollowUp] = useState(item.follow_up_measure ?? "");
+  // 조치를 적었는데도 허용 불가면 끝난 게 아니다 (고시 제13조).
+  const stillOpen = done && item.post_allowable === false;
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -107,20 +115,27 @@ function ActionBlock({
         actualCompletionDate: date,
         postRiskLevel: level,
         postAllowable: allowable === "yes",
+        followUpMeasure: followUp,
       });
       if (!result.ok) setError(result.error);
       else setOpen(false);
     });
 
   return (
-    <div className={`asmt-action${done ? " is-done" : ""}`}>
+    <div className={`asmt-action${done && !stillOpen ? " is-done" : ""}`}>
       <div className="asmt-action-head">
-        {done ? (
+        {stillOpen ? (
+          <span className="asmt-action-state asmt-action-state--open">
+            조치 뒤에도 허용 불가 · {koDate(item.actual_completion_date)} · 조치
+            후 {item.post_risk_level ? LEVEL_LABEL[item.post_risk_level] : ""} ·
+            추가 대책 남음
+          </span>
+        ) : done ? (
           <span className="asmt-action-state">
             <Check size={14} /> 조치 완료 ·{" "}
             {koDate(item.actual_completion_date)} · 조치 후{" "}
-            {item.post_risk_level ? LEVEL_LABEL[item.post_risk_level] : ""}
-            {item.post_allowable ? " · 허용 가능" : " · 허용 불가"}
+            {item.post_risk_level ? LEVEL_LABEL[item.post_risk_level] : ""} ·
+            허용 가능
           </span>
         ) : (
           <span className="asmt-action-state asmt-action-state--open">
@@ -134,13 +149,16 @@ function ActionBlock({
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
-            {done ? "고치기" : "조치 적기"}
+            {stillOpen ? "추가 조치 적기" : done ? "고치기" : "조치 적기"}
             <ChevronDown size={14} className={open ? "is-flipped" : ""} />
           </button>
         )}
       </div>
       {done && item.actual_action && !open && (
         <p className="asmt-action-text">{item.actual_action}</p>
+      )}
+      {stillOpen && item.follow_up_measure && !open && (
+        <p className="asmt-action-text">추가 대책: {item.follow_up_measure}</p>
       )}
       {open && (
         <div className="asmt-action-form">
@@ -174,6 +192,18 @@ function ActionBlock({
             value={allowable}
             onChange={setAllowable}
           />
+          {allowable === "no" && (
+            <label className="form-field">
+              <span>추가 대책 (허용 수준이 될 때까지)</span>
+              <textarea
+                rows={2}
+                maxLength={1000}
+                value={followUp}
+                onChange={(e) => setFollowUp(e.target.value)}
+                placeholder="다음에 무엇을 더 할지, 언제까지"
+              />
+            </label>
+          )}
           <FormErrorDialog message={error} nonce={error} />
           <div className="asmt-action-buttons">
             <button
