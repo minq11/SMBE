@@ -58,6 +58,7 @@ export function AssessmentItems({
               item={item}
               assessmentId={detail.id}
               canRecord={canRecord && detail.status === "APPROVED"}
+              criteria={detail.criteria}
             />
           )}
         </li>
@@ -70,10 +71,13 @@ function ActionBlock({
   item,
   assessmentId,
   canRecord,
+  criteria,
 }: {
   item: AssessmentItemDetail;
   assessmentId: string;
   canRecord: boolean;
+  /** 이 평가에 복사된 판단 기준. 조치 후 수준도 같은 기준으로 고른다. */
+  criteria: string;
 }) {
   const done = Boolean(item.actual_completion_date);
   const [open, setOpen] = useState(false);
@@ -161,6 +165,8 @@ function ActionBlock({
             label="조치 후 위험성 수준"
             value={level}
             onChange={setLevel}
+            criteria={criteria}
+            criteriaSnapshot
           />
           <AllowablePicker
             label="조치 후 허용 여부"

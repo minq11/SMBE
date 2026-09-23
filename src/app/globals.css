@@ -949,7 +949,6 @@ html[data-banner-hidden] .preview-banner {
   font-size: 15.5px;
   line-height: 1.8;
   color: var(--ink-2);
-  white-space: pre-line;
 }
 .reason-dialog .btn-primary {
   align-self: stretch;
@@ -4379,19 +4378,16 @@ html[data-banner-hidden] .preview-banner {
 .std-section-head .help-dialog-icon {
   margin-right: -12px;
 }
-/* 단추 묶음 라벨 옆 물음표 (risk-level-picker.tsx) */
-.seg {
-  position: relative;
+/* 라벨 글자에 바로 붙는 물음표. 그림은 15px 로 작게 보이되 누르는 자리는 44px 을
+   지킨다 (헌법 4장). 음수 여백으로 그 44px 이 라벨 줄을 밀거나 넓히지 않게 한다. */
+.help-dialog-icon--inline {
+  margin: -12px -12px -12px -10px;
 }
-/* 물음표(44px)가 단추 줄을 덮지 않게 위를 비우고, 덮이는 몇 px 은 위로 올린다. */
-.seg:has(.seg-help) {
-  padding-top: 10px;
-}
-.seg-help {
-  position: absolute;
-  right: -12px;
-  top: -6px;
-  z-index: 1;
+/* 그 44px 은 위아래로 12px 씩 삐져나온다. 위는 카드의 12px 틈이 받아 주고, 아래는
+   여기서 12px 을 띄워 받는다. 안 그러면 투명한 단추가 "상" 단추 윗부분을 덮어
+   수준을 고르려다 안내 창이 열린다. */
+.seg-head:has(.help-dialog-icon--inline) {
+  margin-bottom: 12px;
 }
 .help-dialog-content p + p {
   margin-top: 10px;
@@ -6446,11 +6442,15 @@ body.sidebar-lock {
   margin: 0;
   min-width: 0;
 }
-.seg > legend {
+/* 라벨 + 그 뒤에 붙는 물음표 한 줄 */
+.seg-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.seg-label {
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 6px;
-  padding: 0;
 }
 .seg-row {
   display: flex;

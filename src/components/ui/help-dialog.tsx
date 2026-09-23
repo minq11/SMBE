@@ -20,8 +20,11 @@ export function HelpDialog({
   title: string;
   /** 글 단추의 글. "어떤 작업이 PTW 대상인가요?" 처럼 질문으로 쓴다. */
   trigger?: string;
-  /** icon: 구간 머리 오른쪽의 물음표(44px). 라벨은 `{title} 안내`. */
-  variant?: "text" | "icon";
+  /**
+   * icon: 구간 머리 오른쪽의 물음표. inline: 라벨 글자에 바로 붙는 작은 물음표.
+   * 둘 다 누르는 자리는 44px 이고(헌법 4장) 라벨은 `{title} 안내`.
+   */
+  variant?: "text" | "icon" | "inline";
   /** icon 변형의 그림. clip 은 첨부 자리 표시. */
   icon?: "help" | "clip";
   children: ReactNode;
@@ -36,14 +39,22 @@ export function HelpDialog({
   }, [open]);
   return (
     <>
-      {variant === "icon" ? (
+      {variant !== "text" ? (
         <button
           type="button"
-          className="help-dialog-icon"
+          className={
+            variant === "inline"
+              ? "help-dialog-icon help-dialog-icon--inline"
+              : "help-dialog-icon"
+          }
           aria-label={`${title} 안내`}
           onClick={() => setOpen(true)}
         >
-          {icon === "clip" ? <Paperclip size={18} /> : <CircleHelp size={20} />}
+          {icon === "clip" ? (
+            <Paperclip size={18} />
+          ) : (
+            <CircleHelp size={variant === "inline" ? 15 : 20} />
+          )}
         </button>
       ) : (
         <button

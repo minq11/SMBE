@@ -295,10 +295,12 @@
   line-height: 1.6;
   color: var(--ink-2);
 }
+/* 틈이 12px 인 것은 위험요인 카드와 같은 값이다. 수준 라벨 옆 물음표의 44px 이
+   위로 12px 삐져나오므로 그만큼은 비어 있어야 윗칸을 덮지 않는다. */
 .asmt-action-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin-top: 10px;
 }
 .asmt-action-form .form-field {

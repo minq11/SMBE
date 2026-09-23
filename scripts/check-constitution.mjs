@@ -5,15 +5,18 @@
 //
 //   node scripts/check-constitution.mjs
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join, relative, resolve, dirname } from "node:path";
+import { join, relative, resolve, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// 경로 비교는 언제나 이 함수를 거친다. Windows 의 join() 은 `\` 를 주는데 아래
+// 규칙들은 `src/app/globals.css` 처럼 `/` 로 적혀 있어, 그냥 비교하면 예외가 하나도
+// 안 걸리고(색 규칙이 globals.css 를 통째로 위반으로 잡는다) 반대로 `/page.tsx` 는
+// 아무것도 못 찾아 loading.tsx 검사가 조용히 건너뛰어진다.
+const posix = (path) => relative(root, path).split(sep).join("/");
 const problems = [];
 const fail = (rule, file, detail) =>
-  problems.push(
-    `[${rule}] ${relative(root, file)}${detail ? " — " + detail : ""}`,
-  );
+  problems.push(`[${rule}] ${posix(file)}${detail ? " — " + detail : ""}`);
 
 async function walk(dir, out = []) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -32,12 +35,12 @@ const exists = (path) =>
 // 5장 — 자식 화면을 가진 폴더마다 loading.tsx. 없으면 그 이동에는 아무 신호가 없다.
 async function checkLoading() {
   const pages = (await walk(join(root, "src/app"))).filter((f) =>
-    f.endsWith("/page.tsx"),
+    posix(f).endsWith("/page.tsx"),
   );
   const dirs = new Set(pages.map((f) => dirname(f)));
   for (const dir of dirs) {
     const hasChildScreen = [...dirs].some(
-      (other) => other !== dir && other.startsWith(dir + "/"),
+      (other) => other !== dir && other.startsWith(dir + sep),
     );
     if (hasChildScreen && !(await exists(join(dir, "loading.tsx"))))
       fail("5장 loading.tsx", dir, "자식 화면이 있는데 loading.tsx 가 없다");
@@ -88,15 +91,17 @@ async function checkErrorBanner() {
 // 3장 — 색은 토큰으로. 기능 CSS 에 색 코드를 직접 쓰지 않는다 (globals.css 의
 // :root 만 예외, 로그인 제공자 로고는 그 회사 색이라 예외).
 async function checkRawColors() {
-  const files = (await walk(join(root, "src"))).filter(
-    (f) =>
-      (f.endsWith(".css") || f.endsWith(".tsx")) &&
-      !f.endsWith("src/app/globals.css") &&
+  const files = (await walk(join(root, "src"))).filter((f) => {
+    const p = posix(f);
+    return (
+      (p.endsWith(".css") || p.endsWith(".tsx")) &&
+      p !== "src/app/globals.css" &&
       // themeColor 는 글자 그대로여야 한다. 아래 checkThemeColor 가 --bg 와 맞춘다.
-      !f.endsWith("src/app/layout.tsx") &&
-      !f.includes("/brand/") &&
-      !f.endsWith("provider-logos.tsx"),
-  );
+      p !== "src/app/layout.tsx" &&
+      !p.includes("/brand/") &&
+      !p.endsWith("provider-logos.tsx")
+    );
+  });
   const hex = /#[0-9a-fA-F]{3,8}\b/g;
   for (const file of files) {
     const lines = (await readFile(file, "utf8")).split("\n");

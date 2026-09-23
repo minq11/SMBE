@@ -29,15 +29,19 @@ export function Segmented<T extends string>({
   }>;
   onChange: (value: T) => void;
   name?: string;
-  /** 라벨 오른쪽의 물음표 등. legend 안에는 dialog 를 둘 수 없어 옆에 띄운다. */
+  /** 라벨 글자 바로 뒤에 붙는 물음표 등. */
   help?: ReactNode;
 }) {
   const id = useId();
   const groupName = name ?? id;
   return (
+    // 라벨을 legend 가 아닌 span 으로 둔다. legend 안에는 dialog 를 넣을 수 없어
+    // 물음표를 라벨 옆에 붙이지 못했다. 이름은 아래 radiogroup 이 이미 갖고 있다.
     <fieldset className="seg">
-      <legend>{label}</legend>
-      {help && <div className="seg-help">{help}</div>}
+      <div className="seg-head">
+        <span className="seg-label">{label}</span>
+        {help}
+      </div>
       <div className="seg-row" role="radiogroup" aria-label={label}>
         {options.map((o) => {
           const on = value === o.value;
@@ -78,12 +82,15 @@ export function RiskLevelPicker({
   onChange,
   label = "위험성 수준",
   criteria,
+  criteriaSnapshot = false,
 }: {
   value: "" | "HIGH" | "MID" | "LOW";
   onChange: (v: "HIGH" | "MID" | "LOW") => void;
   label?: string;
   /** 회사의 판단 기준. 있으면 라벨 옆 물음표가 그것을 보여 준다. */
   criteria?: string;
+  /** 그 기준이 평가에 복사된 사본이면 참. 안내 문구가 달라진다. */
+  criteriaSnapshot?: boolean;
 }) {
   return (
     <Segmented
@@ -93,8 +100,8 @@ export function RiskLevelPicker({
       onChange={onChange}
       help={
         criteria ? (
-          <HelpDialog title="위험성 판단 기준" variant="icon">
-            <CriteriaHelp criteria={criteria} />
+          <HelpDialog title="위험성 판단 기준" variant="inline">
+            <CriteriaHelp criteria={criteria} snapshot={criteriaSnapshot} />
           </HelpDialog>
         ) : undefined
       }

@@ -94,10 +94,22 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await page.getByPlaceholder("예: 회전부 덮개 유지").fill("잠금장치 유지");
     await page.getByLabel("유해·위험요인", { exact: true }).fill("끼임");
     // 수준 옆 물음표가 회사 판단 기준을 보여 준다.
-    await page
+    const levelHelp = page
       .getByRole("button", { name: "위험성 판단 기준 안내" })
-      .first()
-      .click();
+      .first();
+    // 물음표는 "위험성 수준" 글자에 붙어 있어야 한다 (헌법 1-6). 라벨에서 떼어
+    // 카드 오른쪽 끝에 띄우면 무엇에 대한 물음인지 사라지고 좁은 화면에서 잘린다.
+    {
+      const help = (await levelHelp.boundingBox())!;
+      const label = (await page
+        .locator(".risk-card .seg-label")
+        .first()
+        .boundingBox())!;
+      const card = (await page.locator(".risk-card").first().boundingBox())!;
+      expect(help.x).toBeLessThan(label.x + label.width + 24);
+      expect(help.x + help.width).toBeLessThanOrEqual(card.x + card.width);
+    }
+    await levelHelp.click();
     await expect(page.locator("dialog.help-dialog[open]")).toContainText(
       "회사가 정한 기준",
     );
