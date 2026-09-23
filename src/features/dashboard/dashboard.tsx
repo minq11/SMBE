@@ -103,8 +103,6 @@ const REASONS: Reason[] = [
   },
 ];
 
-type Reason = (typeof REASONS)[number];
-
 /**
  * 이유 한 장. 카드 전체가 단추라 어디를 눌러도 자세한 설명이 창으로 뜬다.
  * 제목·한 줄 설명·혜택 칩은 카드에 늘 보이고, 긴 설명만 창에 있다.
