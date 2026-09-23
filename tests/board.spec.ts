@@ -58,7 +58,7 @@ test("board: manager writes and publishes a notice; popup shows on home and hide
     await page.keyboard.press("Enter");
     await page.keyboard.type("작업 전 TBM 필수");
     await page.getByLabel("구성원이 들어올 때 창으로 띄우기").check();
-    await page.getByRole("button", { name: "공지사항 발행" }).click();
+    await page.getByRole("button", { name: "발행" }).click();
     await expect(page).toHaveURL(/\/board\/notices\/[0-9a-f-]+$/);
     await expect(
       page.getByRole("heading", { name: "10월 정기 안전점검 일정" }),

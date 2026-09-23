@@ -7,7 +7,6 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { BoardEditor } from "./editor";
 import { deletePostAction, savePostAction } from "./actions";
 import {
-  KIND_LABEL,
   SLUG_BY_KIND,
   formatBytes,
   type BoardDoc,
@@ -200,19 +199,10 @@ export function PostForm({
       {notice && <p className="board-form-notice">{notice}</p>}
 
       <div className="board-form-actions">
-        <button
-          type="button"
-          className="ghost-button ghost-button--danger"
-          onClick={remove}
-          disabled={pending}
-        >
-          <Trash2 size={14} /> 지우기
-        </button>
-        <span className="board-form-actions-gap" />
         {published ? (
           <>
             <a className="btn-secondary" href={`/board/${slug}/${post.id}`}>
-              <Eye size={14} /> 보기
+              <Eye size={15} /> 보기
             </a>
             <button
               type="button"
@@ -220,7 +210,7 @@ export function PostForm({
               onClick={() => save(false)}
               disabled={pending}
             >
-              <Save size={14} /> {pending ? "저장 중…" : "저장"}
+              <Save size={15} /> {pending ? "저장 중…" : "저장"}
             </button>
           </>
         ) : (
@@ -231,7 +221,7 @@ export function PostForm({
               onClick={() => save(false)}
               disabled={pending}
             >
-              <Save size={14} /> 임시저장
+              <Save size={15} /> 임시저장
             </button>
             <button
               type="button"
@@ -239,12 +229,19 @@ export function PostForm({
               onClick={() => save(true)}
               disabled={pending}
             >
-              <Send size={14} />{" "}
-              {pending ? "처리 중…" : `${KIND_LABEL[post.kind]} 발행`}
+              <Send size={15} /> {pending ? "처리 중…" : "발행"}
             </button>
           </>
         )}
       </div>
+      <button
+        type="button"
+        className="board-form-delete"
+        onClick={remove}
+        disabled={pending}
+      >
+        <Trash2 size={14} /> 이 글 지우기
+      </button>
     </div>
   );
 }

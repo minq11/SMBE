@@ -5,7 +5,6 @@ import { PenLine } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { readPost } from "@/server/board";
-import { PageHeader } from "@/components/ui/page-header";
 import { BoardShell } from "@/features/board/board-shell";
 import {
   BoardError,
@@ -37,29 +36,31 @@ export default async function BoardPostPage({
 
   return (
     <BoardShell session={session} kind={kind} title={post.title}>
-      <PageHeader
-        title={post.title}
-        description={
-          <span className="board-post-meta">
-            {post.author} · {postDate(post.published_at ?? post.updated_at)}
-            {post.status === "DRAFT" && " · 작성 중"}
-            {post.popup && " · 팝업 공지"}
-            {post.popup && (post.popup_from || post.popup_until) && (
-              <>
-                {" "}
-                ({post.popup_from ?? "…"} ~ {post.popup_until ?? "…"})
-              </>
-            )}
-          </span>
-        }
-        actions={
-          manager ? (
-            <Link href={`/board/${kind}/${id}/edit`} className="btn-secondary">
-              <PenLine size={15} /> 고치기
+      <div className="board-post-head">
+        <h1 className="board-post-title">{post.title}</h1>
+        <p className="board-post-meta">
+          <span>{post.author}</span>
+          <span>{postDate(post.published_at ?? post.updated_at)}</span>
+          {post.status === "DRAFT" && (
+            <span className="board-tag">작성 중</span>
+          )}
+          {post.popup && (
+            <span className="board-tag">
+              팝업
+              {(post.popup_from || post.popup_until) &&
+                ` ${post.popup_from ?? "…"} ~ ${post.popup_until ?? "…"}`}
+            </span>
+          )}
+          {manager && (
+            <Link
+              href={`/board/${kind}/${id}/edit`}
+              className="board-post-edit"
+            >
+              <PenLine size={13} /> 고치기
             </Link>
-          ) : undefined
-        }
-      />
+          )}
+        </p>
+      </div>
       <article
         className="board-content board-post"
         dangerouslySetInnerHTML={{ __html: renderDoc(post.body) }}

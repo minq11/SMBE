@@ -217,10 +217,11 @@ export function BoardEditor({
     onClick: () => void,
     isActive = false,
     disabled = false,
+    desktopOnly = false,
   ) => (
     <button
       type="button"
-      className={`board-tool${isActive ? " is-active" : ""}`}
+      className={`board-tool${isActive ? " is-active" : ""}${desktopOnly ? " board-tool--desktop" : ""}`}
       aria-label={label}
       title={label}
       aria-pressed={isActive}
@@ -252,6 +253,8 @@ export function BoardEditor({
           <Underline size={18} />,
           () => editor.chain().focus().toggleUnderline().run(),
           active?.underline,
+          false,
+          true,
         )}
         {tool(
           "소제목",
@@ -311,12 +314,14 @@ export function BoardEditor({
           />
         </label>
         <span className="board-toolbar-gap" />
+        {/* 좁은 화면에서는 밑줄·실행취소·다시실행을 뺀다 — 한 줄에 여덟 개가 한계다. */}
         {tool(
           "실행 취소",
           <Undo2 size={18} />,
           () => editor.chain().focus().undo().run(),
           false,
           !active?.canUndo,
+          true,
         )}
         {tool(
           "다시 실행",
@@ -324,6 +329,7 @@ export function BoardEditor({
           () => editor.chain().focus().redo().run(),
           false,
           !active?.canRedo,
+          true,
         )}
       </div>
       <EditorContent editor={editor} />

@@ -567,6 +567,9 @@ html[data-banner-hidden] .preview-banner {
    5. Main content wrapper
    ========================================================================= */
 .main-content {
+  /* 내용이 짧아도(짧은 글 한 줄) 본문 폭은 화면을 다 쓴다. flex 안에서 폭을
+     안 주면 내용 크기로 줄어들어 글이 가운데 좁게 몰린다. */
+  width: 100%;
   max-width: 1080px;
   margin: 0 auto;
   padding: 72px 40px 96px;
