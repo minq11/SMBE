@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Tier } from "@/components/shell/tier";
 import {
   ArrowRight,
@@ -275,6 +275,7 @@ export function Dashboard({
   today,
   worker,
   pendingJoinCount = 0,
+  topSlot,
 }: {
   companyName?: string;
   tier?: Tier;
@@ -287,6 +288,8 @@ export function Dashboard({
   today?: Today;
   worker?: WorkerHome;
   pendingJoinCount?: number;
+  /** 본문 맨 위에 끼우는 것 (푸시 알림 켜기 안내 등). 서버가 고른다. */
+  topSlot?: ReactNode;
 }) {
   return (
     <AppShell
@@ -297,6 +300,7 @@ export function Dashboard({
       isAuthenticated={isAuthenticated}
       isOperator={isOperator}
     >
+      {topSlot}
       <DashboardBody
         jobs={jobs}
         isAuthenticated={isAuthenticated}

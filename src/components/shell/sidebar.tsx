@@ -11,9 +11,11 @@ import {
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
+  FolderOpen,
   HelpCircle,
   Home,
   LogOut,
+  Megaphone,
   Settings2,
   ShieldCheck,
   TriangleAlert,
@@ -59,7 +61,9 @@ export type NavKey =
   | "profile"
   | "permits"
   | "locations"
-  | "criteria";
+  | "criteria"
+  | "notices"
+  | "resources";
 
 type NavEntry = {
   key: NavKey;
@@ -132,6 +136,25 @@ const NAV: ReadonlyArray<NavEntry> = [
     ],
   },
   { key: "incident", title: "안전사고", icon: TriangleAlert },
+  {
+    key: "notices",
+    title: "통합자료실",
+    icon: FolderOpen,
+    children: [
+      {
+        key: "notices",
+        title: "공지사항",
+        icon: Megaphone,
+        href: "/board/notices",
+      },
+      {
+        key: "resources",
+        title: "자료실",
+        icon: FolderOpen,
+        href: "/board/resources",
+      },
+    ],
+  },
   {
     key: "permits",
     title: "위험작업허가",

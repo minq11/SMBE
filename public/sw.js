@@ -8,7 +8,7 @@
 //   - /_next/static : 파일명에 빌드 해시가 박혀 있어 내용이 바뀌면 경로도 바뀜 → 영구 캐시
 //
 // 캐시를 비우려면 VERSION 을 올립니다.
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `smbe-static-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icon-192.png"];
@@ -84,4 +84,42 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(networkFirst(request));
   }
+});
+
+// 웹 푸시 (유료 회사의 공지·자료 발행). 본문은 서버가 JSON 으로 보낸다
+// (src/server/push.ts). 누르면 그 글을 연다 — 열린 창이 있으면 거기로.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "심플안전", {
+      body: data.body || "",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: data.tag,
+      renotify: Boolean(data.tag),
+      data: { url: data.url || "/" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((list) => {
+        for (const client of list) {
+          if ("navigate" in client && "focus" in client) {
+            return client.navigate(url).then((c) => (c || client).focus());
+          }
+        }
+        return self.clients.openWindow(url);
+      }),
+  );
 });

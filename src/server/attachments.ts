@@ -10,6 +10,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import { query, withTransaction } from "./db";
 import { S3_BUCKET, s3 } from "./s3-client";
+import { BOARD_STORAGE_LIMIT, formatBytes } from "../features/board/model";
 
 export type Actor = { companyId: string; userId: string };
 
@@ -28,6 +29,7 @@ export const TARGET_TYPES = [
   "inspection_result",
   "inspection_finding",
   "incident",
+  "board_post",
 ] as const;
 export type AttachmentTarget = (typeof TARGET_TYPES)[number];
 
@@ -42,12 +44,33 @@ const LINK_TARGETS: ReadonlySet<AttachmentTarget> = new Set([
 ]);
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB (클라이언트 압축 후 여유 있게)
+/** 자료실 글은 동영상도 받는다. 압축하지 않으므로 한 파일 200MB 까지. */
+const MAX_BOARD_UPLOAD_BYTES = 200 * 1024 * 1024;
 const ALLOWED_MIME = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/heic",
 ]);
+const BOARD_VIDEO_MIME = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
+const EXTENSIONS: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "image/heic": ".heic",
+  "video/mp4": ".mp4",
+  "video/webm": ".webm",
+  "video/quicktime": ".mov",
+};
+const maxBytesFor = (target: AttachmentTarget) =>
+  target === "board_post" ? MAX_BOARD_UPLOAD_BYTES : MAX_UPLOAD_BYTES;
+const mimeAllowed = (target: AttachmentTarget, mime: string) =>
+  ALLOWED_MIME.has(mime) ||
+  (target === "board_post" && BOARD_VIDEO_MIME.has(mime));
 
 export class AttachmentError extends Error {}
 
@@ -71,10 +94,15 @@ async function verifyActor(
   // 사진 첨부는 **요금제 하나만** 가른다. 역할에 따른 차이는 없다 —
   // 작업자도 표준서에 사진을 올릴 수 있다. 위험 앞에 서 있는 사람이 작업자다.
   if (upload && !pro)
-    throw new AttachmentError("사진 첨부는 유료 요금제에서 이용할 수 있습니다.");
+    throw new AttachmentError(
+      "사진·동영상 첨부는 유료 요금제에서 이용할 수 있습니다.",
+    );
   // 링크 방문자는 회사에서 어떤 역할이든 현장 작업자 권한으로만 다룬다.
   // 토큰은 배정 하나를 여는 열쇠이지 관리자 자격을 옮겨 오지 않는다.
   const role = actor.linkWorkOrderId ? "WORKER" : row.role;
+  // 자료실 글은 관리자만 쓰므로 첨부도 관리자만 올린다. 읽기는 구성원 전원.
+  if (upload && target === "board_post" && role === "WORKER")
+    throw new AttachmentError("자료실 첨부는 관리자만 올릴 수 있습니다.");
   return { role, pro };
 }
 
@@ -136,6 +164,10 @@ async function verifyTargetOwnership(
       table: "companies",
       join: "id = $2 AND $1::uuid = $1::uuid",
     },
+    board_post: {
+      table: "board_posts",
+      join: "id = $1 AND company_id = $2 AND deleted_at IS NULL",
+    },
   };
   const spec = map[target];
   const rows = await query<{ ok: boolean }>(
@@ -158,6 +190,9 @@ async function assertLinkScope(
 ) {
   const scope = actor.linkWorkOrderId;
   if (!scope) return;
+  // 공지 팝업은 링크 화면에도 뜨므로 그 안의 사진은 링크 방문자도 본다.
+  // 올리는 쪽은 verifyActor 가 관리자만 통과시킨다.
+  if (target === "board_post") return;
   if (!LINK_TARGETS.has(target))
     throw new AttachmentError("이 링크로 열 수 있는 문서가 아닙니다.");
   if (target === "work_order" && targetId !== scope)
@@ -180,19 +215,38 @@ async function assertLinkScope(
     throw new AttachmentError("이 링크로 열 수 있는 작업지시가 아닙니다.");
 }
 
-const presignSchema = z.object({
-  targetType: z.enum(TARGET_TYPES),
-  targetId: z.string().uuid(),
-  filename: z.string().min(1).max(200),
-  mimeType: z
-    .string()
-    .refine((m) => ALLOWED_MIME.has(m), { message: "지원하지 않는 파일 형식" }),
-  sizeBytes: z
-    .number()
-    .int()
-    .positive()
-    .max(MAX_UPLOAD_BYTES, "파일이 너무 큽니다 (최대 10MB)"),
-});
+const presignSchema = z
+  .object({
+    targetType: z.enum(TARGET_TYPES),
+    targetId: z.string().uuid(),
+    filename: z.string().min(1).max(200),
+    mimeType: z.string().min(1).max(80),
+    sizeBytes: z.number().int().positive(),
+  })
+  .superRefine((v, ctx) => {
+    if (!mimeAllowed(v.targetType, v.mimeType))
+      ctx.addIssue({ code: "custom", message: "지원하지 않는 파일 형식" });
+    if (v.sizeBytes > maxBytesFor(v.targetType))
+      ctx.addIssue({
+        code: "custom",
+        message: `파일이 너무 큽니다 (최대 ${formatBytes(maxBytesFor(v.targetType))})`,
+      });
+  });
+
+/** 회사의 자료실 첨부 합계 — 1GB 를 넘기지 않는다. */
+async function assertBoardQuota(companyId: string, adding: number) {
+  const rows = await query<{ used: string }>(
+    `SELECT coalesce(sum(size_bytes), 0)::text AS used FROM attachments
+      WHERE company_id=$1 AND target_type='board_post'
+        AND (status='READY' OR (status='PENDING' AND created_at > now() - interval '1 hour'))`,
+    [companyId],
+  );
+  const used = Number(rows[0].used);
+  if (used + adding > BOARD_STORAGE_LIMIT)
+    throw new AttachmentError(
+      `자료실 저장 공간이 부족합니다 (사용 ${formatBytes(used)} / ${formatBytes(BOARD_STORAGE_LIMIT)}). 오래된 첨부를 지우세요.`,
+    );
+}
 
 /**
  * presigned PUT URL 발급 + attachments 행 PENDING 삽입.
@@ -205,15 +259,10 @@ export async function presignUpload(
   const parsed = presignSchema.parse(input);
   await verifyActor(actor, parsed.targetType);
   await verifyTargetOwnership(actor, parsed.targetType, parsed.targetId);
+  if (parsed.targetType === "board_post")
+    await assertBoardQuota(actor.companyId, parsed.sizeBytes);
 
-  const ext = (
-    {
-      "image/jpeg": ".jpg",
-      "image/png": ".png",
-      "image/webp": ".webp",
-      "image/heic": ".heic",
-    } as Record<string, string>
-  )[parsed.mimeType];
+  const ext = EXTENSIONS[parsed.mimeType];
   const storageKey = `${actor.companyId}/${parsed.targetType}/${parsed.targetId}/${randomUUID()}${ext}`;
 
   const attachmentId = await withTransaction(async (client) => {
@@ -245,7 +294,8 @@ export async function presignUpload(
       ContentType: parsed.mimeType,
       ContentLength: parsed.sizeBytes,
     }),
-    { expiresIn: 300 },
+    // 동영상은 느린 회선에서 오래 걸린다.
+    { expiresIn: parsed.targetType === "board_post" ? 900 : 300 },
   );
 
   return { attachmentId, uploadUrl, storageKey };
@@ -291,7 +341,7 @@ export async function confirmUpload(
     const actualSize = Number(head.ContentLength ?? 0);
     if (
       !actualSize ||
-      actualSize > MAX_UPLOAD_BYTES ||
+      actualSize > maxBytesFor(row.target_type) ||
       actualSize !== Number(row.size_bytes) ||
       head.ContentType !== row.mime_type
     )

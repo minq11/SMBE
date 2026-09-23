@@ -12,6 +12,7 @@ Windows CMD / PowerShell 공통:
 docker run --detach --rm --name smbe-regression -e POSTGRES_PASSWORD=smbe-test-only -e POSTGRES_DB=smbe_regression -p 127.0.0.1:55439:5432 postgres:16-alpine
 docker exec smbe-regression pg_isready -U postgres
 npm run test:db
+npm run test:board      # 통합자료실 (공지·자료실) 서비스
 docker stop smbe-regression
 ```
 

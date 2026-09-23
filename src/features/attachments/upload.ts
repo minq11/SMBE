@@ -31,7 +31,7 @@ export async function uploadImage(
     invalidatePath?: string;
     onStage?: (stage: UploadStage) => void;
   } = {},
-): Promise<void> {
+): Promise<string> {
   options.onStage?.("compress");
   const compressed = options.keepOriginal
     ? file
@@ -65,6 +65,7 @@ export async function uploadImage(
     invalidatePath: options.invalidatePath,
   });
   if (!confirm.ok) throw new Error(confirm.error);
+  return presign.attachmentId;
 }
 
 function readDimensions(

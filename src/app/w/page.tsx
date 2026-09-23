@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { AddToHomeHint } from "@/components/pwa/add-to-home-hint";
+import { NoticePopup } from "@/features/board/notice-popup";
+import { activePopupNotices } from "@/server/board";
+import { renderDoc } from "@/features/board/model";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { withTransaction } from "@/server/db";
@@ -46,6 +49,18 @@ export default async function WorkerLinkPage({
     throw error;
   });
 
+  // 팝업 공지는 링크로 들어온 작업자에게도 뜬다. 글 화면은 없으니 창 안에서 다 읽는다.
+  const popups = (
+    await withTransaction((client) =>
+      activePopupNotices(client, actor.companyId),
+    )
+  ).map((n) => ({
+    id: n.id,
+    title: n.title,
+    html: renderDoc(n.body),
+    published_at: n.published_at,
+  }));
+
   const canceled = data.order.status === "CANCELED";
   const kind =
     query.type === "TBM"
@@ -89,6 +104,7 @@ export default async function WorkerLinkPage({
         <h1>{data.order.name}</h1>
       </header>
       <AddToHomeHint />
+      {popups.length > 0 && <NoticePopup notices={popups} linkBase={null} />}
 
       {query.saved === "1" && (
         <p role="status" className="wo-notice">

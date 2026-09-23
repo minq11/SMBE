@@ -13,6 +13,10 @@ import {
 } from "@/server/inspection-service";
 import { sessionState } from "@/features/inspections/model";
 import { pendingJoinCount } from "@/server/members";
+import { activePopupNotices } from "@/server/board";
+import { NoticePopup } from "@/features/board/notice-popup";
+import { PushOptIn } from "@/features/push/push-opt-in";
+import { renderDoc } from "@/features/board/model";
 
 const at = (value: string) =>
   new Date(value).toLocaleTimeString("ko-KR", {
@@ -109,35 +113,54 @@ export default async function Home() {
         })
       : undefined;
 
+  // 팝업 공지: 구성원이 홈에 들어올 때 창으로. 숨김(오늘/7일)은 기기가 기억한다.
+  const popups = actor
+    ? (
+        await withTransaction((client) =>
+          activePopupNotices(client, actor.companyId),
+        )
+      ).map((n) => ({
+        id: n.id,
+        title: n.title,
+        html: renderDoc(n.body),
+        published_at: n.published_at,
+      }))
+    : [];
+  const paid = tierOf(session?.membership) === "유료";
+
   return (
-    <Dashboard
-      companyName={session?.membership?.company_name}
-      tier={tierOf(session?.membership)}
-      userName={session?.user.displayName ?? undefined}
-      isAuthenticated={Boolean(session)}
-      isOperator={isOperator}
-      isManager={isManager}
-      openFindingCount={openFindingCount}
-      pendingJoinCount={joinRequestCount}
-      worker={worker}
-      today={
-        actor
-          ? {
-              date: today,
-              jobs: todayJobs,
-              tbmMissing: monitor?.paid ? monitor.summary.tbmMissing : null,
-              drafts,
-            }
-          : undefined
-      }
-      jobs={orders?.rows.slice(0, 5).map((row) => ({
-        href: "/work-orders/" + row.id,
-        title: row.name,
-        place: row.location,
-        time: (row.start_time ?? "") + " ~ " + (row.end_time ?? ""),
-        people: row.assignee_count,
-        status: STATUS_LABEL[row.status],
-      }))}
-    />
+    <>
+      {popups.length > 0 && <NoticePopup notices={popups} />}
+      <Dashboard
+        topSlot={actor && paid ? <PushOptIn /> : undefined}
+        companyName={session?.membership?.company_name}
+        tier={tierOf(session?.membership)}
+        userName={session?.user.displayName ?? undefined}
+        isAuthenticated={Boolean(session)}
+        isOperator={isOperator}
+        isManager={isManager}
+        openFindingCount={openFindingCount}
+        pendingJoinCount={joinRequestCount}
+        worker={worker}
+        today={
+          actor
+            ? {
+                date: today,
+                jobs: todayJobs,
+                tbmMissing: monitor?.paid ? monitor.summary.tbmMissing : null,
+                drafts,
+              }
+            : undefined
+        }
+        jobs={orders?.rows.slice(0, 5).map((row) => ({
+          href: "/work-orders/" + row.id,
+          title: row.name,
+          place: row.location,
+          time: (row.start_time ?? "") + " ~ " + (row.end_time ?? ""),
+          people: row.assignee_count,
+          status: STATUS_LABEL[row.status],
+        }))}
+      />
+    </>
   );
 }

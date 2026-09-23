@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BellRing,
   Camera,
+  FolderOpen,
   FileBarChart2,
   History,
   MessageSquare,
@@ -35,6 +36,15 @@ export const PRO_FEATURES: ProFeature[] = [
       "표준서·점검·안전사고 기록에 사진을 첨부해 현장 상황을 그대로 남깁니다.",
     freeBehavior: "텍스트 기록만",
     proBehavior: "사진 첨부",
+  },
+  {
+    key: "board",
+    icon: FolderOpen,
+    title: "공지·자료실 첨부와 푸시 알림",
+    description:
+      "공지사항·자료실 글에 사진·동영상을 넣고(회사당 1GB), 발행하면 구성원 기기로 푸시 알림을 보냅니다.",
+    freeBehavior: "글자만 · 알림 없음",
+    proBehavior: "사진·동영상 첨부 + 푸시 알림",
   },
   {
     key: "inspection-monitoring",

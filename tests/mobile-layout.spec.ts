@@ -125,6 +125,8 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
       await page.setViewportSize({ width, height: 844 });
       for (const route of [
         "/",
+        "/board/notices",
+        "/board/resources",
         "/company/members",
         "/work-orders",
         "/work-orders/new",

@@ -63,6 +63,8 @@ Linux/macOS: `test -f .env.local || cp .env.template .env.local`
 | AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY | 해당 버킷만 접근 가능한 IAM 자격증명                                    |
 | AWS_SESSION_TOKEN                         | 임시 자격증명을 쓰는 경우만 입력                                        |
 | HEALTHCHECK_TOKEN                         | 32자 이상 무작위 토큰. 연결 진단 API 전용                               |
+| VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY      | 웹 푸시 키 (`npx web-push generate-vapid-keys`). 없으면 푸시만 건너뜀   |
+| VAPID_SUBJECT                             | 푸시 발신자 연락처 `mailto:…` (기본 `mailto:hi@smbe.net`)               |
 
 토큰 생성: `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`
 

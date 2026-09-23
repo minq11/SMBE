@@ -1,0 +1,134 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { FolderOpen, Megaphone, Paperclip, PenLine } from "lucide-react";
+import { withTransaction } from "@/server/db";
+import { workSession } from "@/server/work-orders";
+import { listPosts } from "@/server/board";
+import { PageHeader } from "@/components/ui/page-header";
+import { BoardShell } from "@/features/board/board-shell";
+import { createPostAction } from "@/features/board/actions";
+import {
+  KIND_BY_SLUG,
+  KIND_LABEL,
+  isKindSlug,
+  postDate,
+  type PostSummary,
+} from "@/features/board/model";
+import "@/features/board/board.css";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ kind: string }>;
+}) {
+  const { kind } = await params;
+  return {
+    title: `${isKindSlug(kind) ? KIND_LABEL[KIND_BY_SLUG[kind]] : "통합자료실"} · 심플안전`,
+  };
+}
+
+const DESCRIPTION = {
+  NOTICE: "회사 구성원 모두에게 알리는 글. 팝업으로 띄울 수 있습니다.",
+  RESOURCE: "표준서·점검표·교육자료처럼 두고 보는 자료.",
+};
+
+export default async function BoardListPage({
+  params,
+}: {
+  params: Promise<{ kind: string }>;
+}) {
+  const { kind } = await params;
+  if (!isKindSlug(kind)) notFound();
+  const { session, actor } = await workSession("/board/" + kind);
+  const boardKind = KIND_BY_SLUG[kind];
+  const { published, drafts, manager } = await withTransaction((c) =>
+    listPosts(c, actor, boardKind),
+  );
+
+  return (
+    <BoardShell session={session} kind={kind}>
+      <PageHeader
+        title={KIND_LABEL[boardKind]}
+        description={DESCRIPTION[boardKind]}
+        actions={
+          manager ? (
+            <form action={createPostAction}>
+              <input type="hidden" name="kind" value={kind} />
+              <button type="submit" className="btn-primary">
+                <PenLine size={15} /> 글쓰기
+              </button>
+            </form>
+          ) : undefined
+        }
+      />
+
+      {manager && drafts.length > 0 && (
+        <section className="board-section" aria-label="작성 중">
+          <h2 className="board-section-title">작성 중 · {drafts.length}</h2>
+          <PostRows posts={drafts} kind={kind} edit />
+        </section>
+      )}
+
+      <section className="board-section" aria-label={KIND_LABEL[boardKind]}>
+        {published.length === 0 ? (
+          <div className="empty-state">
+            <span className="empty-state-icon">
+              {boardKind === "NOTICE" ? (
+                <Megaphone size={20} />
+              ) : (
+                <FolderOpen size={20} />
+              )}
+            </span>
+            <p>
+              {manager
+                ? `아직 ${KIND_LABEL[boardKind]} 글이 없습니다. 첫 글을 써 보세요.`
+                : `아직 올라온 ${KIND_LABEL[boardKind]} 글이 없습니다.`}
+            </p>
+          </div>
+        ) : (
+          <PostRows posts={published} kind={kind} />
+        )}
+      </section>
+    </BoardShell>
+  );
+}
+
+function PostRows({
+  posts,
+  kind,
+  edit = false,
+}: {
+  posts: PostSummary[];
+  kind: string;
+  edit?: boolean;
+}) {
+  return (
+    <ul className="board-list">
+      {posts.map((p) => (
+        <li key={p.id}>
+          <Link
+            href={`/board/${kind}/${p.id}${edit ? "/edit" : ""}`}
+            className="board-row"
+          >
+            <span className="board-row-main">
+              <strong>{p.title || "(제목 없음)"}</strong>
+              {p.excerpt && (
+                <span className="board-row-excerpt">{p.excerpt}</span>
+              )}
+            </span>
+            <span className="board-row-meta">
+              {p.popup && <span className="board-tag">팝업</span>}
+              {p.has_media && (
+                <span className="board-tag board-tag--quiet">
+                  <Paperclip size={11} /> 첨부
+                </span>
+              )}
+              <span>{p.author}</span>
+              <span>{postDate(p.published_at ?? p.updated_at)}</span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}

@@ -11,6 +11,7 @@ import {
   LeaveCompanyForm,
 } from "@/features/profile/profile-forms";
 import { logoutAction } from "@/features/auth/logout-action";
+import { PushOptIn } from "@/features/push/push-opt-in";
 import "@/features/profile/profile.css";
 
 export const metadata = { title: "마이페이지 · 심플안전" };
@@ -66,6 +67,9 @@ export default async function MyPage({
         title="마이페이지"
         description="내 정보와 회사 소속을 확인하고 관리하세요."
       />
+      {current?.status === "ACTIVE" && current.pro_state !== "FREE" && (
+        <PushOptIn compact />
+      )}
       {left === "1" && !current && (
         <p className="account-notice" role="status">
           회사 소속이 해제되었습니다. 새 회사에 가입할 수 있습니다.

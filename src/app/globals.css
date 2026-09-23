@@ -6164,3 +6164,180 @@ body.sidebar-lock {
   margin-top: 8px;
   font-size: 13px;
 }
+
+/* 공지 팝업 (features/board/notice-popup.tsx). 홈·작업자 링크 화면에 뜬다.
+   넓은 화면은 가운데 카드, 좁은 화면은 아래에서 올라오는 시트. */
+.notice-popup {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+}
+.notice-popup::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+.notice-popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 28px 28px;
+}
+.notice-popup-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+.notice-popup-eyebrow span {
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.notice-popup h2 {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+}
+.notice-popup-content {
+  max-height: 44dvh;
+  overflow-y: auto;
+  font-size: 15px;
+  line-height: 1.75;
+}
+.notice-popup-content > * + * {
+  margin-top: 0.6em;
+}
+.notice-popup-content img,
+.notice-popup-content video {
+  display: block;
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+}
+.notice-popup-content ul,
+.notice-popup-content ol {
+  padding-left: 1.4em;
+  list-style: disc;
+}
+.notice-popup-content ol {
+  list-style: decimal;
+}
+.notice-popup-content a {
+  color: var(--brand);
+  text-decoration: underline;
+}
+.notice-popup-link {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: underline;
+}
+.notice-popup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.notice-popup-actions .btn-primary {
+  margin-left: auto;
+}
+@media (max-width: 640px) {
+  .notice-popup {
+    width: 100%;
+    max-width: none;
+    margin: auto 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+  }
+  .notice-popup-body {
+    padding: 20px 20px max(20px, env(safe-area-inset-bottom, 0px));
+  }
+  .notice-popup h2 {
+    font-size: 20px;
+  }
+  .notice-popup-actions {
+    flex-direction: column;
+  }
+  .notice-popup-actions > * {
+    justify-content: center;
+  }
+  .notice-popup-actions .btn-primary {
+    margin-left: 0;
+    order: -1;
+  }
+}
+
+/* 푸시 알림 켜기 안내 (features/push/push-opt-in.tsx). 유료 회사 구성원에게만. */
+.push-optin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 44px 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.push-optin--compact {
+  padding-right: 14px;
+  margin-bottom: 16px;
+}
+.push-optin-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.push-optin-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.push-optin-copy strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+.push-optin .btn-primary,
+.push-optin .btn-secondary {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding-inline: 14px;
+}
+.push-optin-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+@media (max-width: 640px) {
+  .push-optin {
+    flex-wrap: wrap;
+  }
+  .push-optin .btn-primary,
+  .push-optin .btn-secondary {
+    flex: 1 0 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
