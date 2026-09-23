@@ -4729,6 +4729,17 @@ html[data-banner-hidden] .preview-banner {
     height: var(--app-h, 100dvh);
     min-height: 0;
   }
+  /* 키보드가 열린 동안(viewport-height.tsx) 아래 단추 띠는 고정을 푼다. 남은
+     화면이 절반이라 띠가 자리를 먹고, 타자 치는 동안 저장은 쓸 일이 없다. 띠는
+     내용 끝으로 내려가고 키보드를 닫으면 다시 붙는다. */
+  html[data-keyboard="open"] :is(
+      .wo-editor .wo-actions,
+      .sticky-actions,
+      .inspection-form-actions,
+      .board-form-actions
+    ) {
+    position: static;
+  }
   .main-shell {
     height: 100%;
     display: flex;

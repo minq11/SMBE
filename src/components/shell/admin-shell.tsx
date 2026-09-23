@@ -20,7 +20,11 @@ export function AdminShell({
     <div className="admin-shell">
       <header className="admin-topbar">
         <BackButton hideOn={["/admin"]} />
-        <Link href="/admin" className="admin-brand" aria-label="심플안전 운영자">
+        <Link
+          href="/admin"
+          className="admin-brand"
+          aria-label="심플안전 운영자"
+        >
           <AppIcon size={22} />
           <span>
             <strong>심플안전</strong> 운영자
@@ -48,7 +52,11 @@ export function AdminShell({
             일반 화면
           </Link>
           <form action={logoutAction}>
-            <button type="submit" className="admin-logout" aria-label="로그아웃">
+            <button
+              type="submit"
+              className="admin-logout"
+              aria-label="로그아웃"
+            >
               <LogOut size={15} />
             </button>
           </form>

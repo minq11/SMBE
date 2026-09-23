@@ -20,6 +20,7 @@
     "test:attachments": "node --conditions=react-server --import tsx --test tests/attachments.test.ts",
     "test:board": "node --conditions=react-server --import tsx --test tests/board.test.ts",
     "test:assessments": "node --conditions=react-server --import tsx --test tests/assessments.test.ts tests/risk-seed.test.ts",
+    "test:shell": "node --import tsx --test tests/viewport-frame.test.ts",
     "test:orders-ui": "node scripts/test-work-orders-ui.mjs"
   },
   "dependencies": {

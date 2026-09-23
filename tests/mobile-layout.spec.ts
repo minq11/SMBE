@@ -188,6 +188,22 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
           );
         };
         await barFlush();
+        // 키보드가 열린 동안(html[data-keyboard=open], viewport-height.tsx)
+        // 아래 띠는 고정을 풀어야 한다. 헤드리스에는 키보드가 없으니 표시만 흉내낸다.
+        {
+          const bar = page.locator(".wo-actions, .std-form-actions").first();
+          if (await bar.count()) {
+            await page.evaluate(() => {
+              document.documentElement.dataset.keyboard = "open";
+            });
+            expect(
+              await bar.evaluate((el) => getComputedStyle(el).position),
+            ).toBe("static");
+            await page.evaluate(() => {
+              delete document.documentElement.dataset.keyboard;
+            });
+          }
+        }
         if (route === "/work-orders/new") {
           // 표준서가 없는 회사라 시작 방식을 먼저 고른다. 그러면 한 장 폼이
           // 다 펼쳐지고 구간 칩이 생긴다.

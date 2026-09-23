@@ -34,6 +34,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // 키보드가 올라오면 보이는 영역만 줄이고 문서를 밀지 말고, 문서를 줄여라.
+  // 그래야 아래 단추 띠가 키보드 위에 오고 그 밑에 빈 배경이 남지 않는다
+  // (Chromium 108+). iOS 는 이 값을 모른다 — viewport-height.tsx 가 따라간다.
+  interactiveWidget: "resizes-content",
 };
 export default function RootLayout({
   children,
