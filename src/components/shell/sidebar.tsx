@@ -19,6 +19,7 @@ import {
   Settings2,
   ShieldCheck,
   TriangleAlert,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { usePreview } from "./preview-dialog";
@@ -111,6 +112,12 @@ const NAV: ReadonlyArray<NavEntry> = [
   { key: "standards", title: "작업표준서", icon: BookOpen, href: "/standards" },
   { key: "assessment", title: "위험성평가", icon: ShieldCheck },
   {
+    key: "permits",
+    title: "위험작업허가",
+    icon: ShieldCheck,
+    href: "/permits",
+  },
+  {
     key: "inspection",
     title: "안전점검",
     icon: ClipboardCheck,
@@ -154,12 +161,6 @@ const NAV: ReadonlyArray<NavEntry> = [
         href: "/board/resources",
       },
     ],
-  },
-  {
-    key: "permits",
-    title: "위험작업허가",
-    icon: ShieldCheck,
-    href: "/permits",
   },
 ];
 
@@ -244,12 +245,19 @@ export function Sidebar({
       aria-modal={isMobile && isOpen ? true : undefined}
       aria-label="주 메뉴"
     >
-      <button type="button" className="sidebar-close" onClick={onClose}>
-        메뉴 닫기 ×
-      </button>
-      <Link href="/" className="brand" aria-label="심플안전 홈">
-        <BrandWordmark className="brand-logo" />
-      </Link>
+      <div className="sidebar-head">
+        <Link href="/" className="brand" aria-label="심플안전 홈">
+          <BrandWordmark className="brand-logo" />
+        </Link>
+        <button
+          type="button"
+          className="sidebar-close"
+          onClick={onClose}
+          aria-label="메뉴 닫기"
+        >
+          <X size={18} />
+        </button>
+      </div>
 
       <Link href="/billing" className="workspace-picker" onClick={onClose}>
         <span className="workspace-icon">
