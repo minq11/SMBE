@@ -360,9 +360,6 @@ html[data-banner-hidden] .preview-banner {
 .nav-item > span {
   flex: 1;
 }
-.nav-item > svg:last-child:not(:first-child) {
-  color: var(--ink-4);
-}
 .nav-item:hover:not(.is-active) {
   background: var(--surface-2);
   color: var(--ink);
