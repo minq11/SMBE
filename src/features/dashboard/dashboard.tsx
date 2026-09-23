@@ -57,7 +57,17 @@ export type Today = {
  * 가짜 데이터는 두지 않는다. 처음 온 사람이 읽고 바로 시작하게만 한다.
  * 한 줄 설명은 늘 보이고, 카드 어디를 눌러도 자세한 설명이 펼쳐진다.
  */
-const REASONS = [
+// 카드마다 다 갖는 건 넷, `soon`·`chips` 는 있을 때만. 마지막 카드에서 둘을 빼자
+// 추론이 무너져 아래 map 이 any 가 됐다 — 모양을 못 박아 둔다.
+type Reason = {
+  keyword: string;
+  icon: typeof Coins;
+  body: string;
+  detail: string;
+  soon?: boolean;
+  chips?: string[];
+};
+const REASONS: Reason[] = [
   {
     keyword: "시작 요금",
     icon: Coins,
