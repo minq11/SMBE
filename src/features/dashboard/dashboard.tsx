@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import type { Tier } from "@/components/shell/tier";
 import {
   ArrowRight,
@@ -8,6 +9,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
+  HelpCircle,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -70,6 +72,67 @@ const REASONS = [
     soon: true,
   },
 ];
+
+/**
+ * 이유 한 장. 제목만 먼저 보이고, 물음표를 눌러야 한 줄 설명이 펼쳐진다 —
+ * 자세한 설명을 빼는 게 아니라 필요할 때만 꺼내 본다. 다만 혜택 칩(2번 '걱정')은
+ * 늘 보이는 정보라 펼치기와 무관하게 항상 띄운다.
+ */
+function ReasonCard({
+  index,
+  keyword,
+  body,
+  soon,
+  chips,
+}: {
+  index: number;
+  keyword: string;
+  body: string;
+  soon?: boolean;
+  chips?: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const bodyId = `reason-body-${index}`;
+
+  return (
+    <li>
+      <span className="reason-no" aria-hidden="true">
+        {index + 1}
+      </span>
+      <div className="reason-content">
+        <div className="reason-head">
+          <h2>
+            <span className="reason-keyword">&lsquo;{keyword}&rsquo;</span>{" "}
+            없는
+            {soon && <span className="reason-badge">준비 중</span>}
+          </h2>
+          <button
+            type="button"
+            className="reason-toggle"
+            aria-expanded={open}
+            aria-controls={bodyId}
+            aria-label="자세히 보기"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <HelpCircle size={18} />
+          </button>
+        </div>
+        {chips && (
+          <div className="reason-chips">
+            {chips.map((c) => (
+              <span key={c}>{c}</span>
+            ))}
+          </div>
+        )}
+        {open && (
+          <p id={bodyId} className="reason-detail">
+            {body}
+          </p>
+        )}
+      </div>
+    </li>
+  );
+}
 
 export function Dashboard({
   companyName,
@@ -303,39 +366,12 @@ function DashboardBody({
       )}
 
       {!isAuthenticated && (
-        <section className="stack" aria-label="심플안전 해야하는 이유">
+        <section className="stack reasons-section" aria-label="심플안전 해야하는 이유">
           <ol className="reasons">
-            {REASONS.map(({ keyword, body, soon, chips }, i) => (
-              <li key={keyword}>
-                <span className="reason-no" aria-hidden="true">
-                  {i + 1}
-                </span>
-                <div>
-                  <h2>
-                    <span className="reason-keyword">
-                      &lsquo;{keyword}&rsquo;
-                    </span>{" "}
-                    없는
-                    {soon && <span className="reason-badge">준비 중</span>}
-                  </h2>
-                  <p>{body}</p>
-                  {chips && (
-                    <div className="reason-chips">
-                      {chips.map((c) => (
-                        <span key={c}>{c}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </li>
+            {REASONS.map((reason, i) => (
+              <ReasonCard key={reason.keyword} index={i} {...reason} />
             ))}
           </ol>
-          <p className="hero-lead landing-note">
-            텍스트 기능은 전부 무료. 사진·알림톡·출력물·전체 기록은 유료.{" "}
-            <Link className="text-button" href="/contact">
-              요금·도입 문의 <ChevronRight size={13} />
-            </Link>
-          </p>
         </section>
       )}
 

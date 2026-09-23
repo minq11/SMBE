@@ -62,6 +62,16 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await expect(
     page.getByRole("heading", { name: /‘앱 설치’ 없는/ }),
   ).toBeVisible();
+  // 요금 안내 줄은 없앴다 — 이유 넷이 화면을 채운다. 한 줄 설명은 물음표를
+  // 눌러야 펼쳐지고, 2번의 혜택 칩은 펼치기와 무관하게 항상 보인다.
+  await expect(page.getByText("요금·도입 문의")).toHaveCount(0);
+  const firstDetail = page.getByText("인원 제한 없이 무료.", {
+    exact: false,
+  });
+  await expect(firstDetail).toHaveCount(0);
+  await expect(page.getByText("인정 시 3년 감독 유예")).toBeVisible();
+  await page.getByRole("button", { name: "자세히 보기" }).first().click();
+  await expect(firstDetail).toBeVisible();
   for (const fake of [
     "오늘의 작업 (예시)",
     "오늘 처리할 일",

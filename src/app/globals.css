@@ -787,11 +787,19 @@ html[data-banner-hidden] .preview-banner {
   }
 }
 
-/* 로그인 전 — 써야 하는 이유 네 가지. 번호 + 제목 + 한 줄 설명. */
+/* 로그인 전 — 써야 하는 이유 네 가지. 노트·요금 문의 줄을 뺀 자리를 이 넷이
+   채운다. 제목만 먼저 보이고, 한 줄 설명은 물음표를 눌러야 펼쳐진다. */
+.reasons-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 .reasons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -799,8 +807,8 @@ html[data-banner-hidden] .preview-banner {
 }
 .reasons li {
   display: flex;
-  gap: 14px;
-  padding: 20px;
+  gap: 16px;
+  padding: 22px 24px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -808,22 +816,32 @@ html[data-banner-hidden] .preview-banner {
 .reason-no {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
   border-radius: 10px;
   background: var(--accent-soft);
   color: var(--accent-ink);
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
+}
+.reason-content {
+  flex: 1;
+  min-width: 0;
+}
+.reason-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 .reasons h2 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 900;
   letter-spacing: -0.4px;
   line-height: 1.3;
@@ -832,8 +850,28 @@ html[data-banner-hidden] .preview-banner {
 .reason-keyword {
   color: var(--brand);
 }
-.reasons p {
-  margin-top: 6px;
+.reason-toggle {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-3);
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+.reason-toggle:hover,
+.reason-toggle[aria-expanded="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.reasons .reason-detail {
+  margin-top: 8px;
   color: var(--ink-2);
   font-size: 14px;
   line-height: 1.7;
@@ -4628,11 +4666,10 @@ html[data-banner-hidden] .preview-banner {
     font-size: 14px;
   }
   .reasons {
-    grid-template-columns: 1fr;
-    gap: 5px;
+    gap: 6px;
   }
   .reasons li {
-    padding: 7px 10px;
+    padding: 10px 12px;
     gap: 10px;
     border-radius: var(--radius-sm);
   }
@@ -4646,8 +4683,12 @@ html[data-banner-hidden] .preview-banner {
     font-size: 15px;
     gap: 5px;
   }
-  .reasons p {
-    margin-top: 1px;
+  .reason-toggle {
+    width: 28px;
+    height: 28px;
+  }
+  .reasons .reason-detail {
+    margin-top: 3px;
     font-size: 12px;
     line-height: 1.45;
   }
@@ -4658,10 +4699,6 @@ html[data-banner-hidden] .preview-banner {
   .reason-chips span {
     padding: 2px 7px;
     font-size: 11px;
-  }
-  .hero-lead.landing-note {
-    font-size: 12px;
-    margin: -8px 0 0;
   }
   .hero-lead {
     font-size: 14px;
