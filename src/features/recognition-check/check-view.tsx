@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   Check,
   CircleAlert,
   CircleHelp,
+  Eye,
   Info,
   RotateCcw,
   Sparkles,
@@ -347,8 +348,34 @@ function SectionStep({
   const questions = QUESTIONS.filter((q) => q.section === sectionKey);
   const answeredCount = questions.filter((q) => answers[q.id]).length;
 
-  const setAnswer = (id: string, key: string) =>
+  // 구간마다 key 가 달라 새로 마운트되니 (부모의 SECTION_ORDER.map) 이전 구간의
+  // 빨간 표시가 따라올 일이 없다.
+  const [invalidIds, setInvalidIds] = useState<Set<string>>(new Set());
+  const itemRefs = useRef<Record<string, HTMLLIElement | null>>({});
+
+  const setAnswer = (id: string, key: string) => {
     onChange({ ...answers, [id]: key });
+    setInvalidIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  // '다음' 을 막는 대신 눌렀을 때 알려준다 — 비활성 버튼은 왜 안 눌리는지
+  // 말해주지 않는다. 안 고른 첫 문항으로 스크롤해 포커스하고 빨갛게 표시한다.
+  const handleNext = () => {
+    const missing = questions.filter((q) => !answers[q.id]);
+    if (missing.length > 0) {
+      setInvalidIds(new Set(missing.map((q) => q.id)));
+      const target = itemRefs.current[missing[0].id];
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      target?.focus();
+      return;
+    }
+    onNext();
+  };
 
   // Section III has subgroups — render with subgroup headers
   const groups =
@@ -395,22 +422,28 @@ function SectionStep({
                 idx={questions.indexOf(q) + 1}
                 chosen={answers[q.id] ?? null}
                 onSet={(key) => setAnswer(q.id, key)}
+                isInvalid={invalidIds.has(q.id)}
+                registerRef={(el) => {
+                  itemRefs.current[q.id] = el;
+                }}
               />
             ))}
           </ol>
         </div>
       ))}
 
+      {invalidIds.size > 0 && (
+        <p className="check-error" role="alert">
+          <CircleAlert size={14} /> 선택하지 않은 문항이 {invalidIds.size}개
+          있습니다. 빨갛게 표시된 문항에 답해주세요.
+        </p>
+      )}
+
       <div className="check-actions">
         <button type="button" className="ghost-button" onClick={onBack}>
           <ArrowLeft size={13} /> 이전
         </button>
-        <button
-          type="button"
-          className="primary-button"
-          onClick={onNext}
-          disabled={answeredCount < questions.length}
-        >
+        <button type="button" className="primary-button" onClick={handleNext}>
           {sectionKey === "SECTION_IV" ? "결과 보기" : "다음"}{" "}
           <ArrowRight size={14} />
         </button>
@@ -424,14 +457,22 @@ function QuestionCard({
   idx,
   chosen,
   onSet,
+  isInvalid,
+  registerRef,
 }: {
   q: Question;
   idx: number;
   chosen: string | null;
   onSet: (key: string) => void;
+  isInvalid: boolean;
+  registerRef: (el: HTMLLIElement | null) => void;
 }) {
   return (
-    <li className="check-question">
+    <li
+      ref={registerRef}
+      tabIndex={-1}
+      className={`check-question${isInvalid ? " check-question--invalid" : ""}`}
+    >
       <div className="check-question-head">
         <span className="check-question-number">{idx}</span>
         <div>
@@ -442,6 +483,11 @@ function QuestionCard({
           {q.helper && <small>{q.helper}</small>}
         </div>
       </div>
+      {isInvalid && (
+        <p className="check-question-invalid-note" role="alert">
+          <CircleAlert size={13} /> 이 문항에 답하지 않았습니다.
+        </p>
+      )}
       <div className="check-answer-row" role="radiogroup" aria-label={q.text}>
         {q.choices.map((c) => {
           const active = chosen === c.key;
@@ -576,7 +622,7 @@ function ResultPanel({
           <ArrowLeft size={13} /> 응답 수정
         </button>
         <Link href="/guide" className="ghost-button">
-          가이드로 돌아가기 <ArrowRight size={13} />
+          <Eye size={13} /> 안전법 가이드 보기
         </Link>
       </div>
 
@@ -687,13 +733,24 @@ function NeedsList({ result }: { result: CheckResult }) {
               현재 {item.status} ({item.earned} / {item.maxScore}점) — 최대{" "}
               {item.maxScore}점까지 획득 가능
             </span>
+            {item.question.smbeHint ? (
+              <span className="check-result-hint">
+                심플안전에서는{" "}
+                <strong>&lsquo;{item.question.smbeHint.label}&rsquo;</strong>{" "}
+                메뉴로 대응 가능!
+              </span>
+            ) : (
+              <span className="check-result-hint check-result-hint--offline">
+                {item.question.offlineTip}
+              </span>
+            )}
           </div>
           {item.question.smbeHint && (
             <Link
               href={`/login?next=${encodeURIComponent(item.question.smbeHint.href)}`}
               className="check-result-cta"
             >
-              {item.question.smbeHint.label} <ArrowRight size={12} />
+              바로가기 <ArrowRight size={12} />
             </Link>
           )}
         </li>

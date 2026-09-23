@@ -2962,6 +2962,45 @@ html[data-banner-hidden] .preview-banner {
   border-bottom: 0;
   padding-bottom: 0;
 }
+/* '다음' 을 눌렀는데 안 고른 문항이 있을 때 — 스크롤해 온 그 문항을 표시한다. */
+.check-question--invalid {
+  padding: 14px;
+  margin: -14px -14px 6px;
+  border: 1.5px solid #b83a12;
+  border-radius: var(--radius-sm);
+  background: rgba(184, 58, 18, 0.05);
+  outline: none;
+  animation: check-question-flash 0.5s ease;
+}
+@keyframes check-question-flash {
+  0%,
+  100% {
+    background: rgba(184, 58, 18, 0.05);
+  }
+  50% {
+    background: rgba(184, 58, 18, 0.16);
+  }
+}
+.check-question-invalid-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -6px 0 0 40px;
+  color: #b83a12;
+  font-size: 12px;
+  font-weight: 700;
+}
+.check-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(184, 58, 18, 0.08);
+  color: #b83a12;
+  font-size: 13px;
+  font-weight: 700;
+}
 .check-question-head {
   display: flex;
   gap: 14px;
@@ -3383,6 +3422,18 @@ html[data-banner-hidden] .preview-banner {
 }
 .check-result-item--unknown .check-result-status {
   color: var(--warn);
+}
+.check-result-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.check-result-hint strong {
+  color: var(--brand-strong);
+}
+.check-result-hint--offline {
+  color: var(--ink-2);
 }
 .check-result-cta {
   display: inline-flex;
