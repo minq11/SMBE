@@ -4822,13 +4822,29 @@ html[data-banner-hidden] .preview-banner {
   }
   .main-content {
     -webkit-overflow-scrolling: touch;
-    /* 위 여백은 padding 이 아니라 첫 자식의 margin 이다. 스크롤 영역의 padding
-       위로는 고정(sticky) 머리가 올라가지 못해, 그 띠에 지나가는 내용이 비친다. */
-    padding: 0 16px max(64px, env(safe-area-inset-bottom, 0px));
+    /* 위아래 여백은 padding 이 아니다. 스크롤 영역의 padding 안으로는 고정(sticky)
+       머리·띠가 들어가지 못해, 그만큼 띄워진 채 서고 그 밑으로 내용이 비친다.
+       위는 첫 자식의 margin, 아래는 ::after 여백 조각으로 준다. */
+    padding: 0 16px 0;
     gap: 28px;
   }
   .main-content > :first-child {
     margin-top: 16px;
+  }
+  .main-content::after {
+    content: "";
+    flex-shrink: 0;
+    height: calc(max(64px, env(safe-area-inset-bottom, 0px)) - 28px);
+  }
+  /* 아래에 붙는 띠(이전·저장·발행)가 있는 화면은 띠가 안전 영역까지 직접 채운다.
+     여백 조각을 두면 스크롤 끝에서 띠가 그만큼 떠 있게 된다. */
+  .main-content:has(
+      .wo-actions,
+      .sticky-actions,
+      .inspection-form-actions,
+      .board-form-actions
+    )::after {
+    display: none;
   }
   /* 제목·뒤로가기는 상단바 한 줄로 합쳤다. 본문 머리말은 설명과 버튼만 남긴다. */
   .page-header .back-button,
@@ -4856,6 +4872,9 @@ html[data-banner-hidden] .preview-banner {
   /* 한 화면짜리 로그인 전 홈에는 스크롤 끝 여백이 필요 없다. */
   .main-content:has(.reasons-section) {
     padding-bottom: 16px;
+  }
+  .main-content:has(.reasons-section)::after {
+    display: none;
   }
   .hero-eyebrow {
     font-size: 13px;

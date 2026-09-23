@@ -157,6 +157,31 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
           await fits();
           await page.locator(".help-tip-close").click();
         }
+        // 아래에 붙는 띠는 스크롤 중에 화면 바닥에 **정확히** 붙어 있어야 한다.
+        // 본문(main)의 아래 padding 만큼 띄워지면 그 밑으로 내용이 지나간다.
+        if (width <= 390) {
+          const bar = page.locator(".wo-actions, .std-form-actions").first();
+          // 폼이 화면보다 짧으면 띠는 제자리(내용 끝)에 있다. 스크롤될 때만 잰다.
+          const scrollable = await page.evaluate(() => {
+            const main = document.getElementById("main")!;
+            return main.scrollHeight - main.clientHeight;
+          });
+          if ((await bar.count()) && scrollable > 100) {
+            await page.evaluate(() =>
+              document.getElementById("main")?.scrollTo({ top: 80 }),
+            );
+            const box = (await bar.boundingBox())!;
+            const viewportHeight = await page.evaluate(
+              () => window.innerHeight,
+            );
+            expect(
+              Math.abs(box.y + box.height - viewportHeight),
+            ).toBeLessThanOrEqual(1);
+            await page.evaluate(() =>
+              document.getElementById("main")?.scrollTo({ top: 0 }),
+            );
+          }
+        }
         if (route === "/work-orders/new") {
           for (const label of [/위험성평가/, /일정·인원/, /검토/]) {
             const step = page
