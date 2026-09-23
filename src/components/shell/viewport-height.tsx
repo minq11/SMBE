@@ -34,13 +34,18 @@ export function ViewportHeight() {
           maxHeight,
         });
         root.style.setProperty("--app-h", frame.height + "px");
+        // 틀에 갇힌 화면(좁은 화면의 앱·로그인, globals.css 앱 틀)만 옮기고
+        // 되돌린다. 공개 화면·넓은 화면은 문서가 스크롤되는데, 휴대폰에서 내리면
+        // 주소창이 접히며 resize 가 오고 그때마다 맨 위로 끌어올려 버렸다.
+        const framed = getComputedStyle(document.body).overflowY === "hidden";
         // translate 가 none 이 아니면 fixed 자손의 기준이 body 가 된다. 밀렸을
         // 때만 켠다 — body 가 보이는 영역과 같으니 그때는 기준이 같다.
-        document.body.style.translate = frame.top ? `0 ${frame.top}px` : "";
+        document.body.style.translate =
+          framed && frame.top ? `0 ${frame.top}px` : "";
         if (frame.keyboard) root.dataset.keyboard = "open";
         else delete root.dataset.keyboard;
         // 키보드가 닫힌 뒤 문서가 밀려 있으면 되돌린다.
-        if (!frame.top && window.scrollY > 0) window.scrollTo(0, 0);
+        if (framed && !frame.top && window.scrollY > 0) window.scrollTo(0, 0);
         // 틀이 줄어든 뒤 입력칸이 본문 밖에 남을 수 있다. 본문만 조금 민다.
         if (frame.keyboard && !wasKeyboard) {
           const el = document.activeElement;
