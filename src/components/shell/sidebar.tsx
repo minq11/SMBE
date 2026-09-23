@@ -227,14 +227,7 @@ export function Sidebar({
         <BrandWordmark className="brand-logo" />
       </Link>
 
-      <button
-        type="button"
-        className="workspace-picker"
-        onClick={() => {
-          onClose();
-          preview("회사 선택");
-        }}
-      >
+      <Link href="/billing" className="workspace-picker" onClick={onClose}>
         <span className="workspace-icon">
           <Building2 size={16} />
         </span>
@@ -242,8 +235,8 @@ export function Sidebar({
           <strong>{companyName ?? "우리 회사"}</strong>
           <small>{tier} 요금제</small>
         </span>
-        <ChevronDown size={14} />
-      </button>
+        <ChevronRight size={14} />
+      </Link>
 
       <nav aria-label="주 메뉴" className="nav">
         {NAV.map(({ key, title, icon: Icon, href, children }) => {
