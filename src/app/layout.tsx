@@ -4,6 +4,7 @@ import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 import { PreviewBanner } from "@/components/preview-banner";
 import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
+import { ViewportHeight } from "@/components/shell/viewport-height";
 export const metadata: Metadata = {
   title: "심플안전 · 안전관리, 쉽고 간편하게",
   description:
@@ -49,6 +50,7 @@ export default function RootLayout({
           }}
         />
         <ServiceWorkerRegistrar />
+        <ViewportHeight />
         <PreviewBanner />
         {children}
       </body>

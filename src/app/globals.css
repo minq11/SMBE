@@ -4761,10 +4761,13 @@ html[data-banner-hidden] .preview-banner {
      같은 색이라 경계가 없다. 본문이 밑으로 들어가면 그림자만 살짝 켠다
      (.is-scrolled, app-shell.tsx). 공지 띠는 이 틀에서는 접는다 — 상단바의
      '개발 중' 표시로 충분하다. */
+  /* 높이는 실제 보이는 영역이다 (--app-h, components/shell/viewport-height.tsx).
+     iOS 가 키보드를 내린 뒤 100dvh 를 되돌리지 않으면 아래 단추 띠가 화면 중간에
+     뜬다. 값이 없으면 100dvh. */
   body:has(.app-shell),
   body:has(.auth-shell) {
     --banner-h: 0px;
-    height: 100dvh;
+    height: var(--app-h, 100dvh);
     overflow: hidden;
   }
   body:has(.app-shell) .preview-banner,
@@ -4772,7 +4775,7 @@ html[data-banner-hidden] .preview-banner {
     display: none;
   }
   .auth-shell {
-    height: 100dvh;
+    height: var(--app-h, 100dvh);
     min-height: 0;
   }
   .auth-main {
@@ -4785,7 +4788,7 @@ html[data-banner-hidden] .preview-banner {
     display: none;
   }
   .app-shell {
-    height: 100dvh;
+    height: var(--app-h, 100dvh);
     min-height: 0;
   }
   .main-shell {
