@@ -19,6 +19,7 @@
     "test:db": "node --conditions=react-server --import tsx --test tests/database.test.ts",
     "test:attachments": "node --conditions=react-server --import tsx --test tests/attachments.test.ts",
     "test:board": "node --conditions=react-server --import tsx --test tests/board.test.ts",
+    "test:assessments": "node --conditions=react-server --import tsx --test tests/assessments.test.ts",
     "test:orders-ui": "node scripts/test-work-orders-ui.mjs"
   },
   "dependencies": {

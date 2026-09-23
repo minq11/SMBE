@@ -131,6 +131,8 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
         "/work-orders",
         "/work-orders/new",
         "/standards/new",
+        "/assessments",
+        "/assessments/new",
         "/billing",
         "/inspections",
       ]) {
@@ -138,9 +140,9 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
         await page.locator("h1").first().waitFor();
         await fits();
         if (route === "/standards/new" && width <= 390) {
-          const dueDate = page
-            .locator(".std-risk-field input[type=date]")
-            .first();
+          // 담당·예정일은 접혀 있다. 펴서 날짜 칸이 눌리지 않았는지 잰다.
+          await page.locator(".risk-card-more summary").first().click();
+          const dueDate = page.locator(".risk-card input[type=date]").first();
           expect((await dueDate.boundingBox())!.width).toBeGreaterThan(180);
           // 긴 폼의 저장 줄은 작업지시 작성과 같이 화면 아래에 붙어 있어야
           // 한다 — 맨 위에 있어도 저장 버튼이 보여야 다시 내려가지 않는다.

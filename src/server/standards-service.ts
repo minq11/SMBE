@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { query, queryOne, withTransaction } from "@/server/db";
+import { readRiskCriteria } from "@/server/company-settings";
 import {
   ASSESSMENT_KIND_LABEL,
   VALIDITY_MONTHS,
@@ -85,8 +86,14 @@ export type StandardEditPayload = z.infer<typeof standardEditSchema>;
 export const assessmentRoundSchema = z.object({
   kind: z.enum(["FIRST", "PERIODIC", "AD_HOC", "CONTINUOUS"]),
   performed_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  work_method: z.string().trim().min(1, "작업방법 요약을 입력하세요.").max(4000),
-  criteria: z.string().trim().min(1, "위험성 판단 기준을 입력하세요.").max(2000),
+  work_method: z
+    .string()
+    .trim()
+    .min(1, "작업방법 요약을 입력하세요.")
+    .max(4000),
+  // 판단 기준은 회사가 정한 값이 원본이다. 클라이언트 값은 받지 않고 서버가
+  // 회사 기준을 사본으로 남긴다 (0013). 옛 클라이언트가 보내도 무시한다.
+  criteria: z.string().max(2000).optional(),
   safety_info: safetyInfoSchema,
   risks: z.array(riskItemSchema).min(1).max(30),
   participant_user_ids: z
@@ -173,13 +180,14 @@ export async function listStandards(
   return rows.map((r) => {
     const validUntil =
       r.latest_approved_kind && r.latest_approved_performed_on
-        ? computeValidUntil(r.latest_approved_kind, r.latest_approved_performed_on)
+        ? computeValidUntil(
+            r.latest_approved_kind,
+            r.latest_approved_performed_on,
+          )
         : null;
     const notExpired = validUntil === null || validUntil >= todayIso();
     const usable =
-      r.status === "APPROVED" &&
-      r.approved_assessment_count > 0 &&
-      notExpired;
+      r.status === "APPROVED" && r.approved_assessment_count > 0 && notExpired;
     return {
       ...r,
       valid_until: validUntil,
@@ -310,13 +318,12 @@ export async function getStandardDetail(
       performed_on: currentApproved.performed_on,
       criteria: info?.criteria_snapshot ?? "",
       work_method: info?.work_method_snapshot ?? "",
-      safety_info:
-        info?.safety_info ?? {
-          equipment: "",
-          materials: "",
-          environment: "",
-          history: "",
-        },
+      safety_info: info?.safety_info ?? {
+        equipment: "",
+        materials: "",
+        environment: "",
+        history: "",
+      },
       risks: items,
       participant_names: parts.map((p) => p.snapshot_display_name),
       valid_until: validUntil,
@@ -422,6 +429,10 @@ async function insertRiskAssessmentRound(
 ): Promise<string> {
   const { companyId, standardId, actorId, payload, participantNameByUserId } =
     args;
+  const criteria = await readRiskCriteria(
+    client as unknown as Parameters<typeof readRiskCriteria>[0],
+    companyId,
+  );
   const raRow = await client.query<{ id: string }>(
     `INSERT INTO risk_assessments
        (company_id, is_simple, name, assessment_kind, performed_on, status,
@@ -437,7 +448,7 @@ async function insertRiskAssessmentRound(
       standardId,
       payload.kind,
       payload.performed_on,
-      payload.criteria,
+      criteria,
       payload.work_method,
       JSON.stringify(payload.safety_info),
       actorId,
@@ -693,13 +704,8 @@ export async function addAssessmentRound(input: {
   payload: AssessmentRoundPayload;
   participantDisplayNames: Record<string, string>;
 }): Promise<{ assessmentId: string }> {
-  const {
-    companyId,
-    actorId,
-    standardId,
-    payload,
-    participantDisplayNames,
-  } = input;
+  const { companyId, actorId, standardId, payload, participantDisplayNames } =
+    input;
   return withTransaction(async (client) => {
     const stdExists = await client.query<{ id: string; status: string }>(
       `SELECT id, status FROM standards

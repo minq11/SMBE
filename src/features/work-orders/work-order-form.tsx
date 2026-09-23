@@ -26,6 +26,7 @@ import { HelpTip } from "@/components/ui/help-tip";
 import { PageHeader } from "@/components/ui/page-header";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PeoplePicker } from "@/components/ui/people-picker";
+import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { PtwHelp } from "@/features/standards/ptw-help";
 import { saveOrderAction, saveAndIssueAction } from "./actions";
 import { shiftMinutes, type WorkDraft, type MemberOption } from "./model";
@@ -624,97 +625,50 @@ export function WorkOrderForm({
                     에서 수정하세요. 이미 승인된 평가는 영향을 받지 않습니다.
                   </p>
                 </section>
-                {data.risks.map((risk, i) => {
-                  const update = (key: keyof typeof risk, value: string) =>
-                    set(
-                      "risks",
-                      data.risks.map((r, index) =>
-                        index === i ? { ...r, [key]: value } : r,
-                      ),
-                    );
-                  return (
-                    <fieldset className="wo-risk" key={i}>
-                      <legend>위험요인 {i + 1}</legend>
-                      <Field label="유해·위험요인">
-                        <textarea
-                          value={risk.hazard}
-                          onChange={(e) => update("hazard", e.target.value)}
-                          maxLength={4000}
-                        />
-                      </Field>
-                      <div className="wo-columns">
-                        <Field label="위험성 수준">
-                          <select
-                            value={risk.level}
-                            onChange={(e) => update("level", e.target.value)}
-                          >
-                            <option value="">선택하세요</option>
-                            <option value="HIGH">상</option>
-                            <option value="MID">중</option>
-                            <option value="LOW">하</option>
-                          </select>
-                        </Field>
-                        <Field label="허용 가능 여부">
-                          <select
-                            value={risk.allowable}
-                            onChange={(e) =>
-                              update("allowable", e.target.value)
-                            }
-                          >
-                            <option value="">선택하세요</option>
-                            <option value="yes">허용 가능</option>
-                            <option value="no">허용 불가 · 조치 필요</option>
-                          </select>
-                        </Field>
-                      </div>
-                      <Field label="감소대책">
-                        <textarea
-                          value={risk.measure}
-                          onChange={(e) => update("measure", e.target.value)}
-                          maxLength={4000}
-                        />
-                      </Field>
-                      <div className="wo-columns">
-                        <Field label="조치 담당자">
-                          <select
-                            value={risk.responsibleId}
-                            onChange={(e) =>
-                              update("responsibleId", e.target.value)
-                            }
-                          >
-                            <option value="">선택하세요</option>
-                            {members.map((m) => (
-                              <option key={m.user_id} value={m.user_id}>
-                                {m.display_name}
-                              </option>
-                            ))}
-                          </select>
-                        </Field>
-                        <Field label="조치 예정일">
-                          <input
-                            type="date"
-                            value={risk.dueDate}
-                            onChange={(e) => update("dueDate", e.target.value)}
-                          />
-                        </Field>
-                      </div>
-                      {data.risks.length > 1 && (
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          onClick={() =>
-                            set(
-                              "risks",
-                              data.risks.filter((_, n) => n !== i),
-                            )
-                          }
-                        >
-                          위험요인 {i + 1} 삭제
-                        </button>
-                      )}
-                    </fieldset>
-                  );
-                })}
+                <ol className="risk-card-list">
+                  {data.risks.map((risk, i) => (
+                    <li key={i}>
+                      <RiskItemCard
+                        index={i}
+                        value={{
+                          hazard: risk.hazard,
+                          level: risk.level,
+                          allowable: risk.allowable,
+                          measure: risk.measure,
+                          responsibleId: risk.responsibleId,
+                          dueDate: risk.dueDate,
+                        }}
+                        members={members}
+                        onChange={(v) =>
+                          set(
+                            "risks",
+                            data.risks.map((r, index) =>
+                              index === i
+                                ? {
+                                    hazard: v.hazard,
+                                    level: v.level,
+                                    allowable: v.allowable,
+                                    measure: v.measure,
+                                    responsibleId: v.responsibleId,
+                                    dueDate: v.dueDate,
+                                  }
+                                : r,
+                            ),
+                          )
+                        }
+                        onRemove={
+                          data.risks.length > 1
+                            ? () =>
+                                set(
+                                  "risks",
+                                  data.risks.filter((_, n) => n !== i),
+                                )
+                            : undefined
+                        }
+                      />
+                    </li>
+                  ))}
+                </ol>
                 <button
                   type="button"
                   className="btn-secondary"

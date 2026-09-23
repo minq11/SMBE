@@ -7,6 +7,8 @@ import {
   getStandardDetail,
   listCompanyMembersForPicker,
 } from "@/server/standards-service";
+import { withTransaction } from "@/server/db";
+import { readRiskCriteria } from "@/server/company-settings";
 import { AssessmentForm } from "@/features/standards/assessment-form";
 
 export const metadata = { title: "평가 회차 추가 · 심플안전" };
@@ -23,20 +25,31 @@ export default async function NewAssessmentPage({
   if (session.membership.role === "WORKER") redirect("/");
 
   const { id } = await params;
-  const [detail, members, isOperator] = await Promise.all([
-    getStandardDetail(session.membership.company_id, id),
-    listCompanyMembersForPicker(session.membership.company_id),
+  const companyId = session.membership.company_id;
+  const [detail, members, isOperator, criteria] = await Promise.all([
+    getStandardDetail(companyId, id),
+    listCompanyMembersForPicker(companyId),
     isCurrentUserOperator(),
+    withTransaction((c) => readRiskCriteria(c, companyId)),
   ]);
   if (!detail) notFound();
   if (detail.status === "ARCHIVED") redirect(`/standards/${id}`);
 
-  // 이전 회차 값을 재사용해 입력 부담을 줄이기 위한 seed
-  const seed = detail.current_assessment
+  // 정기평가는 지난 평가를 다시 보는 일이다. 지난 회차의 위험요인·대책까지
+  // 채워 두고 바뀐 것만 고치게 한다.
+  const cur = detail.current_assessment;
+  const seed = cur
     ? {
-        work_method: detail.current_assessment.work_method,
-        criteria: detail.current_assessment.criteria,
-        safety_info: detail.current_assessment.safety_info,
+        work_method: cur.work_method,
+        safety_info: cur.safety_info,
+        risks: cur.risks.map((r) => ({
+          hazard: r.hazard,
+          level: r.initial_risk_level,
+          allowable: (r.initial_allowable ? "yes" : "no") as "yes" | "no",
+          measure: r.reduction_measure,
+          responsibleId: r.responsible_user_id ?? "",
+          dueDate: r.planned_completion_date ?? "",
+        })),
       }
     : undefined;
 
@@ -58,6 +71,7 @@ export default async function NewAssessmentPage({
         standardId={id}
         standardName={detail.name}
         members={members}
+        criteria={criteria}
         seed={seed}
       />
     </AppShell>

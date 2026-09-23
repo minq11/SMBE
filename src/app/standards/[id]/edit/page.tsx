@@ -75,9 +75,7 @@ export default async function EditStandardPage({
           checklist_tbm:
             detail.checklist_tbm.length > 0 ? detail.checklist_tbm : [""],
           checklist_during:
-            detail.checklist_during.length > 0
-              ? detail.checklist_during
-              : [""],
+            detail.checklist_during.length > 0 ? detail.checklist_during : [""],
         }}
       />
     </AppShell>

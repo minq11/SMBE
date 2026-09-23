@@ -15,8 +15,7 @@ import {
 } from "@/server/standards-service";
 
 export type StandardActionState =
-  | undefined
-  | { error?: string; message?: string; standardId?: string };
+  undefined | { error?: string; message?: string; standardId?: string };
 
 async function actor() {
   const s = await getCurrentSession();

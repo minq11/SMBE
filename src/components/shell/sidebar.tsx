@@ -113,7 +113,12 @@ const NAV: ReadonlyArray<NavEntry> = [
     href: "/work-orders",
   },
   { key: "standards", title: "작업표준서", icon: BookOpen, href: "/standards" },
-  { key: "assessment", title: "위험성평가", icon: ListChecks },
+  {
+    key: "assessment",
+    title: "위험성평가",
+    icon: ListChecks,
+    href: "/assessments",
+  },
   {
     key: "permits",
     title: "위험작업허가",

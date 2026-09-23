@@ -4,6 +4,8 @@ import { AppShell } from "@/components/shell/app-shell";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
 import { listCompanyMembersForPicker } from "@/server/standards-service";
+import { withTransaction } from "@/server/db";
+import { readRiskCriteria } from "@/server/company-settings";
 import { StandardForm } from "@/features/standards/standard-form";
 
 export const metadata = { title: "새 표준서 · 심플안전" };
@@ -26,9 +28,11 @@ export default async function NewStandardPage({
       ? returnParam
       : undefined;
 
-  const [members, isOperator] = await Promise.all([
-    listCompanyMembersForPicker(session.membership.company_id),
+  const companyId = session.membership.company_id;
+  const [members, isOperator, criteria] = await Promise.all([
+    listCompanyMembersForPicker(companyId),
     isCurrentUserOperator(),
+    withTransaction((c) => readRiskCriteria(c, companyId)),
   ]);
 
   return (
@@ -44,7 +48,11 @@ export default async function NewStandardPage({
       isAuthenticated={true}
       isOperator={isOperator}
     >
-      <StandardForm members={members} returnHref={returnHref} />
+      <StandardForm
+        criteria={criteria}
+        members={members}
+        returnHref={returnHref}
+      />
     </AppShell>
   );
 }

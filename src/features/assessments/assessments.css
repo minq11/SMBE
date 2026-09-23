@@ -1,0 +1,373 @@
+/* 위험성평가 메뉴 — 현황 타일·목록·상세·조치 이행 */
+
+.asmt-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.asmt-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+}
+.asmt-tile strong {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+.asmt-tile small {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.asmt-tile.is-alert strong {
+  color: var(--danger);
+}
+
+.asmt-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.asmt-tag--ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.asmt-tag--action {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.asmt-tag--expired {
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+.asmt-tag--pending {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.asmt-level {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.asmt-level--high {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.asmt-level--mid {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.asmt-level--low {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+/* 평가 필요 표준서 목록 */
+.asmt-needs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.asmt-need {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.asmt-need-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.asmt-need-main strong {
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.asmt-need-main small {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.asmt-need .btn-primary,
+.asmt-need .btn-secondary {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding-inline: 12px;
+  white-space: nowrap;
+}
+
+/* 상세 */
+.asmt-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 760px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.asmt-head h1 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+.asmt-head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.asmt-head-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.asmt-section {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.asmt-section h2 {
+  font-size: 15px;
+  font-weight: 800;
+}
+.asmt-note {
+  white-space: pre-line;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.asmt-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.asmt-info > div {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.asmt-info dt {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+.asmt-info dd {
+  font-size: 13.5px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.asmt-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.asmt-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.asmt-item-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.asmt-item-head strong {
+  font-size: 15px;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.asmt-item-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 36px;
+}
+.asmt-item-measure {
+  margin: 0;
+  padding-left: 36px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.asmt-item-plan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding-left: 36px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* 조치 이행 */
+.asmt-action {
+  margin-left: 36px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+}
+.asmt-action.is-done {
+  background: var(--ok-soft);
+}
+.asmt-action-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.asmt-action-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ok);
+}
+.asmt-action-state--open {
+  color: var(--danger);
+}
+.asmt-action-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.asmt-action-toggle .is-flipped {
+  transform: rotate(180deg);
+}
+.asmt-action-text {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.asmt-action-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+.asmt-action-form .form-field {
+  margin: 0;
+}
+.asmt-action-form .form-field span {
+  font-size: 13px;
+  font-weight: 600;
+}
+.asmt-action-form textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  background: var(--surface);
+}
+.asmt-action-form .form-error {
+  margin: 0;
+}
+.asmt-action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 표준서 고르기 (평가 작성) */
+.asmt-pick {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 760px;
+}
+
+@media (max-width: 960px) {
+  /* 상단바는 "위험성평가", 제목은 본문 위에 (자료실 글과 같은 규칙, 헌법 7장) */
+  .asmt-head h1 {
+    font-size: 21px;
+  }
+}
+@media (max-width: 640px) {
+  .asmt-tiles {
+    gap: 8px;
+  }
+  .asmt-tile {
+    padding: 12px 12px;
+  }
+  .asmt-tile strong {
+    font-size: 20px;
+  }
+  .asmt-info {
+    grid-template-columns: 1fr;
+  }
+  .asmt-item-badges,
+  .asmt-item-measure,
+  .asmt-item-plan {
+    padding-left: 0;
+  }
+  .asmt-action {
+    margin-left: 0;
+  }
+  .asmt-action-buttons > * {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+  }
+}

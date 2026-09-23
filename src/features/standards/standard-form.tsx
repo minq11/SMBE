@@ -4,6 +4,7 @@ import { PeoplePicker } from "@/components/ui/people-picker";
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
+import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { HelpTip } from "@/components/ui/help-tip";
 import { PtwHelp } from "./ptw-help";
 import { createStandardAction, type StandardActionState } from "./actions";
@@ -25,7 +26,6 @@ type Draft = {
   steps: string[];
   checklist_tbm: string[];
   checklist_during: string[];
-  criteria: string;
   safety_info: {
     equipment: string;
     materials: string;
@@ -50,7 +50,6 @@ function blankDraft(): Draft {
     steps: [""],
     checklist_tbm: [""],
     checklist_during: [""],
-    criteria: "",
     safety_info: { equipment: "", materials: "", environment: "", history: "" },
     risks: [
       {
@@ -67,9 +66,12 @@ function blankDraft(): Draft {
 }
 
 export function StandardForm({
+  criteria,
   members,
   returnHref,
 }: {
+  /** 회사의 위험성 판단 기준 (읽기만) */
+  criteria: string;
   members: Member[];
   returnHref?: string;
 }) {
@@ -104,17 +106,6 @@ export function StandardForm({
     setDraft((d) => {
       if (d[key].length <= 1) return d;
       return { ...d, [key]: d[key].filter((_, i) => i !== idx) };
-    });
-
-  const updateRisk = <K extends keyof Risk>(
-    idx: number,
-    key: K,
-    value: Risk[K],
-  ) =>
-    setDraft((d) => {
-      const next = [...d.risks];
-      next[idx] = { ...next[idx], [key]: value };
-      return { ...d, risks: next };
     });
 
   const addRisk = () =>
@@ -165,7 +156,6 @@ export function StandardForm({
             .toISOString()
             .slice(0, 10),
         work_method: draft.work_method.trim(),
-        criteria: draft.criteria.trim(),
         safety_info: {
           equipment: draft.safety_info.equipment.trim(),
           materials: draft.safety_info.materials.trim(),
@@ -327,17 +317,16 @@ export function StandardForm({
           />
         </div>
 
-        <div className="form-field">
-          <label htmlFor="std-criteria">위험성 판단 기준</label>
-          <textarea
-            id="std-criteria"
-            rows={3}
-            maxLength={2000}
-            value={draft.criteria}
-            onChange={(e) => setField("criteria", e.target.value)}
-            placeholder="예: 심각도(경상·중상·사망) × 발생가능성(낮음·보통·높음) 기준으로 상·중·하 판정."
-          />
-        </div>
+        {/* 판단 기준은 회사가 한 번 정하는 값이다. 여기서 다시 쓰지 않는다. */}
+        <details className="std-fold">
+          <summary>적용하는 위험성 판단 기준 (회사 기준)</summary>
+          <pre className="criteria-readonly">{criteria}</pre>
+          <p className="std-form-note">
+            바꾸려면{" "}
+            <Link href="/company/criteria">회사정보 &gt; 위험성 판단 기준</Link>{" "}
+            에서 수정하세요.
+          </p>
+        </details>
 
         <div className="std-safety-grid">
           {(
@@ -369,112 +358,42 @@ export function StandardForm({
 
         <div className="form-field">
           <label>위험요인 · 감소대책</label>
-          <ol className="std-risk-list">
+          <ol className="risk-card-list">
             {draft.risks.map((r, i) => (
-              <li key={i} className="std-risk-item">
-                <div className="std-risk-head">
-                  <span className="std-list-number">{i + 1}</span>
-                  <input
-                    type="text"
-                    value={r.hazard}
-                    onChange={(e) => updateRisk(i, "hazard", e.target.value)}
-                    maxLength={500}
-                    placeholder="위험요인 (예: 프레스 하강 중 손 끼임)"
-                    className="std-risk-hazard"
-                  />
-                  <button
-                    type="button"
-                    className="icon-button"
-                    onClick={() => removeRisk(i)}
-                    aria-label="이 위험요인 삭제"
-                    disabled={draft.risks.length <= 1}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-                <div className="std-risk-grid">
-                  <label className="std-risk-field">
-                    <span>위험성 수준</span>
-                    <select
-                      value={r.initial_risk_level}
-                      onChange={(e) =>
-                        updateRisk(
-                          i,
-                          "initial_risk_level",
-                          e.target.value as Risk["initial_risk_level"],
-                        )
-                      }
-                    >
-                      <option value="">선택</option>
-                      <option value="HIGH">상</option>
-                      <option value="MID">중</option>
-                      <option value="LOW">하</option>
-                    </select>
-                  </label>
-                  <label className="std-risk-field">
-                    <span>허용 가능</span>
-                    <select
-                      value={r.initial_allowable}
-                      onChange={(e) =>
-                        updateRisk(
-                          i,
-                          "initial_allowable",
-                          e.target.value as Risk["initial_allowable"],
-                        )
-                      }
-                    >
-                      <option value="">선택</option>
-                      <option value="yes">예</option>
-                      <option value="no">아니오</option>
-                    </select>
-                  </label>
-                  <label className="std-risk-field std-risk-field--full">
-                    <span>감소대책</span>
-                    <textarea
-                      rows={2}
-                      maxLength={1000}
-                      value={r.reduction_measure}
-                      onChange={(e) =>
-                        updateRisk(i, "reduction_measure", e.target.value)
-                      }
-                      placeholder="위험을 줄이기 위한 구체적 조치"
-                    />
-                  </label>
-                  <label className="std-risk-field">
-                    <span>조치 담당</span>
-                    <select
-                      value={r.responsible_user_id}
-                      onChange={(e) =>
-                        updateRisk(i, "responsible_user_id", e.target.value)
-                      }
-                    >
-                      <option value="">선택 (선택 사항)</option>
-                      {members.map((m) => (
-                        <option key={m.user_id} value={m.user_id}>
-                          {m.display_name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="std-risk-field">
-                    <span>완료 예정일</span>
-                    <input
-                      type="date"
-                      value={r.planned_completion_date}
-                      onChange={(e) =>
-                        updateRisk(i, "planned_completion_date", e.target.value)
-                      }
-                    />
-                  </label>
-                </div>
+              <li key={i}>
+                <RiskItemCard
+                  index={i}
+                  value={{
+                    hazard: r.hazard,
+                    level: r.initial_risk_level,
+                    allowable: r.initial_allowable,
+                    measure: r.reduction_measure,
+                    responsibleId: r.responsible_user_id,
+                    dueDate: r.planned_completion_date,
+                  }}
+                  members={members}
+                  onChange={(v) =>
+                    setDraft((d) => {
+                      const next = [...d.risks];
+                      next[i] = {
+                        hazard: v.hazard,
+                        initial_risk_level: v.level,
+                        initial_allowable: v.allowable,
+                        reduction_measure: v.measure,
+                        responsible_user_id: v.responsibleId,
+                        planned_completion_date: v.dueDate,
+                      };
+                      return { ...d, risks: next };
+                    })
+                  }
+                  onRemove={
+                    draft.risks.length > 1 ? () => removeRisk(i) : undefined
+                  }
+                />
               </li>
             ))}
           </ol>
-          <button
-            type="button"
-            className="ghost-button std-add-button"
-            onClick={addRisk}
-          >
+          <button type="button" className="btn-secondary" onClick={addRisk}>
             <Plus size={13} /> 위험요인 추가
           </button>
         </div>
