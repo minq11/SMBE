@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
-import { HelpTip } from "@/components/ui/help-tip";
+import { HelpDialog } from "@/components/ui/help-dialog";
+import { JumpNav } from "@/components/ui/jump-nav";
 import { PtwHelp } from "./ptw-help";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
 import {
@@ -125,11 +126,13 @@ export function StandardEditForm({
 
       {state?.error && <div className="form-error">{state.error}</div>}
 
-      <nav className="std-jump" aria-label="구간 이동">
-        <a href="#std-basic">기본 정보</a>
-        <a href="#std-steps">작업 단계</a>
-        <a href="#std-checklist">체크리스트</a>
-      </nav>
+      <JumpNav
+        items={[
+          { id: "std-basic", label: "기본 정보" },
+          { id: "std-steps", label: "작업 단계" },
+          { id: "std-checklist", label: "체크리스트" },
+        ]}
+      />
 
       <section className="std-form-section" id="std-basic">
         <h2>기본 정보</h2>
@@ -143,17 +146,22 @@ export function StandardEditForm({
             maxLength={120}
           />
         </div>
-        <label className="std-checkbox">
-          <input
-            type="checkbox"
-            checked={draft.ptw_required}
-            onChange={(e) => setField("ptw_required", e.target.checked)}
-          />
-          <span>이 작업은 위험작업허가(PTW)가 필요합니다</span>
-          <HelpTip title="위험작업허가 (PTW)">
+        <div className="std-ptw">
+          <label className="std-checkbox">
+            <input
+              type="checkbox"
+              checked={draft.ptw_required}
+              onChange={(e) => setField("ptw_required", e.target.checked)}
+            />
+            <span>이 작업은 위험작업허가(PTW)가 필요합니다</span>
+          </label>
+          <HelpDialog
+            title="위험작업허가(PTW)"
+            trigger="어떤 작업이 해당되나요?"
+          >
             <PtwHelp />
-          </HelpTip>
-        </label>
+          </HelpDialog>
+        </div>
       </section>
 
       <section className="std-form-section" id="std-steps">

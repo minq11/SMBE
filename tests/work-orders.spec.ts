@@ -75,10 +75,14 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       path: testInfo.outputPath("work-order-new.png"),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "다음", exact: true }).click();
+    // 한 장 폼이다: 구간 칩으로 내려가고, 뒤 구간이 숨지 않는다.
+    await page
+      .locator(".jump-nav")
+      .getByRole("link", { name: "위험성평가", exact: true })
+      .click();
     // 판단 기준은 회사가 정한 값이 자동으로 적용된다 (회사정보 > 위험성 판단 기준).
     await expect(
-      page.getByRole("heading", { name: "적용한 위험성 수준 판단 기준" }),
+      page.locator("#wo-risk summary", { hasText: "판단 기준" }),
     ).toBeVisible();
     await page
       .getByLabel("유해·위험요인", { exact: true })
@@ -100,18 +104,19 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     ]) {
       await page.getByLabel(label, { exact: true }).fill("테스트 정보");
     }
+    // 같은 이름의 사람이 평가 참여자와 작업자 배정 두 곳에 있다. 구간으로 가른다.
     await page
+      .locator("#wo-risk")
       .getByRole("checkbox", { name: "검증 작업자", exact: true })
       .check();
-    await page.getByRole("button", { name: "다음", exact: true }).click();
     const tomorrow = seoulToday(new Date(Date.now() + 86400_000));
     await page.getByLabel("작업 시작일").fill(tomorrow);
     await page.getByLabel("작업 종료일").fill(tomorrow);
     await page.getByLabel("작업 장소", { exact: true }).fill("테스트 구역");
     await page
+      .locator("#wo-schedule")
       .getByRole("checkbox", { name: "검증 작업자", exact: true })
       .check();
-    await page.getByRole("button", { name: "다음", exact: true }).click();
     await page
       .getByLabel("TBM · 작업 전 항목 1", { exact: true })
       .fill("테스트 TBM");
@@ -133,10 +138,6 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(
       page.getByRole("heading", { name: "지시서 취소", exact: true }),
     ).toHaveCount(0);
-    // 편집 화면은 첫 단계부터 다시 시작하므로 검토 단계까지 이동한다.
-    for (let i = 0; i < 3; i++) {
-      await page.getByRole("button", { name: "다음", exact: true }).click();
-    }
     // 저장 → 본인 평가 승인 → 발급 → 링크 전송을 한 번에 처리한다.
     // 확인은 브라우저 confirm 이 아니라 앱 안의 확인 창이다 (confirm-dialog.tsx).
     await page
@@ -274,10 +275,15 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     ).toBeVisible();
     await page.goto(path);
     await page.getByRole("link", { name: "복사", exact: true }).click();
-    await page.getByRole("button", { name: /일정·인원/ }).click();
+    await page
+      .locator(".jump-nav")
+      .getByRole("link", { name: "일정·인원", exact: true })
+      .click();
     await expect(page.getByLabel("작업 시작일")).toHaveValue("");
     await expect(
-      page.getByRole("checkbox", { name: "검증 작업자", exact: true }),
+      page
+        .locator("#wo-schedule")
+        .getByRole("checkbox", { name: "검증 작업자", exact: true }),
     ).toBeChecked();
 
     const workerContext = await browser.newContext({

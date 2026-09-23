@@ -4186,7 +4186,7 @@ html[data-banner-hidden] .preview-banner {
 }
 
 /* =========================================================================
-   12j. Work-order form: standard picker section (step 0)
+   12j. Work-order form: standard picker (작업 정보 구간의 첫 덩어리)
    ========================================================================= */
 .wo-std-picker {
   background: var(--brand-softer);
@@ -4198,11 +4198,12 @@ html[data-banner-hidden] .preview-banner {
   gap: 12px;
   margin-bottom: 24px;
 }
-.wo-std-picker h2 {
+.wo-std-picker-title {
   font-size: 14px;
   font-weight: 800;
   color: var(--brand-strong);
   letter-spacing: -0.1px;
+  margin: 0;
 }
 .wo-std-list {
   list-style: none;
@@ -4295,138 +4296,55 @@ html[data-banner-hidden] .preview-banner {
 }
 
 /* =========================================================================
-   12k. Help tip (물음표 팝오버)
+   12k. Help dialog ("이게 뭔가요?" 글 단추 + 시트·카드 답, components/ui/help-dialog.tsx)
    ========================================================================= */
-.help-tip {
-  position: relative;
+.help-dialog-trigger {
   display: inline-flex;
   align-items: center;
-  margin-left: 6px;
-  vertical-align: middle;
-}
-.help-tip-button {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink-3);
-  transition:
-    border-color 0.15s,
-    color 0.15s,
-    background 0.15s;
-}
-.help-tip-button:hover,
-.help-tip-button[aria-expanded="true"] {
-  border-color: var(--brand);
-  color: var(--brand);
-  background: var(--brand-softer);
-}
-.help-tip-panel {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 40;
-  width: 320px;
-  max-width: min(320px, calc(100vw - 40px));
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: 0 16px 40px rgba(30, 36, 41, 0.14);
-  padding: 14px 16px;
-  color: var(--ink-2);
-  font-size: 12px;
-  line-height: 1.7;
-  font-weight: 400;
-}
-.help-tip-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-.help-tip-head strong {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--ink);
-}
-.help-tip-close {
-  display: inline-grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  color: var(--ink-3);
-}
-.help-tip-close:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
-.help-tip-body p {
-  margin-bottom: 8px;
-}
-.help-tip-body p:last-child {
-  margin-bottom: 0;
-}
-.help-tip-body ul {
-  list-style: none;
-  padding: 0;
-  margin: 6px 0 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.help-tip-body li {
-  position: relative;
-  padding-left: 12px;
-}
-.help-tip-body li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 9px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--brand);
-}
-.help-tip-note {
-  padding-top: 8px;
-  border-top: 1px solid var(--line-soft);
-  color: var(--ink-3);
-  font-size: 11px;
-}
-@media (max-width: 720px) {
-  .help-tip-panel {
-    position: fixed;
-    width: auto;
-    max-width: none;
-    left: 16px;
-    right: 16px;
-    top: auto;
-    bottom: max(16px, env(safe-area-inset-bottom, 0px));
-    max-height: calc(100dvh - 140px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-  .help-tip-button,
-  .help-tip-close {
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-  }
-}
-/* work-order form: label wrapper for HelpTip */
-.wo-field-label {
-  display: inline-flex;
-  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 4px;
   font-size: 13px;
   font-weight: 600;
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong, var(--line));
+  border-radius: 6px;
+}
+@media (hover: hover) {
+  .help-dialog-trigger:hover {
+    text-decoration-color: currentColor;
+  }
+}
+.help-dialog-content {
+  font-size: 14px;
+  line-height: 1.7;
   color: var(--ink-2);
-  margin-bottom: 6px;
+}
+.help-dialog-content p + p {
+  margin-top: 10px;
+}
+.help-dialog-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  display: grid;
+  gap: 6px;
+}
+.help-dialog-content li {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+/* 표준서 폼의 PTW 줄: 체크 + 설명 단추 */
+.std-ptw {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
 }
 
 /* =========================================================================
@@ -4992,19 +4910,12 @@ html[data-banner-hidden] .preview-banner {
   .text-button,
   .invite-form-actions .primary-button,
   .tabs button,
-  .wo-steps button,
   .wo-tabs a {
     min-height: 44px;
   }
   .wo-tabs a {
     display: inline-flex;
     align-items: center;
-  }
-  /* 도움말 ? 와 닫기 × 는 작은 그림이지만 누르는 자리는 40px 로 넓힌다. */
-  .help-tip-button,
-  .help-tip-close {
-    width: 40px;
-    height: 40px;
   }
   /* iOS Safari 는 16px 미만 input 포커스 시 자동 확대 → 항상 16px 이상 */
   input,
@@ -5550,12 +5461,12 @@ body.sidebar-lock {
 }
 
 /* 표준서 폼 구간 이동 (좁은 화면에서 위에 붙는다) */
-.std-jump {
+.jump-nav {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
 }
-.std-jump a {
+.jump-nav a {
   display: inline-flex;
   align-items: center;
   min-height: 40px;
@@ -5567,12 +5478,21 @@ body.sidebar-lock {
   font-size: 13px;
   text-decoration: none;
 }
-.std-jump a:hover {
+@media (hover: hover) {
+  .jump-nav a:hover {
+    border-color: var(--brand);
+    color: var(--brand-strong);
+  }
+}
+/* 지나는 구간의 칩이 켜진다 (components/ui/jump-nav.tsx). */
+.jump-nav a[aria-current] {
   border-color: var(--brand);
+  background: var(--brand-softer);
   color: var(--brand-strong);
+  font-weight: 700;
 }
 @media (max-width: 960px) {
-  .std-jump {
+  .jump-nav {
     position: sticky;
     top: 0;
     contain: inline-size;
@@ -5585,15 +5505,16 @@ body.sidebar-lock {
     background: var(--bg);
     border-bottom: 1px solid var(--line);
   }
-  .std-jump::-webkit-scrollbar {
+  .jump-nav::-webkit-scrollbar {
     display: none;
   }
-  .std-jump a {
+  .jump-nav a {
     flex-shrink: 0;
     white-space: nowrap;
   }
+  /* 본문(main)이 스크롤 영역이고 상단바는 그 밖이라 칩 띠 높이만 비운다. */
   .std-form-section {
-    scroll-margin-top: calc(var(--banner-h) + 56px + 64px);
+    scroll-margin-top: 68px;
   }
 }
 

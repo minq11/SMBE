@@ -5,7 +5,8 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
-import { HelpTip } from "@/components/ui/help-tip";
+import { HelpDialog } from "@/components/ui/help-dialog";
+import { JumpNav } from "@/components/ui/jump-nav";
 import { PtwHelp } from "./ptw-help";
 import { createStandardAction, type StandardActionState } from "./actions";
 
@@ -199,12 +200,14 @@ export function StandardForm({
       {state?.error && <div className="form-error">{state.error}</div>}
 
       {/* 긴 폼이라 구간으로 바로 간다. 좁은 화면에서는 위에 붙는다 (globals.css). */}
-      <nav className="std-jump" aria-label="구간 이동">
-        <a href="#std-basic">기본 정보</a>
-        <a href="#std-method-section">작업 방법</a>
-        <a href="#std-checklist">체크리스트</a>
-        <a href="#std-risk">위험성평가</a>
-      </nav>
+      <JumpNav
+        items={[
+          { id: "std-basic", label: "기본 정보" },
+          { id: "std-method-section", label: "작업 방법" },
+          { id: "std-checklist", label: "체크리스트" },
+          { id: "std-risk", label: "위험성평가" },
+        ]}
+      />
 
       <section className="std-form-section" id="std-basic">
         <h2>기본 정보</h2>
@@ -220,17 +223,22 @@ export function StandardForm({
             placeholder="예: 프레스 설비 정기 점검"
           />
         </div>
-        <label className="std-checkbox">
-          <input
-            type="checkbox"
-            checked={draft.ptw_required}
-            onChange={(e) => setField("ptw_required", e.target.checked)}
-          />
-          <span>이 작업은 위험작업허가(PTW)가 필요합니다</span>
-          <HelpTip title="위험작업허가 (PTW)">
+        <div className="std-ptw">
+          <label className="std-checkbox">
+            <input
+              type="checkbox"
+              checked={draft.ptw_required}
+              onChange={(e) => setField("ptw_required", e.target.checked)}
+            />
+            <span>이 작업은 위험작업허가(PTW)가 필요합니다</span>
+          </label>
+          <HelpDialog
+            title="위험작업허가(PTW)"
+            trigger="어떤 작업이 해당되나요?"
+          >
             <PtwHelp />
-          </HelpTip>
-        </label>
+          </HelpDialog>
+        </div>
       </section>
 
       <section className="std-form-section" id="std-method-section">

@@ -11,6 +11,8 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
     process.env.SMBE_ORDER_UI_TESTS !== "1" || info.project.name !== "mobile",
     "Uses isolated local DB and mobile viewport",
   );
+  // 화면 11개 × 너비 3개를 한 번에 돈다. 기본 30초로는 모자란다.
+  test.slow();
   const schema = process.env.SMBE_ORDER_UI_SCHEMA ?? "";
   if (!/^orders_ui_[a-f0-9]{32}$/.test(schema))
     throw new Error("Invalid test schema");
@@ -57,9 +59,9 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
             return (
               r.width > 0 &&
               (r.right > innerWidth + 1 || r.left < -1) &&
-              // .wo-steps/.std-jump: 좁은 화면에서 한 줄로 옆으로 미는 띠다.
+              // .jump-nav: 좁은 화면에서 한 줄로 옆으로 미는 띠다.
               !el.closest(
-                ".honeypot, [hidden], .wo-table-wrap, .tabs, .wo-steps, .std-jump",
+                ".honeypot, [hidden], .wo-table-wrap, .tabs, .jump-nav",
               ) &&
               // 접힌 <details> 속은 그려지지 않는데도 크기가 잡힌다.
               !(el.closest("details:not([open])") && !el.closest("summary"))
@@ -152,48 +154,59 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
             (await page.evaluate(() => innerHeight)) + 1,
           );
         }
-        const tips = page.locator(".help-tip-button");
-        if (await tips.count()) {
-          await tips.first().click();
-          await expect(page.locator(".help-tip-panel")).toBeVisible();
+        // "어떤 작업이 해당되나요?" 글 단추 → 시트로 뜨는 설명 (help-dialog.tsx).
+        const help = page.locator(".help-dialog-trigger");
+        if (await help.count()) {
+          await help.first().click();
+          const sheet = page.locator("dialog.help-dialog[open]");
+          await expect(sheet).toBeVisible();
           await fits();
-          await page.locator(".help-tip-close").click();
+          await sheet.getByRole("button", { name: "확인" }).click();
+          await expect(sheet).toHaveCount(0);
         }
         // 아래에 붙는 띠는 스크롤 중에 화면 바닥에 **정확히** 붙어 있어야 한다.
         // 본문(main)의 아래 padding 만큼 띄워지면 그 밑으로 내용이 지나간다.
-        if (width <= 390) {
+        const barFlush = async () => {
+          if (width > 390) return;
           const bar = page.locator(".wo-actions, .std-form-actions").first();
           // 폼이 화면보다 짧으면 띠는 제자리(내용 끝)에 있다. 스크롤될 때만 잰다.
           const scrollable = await page.evaluate(() => {
             const main = document.getElementById("main")!;
             return main.scrollHeight - main.clientHeight;
           });
-          if ((await bar.count()) && scrollable > 100) {
-            await page.evaluate(() =>
-              document.getElementById("main")?.scrollTo({ top: 80 }),
-            );
-            const box = (await bar.boundingBox())!;
-            const viewportHeight = await page.evaluate(
-              () => window.innerHeight,
-            );
-            expect(
-              Math.abs(box.y + box.height - viewportHeight),
-            ).toBeLessThanOrEqual(1);
-            await page.evaluate(() =>
-              document.getElementById("main")?.scrollTo({ top: 0 }),
-            );
-          }
-        }
+          if (!(await bar.count()) || scrollable <= 100) return;
+          await page.evaluate(() =>
+            document.getElementById("main")?.scrollTo({ top: 80 }),
+          );
+          const box = (await bar.boundingBox())!;
+          const viewportHeight = await page.evaluate(() => window.innerHeight);
+          expect(
+            Math.abs(box.y + box.height - viewportHeight),
+          ).toBeLessThanOrEqual(1);
+          await page.evaluate(() =>
+            document.getElementById("main")?.scrollTo({ top: 0 }),
+          );
+        };
+        await barFlush();
         if (route === "/work-orders/new") {
-          for (const label of [/위험성평가/, /일정·인원/, /검토/]) {
-            const step = page
-              .locator(".wo-steps button")
-              .filter({ hasText: label });
-            if (await step.count()) {
-              await step.click();
-              await fits();
-            }
+          // 표준서가 없는 회사라 시작 방식을 먼저 고른다. 그러면 한 장 폼이
+          // 다 펼쳐지고 구간 칩이 생긴다.
+          await page.getByRole("button", { name: /표준서 없이 진행/ }).click();
+          for (const label of [
+            "위험성평가",
+            "일정·인원",
+            "체크리스트",
+            "발급",
+          ]) {
+            await page.locator(".jump-nav a", { hasText: label }).click();
+            await fits();
           }
+          // 내려간 구간의 칩이 켜져 있다 (jump-nav.tsx).
+          await expect(page.locator(".jump-nav a[aria-current]")).toHaveText(
+            "발급",
+          );
+          // 펼쳐진 뒤에야 저장·발급 띠가 있다. 그 띠도 바닥에 붙어야 한다.
+          await barFlush();
         }
         await page.screenshot({
           path: info.outputPath(`${width}-${route.replaceAll("/", "_")}.png`),

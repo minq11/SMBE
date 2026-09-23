@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Plus, Save, X } from "lucide-react";
+import { JumpNav } from "@/components/ui/jump-nav";
 import { PeoplePicker } from "@/components/ui/people-picker";
 import {
   RiskItemCard,
@@ -118,11 +119,13 @@ export function AssessmentForm({
         </p>
       </header>
 
-      <nav className="std-jump" aria-label="구간 이동">
-        <a href="#asmt-info">실시 정보</a>
-        <a href="#asmt-risks">위험요인</a>
-        <a href="#asmt-people">참여자</a>
-      </nav>
+      <JumpNav
+        items={[
+          { id: "asmt-info", label: "실시 정보" },
+          { id: "asmt-risks", label: "위험요인" },
+          { id: "asmt-people", label: "참여자" },
+        ]}
+      />
 
       {state?.error && (
         <div className="form-error" role="alert">

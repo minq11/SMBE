@@ -78,9 +78,38 @@
 .inspection-dialog::backdrop {
   background: rgb(0 0 0 / 45%);
 }
-/* 작성 화면 머리 — 제목과 단계 탭. 좁은 화면에서는 위에 고정된다 (아래 @media). */
-.wo-editor-head .page-header {
+/* 작성 폼의 구간. 한 장에 작업 정보 → 위험성평가 → 일정·인원 → 체크리스트 →
+   발급이 이어지고, 위의 구간 칩(.jump-nav)이 길잡이다. */
+.wo-part {
+  border-top: 1px solid var(--line);
+  padding: 24px 0 8px;
+  scroll-margin-top: 16px;
+}
+.wo-part:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.wo-editor .jump-nav {
   margin-bottom: 20px;
+}
+/* 표준서에서 딸려온 위험성평가·체크리스트는 접어 둔다. 고칠 일이 드물다. */
+.wo-fold > summary {
+  font-weight: 600;
+}
+.wo-fold > summary small {
+  font-weight: 400;
+  color: var(--ink-3);
+  margin-left: 6px;
+}
+/* PTW 줄: 불필요·필요 단추와 "어떤 작업이 해당되나요?" */
+.wo-ptw {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wo-ptw .seg-row {
+  max-width: 320px;
 }
 .wo-editor-lead {
   color: var(--ink-3);
@@ -133,11 +162,9 @@
   opacity: 0.5;
 }
 
-/* 지시서의 다섯 단계 띠. 작성(.wo-steps, 버튼)과 발급 후 열람(.wo-doc-tabs,
-   링크)이 같은 순서를 걷는 같은 화면이라 모양을 하나로 쓴다. 열람 쪽만 링크인
-   것은 URL 에 남기기 위해서다 — 새로고침·뒤로가기·링크 공유가 그대로 된다.
-   목록 화면의 상태 탭(.wo-tabs)과는 다른 물건이므로 클래스를 나눈다. */
-.wo-steps,
+/* 발급된 지시서 열람의 다섯 단계 띠(.wo-doc-tabs, 링크). URL 에 남겨
+   새로고침·뒤로가기·링크 공유가 그대로 된다. 작성 폼은 단계가 아니라 한 장에
+   구간 칩(.jump-nav)을 쓴다. 목록 화면의 상태 탭(.wo-tabs)과는 다른 물건이다. */
 .wo-doc-tabs {
   display: flex;
   align-items: stretch;
@@ -147,11 +174,9 @@
   overflow-x: auto;
   scrollbar-width: none;
 }
-.wo-steps::-webkit-scrollbar,
 .wo-doc-tabs::-webkit-scrollbar {
   display: none;
 }
-.wo-steps button,
 .wo-doc-tabs a {
   position: relative;
   flex: 1 0 auto;
@@ -169,8 +194,6 @@
   cursor: pointer;
 }
 /* 번호와 번호를 잇는 선. 원의 중심 높이(패딩 8px + 반지름 14px)에 맞춘다. */
-.wo-steps button::before,
-.wo-steps button::after,
 .wo-doc-tabs a::before,
 .wo-doc-tabs a::after {
   content: "";
@@ -179,28 +202,21 @@
   height: 2px;
   background: var(--line);
 }
-.wo-steps button::before,
 .wo-doc-tabs a::before {
   left: 0;
   right: 50%;
   margin-right: 18px;
 }
-.wo-steps button::after,
 .wo-doc-tabs a::after {
   left: 50%;
   right: 0;
   margin-left: 18px;
 }
-.wo-steps button:first-child::before,
-.wo-steps button:last-child::after,
 .wo-doc-tabs a:first-child::before,
 .wo-doc-tabs a:last-child::after {
   content: none;
 }
 /* 지나온 길에만 색이 찬다. 어디까지 왔는지가 번호를 세지 않아도 보인다. */
-.wo-steps [data-state="done"]::before,
-.wo-steps [data-state="done"]::after,
-.wo-steps [data-state="current"]::before,
 .wo-doc-tabs a[data-state="done"]::before,
 .wo-doc-tabs a[data-state="done"]::after,
 .wo-doc-tabs a[data-state="current"]::before {
@@ -223,29 +239,23 @@
     background 0.15s,
     color 0.15s;
 }
-.wo-steps [data-state="done"],
 .wo-doc-tabs a[data-state="done"] {
   color: var(--ink-2);
 }
-.wo-steps [data-state="done"] .wo-doc-tab-no,
 .wo-doc-tabs a[data-state="done"] .wo-doc-tab-no {
   border-color: var(--brand);
   color: var(--brand-strong);
 }
-.wo-steps button:hover,
 .wo-doc-tabs a:hover {
   color: var(--brand-strong);
 }
-.wo-steps button:hover .wo-doc-tab-no,
 .wo-doc-tabs a:hover .wo-doc-tab-no {
   border-color: var(--brand);
 }
-.wo-steps [aria-current],
 .wo-doc-tabs [aria-current] {
   color: var(--brand-strong);
   font-weight: 700;
 }
-.wo-steps [aria-current] .wo-doc-tab-no,
 .wo-doc-tabs [aria-current] .wo-doc-tab-no {
   border-color: var(--brand);
   background: var(--brand);
@@ -732,49 +742,13 @@
   border-bottom: 1px solid var(--line);
 }
 @media (max-width: 960px) {
-  /* 제목·단계 탭은 상단바 바로 아래에 붙어 따라온다. 상단바 높이 56px 은
-     globals.css 16. Responsive 의 값이다. 본문 여백(16px)만큼 밖으로 빼서
-     밑을 지나가는 내용이 옆으로 비치지 않게 한다. */
-  .wo-editor-head {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    margin: 0 -16px;
-    padding: 10px 16px 10px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--line);
+  /* 구간 칩(.jump-nav)이 본문 위에 붙는다 (globals.css). 본문(main)이 스크롤
+     영역이고 상단바는 그 밖이라, 칩 띠 높이(60px)만 비우면 구간 머리가 띠 바로
+     밑에 온다. */
+  .wo-part {
+    scroll-margin-top: 68px;
   }
-  /* 제목은 상단바에 있다. 고정 머리에는 단계 탭만 남는다. */
-  .wo-editor-head .page-header {
-    display: none;
-  }
-  .wo-editor-head .page-header-copy {
-    align-items: center;
-    overflow-wrap: normal;
-  }
-  .wo-editor-head .page-header-copy h1 {
-    font-size: 17px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .wo-editor-head .icon-button.back-button {
-    margin-top: 0;
-  }
-  /* 고정 머리에 들어가는 단계 띠는 좌우 여백만큼 밖으로 빼 화면 끝까지 민다. */
-  .wo-editor-head .wo-steps {
-    position: relative;
-    /* 옆으로 미는 띠의 내용 너비가 문서의 최소 너비로 번지면 모바일 브라우저가
-       화면을 그 너비로 넓혀(축소해) 버린다. 띠의 크기는 내용과 무관하게 잡는다. */
-    contain: inline-size;
-    margin: 0 -16px;
-    padding: 0 16px;
-  }
-  .wo-editor-head .wo-steps button {
-    font-size: 11px;
-    padding-inline: 6px;
-  }
-  /* 이전·임시저장·다음은 화면 아래에 붙는다. 긴 단계를 다 내려가지 않아도 된다. */
+  /* 임시저장·발급은 화면 아래에 붙는다. 어디까지 내려갔든 엄지 자리는 같다. */
   .wo-editor .wo-actions {
     position: sticky;
     bottom: 0;
@@ -807,13 +781,6 @@
 @media (max-width: 520px) {
   .wo-columns {
     grid-template-columns: 1fr;
-  }
-  .wo-steps {
-    gap: 6px;
-  }
-  .wo-steps button {
-    font-size: 12px;
-    padding: 9px;
   }
   .wo-doc-tabs {
     /* 옆으로 미는 띠의 내용 너비가 문서의 최소 너비로 번지면 모바일 브라우저가

@@ -5,11 +5,7 @@ export function Panel({
   className,
   ...rest
 }: HTMLAttributes<HTMLElement> & { padded?: boolean }) {
-  const merged = [
-    "panel",
-    padded ? "panel--padded" : null,
-    className,
-  ]
+  const merged = ["panel", padded ? "panel--padded" : null, className]
     .filter(Boolean)
     .join(" ");
   return <section {...rest} className={merged} />;
