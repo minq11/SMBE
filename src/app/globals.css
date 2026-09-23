@@ -787,9 +787,9 @@ html[data-banner-hidden] .preview-banner {
   }
 }
 
-/* 로그인 전 — 써야 하는 이유 네 가지. 카드 하나가 <details> 라 어디를 눌러도
-   펼쳐진다. 한 줄 설명과 혜택 칩은 늘 보이고, 자세한 설명만 접혀 있다.
-   넓은 화면은 2×2, 좁은 화면은 세로로 화면을 채운다. */
+/* 로그인 전 — 써야 하는 이유 네 가지. 카드 하나가 단추라 어디를 눌러도 자세한
+   설명이 창(.reason-dialog)으로 뜬다. 한 줄 설명과 혜택 칩은 카드에 늘 보인다.
+   넓은 화면은 2×2, 좁은 화면은 카드 넷이 세로로 화면을 꽉 채운다. */
 .reasons-section {
   flex: 1;
   display: flex;
@@ -803,45 +803,43 @@ html[data-banner-hidden] .preview-banner {
   padding: 0;
   list-style: none;
 }
+.reasons > li {
+  display: flex;
+}
 .reason {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 16px 18px 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition:
     border-color 0.12s,
     background 0.12s;
 }
-.reason[open] {
+.reason:hover {
+  background: var(--surface-2);
   border-color: var(--brand-soft);
 }
-.reason-summary {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 18px 18px 18px 20px;
-  cursor: pointer;
-  list-style: none;
-  border-radius: var(--radius);
-  -webkit-tap-highlight-color: transparent;
-}
-.reason-summary::-webkit-details-marker {
-  display: none;
-}
-.reason-summary:hover {
-  background: var(--surface-2);
-}
-.reason-summary:active {
+.reason:active {
   background: var(--brand-softer);
 }
-.reason-summary:focus-visible {
+.reason:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 .reason-icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   border-radius: 12px;
   background: var(--accent-soft);
@@ -854,7 +852,8 @@ html[data-banner-hidden] .preview-banner {
   flex-direction: column;
   gap: 4px;
 }
-.reasons h2 {
+.reasons h2,
+.reason-dialog h2 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -875,20 +874,75 @@ html[data-banner-hidden] .preview-banner {
 }
 .reason-chevron {
   flex-shrink: 0;
-  margin-top: 10px;
   color: var(--ink-4);
-  transition: transform 0.15s;
 }
-.reason[open] .reason-chevron {
-  transform: rotate(180deg);
+.reason:hover .reason-chevron {
   color: var(--brand);
 }
-.reason-detail {
+/* 이유 설명 창. 넓은 화면은 가운데 카드, 좁은 화면은 아래에서 올라오는 시트. */
+.reason-dialog {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  width: min(480px, calc(100vw - 32px));
+}
+.reason-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+.reason-dialog-body {
+  position: relative;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.reason-dialog h2 {
+  font-size: 24px;
+  letter-spacing: -0.6px;
+}
+.reason-dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.reason-dialog-close:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.reason-dialog-lead {
   margin: 0;
-  padding: 0 18px 18px 74px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.reason-dialog-detail {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.8;
   color: var(--ink-2);
-  font-size: 13.5px;
-  line-height: 1.75;
+}
+.reason-dialog .btn-primary {
+  align-self: stretch;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 8px;
+  font-size: 16px;
+}
+.reason-dialog .reason-chips {
+  margin-top: 0;
 }
 .reason-badge {
   display: inline-flex;
@@ -4731,6 +4785,13 @@ html[data-banner-hidden] .preview-banner {
      없이 들어가도록 줄인다. 더 작은 화면에서는 본문이 스크롤된다. */
   .hero {
     padding: 14px 16px 12px;
+    /* 본문이 세로 flex 라 남는 높이가 모자라면 머리가 잘린다. 머리는 줄지 않고,
+       이유 카드가 남는 높이를 나눠 갖는다. 모자라면 본문이 스크롤된다 (e2e 가 잡는다). */
+    flex-shrink: 0;
+  }
+  /* 한 화면짜리 로그인 전 홈에는 스크롤 끝 여백이 필요 없다. */
+  .main-content:has(.reasons-section) {
+    padding-bottom: 16px;
   }
   .hero-eyebrow {
     font-size: 13px;
@@ -4753,58 +4814,52 @@ html[data-banner-hidden] .preview-banner {
     margin-top: -12px;
   }
   .hero-actions > * {
-    flex: 1;
+    flex: 1 1 auto;
     justify-content: center;
     min-height: 44px;
-    padding-inline: 10px;
+    padding-inline: 12px;
     font-size: 14px;
+    white-space: nowrap;
   }
+  /* 카드 넷이 남는 높이를 나눠 가져 화면을 채운다. 사이 여백이 아니라 카드가
+     커진다. 글자는 넓은 화면과 같은 크기 — 줄이면 텅 비어 보이고 읽기 어렵다. */
   .reasons {
     display: flex;
     flex: 1;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 6px;
+    gap: 8px;
+  }
+  .reasons > li {
+    flex: 1;
   }
   .reason {
-    border-radius: var(--radius-sm);
-  }
-  .reason-summary {
-    gap: 10px;
-    padding: 9px 10px 9px 12px;
-    border-radius: var(--radius-sm);
+    gap: 12px;
+    padding: 12px 10px 12px 14px;
+    border-radius: var(--radius);
   }
   .reason-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
   }
   .reason-content {
-    gap: 1px;
+    gap: 2px;
   }
   .reasons h2 {
-    font-size: 15px;
+    font-size: 18px;
     gap: 5px;
   }
   .reason-body {
-    font-size: 12px;
-    line-height: 1.45;
-  }
-  .reason-chevron {
-    margin-top: 6px;
-  }
-  .reason-detail {
-    padding: 0 12px 10px 54px;
-    font-size: 12px;
-    line-height: 1.55;
+    font-size: 14px;
+    line-height: 1.5;
   }
   .reason-chips {
-    margin-top: 4px;
+    margin-top: 5px;
     gap: 4px;
   }
   .reason-chips span {
-    padding: 2px 7px;
-    font-size: 11px;
+    padding: 3px 8px;
+    font-size: 12px;
   }
   .hero-phone {
     display: none;
@@ -5439,6 +5494,12 @@ body.sidebar-lock {
   }
 }
 
+/* 아주 좁은 화면(≤360px)에서는 로그인 전 머리의 단추 둘이 한 줄에 안 들어간다. */
+@media (max-width: 360px) {
+  .hero-actions {
+    flex-direction: column;
+  }
+}
 /* 확인 창 (components/ui/confirm-dialog.tsx). 넓은 화면은 가운데 카드,
    좁은 화면은 아래에서 올라오는 시트 — 엄지가 닿는 자리에 버튼이 온다. */
 .confirm-dialog {
@@ -5488,6 +5549,21 @@ body.sidebar-lock {
   .confirm-dialog-actions > * {
     flex: 1;
     justify-content: center;
+  }
+}
+@media (max-width: 640px) {
+  .reason-dialog {
+    width: 100%;
+    max-width: none;
+    margin: auto 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+  }
+  .reason-dialog-body {
+    padding: 24px 20px max(20px, env(safe-area-inset-bottom, 0px));
+  }
+  .reason-dialog h2 {
+    font-size: 22px;
   }
 }
 .pending-notice {

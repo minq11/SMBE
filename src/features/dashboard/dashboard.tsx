@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import type { Tier } from "@/components/shell/tier";
 import {
   ArrowRight,
   Check,
   CheckCircle2,
-  ChevronDown,
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
@@ -15,7 +15,7 @@ import {
   QrCode,
   ShieldCheck,
   Users,
-  type LucideIcon,
+  X,
 } from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -71,7 +71,7 @@ const REASONS = [
     body: "위험성평가 → 작업지시 → 허가서 → 안전점검, 한 흐름.",
     chips: ["인정 시 3년 감독 유예", "산재보험료 20% 인하", "중처법 일부 대응"],
     detail:
-      "매일 쌓이는 기록이 그대로 위험성평가 인정 준비가 됩니다. 인정은 안전보건공단 심사로 결정되고, 산재보험료 인하는 50인 미만 제조업 등 대상 업종에 적용됩니다. 심플안전은 중대재해처벌법상 의무 이행 기록을 돕고, 법적 책임을 대신하지는 않습니다.",
+      "매일 쌓이는 표준서·지시서·허가서·점검 기록이 그대로 위험성평가 인정 준비가 됩니다. 인정받으면 3년간 정기 감독 유예, 산재보험료 20% 인하. 중대재해처벌법이 요구하는 의무 이행 기록도 같은 흐름에서 자동으로 남습니다.",
   },
   {
     keyword: "앱 설치",
@@ -86,60 +86,142 @@ const REASONS = [
     body: "외국인 근로자도 자기 언어로 위험요인 확인·기록.",
     soon: true,
     detail:
-      "외국인 근로자가 위험요인과 감소대책을 자기 언어로 읽고 확인 기록을 남기는 기능을 준비하고 있습니다. 한국어 원문과 함께 보관됩니다.",
+      "외국인 근로자가 위험요인과 감소대책을 자기 언어로 읽고 확인 기록을 남깁니다. 한국어 원문과 함께 보관되어 관리자는 그대로 확인합니다. 곧 열립니다.",
   },
 ];
 
+type Reason = (typeof REASONS)[number];
+
 /**
- * 이유 한 장. <details> 라 카드 어디를 눌러도 펼쳐지고, 키보드·스크린리더에도
- * 펼치기로 읽힌다. 한 줄 설명과 혜택 칩은 늘 보이고, 자세한 설명만 접혀 있다.
+ * 이유 한 장. 카드 전체가 단추라 어디를 눌러도 자세한 설명이 창으로 뜬다.
+ * 제목·한 줄 설명·혜택 칩은 카드에 늘 보이고, 긴 설명만 창에 있다.
+ * 접기(<details>)는 좁은 화면에서 카드 사이가 비고 열리면 아래가 밀려 내려가
+ * 한 화면 규칙이 깨졌다. 창은 카드 배치를 흔들지 않는다.
  */
 function ReasonCard({
-  keyword,
-  icon: Icon,
-  body,
-  detail,
-  soon,
-  chips,
+  reason,
+  onOpen,
 }: {
-  keyword: string;
-  icon: LucideIcon;
-  body: string;
-  detail: string;
-  soon?: boolean;
-  chips?: string[];
+  reason: Reason;
+  onOpen: () => void;
 }) {
+  const { keyword, icon: Icon, body, soon, chips } = reason;
   return (
     <li>
-      <details className="reason">
-        <summary className="reason-summary">
-          <span className="reason-icon" aria-hidden="true">
-            <Icon size={20} />
-          </span>
-          <span className="reason-content">
-            <h2>
-              <span className="reason-keyword">&lsquo;{keyword}&rsquo;</span>{" "}
-              없는
-              {soon && <span className="reason-badge">준비 중</span>}
-            </h2>
-            <span className="reason-body">{body}</span>
-            {chips && (
-              <span className="reason-chips">
-                {chips.map((c) => (
-                  <span key={c}>{c}</span>
-                ))}
-              </span>
-            )}
-          </span>
-          <ChevronDown
-            size={18}
-            className="reason-chevron"
-            aria-hidden="true"
-          />
-        </summary>
-        <p className="reason-detail">{detail}</p>
-      </details>
+      <button type="button" className="reason" onClick={onOpen}>
+        <span className="reason-icon" aria-hidden="true">
+          <Icon size={22} />
+        </span>
+        <span className="reason-content">
+          <h2>
+            <span className="reason-keyword">&lsquo;{keyword}&rsquo;</span> 없는
+            {soon && <span className="reason-badge">준비 중</span>}
+          </h2>
+          <span className="reason-body">{body}</span>
+          {chips && (
+            <span className="reason-chips">
+              {chips.map((c) => (
+                <span key={c}>{c}</span>
+              ))}
+            </span>
+          )}
+        </span>
+        <ChevronRight size={20} className="reason-chevron" aria-hidden="true" />
+      </button>
     </li>
+  );
+}
+
+/**
+ * 이유의 자세한 설명 창. 넓은 화면은 가운데 카드, 좁은 화면은 아래에서 올라오는
+ * 시트 (globals.css .reason-dialog). 바깥을 누르거나 Esc 로 닫는다.
+ */
+function ReasonDialog({
+  reason,
+  onClose,
+}: {
+  reason: Reason | null;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (reason && !el.open) el.showModal();
+    else if (!reason && el.open) el.close();
+  }, [reason]);
+  const Icon = reason?.icon;
+  return (
+    <dialog
+      ref={ref}
+      className="reason-dialog"
+      aria-labelledby="reason-dialog-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      {reason && Icon && (
+        <div className="reason-dialog-body">
+          <button
+            type="button"
+            className="reason-dialog-close"
+            onClick={onClose}
+            aria-label="닫기"
+          >
+            <X size={20} />
+          </button>
+          <span className="reason-icon" aria-hidden="true">
+            <Icon size={24} />
+          </span>
+          <h2 id="reason-dialog-title">
+            <span className="reason-keyword">
+              &lsquo;{reason.keyword}&rsquo;
+            </span>{" "}
+            없는
+            {reason.soon && <span className="reason-badge">준비 중</span>}
+          </h2>
+          <p className="reason-dialog-lead">{reason.body}</p>
+          {reason.chips && (
+            <span className="reason-chips">
+              {reason.chips.map((c) => (
+                <span key={c}>{c}</span>
+              ))}
+            </span>
+          )}
+          <p className="reason-dialog-detail">{reason.detail}</p>
+          <button type="button" className="btn-primary" onClick={onClose}>
+            확인
+          </button>
+        </div>
+      )}
+    </dialog>
+  );
+}
+
+/** 로그인 전 — 이유 넷과 그 설명 창. */
+function Reasons() {
+  const [open, setOpen] = useState<Reason | null>(null);
+  return (
+    <section
+      className="stack reasons-section"
+      aria-label="심플안전 해야하는 이유"
+    >
+      <ol className="reasons">
+        {REASONS.map((reason) => (
+          <ReasonCard
+            key={reason.keyword}
+            reason={reason}
+            onOpen={() => setOpen(reason)}
+          />
+        ))}
+      </ol>
+      <ReasonDialog reason={open} onClose={() => setOpen(null)} />
+    </section>
   );
 }
 
@@ -415,18 +497,7 @@ function DashboardBody({
         </section>
       )}
 
-      {!isAuthenticated && (
-        <section
-          className="stack reasons-section"
-          aria-label="심플안전 해야하는 이유"
-        >
-          <ol className="reasons">
-            {REASONS.map((reason) => (
-              <ReasonCard key={reason.keyword} {...reason} />
-            ))}
-          </ol>
-        </section>
-      )}
+      {!isAuthenticated && <Reasons />}
 
       {isAuthenticated && (
         <section className="action-grid" aria-label="빠른 시작">

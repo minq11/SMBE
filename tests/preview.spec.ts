@@ -63,19 +63,29 @@ test("preview renders without secrets and only shows preparation dialogs", async
     page.getByRole("heading", { name: /‘앱 설치’ 없는/ }),
   ).toBeVisible();
   // 요금 안내 줄은 없앴다 — 이유 넷이 화면을 채운다. 한 줄 설명은 물음표를
-  // 한 줄 설명과 혜택 칩은 늘 보이고, 자세한 설명은 카드 어디를 눌러도 펼쳐진다.
+  // 한 줄 설명과 혜택 칩은 카드에 늘 보이고, 자세한 설명은 카드를 누르면 창으로 뜬다.
   await expect(page.getByText("요금·도입 문의")).toHaveCount(0);
   await expect(page.getByText("인원 제한 없이 무료.")).toBeVisible();
   await expect(page.getByText("인정 시 3년 감독 유예")).toBeVisible();
-  const firstReason = page.locator("details.reason").first();
-  await expect(firstReason).not.toHaveAttribute("open", "");
+  const dialog = page.locator("dialog.reason-dialog");
   const firstDetail = page.getByText("문의나 협의 없이 가입 즉시", {
     exact: false,
   });
   await expect(firstDetail).toBeHidden();
-  await firstReason.locator("summary").click();
-  await expect(firstReason).toHaveAttribute("open", "");
+  await page.getByRole("button", { name: /‘시작 요금’ 없는/ }).click();
+  await expect(dialog).toBeVisible();
   await expect(firstDetail).toBeVisible();
+  // 창 안의 확인 단추로 닫힌다.
+  await dialog.getByRole("button", { name: "확인" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(firstDetail).toBeHidden();
+  // 여전히 한 화면 — 창이 카드 배치를 밀어내지 않는다.
+  if (test.info().project.name === "mobile") {
+    const main = page.locator("main");
+    expect(
+      await main.evaluate((el) => el.scrollHeight - el.clientHeight),
+    ).toBeLessThanOrEqual(0);
+  }
   for (const fake of [
     "오늘의 작업 (예시)",
     "오늘 처리할 일",
