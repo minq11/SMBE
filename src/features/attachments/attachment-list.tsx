@@ -36,6 +36,7 @@ export function AttachmentList({
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [openId, setOpenId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // 열려있는 아이템의 큰 URL 이 아직 없으면 lazy 로드
@@ -74,10 +75,11 @@ export function AttachmentList({
       }))
     )
       return;
+    setError(null);
     startTransition(async () => {
       const res = await deleteAttachmentAction(id, invalidatePath);
       if (res.ok) onDeleted?.();
-      else alert(res.error);
+      else setError(res.error);
     });
   };
 
@@ -89,6 +91,11 @@ export function AttachmentList({
   return (
     <>
       {dialog}
+      {error && (
+        <p className="attach-uploader-error" role="alert">
+          {error}
+        </p>
+      )}
       <ul
         className={`attach-grid${compact ? " attach-grid--compact" : ""}`}
         role="list"

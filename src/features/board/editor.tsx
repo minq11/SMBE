@@ -117,6 +117,8 @@ export function BoardEditor({
 }) {
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** 링크 입력 칸. 브라우저 prompt 대신 도구 막대 아래에 편다 (헌법 9장). */
+  const [link, setLink] = useState<string | null>(null);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -164,20 +166,20 @@ export function BoardEditor({
 
   if (!editor) return <div className="board-editor board-editor--loading" />;
 
-  const setLink = () => {
-    const previous = editor.getAttributes("link").href as string | undefined;
-    const href = window.prompt("링크 주소 (https://…)", previous ?? "https://");
-    if (href === null) return;
-    if (!href.trim() || href.trim() === "https://") {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+  const openLink = () => {
+    if (link !== null) {
+      setLink(null);
       return;
     }
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange("link")
-      .setLink({ href: href.trim() })
-      .run();
+    const previous = editor.getAttributes("link").href as string | undefined;
+    setLink(previous ?? "");
+  };
+  const applyLink = () => {
+    const href = (link ?? "").trim();
+    const chain = editor.chain().focus().extendMarkRange("link");
+    if (href) chain.setLink({ href }).run();
+    else chain.unsetLink().run();
+    setLink(null);
   };
 
   const upload = async (file: File, kind: "image" | "video") => {
@@ -274,7 +276,12 @@ export function BoardEditor({
           () => editor.chain().focus().toggleOrderedList().run(),
           active?.ordered,
         )}
-        {tool("링크", <Link2 size={18} />, setLink, active?.link)}
+        {tool(
+          "링크",
+          <Link2 size={18} />,
+          openLink,
+          active?.link || link !== null,
+        )}
         <span className="board-toolbar-gap" />
         {/* 파일 고르기는 label 이 연다 — ref 없이 된다. */}
         <label
@@ -332,6 +339,35 @@ export function BoardEditor({
           true,
         )}
       </div>
+      {link !== null && (
+        <form
+          className="board-link-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            applyLink();
+          }}
+        >
+          <input
+            type="url"
+            inputMode="url"
+            autoFocus
+            placeholder="https://…"
+            aria-label="링크 주소"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+          />
+          <button type="submit" className="btn-primary">
+            {link.trim() ? "적용" : "링크 제거"}
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => setLink(null)}
+          >
+            취소
+          </button>
+        </form>
+      )}
       <EditorContent editor={editor} />
       <div className="board-editor-foot">
         {uploading ? (

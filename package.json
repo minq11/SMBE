@@ -7,10 +7,11 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/check-constitution.mjs && next build",
     "start": "node scripts/start.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-constitution.mjs",
+    "check:constitution": "node scripts/check-constitution.mjs",
     "check:connections": "tsx scripts/check-connections.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:reconcile-headcounts": "tsx scripts/reconcile-headcounts.ts",

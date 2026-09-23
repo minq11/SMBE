@@ -78,7 +78,7 @@
   accent-color: var(--brand);
 }
 .account-error {
-  color: #a22e17;
+  color: var(--danger);
 }
 .account-notice {
   padding: 16px;

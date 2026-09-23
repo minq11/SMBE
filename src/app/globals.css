@@ -49,6 +49,9 @@
   --font-display: var(--font-sans);
 
   /* Legacy tokens for auth/onboarding */
+  /* 위험·오류. 지우기 버튼, 입력 오류, 놓친 회차. */
+  --danger: #b83a12;
+  --danger-soft: #fef4f0;
   --orange: var(--brand);
   --muted: var(--ink-3);
   --green: var(--ok);
@@ -672,7 +675,7 @@ html[data-banner-hidden] .preview-banner {
   color: var(--ink-3);
 }
 .today-tile.is-alert strong {
-  color: #b83a12;
+  color: var(--danger);
 }
 @media (max-width: 960px) {
   /* 한 화면에 들어가야 한다. 타일 네 개를 한 줄에, 시작 카드 두 장은 버튼 한 줄로. */
@@ -1653,7 +1656,7 @@ html[data-banner-hidden] .preview-banner {
   color: var(--ok);
 }
 .invite-result-status--warn {
-  color: #b83a12;
+  color: var(--danger);
 }
 .invite-result code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1704,11 +1707,11 @@ html[data-banner-hidden] .preview-banner {
   font-weight: 700;
 }
 .row.has-error {
-  background: #fef4f0;
+  background: var(--danger-soft);
 }
 .row-error {
   flex-basis: 100%;
-  color: #b83a12;
+  color: var(--danger);
   font-size: 12px;
   margin-top: 4px;
 }
@@ -2969,7 +2972,7 @@ html[data-banner-hidden] .preview-banner {
 .check-question--invalid {
   padding: 14px;
   margin: -14px -14px 6px;
-  border: 1.5px solid #b83a12;
+  border: 1.5px solid var(--danger);
   border-radius: var(--radius-sm);
   background: rgba(184, 58, 18, 0.05);
   outline: none;
@@ -2989,7 +2992,7 @@ html[data-banner-hidden] .preview-banner {
   align-items: center;
   gap: 6px;
   margin: -6px 0 0 40px;
-  color: #b83a12;
+  color: var(--danger);
   font-size: 12px;
   font-weight: 700;
 }
@@ -3000,7 +3003,7 @@ html[data-banner-hidden] .preview-banner {
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   background: rgba(184, 58, 18, 0.08);
-  color: #b83a12;
+  color: var(--danger);
   font-size: 13px;
   font-weight: 700;
 }
@@ -3596,7 +3599,7 @@ html[data-banner-hidden] .preview-banner {
   color: var(--ink-4);
 }
 .std-list-remove:hover {
-  color: #b83a12;
+  color: var(--danger);
 }
 .std-add-button {
   align-self: flex-start;
@@ -3920,7 +3923,7 @@ html[data-banner-hidden] .preview-banner {
 }
 .std-detail-risk-badge--high {
   background: #fdecea;
-  color: #b83a12;
+  color: var(--danger);
 }
 .std-detail-risk-badge--mid {
   background: var(--warn-soft);
@@ -4492,8 +4495,8 @@ html[data-banner-hidden] .preview-banner {
   color: #fff;
 }
 .ghost-button--danger:hover {
-  border-color: #b83a12;
-  color: #b83a12;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 .logout-button {
   padding: 7px 14px;
@@ -5318,8 +5321,8 @@ body.sidebar-lock {
 .form-error {
   padding: 12px 14px;
   border-radius: var(--radius-sm);
-  background: #fef4f0;
-  color: #b83a12;
+  background: var(--danger-soft);
+  color: var(--danger);
   font-size: 13px;
   margin-bottom: 18px;
 }
@@ -5363,7 +5366,7 @@ body.sidebar-lock {
   gap: 8px;
   padding: 12px 20px;
   border-radius: var(--radius-sm);
-  background: #b83a12;
+  background: var(--danger);
   color: #fff;
   font-weight: 700;
   font-size: 14px;
@@ -5860,7 +5863,7 @@ body.sidebar-lock {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #b83a12;
+  color: var(--danger);
 }
 .attach-empty {
   font-size: 12px;

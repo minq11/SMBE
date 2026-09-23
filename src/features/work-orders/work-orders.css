@@ -681,8 +681,8 @@
   cursor: pointer;
 }
 .wo-delete-button:hover:not(:disabled) {
-  border-color: #b83a12;
-  color: #b83a12;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 .wo-delete-button:disabled {
   opacity: 0.6;
@@ -1095,7 +1095,7 @@
 }
 .wo-sheet-risks th,
 .wo-sheet-risks td {
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid var(--ink-4);
   padding: 1.2mm 2mm 1.2mm 0;
   text-align: left;
   vertical-align: top;
