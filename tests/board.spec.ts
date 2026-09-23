@@ -64,8 +64,21 @@ test("board: manager writes and publishes a notice; popup shows on home and hide
       page.getByRole("heading", { name: "10월 정기 안전점검 일정" }),
     ).toBeVisible();
     await expect(page.getByText("작업 전 TBM 필수")).toBeVisible();
+    // 고치기 → 저장은 글 화면으로 돌아온다.
+    await page.getByRole("link", { name: "고치기" }).click();
+    await expect(page).toHaveURL(/\/edit$/);
+    await page
+      .getByLabel("제목", { exact: true })
+      .fill("10월 정기 안전점검 일정 (변경)");
+    await page.getByRole("button", { name: "저장" }).click();
+    await expect(page).toHaveURL(/\/board\/notices\/[0-9a-f-]+$/);
+    await expect(
+      page.getByRole("heading", { name: "10월 정기 안전점검 일정 (변경)" }),
+    ).toBeVisible();
     await page.goto("/board/notices");
-    await expect(page.getByText("10월 정기 안전점검 일정")).toBeVisible();
+    await expect(
+      page.getByText("10월 정기 안전점검 일정 (변경)"),
+    ).toBeVisible();
     // 홈에서 팝업
     await page.goto("/");
     const popup = page.locator("dialog.notice-popup");

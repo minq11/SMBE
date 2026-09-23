@@ -67,16 +67,14 @@ export function PostForm({
         return;
       }
       setDirty(false);
-      if (publish && !published) {
+      // 발행했거나 발행된 글을 고쳤으면 글 화면으로 돌아간다. 초안의 임시저장만
+      // 편집 화면에 남는다 — 아직 쓰는 중이다.
+      if (publish || published) {
         router.replace(`/board/${slug}/${post.id}`);
         router.refresh();
         return;
       }
-      setNotice(
-        result.pushed > 0
-          ? `저장했습니다. 기기 ${result.pushed}대에 알렸습니다.`
-          : "저장했습니다.",
-      );
+      setNotice("임시저장했습니다.");
     });
 
   const remove = async () => {
