@@ -1,17 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import type { Tier } from "@/components/shell/tier";
 import {
   ArrowRight,
+  Check,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
-  HelpCircle,
+  Coins,
+  Globe,
+  QrCode,
   ShieldCheck,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -51,86 +55,129 @@ export type Today = {
 /**
  * 로그인 전 화면 — 구성 설명이 아니라 "왜 써야 하는가" 네 가지.
  * 가짜 데이터는 두지 않는다. 처음 온 사람이 읽고 바로 시작하게만 한다.
+ * 한 줄 설명은 늘 보이고, 카드 어디를 눌러도 자세한 설명이 펼쳐진다.
  */
 const REASONS = [
   {
     keyword: "시작 요금",
+    icon: Coins,
     body: "인원 제한 없이 무료. 유료는 필요할 때만.",
+    detail:
+      "문의나 협의 없이 가입 즉시 씁니다. 표준서·지시서·허가서·TBM·점검 같은 글자 기반 기능은 인원 제한 없이 무료이고, 사진 첨부·알림톡·지시서 출력물·전체 기록 조회가 필요해질 때만 유료로 넘어갑니다.",
   },
   {
     keyword: "걱정",
+    icon: ShieldCheck,
     body: "위험성평가 → 작업지시 → 허가서 → 안전점검, 한 흐름.",
     chips: ["인정 시 3년 감독 유예", "산재보험료 20% 인하", "중처법 일부 대응"],
+    detail:
+      "매일 쌓이는 기록이 그대로 위험성평가 인정 준비가 됩니다. 인정은 안전보건공단 심사로 결정되고, 산재보험료 인하는 50인 미만 제조업 등 대상 업종에 적용됩니다. 심플안전은 중대재해처벌법상 의무 이행 기록을 돕고, 법적 책임을 대신하지는 않습니다.",
   },
   {
     keyword: "앱 설치",
+    icon: QrCode,
     body: "구성원은 QR만 찍으면 TBM·점검 기록.",
+    detail:
+      "관리자가 구성원을 초대하면 끝입니다. 지시서가 발급되면 본인 전용 링크가 가고, 현장에 붙인 QR 을 찍으면 위험요인과 대책을 확인하고 TBM·작업 중 점검을 기록합니다. 홈 화면에 추가하면 앱처럼 열립니다.",
   },
   {
     keyword: "국경",
+    icon: Globe,
     body: "외국인 근로자도 자기 언어로 위험요인 확인·기록.",
     soon: true,
+    detail:
+      "외국인 근로자가 위험요인과 감소대책을 자기 언어로 읽고 확인 기록을 남기는 기능을 준비하고 있습니다. 한국어 원문과 함께 보관됩니다.",
   },
 ];
 
 /**
- * 이유 한 장. 제목만 먼저 보이고, 물음표를 눌러야 한 줄 설명이 펼쳐진다 —
- * 자세한 설명을 빼는 게 아니라 필요할 때만 꺼내 본다. 다만 혜택 칩(2번 '걱정')은
- * 늘 보이는 정보라 펼치기와 무관하게 항상 띄운다.
+ * 이유 한 장. <details> 라 카드 어디를 눌러도 펼쳐지고, 키보드·스크린리더에도
+ * 펼치기로 읽힌다. 한 줄 설명과 혜택 칩은 늘 보이고, 자세한 설명만 접혀 있다.
  */
 function ReasonCard({
-  index,
   keyword,
+  icon: Icon,
   body,
+  detail,
   soon,
   chips,
 }: {
-  index: number;
   keyword: string;
+  icon: LucideIcon;
   body: string;
+  detail: string;
   soon?: boolean;
   chips?: string[];
 }) {
-  const [open, setOpen] = useState(false);
-  const bodyId = `reason-body-${index}`;
-
   return (
     <li>
-      <span className="reason-no" aria-hidden="true">
-        {index + 1}
-      </span>
-      <div className="reason-content">
-        <div className="reason-head">
-          <h2>
-            <span className="reason-keyword">&lsquo;{keyword}&rsquo;</span>{" "}
-            없는
-            {soon && <span className="reason-badge">준비 중</span>}
-          </h2>
-          <button
-            type="button"
-            className="reason-toggle"
-            aria-expanded={open}
-            aria-controls={bodyId}
-            aria-label="자세히 보기"
-            onClick={() => setOpen((v) => !v)}
-          >
-            <HelpCircle size={18} />
-          </button>
-        </div>
-        {chips && (
-          <div className="reason-chips">
-            {chips.map((c) => (
-              <span key={c}>{c}</span>
-            ))}
-          </div>
-        )}
-        {open && (
-          <p id={bodyId} className="reason-detail">
-            {body}
-          </p>
-        )}
-      </div>
+      <details className="reason">
+        <summary className="reason-summary">
+          <span className="reason-icon" aria-hidden="true">
+            <Icon size={20} />
+          </span>
+          <span className="reason-content">
+            <h2>
+              <span className="reason-keyword">&lsquo;{keyword}&rsquo;</span>{" "}
+              없는
+              {soon && <span className="reason-badge">준비 중</span>}
+            </h2>
+            <span className="reason-body">{body}</span>
+            {chips && (
+              <span className="reason-chips">
+                {chips.map((c) => (
+                  <span key={c}>{c}</span>
+                ))}
+              </span>
+            )}
+          </span>
+          <ChevronDown
+            size={18}
+            className="reason-chevron"
+            aria-hidden="true"
+          />
+        </summary>
+        <p className="reason-detail">{detail}</p>
+      </details>
     </li>
+  );
+}
+
+/**
+ * 넓은 화면의 머리 오른쪽에 두는 작업자 화면 예시. 포스터의 그림을 옮겼다.
+ * 실제 회사처럼 보이지 않게 이름은 가리고 "예시" 라고 적는다. 좁은 화면에서는
+ * 숨긴다 (한 화면에 들어가야 한다).
+ */
+function HeroPhone() {
+  const rows = [
+    { text: "절단기 #2 작업 전 점검", meta: "08:12 · 김○○", done: true },
+    { text: "화기작업 허가서 승인", meta: "08:20 · 반장 박○○", done: true },
+    { text: "용접 부스 위험요인 확인", meta: "08:30 · 응우옌 ○", done: true },
+    { text: "지게차 일일점검", meta: "QR 스캔 대기", done: false },
+  ];
+  return (
+    <div className="hero-phone" aria-hidden="true">
+      <div className="hero-phone-screen">
+        <div className="hero-phone-head">
+          <small>심플안전 · 2라인</small>
+          <b>오늘 점검 3 / 4</b>
+        </div>
+        <ul className="hero-phone-list">
+          {rows.map((r) => (
+            <li key={r.text} className={r.done ? "is-done" : ""}>
+              <span className="hero-phone-check">
+                {r.done && <Check size={11} strokeWidth={3} />}
+              </span>
+              <span>
+                {r.text}
+                <small>{r.meta}</small>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <p className="hero-phone-cap">작업자 화면 예시</p>
+    </div>
   );
 }
 
@@ -303,19 +350,22 @@ function DashboardBody({
           구호에 주면 정작 할 일이 밀린다 — 오늘 할 일이 먼저다. */}
       {!isAuthenticated && (
         <section className="hero">
-          <p className="hero-eyebrow">우리가</p>
-          <h1>
-            <span>심플안전</span> 해야하는 이유
-          </h1>
-          <p className="hero-lead">당장 오늘부터 심플하게 시작해요</p>
-          <div className="hero-actions">
-            <Link href="/login" className="btn-primary">
-              무료로 시작 <ArrowRight size={15} />
-            </Link>
-            <Link href="/recognition-check" className="btn-secondary">
-              <ShieldCheck size={15} /> 우리회사 안전수준 진단
-            </Link>
+          <div className="hero-copy">
+            <p className="hero-eyebrow">우리가</p>
+            <h1>
+              <span>심플안전</span> 해야하는 이유
+            </h1>
+            <p className="hero-lead">당장 오늘부터 심플하게 시작해요</p>
+            <div className="hero-actions">
+              <Link href="/login" className="btn-primary">
+                무료로 시작 <ArrowRight size={15} />
+              </Link>
+              <Link href="/recognition-check" className="btn-secondary">
+                <ShieldCheck size={15} /> 우리회사 안전수준 진단
+              </Link>
+            </div>
           </div>
+          <HeroPhone />
         </section>
       )}
       {isAuthenticated && today && (
@@ -366,10 +416,13 @@ function DashboardBody({
       )}
 
       {!isAuthenticated && (
-        <section className="stack reasons-section" aria-label="심플안전 해야하는 이유">
+        <section
+          className="stack reasons-section"
+          aria-label="심플안전 해야하는 이유"
+        >
           <ol className="reasons">
-            {REASONS.map((reason, i) => (
-              <ReasonCard key={reason.keyword} index={i} {...reason} />
+            {REASONS.map((reason) => (
+              <ReasonCard key={reason.keyword} {...reason} />
             ))}
           </ol>
         </section>

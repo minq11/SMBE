@@ -787,61 +787,79 @@ html[data-banner-hidden] .preview-banner {
   }
 }
 
-/* 로그인 전 — 써야 하는 이유 네 가지. 노트·요금 문의 줄을 뺀 자리를 이 넷이
-   채운다. 제목만 먼저 보이고, 한 줄 설명은 물음표를 눌러야 펼쳐진다. */
+/* 로그인 전 — 써야 하는 이유 네 가지. 카드 하나가 <details> 라 어디를 눌러도
+   펼쳐진다. 한 줄 설명과 혜택 칩은 늘 보이고, 자세한 설명만 접혀 있다.
+   넓은 화면은 2×2, 좁은 화면은 세로로 화면을 채운다. */
 .reasons-section {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 .reasons {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: reason;
 }
-.reasons li {
-  display: flex;
-  gap: 16px;
-  padding: 22px 24px;
+.reason {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  transition:
+    border-color 0.12s,
+    background 0.12s;
 }
-.reason-no {
+.reason[open] {
+  border-color: var(--brand-soft);
+}
+.reason-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 18px 18px 20px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius);
+  -webkit-tap-highlight-color: transparent;
+}
+.reason-summary::-webkit-details-marker {
+  display: none;
+}
+.reason-summary:hover {
+  background: var(--surface-2);
+}
+.reason-summary:active {
+  background: var(--brand-softer);
+}
+.reason-summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.reason-icon {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--accent-soft);
   color: var(--accent-ink);
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 800;
 }
 .reason-content {
   flex: 1;
   min-width: 0;
-}
-.reason-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  gap: 4px;
 }
 .reasons h2 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 900;
   letter-spacing: -0.4px;
   line-height: 1.3;
@@ -850,31 +868,27 @@ html[data-banner-hidden] .preview-banner {
 .reason-keyword {
   color: var(--brand);
 }
-.reason-toggle {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  color: var(--ink-3);
-  transition:
-    background 0.12s,
-    color 0.12s,
-    border-color 0.12s;
-}
-.reason-toggle:hover,
-.reason-toggle[aria-expanded="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent-ink);
-}
-.reasons .reason-detail {
-  margin-top: 8px;
+.reason-body {
   color: var(--ink-2);
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.6;
+}
+.reason-chevron {
+  flex-shrink: 0;
+  margin-top: 10px;
+  color: var(--ink-4);
+  transition: transform 0.15s;
+}
+.reason[open] .reason-chevron {
+  transform: rotate(180deg);
+  color: var(--brand);
+}
+.reason-detail {
+  margin: 0;
+  padding: 0 18px 18px 74px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.75;
 }
 .reason-badge {
   display: inline-flex;
@@ -931,12 +945,92 @@ html[data-banner-hidden] .preview-banner {
 /* =========================================================================
    7. Hero
    ========================================================================= */
-/* 로그인 전 머리 — 포스터의 초록 상단처럼. 강조 단어와 시작 버튼은 노랑. */
+/* 로그인 전 머리 — 포스터의 초록 상단처럼. 강조 단어와 시작 버튼은 노랑.
+   넓은 화면에서는 오른쪽에 작업자 화면 예시가 선다. */
 .hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
   padding: 32px 32px 30px;
   border-radius: var(--radius-lg);
   background: var(--brand);
   color: #fff;
+  overflow: hidden;
+}
+.hero-copy {
+  min-width: 0;
+  flex: 1;
+}
+.hero-phone {
+  flex-shrink: 0;
+  width: 200px;
+  margin: -10px 0 -70px;
+}
+.hero-phone-screen {
+  background: #fff;
+  color: var(--ink);
+  border-radius: 22px;
+  border: 6px solid #111;
+  padding: 12px 10px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+.hero-phone-head small {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--brand);
+}
+.hero-phone-head b {
+  display: block;
+  font-size: 15px;
+  letter-spacing: -0.3px;
+  margin: 1px 0 8px;
+}
+.hero-phone-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.hero-phone-list li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 7px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.hero-phone-list li small {
+  display: block;
+  font-weight: 400;
+  color: var(--ink-3);
+  font-size: 9.5px;
+}
+.hero-phone-check {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  color: #fff;
+}
+.hero-phone-list li.is-done .hero-phone-check {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.hero-phone-cap {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
 }
 .hero h1 {
   font-size: 40px;
@@ -4666,39 +4760,54 @@ html[data-banner-hidden] .preview-banner {
     font-size: 14px;
   }
   .reasons {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
     gap: 6px;
   }
-  .reasons li {
-    padding: 10px 12px;
-    gap: 10px;
+  .reason {
     border-radius: var(--radius-sm);
   }
-  .reason-no {
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
-    border-radius: 8px;
+  .reason-summary {
+    gap: 10px;
+    padding: 9px 10px 9px 12px;
+    border-radius: var(--radius-sm);
+  }
+  .reason-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+  .reason-content {
+    gap: 1px;
   }
   .reasons h2 {
     font-size: 15px;
     gap: 5px;
   }
-  .reason-toggle {
-    width: 28px;
-    height: 28px;
-  }
-  .reasons .reason-detail {
-    margin-top: 3px;
+  .reason-body {
     font-size: 12px;
     line-height: 1.45;
   }
+  .reason-chevron {
+    margin-top: 6px;
+  }
+  .reason-detail {
+    padding: 0 12px 10px 54px;
+    font-size: 12px;
+    line-height: 1.55;
+  }
   .reason-chips {
-    margin-top: 5px;
+    margin-top: 4px;
     gap: 4px;
   }
   .reason-chips span {
     padding: 2px 7px;
     font-size: 11px;
+  }
+  .hero-phone {
+    display: none;
   }
   .hero-lead {
     font-size: 14px;
