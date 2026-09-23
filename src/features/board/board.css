@@ -89,19 +89,22 @@
   background: var(--surface-2);
   color: var(--ink-3);
 }
-/* 글 머리. 넓은 화면은 제목 + 한 줄 메타, 좁은 화면은 제목이 상단바로 가고 메타만. */
+/* 글 머리: 제목 → 작성자·날짜 (오른쪽에 고치기) → 구분선 → 본문. 문서처럼 읽힌다. */
 .board-post-head {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   width: 100%;
   max-width: 760px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
 }
 .board-post-title {
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.4px;
   line-height: 1.3;
+  word-break: keep-all;
 }
 .board-post-meta {
   display: flex;
@@ -201,6 +204,10 @@
   width: 100%;
   max-width: 760px;
   padding: 0 0 24px;
+}
+/* 본문 사이 기본 간격(56px)은 문서에는 넓다. 구분선 아래 한 줄 반쯤. */
+.board-post-head + .board-post {
+  margin-top: -32px;
 }
 
 /* 편집기 */
@@ -421,10 +428,10 @@
 
 @media (max-width: 960px) {
   .board-post-title {
-    display: none;
+    font-size: 22px;
   }
-  .board-post-head {
-    gap: 0;
+  .board-post-head + .board-post {
+    margin-top: -10px;
   }
   .board-tool--desktop,
   .board-toolbar-gap {

@@ -35,12 +35,14 @@ export default async function BoardPostPage({
   const { post, manager } = data;
 
   return (
-    <BoardShell session={session} kind={kind} title={post.title}>
+    // 상단바는 게시판 이름(공지사항·자료실). 제목은 문서의 일부라 본문 위에 둔다.
+    <BoardShell session={session} kind={kind}>
       <div className="board-post-head">
         <h1 className="board-post-title">{post.title}</h1>
         <p className="board-post-meta">
-          <span>{post.author}</span>
-          <span>{postDate(post.published_at ?? post.updated_at)}</span>
+          <span>
+            {post.author} · {postDate(post.published_at ?? post.updated_at)}
+          </span>
           {post.status === "DRAFT" && (
             <span className="board-tag">작성 중</span>
           )}

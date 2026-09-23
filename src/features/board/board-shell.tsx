@@ -25,6 +25,8 @@ export async function BoardShell({
       userName={session.user.displayName ?? undefined}
       isAuthenticated
       isOperator={await isCurrentUserOperator()}
+      // 마지막 조각이 상단바 제목이 된다. 글 화면은 게시판 이름으로 끝나고
+      // (제목은 본문 위에), 편집 화면만 "공지사항 쓰기" 같은 행동 이름을 단다.
       breadcrumb={[
         { label: "통합자료실", href: "/board/notices" },
         title ? { label, href: "/board/" + kind } : { label },
