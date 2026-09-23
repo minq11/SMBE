@@ -248,10 +248,11 @@ export function Sidebar({
       aria-modal={isMobile && isOpen ? true : undefined}
       aria-label="주 메뉴"
     >
+      {/* 서랍 포커스 잡기(app-shell.tsx)는 문서 순서의 첫 조작 요소를 잡는다.
+          닫기가 시각적으로는 로고 오른쪽이지만, DOM 은 먼저 두고
+          row-reverse 로 자리만 바꾼다 — 열자마자 포커스가 닫기에 있어야
+          바로 Esc 나 Tab 으로 서랍을 다룰 수 있다. */}
       <div className="sidebar-head">
-        <Link href="/" className="brand" aria-label="심플안전 홈">
-          <BrandWordmark className="brand-logo" />
-        </Link>
         <button
           type="button"
           className="sidebar-close"
@@ -260,6 +261,9 @@ export function Sidebar({
         >
           <X size={18} />
         </button>
+        <Link href="/" className="brand" aria-label="심플안전 홈">
+          <BrandWordmark className="brand-logo" />
+        </Link>
       </div>
 
       <Link href="/billing" className="workspace-picker" onClick={onClose}>
