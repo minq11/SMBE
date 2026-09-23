@@ -127,14 +127,16 @@ export function Topbar({
             <Wrench size={17} />
           </Link>
         )}
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="알림"
-          onClick={() => preview("알림")}
-        >
-          <Bell size={17} />
-        </button>
+        {isAuthenticated && (
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="알림"
+            onClick={() => preview("알림")}
+          >
+            <Bell size={17} />
+          </button>
+        )}
         {isAuthenticated ? (
           <>
             <Link

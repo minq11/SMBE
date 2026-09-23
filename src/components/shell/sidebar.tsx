@@ -10,15 +10,19 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardCheck,
-  ClipboardList,
+  ClipboardPenLine,
   FolderOpen,
   HelpCircle,
   Home,
+  ListChecks,
   LogOut,
   Megaphone,
   Settings2,
   ShieldCheck,
+  Speech,
+  SquareCheckBig,
   TriangleAlert,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { usePreview } from "./preview-dialog";
@@ -105,15 +109,21 @@ const NAV: ReadonlyArray<NavEntry> = [
   {
     key: "orders",
     title: "작업지시",
-    icon: ClipboardList,
+    icon: Speech,
     href: "/work-orders",
   },
   { key: "standards", title: "작업표준서", icon: BookOpen, href: "/standards" },
-  { key: "assessment", title: "위험성평가", icon: ShieldCheck },
+  { key: "assessment", title: "위험성평가", icon: ListChecks },
+  {
+    key: "permits",
+    title: "위험작업허가",
+    icon: ClipboardPenLine,
+    href: "/permits",
+  },
   {
     key: "inspection",
     title: "안전점검",
-    icon: ClipboardCheck,
+    icon: SquareCheckBig,
     children: [
       {
         key: "inspection",
@@ -154,12 +164,6 @@ const NAV: ReadonlyArray<NavEntry> = [
         href: "/board/resources",
       },
     ],
-  },
-  {
-    key: "permits",
-    title: "위험작업허가",
-    icon: ShieldCheck,
-    href: "/permits",
   },
 ];
 
@@ -244,12 +248,23 @@ export function Sidebar({
       aria-modal={isMobile && isOpen ? true : undefined}
       aria-label="주 메뉴"
     >
-      <button type="button" className="sidebar-close" onClick={onClose}>
-        메뉴 닫기 ×
-      </button>
-      <Link href="/" className="brand" aria-label="심플안전 홈">
-        <BrandWordmark className="brand-logo" />
-      </Link>
+      {/* 서랍 포커스 잡기(app-shell.tsx)는 문서 순서의 첫 조작 요소를 잡는다.
+          닫기가 시각적으로는 로고 오른쪽이지만, DOM 은 먼저 두고
+          row-reverse 로 자리만 바꾼다 — 열자마자 포커스가 닫기에 있어야
+          바로 Esc 나 Tab 으로 서랍을 다룰 수 있다. */}
+      <div className="sidebar-head">
+        <button
+          type="button"
+          className="sidebar-close"
+          onClick={onClose}
+          aria-label="메뉴 닫기"
+        >
+          <X size={18} />
+        </button>
+        <Link href="/" className="brand" aria-label="심플안전 홈">
+          <BrandWordmark className="brand-logo" />
+        </Link>
+      </div>
 
       <Link href="/billing" className="workspace-picker" onClick={onClose}>
         <span className="workspace-icon">
@@ -315,6 +330,19 @@ export function Sidebar({
       </nav>
 
       <div className="sidebar-foot">
+        {/* 다국어는 아직 없다. 자리만 미리 둔다 — 나중에 실제로 바뀌는 언어
+            선택으로 채운다. */}
+        <button
+          type="button"
+          className="sidebar-support"
+          onClick={() => {
+            onClose();
+            preview("언어 선택");
+          }}
+        >
+          <span aria-hidden="true">🇰🇷</span>
+          한국어
+        </button>
         <button
           type="button"
           className="sidebar-support"
