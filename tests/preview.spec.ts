@@ -62,13 +62,13 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await expect(
     page.getByRole("heading", { name: /‘앱 설치’ 없는/ }),
   ).toBeVisible();
-  // 요금 안내 줄은 없앴다 — 이유 넷이 화면을 채운다. 한 줄 설명은 물음표를
-  // 한 줄 설명과 혜택 칩은 카드에 늘 보이고, 자세한 설명은 카드를 누르면 창으로 뜬다.
+  // 요금 안내 줄은 없앴다 — 이유 넷이 화면을 채운다. 한 줄 설명과 혜택 칩은
+  // 카드에 늘 보이고, 자세한 설명은 카드를 누르면 창으로 뜬다.
   await expect(page.getByText("요금·도입 문의")).toHaveCount(0);
   await expect(page.getByText("인원 제한 없이 무료.")).toBeVisible();
   await expect(page.getByText("인정 시 3년 감독 유예")).toBeVisible();
   const dialog = page.locator("dialog.reason-dialog");
-  const firstDetail = page.getByText("문의나 협의 없이 가입 즉시", {
+  const firstDetail = page.getByText("문의·협의 없이 가입 즉시", {
     exact: false,
   });
   await expect(firstDetail).toBeHidden();

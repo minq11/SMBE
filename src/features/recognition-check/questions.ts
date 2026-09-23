@@ -41,6 +41,8 @@ export type Question = {
   maxScore: number;
   choices: Choice[];
   smbeHint?: { href: string; label: string };
+  /** 심플안전으로는 대응할 수 없는 항목의 아주 짧은 대안 안내. */
+  offlineTip?: string;
 };
 
 // -----------------------------------------------------------------------------
@@ -61,6 +63,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 장소에 게시", score: 5 },
       { key: "OK", label: "우수", detail: "사무실·현장 상시 게시", score: 10 },
     ],
+    offlineTip: "방침·목표를 문서로 정해 사무실·현장에 게시하세요.",
   },
   {
     id: "I-1-2",
@@ -86,6 +89,7 @@ export const QUESTIONS: Question[] = [
       { key: "MI", label: "미이수", score: 1 },
       { key: "OK", label: "이수", score: 15 },
     ],
+    offlineTip: "안전보건공단 홈페이지에서 사업주 위험성평가 교육을 신청해 이수하세요.",
   },
   {
     id: "I-2-2",
@@ -97,6 +101,7 @@ export const QUESTIONS: Question[] = [
       { key: "MI", label: "미이수", score: 1 },
       { key: "OK", label: "이수", score: 15 },
     ],
+    offlineTip: "위험성평가 담당자를 안전보건공단 교육에 등록해 이수시키세요.",
   },
   {
     id: "I-2-3",
@@ -109,6 +114,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 포함", score: 10 },
       { key: "OK", label: "우수", detail: "전반적으로 포함", score: 20 },
     ],
+    offlineTip: "정기 안전보건교육 자료에 위험성평가 내용을 넣어 함께 교육하세요.",
   },
   {
     id: "I-3-1",
@@ -121,6 +127,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "관리적 대책 중심", score: 5 },
       { key: "OK", label: "우수", detail: "평가결과 반영해 집행", score: 10 },
     ],
+    offlineTip: "안전보건 예산을 별도로 편성하고, 평가 결과에 따라 실제로 집행하세요.",
   },
   {
     id: "I-4-1",
@@ -150,6 +157,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 누락", score: 3 },
       { key: "OK", label: "우수", detail: "의견 수렴·특성 반영", score: 5 },
     ],
+    offlineTip: "평가 목적·방법·역할·시기를 담은 실시규정을 문서로 작성하세요.",
   },
   {
     id: "II-1-2",
@@ -162,6 +170,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 누락", score: 3 },
       { key: "OK", label: "우수", detail: "구체적으로 분류·활용", score: 5 },
     ],
+    offlineTip: "작업방법·설비·물질·환경 정보를 미리 조사해 목록으로 정리하세요.",
   },
   {
     id: "II-2-1",
@@ -257,6 +266,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 알고 있음", score: 7 },
       { key: "OK", label: "우수", detail: "주도적으로 참여", score: 15 },
     ],
+    offlineTip: "사업주·임원·현장소장이 위험성평가 운영절차를 함께 숙지하세요.",
   },
   {
     id: "III-1-2",
@@ -270,6 +280,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "형식적", score: 7 },
       { key: "OK", label: "우수", detail: "직접 참여·독려", score: 15 },
     ],
+    offlineTip: "사업주·임원이 이행 여부를 주기적으로 직접 점검하세요.",
   },
   {
     id: "III-1-3",
@@ -283,6 +294,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "제안제도 운영", score: 5 },
       { key: "OK", label: "우수", detail: "포상 등 다양한 인센티브", score: 10 },
     ],
+    offlineTip: "참여를 독려할 포상·인센티브 제도를 마련해 운영하세요.",
   },
 
   // -------------------------------------------------------- SECTION III (manager 30)
@@ -298,6 +310,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 알고 참여", score: 5 },
       { key: "OK", label: "우수", detail: "적극적으로 참여", score: 10 },
     ],
+    offlineTip: "관리감독자에게 위험성평가 절차와 역할을 교육하세요.",
   },
   {
     id: "III-2-2",
@@ -311,6 +324,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 알고 있음", score: 5 },
       { key: "OK", label: "우수", detail: "정확히 알고 있음", score: 10 },
     ],
+    offlineTip: "관리감독자가 담당 공정의 위험요인과 대책을 숙지하도록 하세요.",
   },
   {
     id: "III-2-3",
@@ -340,6 +354,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "제도만 알고 세부 미숙", score: 3 },
       { key: "OK", label: "우수", detail: "제도·절차 정확히 인지", score: 5 },
     ],
+    offlineTip: "근로자에게 위험성평가 제도와 절차를 안내·교육하세요.",
   },
   {
     id: "III-3-2",
@@ -367,6 +382,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 알음", score: 7 },
       { key: "OK", label: "우수", detail: "정확히 알고 제보 중", score: 15 },
     ],
+    offlineTip: "근로자가 위험요인을 알고 제보할 수 있는 통로를 마련하세요.",
   },
 
   // ----------------------------------------------------------------- SECTION IV
@@ -385,6 +401,7 @@ export const QUESTIONS: Question[] = [
       { key: "V1", label: "60% 이상 ~ 100% 미만", score: 92 },
       { key: "V0", label: "60% 미만 또는 무재해", score: 100 },
     ],
+    offlineTip: "무재해를 유지하거나, 재해가 났다면 원인을 분석해 재발을 막으세요.",
   },
 ];
 
