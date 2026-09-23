@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { orderCommandAction } from "./actions";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 type Command =
   | "request"
@@ -100,11 +101,7 @@ export function OrderCommand({
         })()}
         {pending ? "처리 중…" : label}
       </button>
-      {state?.error && (
-        <p role="alert" className="form-error">
-          {state.error}
-        </p>
-      )}
+      <FormErrorDialog message={state?.error} nonce={state} />
       {state?.message && (
         <p role="status" className="wo-muted">
           {state.message}
@@ -244,11 +241,7 @@ export function DeleteDraftButton({
         <Trash2 size={14} />
         {pending ? "삭제 중…" : "삭제"}
       </button>
-      {state?.error && (
-        <p role="alert" className="form-error">
-          {state.error}
-        </p>
-      )}
+      <FormErrorDialog message={state?.error} nonce={state} />
     </form>
   );
 }

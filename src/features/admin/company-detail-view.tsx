@@ -10,6 +10,7 @@ import {
   type ActionState,
 } from "./actions";
 import { PAID_PLANS, seatCapFor, planName } from "@/features/billing/plans";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 const SIZE_LABEL: Record<CompanyDetail["initial_employee_size_band"], string> =
   {
@@ -111,11 +112,7 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
             <Save size={13} /> {planPending ? "변경 중…" : "변경"}
           </button>
         </form>
-        {planState?.error && (
-          <p role="alert" className="form-error">
-            {planState.error}
-          </p>
-        )}
+        <FormErrorDialog message={planState?.error} nonce={planState} />
         {planState?.message && (
           <p role="status" className="wo-muted">
             {planState.message}
@@ -193,7 +190,7 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
               {pending ? "저장 중..." : "저장"}
             </button>
           </div>
-          {state?.error && <div className="form-error">{state.error}</div>}
+          <FormErrorDialog message={state?.error} nonce={state} />
           {state?.message && <div className="form-ok">{state.message}</div>}
         </form>
       </section>

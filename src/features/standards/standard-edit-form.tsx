@@ -3,7 +3,9 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { HelpDialog } from "@/components/ui/help-dialog";
+import { BasicHelp, ChecklistHelp, MethodHelp } from "./section-help";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { PtwHelp } from "./ptw-help";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
@@ -124,18 +126,23 @@ export function StandardEditForm({
         </p>
       </header>
 
-      {state?.error && <div className="form-error">{state.error}</div>}
+      <FormErrorDialog message={state?.error} nonce={state} />
 
       <JumpNav
         items={[
           { id: "std-basic", label: "기본 정보" },
           { id: "std-steps", label: "작업 단계" },
-          { id: "std-checklist", label: "체크리스트" },
+          { id: "std-checklist", label: "안전/품질 체크리스트" },
         ]}
       />
 
       <section className="std-form-section" id="std-basic">
-        <h2>기본 정보</h2>
+        <div className="std-section-head">
+          <h2>기본 정보</h2>
+          <HelpDialog title="기본 정보" variant="icon">
+            <BasicHelp />
+          </HelpDialog>
+        </div>
         <div className="form-field">
           <label htmlFor="std-edit-name">표준서명</label>
           <input
@@ -157,7 +164,7 @@ export function StandardEditForm({
           </label>
           <HelpDialog
             title="위험작업허가(PTW)"
-            trigger="어떤 작업이 해당되나요?"
+            trigger="어떤 작업이 PTW 대상인가요?"
           >
             <PtwHelp />
           </HelpDialog>
@@ -165,7 +172,12 @@ export function StandardEditForm({
       </section>
 
       <section className="std-form-section" id="std-steps">
-        <h2>작업 단계</h2>
+        <div className="std-section-head">
+          <h2>작업 단계</h2>
+          <HelpDialog title="작업 방법" variant="icon">
+            <MethodHelp />
+          </HelpDialog>
+        </div>
         <div className="form-field">
           <ol className="std-list std-list--with-attach">
             {draft.steps.map((s, i) => (
@@ -202,7 +214,8 @@ export function StandardEditForm({
                         targetType="standard_step"
                         targetId={s.id}
                         invalidatePath={invalidatePath}
-                        label="단계 사진 추가"
+                        label="사진 붙이기"
+                        icon="clip"
                       />
                     ) : (
                       <p className="attach-uploader-hint">
@@ -229,7 +242,12 @@ export function StandardEditForm({
       </section>
 
       <section className="std-form-section" id="std-checklist">
-        <h2>체크리스트</h2>
+        <div className="std-section-head">
+          <h2>안전/품질 체크리스트</h2>
+          <HelpDialog title="안전/품질 체크리스트" variant="icon">
+            <ChecklistHelp />
+          </HelpDialog>
+        </div>
         <ChecklistBlock
           title="작업 전 (TBM)"
           items={draft.checklist_tbm}

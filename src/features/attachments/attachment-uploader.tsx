@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Camera, ImageUp, Loader2, X } from "lucide-react";
+import { Camera, ImageUp, Loader2, Paperclip, X } from "lucide-react";
 import { type AttachmentTargetType } from "./actions";
 import { uploadImage, type UploadStage } from "./upload";
 
@@ -16,6 +16,8 @@ type Props = {
   onUploaded?: () => void;
   /** 라벨 override. */
   label?: string;
+  /** 단추 그림. 표준서 단계는 클립. */
+  icon?: "camera" | "clip";
 };
 
 export function AttachmentUploader({
@@ -25,6 +27,7 @@ export function AttachmentUploader({
   keepOriginal = false,
   onUploaded,
   label = "사진 추가",
+  icon = "camera",
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -77,7 +80,13 @@ export function AttachmentUploader({
           disabled={pending}
           hidden
         />
-        {pending ? <Loader2 className="spin" size={14} /> : <Camera size={14} />}
+        {pending ? (
+          <Loader2 className="spin" size={14} />
+        ) : icon === "clip" ? (
+          <Paperclip size={14} />
+        ) : (
+          <Camera size={14} />
+        )}
         <span>
           {pending
             ? progress

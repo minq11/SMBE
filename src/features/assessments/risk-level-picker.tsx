@@ -1,6 +1,8 @@
 "use client";
 
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
+import { HelpDialog } from "@/components/ui/help-dialog";
+import { CriteriaHelp } from "./criteria-help";
 
 /**
  * 위험성 수준(상·중·하)과 허용 여부를 고르는 단추 묶음.
@@ -16,6 +18,7 @@ export function Segmented<T extends string>({
   options,
   onChange,
   name,
+  help,
 }: {
   label: string;
   value: T | "";
@@ -26,12 +29,15 @@ export function Segmented<T extends string>({
   }>;
   onChange: (value: T) => void;
   name?: string;
+  /** 라벨 오른쪽의 물음표 등. legend 안에는 dialog 를 둘 수 없어 옆에 띄운다. */
+  help?: ReactNode;
 }) {
   const id = useId();
   const groupName = name ?? id;
   return (
     <fieldset className="seg">
       <legend>{label}</legend>
+      {help && <div className="seg-help">{help}</div>}
       <div className="seg-row" role="radiogroup" aria-label={label}>
         {options.map((o) => {
           const on = value === o.value;
@@ -71,10 +77,13 @@ export function RiskLevelPicker({
   value,
   onChange,
   label = "위험성 수준",
+  criteria,
 }: {
   value: "" | "HIGH" | "MID" | "LOW";
   onChange: (v: "HIGH" | "MID" | "LOW") => void;
   label?: string;
+  /** 회사의 판단 기준. 있으면 라벨 옆 물음표가 그것을 보여 준다. */
+  criteria?: string;
 }) {
   return (
     <Segmented
@@ -82,6 +91,13 @@ export function RiskLevelPicker({
       value={value}
       options={RISK_LEVEL_OPTIONS}
       onChange={onChange}
+      help={
+        criteria ? (
+          <HelpDialog title="위험성 판단 기준" variant="icon">
+            <CriteriaHelp criteria={criteria} />
+          </HelpDialog>
+        ) : undefined
+      }
     />
   );
 }

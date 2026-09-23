@@ -12,6 +12,7 @@ import {
   type BoardDoc,
   type PostDetail,
 } from "./model";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 /**
  * 글 편집 화면. 제목 + (공지면) 팝업 설정 + 본문 편집기 + 저장/발행/삭제.
@@ -189,11 +190,7 @@ export function PostForm({
         />
       </div>
 
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
+      <FormErrorDialog message={error} nonce={error} />
       {notice && <p className="board-form-notice">{notice}</p>}
 
       <div className="board-form-actions">

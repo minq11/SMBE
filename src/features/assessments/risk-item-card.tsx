@@ -28,6 +28,7 @@ export function RiskItemCard({
   members,
   onChange,
   onRemove,
+  criteria,
 }: {
   index: number;
   value: RiskCardValue;
@@ -35,6 +36,8 @@ export function RiskItemCard({
   onChange: (next: RiskCardValue) => void;
   /** 없으면 삭제 단추를 두지 않는다 (마지막 한 장). */
   onRemove?: () => void;
+  /** 회사의 위험성 판단 기준. 수준 옆 물음표로 보여 준다. */
+  criteria?: string;
 }) {
   const id = useId();
   const set = <K extends keyof RiskCardValue>(key: K, v: RiskCardValue[K]) =>
@@ -68,7 +71,11 @@ export function RiskItemCard({
           placeholder="예: 절단기 회전날에 손이 닿을 수 있음"
         />
       </div>
-      <RiskLevelPicker value={value.level} onChange={(v) => set("level", v)} />
+      <RiskLevelPicker
+        value={value.level}
+        onChange={(v) => set("level", v)}
+        criteria={criteria}
+      />
       <AllowablePicker
         value={value.allowable}
         onChange={(v) => set("allowable", v)}

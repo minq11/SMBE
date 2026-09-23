@@ -4317,10 +4317,81 @@ html[data-banner-hidden] .preview-banner {
     text-decoration-color: currentColor;
   }
 }
+/* 구간 머리·라벨 옆 물음표. 손가락 자리 44px, 그림은 20px. */
+.help-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+@media (hover: hover) {
+  .help-dialog-icon:hover {
+    background: var(--surface-2);
+    color: var(--brand-strong);
+  }
+}
 .help-dialog-content {
   font-size: 14px;
   line-height: 1.7;
   color: var(--ink-2);
+}
+.help-dialog-content .criteria-readonly {
+  white-space: pre-wrap;
+  font: inherit;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+/* 구간 안내의 세 줄: 무엇 · 어떻게 · 왜 */
+.help-rows {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 10px 8px;
+  margin: 0;
+}
+.help-rows dt {
+  font-weight: 800;
+  color: var(--brand-strong);
+}
+.help-rows dd {
+  margin: 0;
+}
+/* 오류 안내 창 (components/ui/form-error-dialog.tsx) */
+.form-error-dialog h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--danger);
+}
+/* 구간 머리: 제목 왼쪽, 물음표 오른쪽. 물음표의 44px 이 줄을 키우지 않게 당긴다. */
+.std-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -10px 0;
+}
+.std-section-head .help-dialog-icon {
+  margin-right: -12px;
+}
+/* 단추 묶음 라벨 옆 물음표 (risk-level-picker.tsx) */
+.seg {
+  position: relative;
+}
+/* 물음표(44px)가 단추 줄을 덮지 않게 위를 비우고, 덮이는 몇 px 은 위로 올린다. */
+.seg:has(.seg-help) {
+  padding-top: 10px;
+}
+.seg-help {
+  position: absolute;
+  right: -12px;
+  top: -6px;
+  z-index: 1;
 }
 .help-dialog-content p + p {
   margin-top: 10px;
@@ -4382,6 +4453,10 @@ html[data-banner-hidden] .preview-banner {
    13. Buttons (shared)
    ========================================================================= */
 .primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   background: var(--brand);
   color: #fff;
   border-radius: var(--radius-sm);
@@ -5278,14 +5353,6 @@ body.sidebar-lock {
 .form-field .hint {
   font-size: 12px;
   color: var(--ink-3);
-}
-.form-error {
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--danger-soft);
-  color: var(--danger);
-  font-size: 13px;
-  margin-bottom: 18px;
 }
 .form-actions {
   display: flex;

@@ -132,6 +132,7 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
         "/company/members",
         "/work-orders",
         "/work-orders/new",
+        "/standards",
         "/standards/new",
         "/assessments",
         "/assessments/new",

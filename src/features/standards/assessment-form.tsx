@@ -3,7 +3,10 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Plus, Save, X } from "lucide-react";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
+import { RiskHelp } from "./section-help";
 import { PeoplePicker } from "@/components/ui/people-picker";
 import {
   RiskItemCard,
@@ -127,11 +130,7 @@ export function AssessmentForm({
         ]}
       />
 
-      {state?.error && (
-        <div className="form-error" role="alert">
-          {state.error}
-        </div>
-      )}
+      <FormErrorDialog message={state?.error} nonce={state} />
 
       <section className="std-form-section" id="asmt-info">
         <h2>실시 정보</h2>
@@ -200,19 +199,15 @@ export function AssessmentForm({
             ))}
           </div>
         </details>
-        <details className="std-fold">
-          <summary>적용하는 위험성 판단 기준 (회사 기준)</summary>
-          <pre className="criteria-readonly">{criteria}</pre>
-          <p className="std-form-note">
-            바꾸려면{" "}
-            <Link href="/company/criteria">회사정보 &gt; 위험성 판단 기준</Link>{" "}
-            에서 수정하세요. 이미 승인된 평가는 영향을 받지 않습니다.
-          </p>
-        </details>
       </section>
 
       <section className="std-form-section" id="asmt-risks">
-        <h2>위험요인 · 감소대책</h2>
+        <div className="std-section-head">
+          <h2>위험요인 · 감소대책</h2>
+          <HelpDialog title="위험성평가" variant="icon">
+            <RiskHelp />
+          </HelpDialog>
+        </div>
         <ol className="risk-card-list">
           {risks.map((r, i) => (
             <li key={i}>
@@ -220,6 +215,7 @@ export function AssessmentForm({
                 index={i}
                 value={r}
                 members={members}
+                criteria={criteria}
                 onChange={(next) =>
                   setRisks(risks.map((x, n) => (n === i ? next : x)))
                 }

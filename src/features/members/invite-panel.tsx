@@ -4,7 +4,12 @@ import { useActionState, useEffect, useState } from "react";
 import { Check, ChevronDown, Copy, Link2, UserPlus, X } from "lucide-react";
 import type { MembershipRole } from "@/server/session";
 import type { OpenInviteRow } from "@/server/members";
-import { createInviteAction, revokeInviteAction, type ActionState } from "./actions";
+import {
+  createInviteAction,
+  revokeInviteAction,
+  type ActionState,
+} from "./actions";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 const ROLE_LABEL: Record<MembershipRole, string> = {
   MANAGER_SUPERVISOR: "관리감독자",
@@ -111,7 +116,7 @@ export function InvitePanel({
             이메일을 입력하면 초대 메일이 자동으로 발송됩니다. 전화번호만 입력한
             경우 문자 발송은 준비 중이라 링크를 직접 전달해 주세요.
           </p>
-          {state?.error && <div className="form-error">{state.error}</div>}
+          <FormErrorDialog message={state?.error} nonce={state} />
           <div className="invite-form-actions">
             <button type="submit" className="primary-button" disabled={pending}>
               <UserPlus size={14} />
@@ -193,7 +198,8 @@ export function InvitePanel({
                       </strong>
                       <small>
                         {ROLE_LABEL[invite.target_role as MembershipRole]} ·
-                        발송 {new Date(invite.sent_at).toLocaleDateString("ko-KR")}
+                        발송{" "}
+                        {new Date(invite.sent_at).toLocaleDateString("ko-KR")}
                         {invite.expires_at && (
                           <>
                             {" "}

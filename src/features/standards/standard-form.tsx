@@ -5,9 +5,24 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { PtwHelp } from "./ptw-help";
+import { BasicHelp, ChecklistHelp, MethodHelp, RiskHelp } from "./section-help";
+
+// 빈칸의 예시. 처음 쓰는 사장님이 "뭘 적지" 하지 않게.
+const STEP_HINTS = [
+  "예: 전원 차단 후 잠금장치 걸기",
+  "예: 금형 고정 볼트 풀기",
+];
+const TBM_HINTS = [
+  "예: 보호구(장갑·보안경) 착용 확인",
+  "예: 잠금장치 걸림 확인",
+];
+const DURING_HINTS = ["예: 회전부 덮개 유지", "예: 작업 구역 출입 통제"];
+const hint = (list: string[], i: number, fallback: string) =>
+  list[i] ?? fallback;
 import { createStandardAction, type StandardActionState } from "./actions";
 
 type Risk = {
@@ -48,9 +63,10 @@ function blankDraft(): Draft {
     ptw_required: false,
     performed_on: today,
     work_method: "",
-    steps: [""],
-    checklist_tbm: [""],
-    checklist_during: [""],
+    // 단계·체크리스트는 두 칸씩. 한 칸이면 "하나만 쓰면 되나" 로 읽힌다.
+    steps: ["", ""],
+    checklist_tbm: ["", ""],
+    checklist_during: ["", ""],
     safety_info: { equipment: "", materials: "", environment: "", history: "" },
     risks: [
       {
@@ -70,11 +86,14 @@ export function StandardForm({
   criteria,
   members,
   returnHref,
+  isPro,
 }: {
   /** 회사의 위험성 판단 기준 (읽기만) */
   criteria: string;
   members: Member[];
   returnHref?: string;
+  /** 유료면 저장 뒤 단계마다 사진을 붙일 수 있다. */
+  isPro: boolean;
 }) {
   const [draft, setDraft] = useState<Draft>(blankDraft);
   const [state, formAction, pending] = useActionState<
@@ -201,20 +220,25 @@ export function StandardForm({
         </p>
       </header>
 
-      {state?.error && <div className="form-error">{state.error}</div>}
+      <FormErrorDialog message={state?.error} nonce={state} />
 
       {/* 긴 폼이라 구간으로 바로 간다. 좁은 화면에서는 위에 붙는다 (globals.css). */}
       <JumpNav
         items={[
           { id: "std-basic", label: "기본 정보" },
           { id: "std-method-section", label: "작업 방법" },
-          { id: "std-checklist", label: "체크리스트" },
+          { id: "std-checklist", label: "안전/품질 체크리스트" },
           { id: "std-risk", label: "위험성평가" },
         ]}
       />
 
       <section className="std-form-section" id="std-basic">
-        <h2>기본 정보</h2>
+        <div className="std-section-head">
+          <h2>기본 정보</h2>
+          <HelpDialog title="기본 정보" variant="icon">
+            <BasicHelp />
+          </HelpDialog>
+        </div>
         <div className="form-field">
           <label htmlFor="std-name">표준서명</label>
           <input
@@ -238,7 +262,7 @@ export function StandardForm({
           </label>
           <HelpDialog
             title="위험작업허가(PTW)"
-            trigger="어떤 작업이 해당되나요?"
+            trigger="어떤 작업이 PTW 대상인가요?"
           >
             <PtwHelp />
           </HelpDialog>
@@ -246,7 +270,12 @@ export function StandardForm({
       </section>
 
       <section className="std-form-section" id="std-method-section">
-        <h2>작업 방법</h2>
+        <div className="std-section-head">
+          <h2>작업 방법</h2>
+          <HelpDialog title="작업 방법" variant="icon">
+            <MethodHelp />
+          </HelpDialog>
+        </div>
         <div className="form-field">
           <label htmlFor="std-method">작업방법 요약</label>
           <textarea
@@ -269,8 +298,23 @@ export function StandardForm({
                   value={s}
                   onChange={(e) => updateStringList("steps", i, e.target.value)}
                   maxLength={500}
-                  placeholder={`${i + 1}단계`}
+                  placeholder={hint(STEP_HINTS, i, `${i + 1}단계`)}
                 />
+                {/* 사진은 저장된 단계에만 붙는다 (첨부의 대상 id). 여기서는
+                    클립이 그 사실을 말한다. */}
+                <HelpDialog title="단계 사진" variant="icon" icon="clip">
+                  {isPro ? (
+                    <p>
+                      표준서를 저장하면 단계마다 사진을 붙일 수 있습니다. 저장
+                      뒤 상세 화면이나 수정 화면에서 이 단계의 클립을 누르세요.
+                    </p>
+                  ) : (
+                    <p>
+                      유료 요금제에서 단계마다 사진을 붙일 수 있습니다. 사진이
+                      있으면 신입도 그대로 따라 합니다.
+                    </p>
+                  )}
+                </HelpDialog>
                 <button
                   type="button"
                   className="icon-button std-list-remove"
@@ -294,9 +338,15 @@ export function StandardForm({
       </section>
 
       <section className="std-form-section" id="std-checklist">
-        <h2>체크리스트</h2>
+        <div className="std-section-head">
+          <h2>안전/품질 체크리스트</h2>
+          <HelpDialog title="안전/품질 체크리스트" variant="icon">
+            <ChecklistHelp />
+          </HelpDialog>
+        </div>
         <ChecklistBlock
           title="작업 전 (TBM)"
+          hints={TBM_HINTS}
           items={draft.checklist_tbm}
           onChange={(i, v) => updateStringList("checklist_tbm", i, v)}
           onAdd={() => addStringItem("checklist_tbm")}
@@ -304,6 +354,7 @@ export function StandardForm({
         />
         <ChecklistBlock
           title="작업 중 (순회점검)"
+          hints={DURING_HINTS}
           items={draft.checklist_during}
           onChange={(i, v) => updateStringList("checklist_during", i, v)}
           onAdd={() => addStringItem("checklist_during")}
@@ -312,10 +363,15 @@ export function StandardForm({
       </section>
 
       <section className="std-form-section" id="std-risk">
-        <h2>위험성평가 (최초평가)</h2>
+        <div className="std-section-head">
+          <h2>위험성평가 (최초평가)</h2>
+          <HelpDialog title="위험성평가" variant="icon">
+            <RiskHelp />
+          </HelpDialog>
+        </div>
         <p className="std-form-note">
-          이 표준서를 사용하는 지시서에 자동으로 딸려가는 최초 회차 평가입니다.
-          이후 정기·수시평가는 표준서 상세 화면에서 회차별로 추가합니다.
+          이 표준서를 사용하는 지시서에 대한 최초 위험성 평가입니다. 이후
+          정기·수시평가는 표준서 상세 화면에서 회차별로 추가합니다.
         </p>
 
         <div className="form-field">
@@ -329,17 +385,8 @@ export function StandardForm({
           />
         </div>
 
-        {/* 판단 기준은 회사가 한 번 정하는 값이다. 여기서 다시 쓰지 않는다. */}
-        <details className="std-fold">
-          <summary>적용하는 위험성 판단 기준 (회사 기준)</summary>
-          <pre className="criteria-readonly">{criteria}</pre>
-          <p className="std-form-note">
-            바꾸려면{" "}
-            <Link href="/company/criteria">회사정보 &gt; 위험성 판단 기준</Link>{" "}
-            에서 수정하세요.
-          </p>
-        </details>
-
+        {/* 판단 기준은 회사가 한 번 정하는 값이다. 여기서 다시 쓰지 않고, 위험
+            요인 카드의 수준 옆 물음표가 보여 준다. */}
         <div className="std-safety-grid">
           {(
             [
@@ -362,7 +409,7 @@ export function StandardForm({
                     [key]: e.target.value,
                   })
                 }
-                placeholder="해당사항이 없으면 그 사실을 적어주세요."
+                placeholder="해당사항이 없으면 '해당없음'으로 적어주세요."
               />
             </div>
           ))}
@@ -384,6 +431,7 @@ export function StandardForm({
                     dueDate: r.planned_completion_date,
                   }}
                   members={members}
+                  criteria={criteria}
                   onChange={(v) =>
                     setDraft((d) => {
                       const next = [...d.risks];
@@ -438,12 +486,14 @@ export function StandardForm({
 
 function ChecklistBlock({
   title,
+  hints,
   items,
   onChange,
   onAdd,
   onRemove,
 }: {
   title: string;
+  hints: string[];
   items: string[];
   onChange: (idx: number, value: string) => void;
   onAdd: () => void;
@@ -461,7 +511,7 @@ function ChecklistBlock({
               value={s}
               onChange={(e) => onChange(i, e.target.value)}
               maxLength={500}
-              placeholder="점검 항목"
+              placeholder={hint(hints, i, "점검 항목")}
             />
             <button
               type="button"

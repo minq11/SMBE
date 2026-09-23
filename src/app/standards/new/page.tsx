@@ -52,6 +52,7 @@ export default async function NewStandardPage({
         criteria={criteria}
         members={members}
         returnHref={returnHref}
+        isPro={tierOf(session.membership) === "유료"}
       />
     </AppShell>
   );

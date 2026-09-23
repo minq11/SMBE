@@ -74,7 +74,7 @@ export function StandardDetailView({
       <header className="std-detail-hero">
         <div>
           <span className="std-detail-tag">
-            {active ? "사용 중" : archived ? "폐기" : "작성 중"}
+            {active ? "확정됨" : archived ? "폐기" : "작성 중"}
             {detail.ptw_required ? " · PTW 필요" : ""}
           </span>
           <h1>{detail.name}</h1>
@@ -196,7 +196,7 @@ export function StandardDetailView({
       </section>
 
       <section className="std-detail-section">
-        <h2>체크리스트</h2>
+        <h2>안전/품질 체크리스트</h2>
         <div className="std-detail-checklist">
           <div>
             <span className="std-detail-sublabel">작업 전 (TBM)</span>

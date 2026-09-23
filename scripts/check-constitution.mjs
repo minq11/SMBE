@@ -66,6 +66,25 @@ async function checkBrowserDialogs() {
   }
 }
 
+// 9장 — 오류는 위에 조용히 뜨는 띠가 아니라 안내 창(FormErrorDialog). 저장은
+// 아래에서 누르는데 오류가 위에 뜨면 아무 일도 없던 것처럼 보인다.
+async function checkErrorBanner() {
+  const files = (await walk(join(root, "src"))).filter(
+    (f) => f.endsWith(".tsx") && !f.endsWith("form-error-dialog.tsx"),
+  );
+  for (const file of files) {
+    const lines = (await readFile(file, "utf8")).split("\n");
+    lines.forEach((line, i) => {
+      if (/className=["'`][^"'`]*\bform-error\b/.test(line))
+        fail(
+          "9장 오류 띠",
+          file,
+          `${i + 1}행: 오류는 FormErrorDialog 로 띄운다`,
+        );
+    });
+  }
+}
+
 // 3장 — 색은 토큰으로. 기능 CSS 에 색 코드를 직접 쓰지 않는다 (globals.css 의
 // :root 만 예외, 로그인 제공자 로고는 그 회사 색이라 예외).
 async function checkRawColors() {
@@ -155,6 +174,7 @@ async function checkFonts() {
 await Promise.all([
   checkLoading(),
   checkBrowserDialogs(),
+  checkErrorBanner(),
   checkRawColors(),
   checkPublicCopy(),
   checkThemeColor(),
@@ -168,5 +188,5 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(
-  "디자인 헌법 검사 통과 (loading.tsx · 대화상자 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴)",
+  "디자인 헌법 검사 통과 (loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴)",
 );

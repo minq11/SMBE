@@ -63,17 +63,48 @@ test("standard: create, edit, add a seeded assessment round", async ({
       },
     ]);
 
-    // 1) 만들기
+    // 1) 만들기. 이름만 쓰고 저장하면 오류가 위의 띠가 아니라 안내 창으로 뜬다.
     await page.goto("/standards/new");
     await page.getByLabel("표준서명").fill("프레스 금형 교체");
-    await page.getByLabel("작업방법 요약").fill("전원 차단 후 금형 분리");
     await page
-      .locator("#std-method-section input[placeholder='1단계']")
+      .getByRole("button", { name: "표준서 저장 · 승인", exact: true })
+      .click();
+    const errorDialog = page.getByRole("alertdialog");
+    await expect(errorDialog).toBeVisible();
+    await expect(errorDialog).toContainText("작업 단계");
+    await errorDialog.getByRole("button", { name: "확인" }).click();
+    await expect(errorDialog).toBeHidden();
+    // 구간 머리의 물음표 → 무엇·어떻게·왜 세 줄
+    await page.getByRole("button", { name: "위험성평가 안내" }).click();
+    await expect(page.locator("dialog.help-dialog[open]")).toContainText(
+      "36조",
+    );
+    await page
+      .locator("dialog.help-dialog[open]")
+      .getByRole("button", { name: "확인" })
+      .click();
+    await page.getByLabel("작업방법 요약").fill("전원 차단 후 금형 분리");
+    // 빈칸의 예시가 곧 안내다. 단계·체크리스트는 두 칸씩 미리 있다.
+    await page
+      .getByPlaceholder("예: 전원 차단 후 잠금장치 걸기")
       .fill("전원 차단");
-    const checks = page.locator("#std-checklist input[type=text]");
-    await checks.nth(0).fill("전원 차단 확인");
-    await checks.nth(1).fill("잠금장치 유지");
+    await page
+      .getByPlaceholder("예: 보호구(장갑·보안경) 착용 확인")
+      .fill("전원 차단 확인");
+    await page.getByPlaceholder("예: 회전부 덮개 유지").fill("잠금장치 유지");
     await page.getByLabel("유해·위험요인", { exact: true }).fill("끼임");
+    // 수준 옆 물음표가 회사 판단 기준을 보여 준다.
+    await page
+      .getByRole("button", { name: "위험성 판단 기준 안내" })
+      .first()
+      .click();
+    await expect(page.locator("dialog.help-dialog[open]")).toContainText(
+      "회사가 정한 기준",
+    );
+    await page
+      .locator("dialog.help-dialog[open]")
+      .getByRole("button", { name: "확인" })
+      .click();
     await page
       .getByRole("radiogroup", { name: "위험성 수준" })
       .getByLabel("중", { exact: true })

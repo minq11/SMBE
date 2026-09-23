@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CircleHelp } from "lucide-react";
+import { CircleHelp, Paperclip } from "lucide-react";
 
 /**
  * 폼 안의 "이게 뭔가요?" 글 단추와 그 답.
@@ -13,11 +13,17 @@ import { CircleHelp } from "lucide-react";
 export function HelpDialog({
   title,
   trigger,
+  variant = "text",
+  icon = "help",
   children,
 }: {
   title: string;
-  /** 단추 글. "PTW 대상 작업은?" 처럼 질문으로 쓴다. */
-  trigger: string;
+  /** 글 단추의 글. "어떤 작업이 PTW 대상인가요?" 처럼 질문으로 쓴다. */
+  trigger?: string;
+  /** icon: 구간 머리 오른쪽의 물음표(44px). 라벨은 `{title} 안내`. */
+  variant?: "text" | "icon";
+  /** icon 변형의 그림. clip 은 첨부 자리 표시. */
+  icon?: "help" | "clip";
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -30,13 +36,24 @@ export function HelpDialog({
   }, [open]);
   return (
     <>
-      <button
-        type="button"
-        className="help-dialog-trigger"
-        onClick={() => setOpen(true)}
-      >
-        <CircleHelp size={15} /> {trigger}
-      </button>
+      {variant === "icon" ? (
+        <button
+          type="button"
+          className="help-dialog-icon"
+          aria-label={`${title} 안내`}
+          onClick={() => setOpen(true)}
+        >
+          {icon === "clip" ? <Paperclip size={18} /> : <CircleHelp size={20} />}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="help-dialog-trigger"
+          onClick={() => setOpen(true)}
+        >
+          <CircleHelp size={15} /> {trigger}
+        </button>
+      )}
       <dialog
         ref={ref}
         className="confirm-dialog help-dialog"

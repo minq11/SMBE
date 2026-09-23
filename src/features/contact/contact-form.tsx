@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Mail, X } from "lucide-react";
 import { submitContactAction, type ContactState } from "./actions";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 export function ContactForm() {
   const [state, formAction, pending] = useActionState<ContactState, FormData>(
@@ -43,7 +44,7 @@ export function ContactForm() {
         도입 문의·기능 요청·하실 말씀을 남겨 주세요. 며칠 안에 답장 드립니다.
       </p>
 
-      {state?.error && <div className="form-error">{state.error}</div>}
+      <FormErrorDialog message={state?.error} nonce={state} />
 
       <div className="form-field">
         <label htmlFor="name">이름</label>

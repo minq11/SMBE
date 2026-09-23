@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { joinCompanyAction, type FormState } from "./actions";
 import { ContactFields } from "./contact-fields";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 export function JoinForm({
   defaultDisplayName,
@@ -26,7 +27,7 @@ export function JoinForm({
         등록됩니다.
       </p>
 
-      {state?.error && <div className="form-error">{state.error}</div>}
+      <FormErrorDialog message={state?.error} nonce={state} />
 
       <div className="form-field">
         <label htmlFor="display_name">내 이름</label>

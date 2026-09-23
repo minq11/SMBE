@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createCompanyAction, type FormState } from "./actions";
 import { ContactFields } from "./contact-fields";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 const bands = [
   { value: "UNDER_5", label: "5인 미만" },
@@ -33,7 +34,7 @@ export function CreateCompanyForm({
         관리감독자 권한이 부여됩니다.
       </p>
 
-      {state?.error && <div className="form-error">{state.error}</div>}
+      <FormErrorDialog message={state?.error} nonce={state} />
 
       <div className="form-field">
         <label htmlFor="display_name">내 이름</label>

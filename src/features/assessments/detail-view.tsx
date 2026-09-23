@@ -9,6 +9,7 @@ import type {
 import { AllowablePicker, RiskLevelPicker } from "./risk-level-picker";
 import { recordRiskActionAction } from "./actions";
 import { LEVEL_LABEL, koDate } from "./model";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 /**
  * 위험요인·대책과 조치 이행. 계획(감소대책·담당·예정일)과 실제(조치·완료일·조치 후
@@ -166,11 +167,7 @@ function ActionBlock({
             value={allowable}
             onChange={setAllowable}
           />
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
+          <FormErrorDialog message={error} nonce={error} />
           <div className="asmt-action-buttons">
             <button
               type="button"

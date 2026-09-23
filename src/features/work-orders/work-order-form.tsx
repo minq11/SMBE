@@ -19,6 +19,7 @@ import {
   Send,
   ShieldCheck,
 } from "lucide-react";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { PageHeader } from "@/components/ui/page-header";
@@ -372,6 +373,7 @@ export function WorkOrderForm({
               index={i}
               value={risk}
               members={members}
+              criteria={data.criteria}
               onChange={(v) =>
                 set(
                   "risks",
@@ -432,17 +434,8 @@ export function WorkOrderForm({
           />
         </Field>
       ))}
-      {/* 판단 기준은 회사가 한 번 정하는 값이다. 평가마다 다시 쓰지 않고
-          회사 기준을 그대로 보여 주며, 저장 시 사본으로 함께 보관된다. */}
-      <details className="std-fold">
-        <summary>적용한 위험성 수준 판단 기준 (회사 기준)</summary>
-        <pre className="criteria-readonly">{data.criteria}</pre>
-        <p className="wo-muted">
-          바꾸려면{" "}
-          <Link href="/company/criteria">회사정보 &gt; 위험성 판단 기준</Link>{" "}
-          에서 수정하세요. 이미 승인된 평가는 영향을 받지 않습니다.
-        </p>
-      </details>
+      {/* 판단 기준은 회사가 한 번 정하는 값이다. 위험요인 카드의 수준 옆
+          물음표가 보여 주고, 저장 시 사본으로 함께 보관된다. */}
       <PeoplePicker
         legend="평가에 실제 참여한 근로자"
         members={members}
@@ -551,11 +544,7 @@ export function WorkOrderForm({
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="revision" value={revision} />
             <input type="hidden" name="payload" value={JSON.stringify(data)} />
-            {state?.error && (
-              <p role="alert" className="form-error">
-                {state.error}
-              </p>
-            )}
+            <FormErrorDialog message={state?.error} nonce={state} />
             <section className="wo-part" id="wo-info">
               <h2>작업 정보</h2>
               <div className="wo-std-picker">
@@ -690,7 +679,7 @@ export function WorkOrderForm({
                     />
                     <HelpDialog
                       title="위험작업허가(PTW)"
-                      trigger="어떤 작업이 해당되나요?"
+                      trigger="어떤 작업이 PTW 대상인가요?"
                     >
                       <PtwHelp />
                     </HelpDialog>
@@ -837,11 +826,7 @@ export function WorkOrderForm({
                       ? " PTW 필요 작업은 저장 후 허가를 신청하면 승인과 함께 발급됩니다."
                       : ""}
                   </p>
-                  {issueError && (
-                    <p role="alert" className="form-error">
-                      {issueError}
-                    </p>
-                  )}
+                  <FormErrorDialog message={issueError} nonce={issueError} />
                 </section>
               </>
             )}

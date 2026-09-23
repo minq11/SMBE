@@ -41,7 +41,7 @@ export function StandardsListView({ items }: { items: StandardListRow[] }) {
             onClick={() => setTab("all")}
           />
           <TabBtn
-            label="사용 중"
+            label="확정됨"
             count={buckets.active.length}
             active={tab === "active"}
             onClick={() => setTab("active")}

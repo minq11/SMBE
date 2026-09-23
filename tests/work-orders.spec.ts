@@ -80,9 +80,13 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .locator(".jump-nav")
       .getByRole("link", { name: "위험성평가", exact: true })
       .click();
-    // 판단 기준은 회사가 정한 값이 자동으로 적용된다 (회사정보 > 위험성 판단 기준).
+    // 판단 기준은 회사가 정한 값이 자동으로 적용된다. 폼에 펼치지 않고 수준 옆
+    // 물음표가 보여 준다 (risk-level-picker.tsx).
     await expect(
-      page.locator("#wo-risk summary", { hasText: "판단 기준" }),
+      page
+        .locator("#wo-risk")
+        .getByRole("button", { name: "위험성 판단 기준 안내" })
+        .first(),
     ).toBeVisible();
     await page
       .getByLabel("유해·위험요인", { exact: true })

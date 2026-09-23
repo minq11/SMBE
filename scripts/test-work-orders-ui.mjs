@@ -100,6 +100,8 @@ try {
           "tests/mobile-layout.spec.ts",
           "tests/profile.spec.ts",
           "tests/ptw.spec.ts",
+          "tests/standards.spec.ts",
+          "tests/board.spec.ts",
         ]),
     "--workers=1",
   ]);
