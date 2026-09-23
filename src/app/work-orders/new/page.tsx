@@ -37,7 +37,7 @@ export default async function NewOrderPage({
   const companyCriteria = await withTransaction((c) =>
     readRiskCriteria(c, actor.companyId),
   );
-  let initial = { ...blankDraft(), criteria: companyCriteria };
+  let initial = blankDraft();
   if (copy) {
     if (!z.string().uuid().safeParse(copy).success) notFound();
     try {
@@ -45,7 +45,6 @@ export default async function NewOrderPage({
       const active = new Set(members.map((m) => m.user_id));
       initial = {
         ...order.draft_data,
-        criteria: companyCriteria,
         startDate: "",
         endDate: "",
         participantIds: order.draft_data.participantIds.filter((id) =>
@@ -120,6 +119,7 @@ export default async function NewOrderPage({
       title={copy ? "작업지시 복사" : "새 작업지시"}
     >
       <WorkOrderForm
+        criteria={companyCriteria}
         id={randomUUID()}
         revision={0}
         title={copy ? "작업지시 복사" : "새 작업지시"}

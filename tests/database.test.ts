@@ -77,6 +77,10 @@ import {
   shiftMinutes,
   type WorkDraft,
 } from "../src/features/work-orders/model";
+import {
+  readRiskCriteria,
+  updateRiskCriteria,
+} from "../src/server/company-settings";
 
 // Deliberately never reads DATABASE_URL or dotenv: tests cannot touch Neon.
 const schema = "regression_" + randomUUID().replaceAll("-", "");
@@ -549,7 +553,6 @@ async function orderFixture(ptw = false) {
     location: "테스트 장소",
     startDate: seoulToday(new Date(Date.now() + 86400_000)),
     endDate: seoulToday(new Date(Date.now() + 86400_000)),
-    criteria: "테스트 판단 기준",
     participantIds: [worker],
     assigneeIds: [worker],
     ptwRequired: ptw,
@@ -2149,4 +2152,59 @@ test("seat cap: paid plans block the next member, free is unlimited, and raising
   await setPlan("ENTERPRISE");
   assert.equal(await capacity(), null);
   await setPlan(null);
+});
+
+test("risk criteria: new company starts with three levels; edits validate; assessments keep their copy", async () => {
+  const { actor, id } = await orderFixture();
+  const initial = await transaction((c) =>
+    readRiskCriteria(c, actor.companyId),
+  );
+  assert.deepEqual(
+    initial.map((r) => [r.level, r.acceptance]),
+    [
+      ["HIGH", "AFTER_REDUCTION"],
+      ["MID", "AFTER_REDUCTION"],
+      ["LOW", "ACCEPTABLE"],
+    ],
+  );
+  assert.ok(initial.every((r) => r.description.length > 0));
+
+  // 한 등급이라도 빠지거나 정의가 비면 아무것도 바뀌지 않는다.
+  await assert.rejects(
+    transaction((c) =>
+      updateRiskCriteria(c, actor.companyId, initial.slice(0, 2)),
+    ),
+    /상·중·하/,
+  );
+  await assert.rejects(
+    transaction((c) =>
+      updateRiskCriteria(
+        c,
+        actor.companyId,
+        initial.map((r) => ({ ...r, description: " " })),
+      ),
+    ),
+    /정의/,
+  );
+
+  await transaction((c) => requestAssessment(c, actor, id, 1));
+  const edited = initial.map((r) =>
+    r.level === "MID"
+      ? { ...r, description: "병원 치료", acceptance: "NOT_ACCEPTABLE" }
+      : r,
+  );
+  await transaction((c) => updateRiskCriteria(c, actor.companyId, edited));
+  assert.deepEqual(
+    await transaction((c) => readRiskCriteria(c, actor.companyId)),
+    edited,
+  );
+  // 평가는 요청 당시의 기준을 들고 있다 — 회사가 나중에 고친 값이 아니라.
+  const { criteria_snapshot } = (
+    await pool.query(
+      `SELECT ra.criteria_snapshot FROM risk_assessments ra
+         JOIN work_orders w ON w.risk_assessment_id = ra.id WHERE w.id = $1`,
+      [id],
+    )
+  ).rows[0];
+  assert.deepEqual(criteria_snapshot, initial);
 });

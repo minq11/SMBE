@@ -1,5 +1,6 @@
 // 서버·클라이언트 공용 라벨·상수·타입.
 // server-only 파일에서 분리해 클라이언트 컴포넌트가 import 해도 안전하도록 유지.
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 
 export type AssessmentKind = "FIRST" | "PERIODIC" | "AD_HOC" | "CONTINUOUS";
 export type AssessmentStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
@@ -126,7 +127,7 @@ export type StandardDetail = {
     assessment_id: string;
     kind: AssessmentKind;
     performed_on: string;
-    criteria: string;
+    criteria: RiskCriteria;
     work_method: string;
     safety_info: SafetyInfo;
     risks: RiskItem[];

@@ -5,6 +5,7 @@ import { query, queryOne } from "./db";
 import { memberAccess, type Actor } from "./work-order-service";
 import { computeValidUntil } from "./standards-service";
 import { WorkOrderError, seoulToday } from "../features/work-orders/model";
+import type { RiskCriteria } from "../features/company/risk-criteria";
 import type {
   AssessmentKind,
   AssessmentStatus,
@@ -195,7 +196,7 @@ export type AssessmentItemDetail = {
 };
 
 export type AssessmentDetail = AssessmentRow & {
-  criteria: string;
+  criteria: RiskCriteria;
   work_method: string;
   safety_info: {
     equipment: string;

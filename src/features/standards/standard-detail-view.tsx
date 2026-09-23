@@ -22,6 +22,7 @@ import {
 } from "@/features/attachments/attachment-list";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
 import { archiveStandardAction } from "./actions";
+import { CriteriaList } from "@/features/company/criteria-list";
 
 export type AttachmentMap = Record<string, AttachmentItem[]>;
 
@@ -220,10 +221,10 @@ export function StandardDetailView({
       {current && (
         <section className="std-detail-section">
           <h2>현재 사용 중 위험성평가</h2>
-          {current.criteria && (
+          {current.criteria.length > 0 && (
             <div className="std-detail-note">
               <span className="std-detail-sublabel">위험성 판단 기준</span>
-              <p>{current.criteria}</p>
+              <CriteriaList criteria={current.criteria} />
             </div>
           )}
           <dl className="std-detail-info">

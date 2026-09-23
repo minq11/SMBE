@@ -1,5 +1,6 @@
 "use client";
 
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { useId } from "react";
 import { Trash2 } from "lucide-react";
 import { AllowablePicker, RiskLevelPicker } from "./risk-level-picker";
@@ -37,7 +38,7 @@ export function RiskItemCard({
   /** 없으면 삭제 단추를 두지 않는다 (마지막 한 장). */
   onRemove?: () => void;
   /** 회사의 위험성 판단 기준. 수준 옆 물음표로 보여 준다. */
-  criteria?: string;
+  criteria?: RiskCriteria;
 }) {
   const id = useId();
   const set = <K extends keyof RiskCardValue>(key: K, v: RiskCardValue[K]) =>

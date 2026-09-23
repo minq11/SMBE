@@ -170,11 +170,8 @@ export default async function EditOrderPage({
             </section>
           </>
         }
-        initial={{
-          ...order.draft_data,
-          // 판단 기준은 회사가 정한 현재 값을 보여 준다 (초안에 박힌 옛 값이 아니라).
-          criteria: companyCriteria,
-        }}
+        initial={order.draft_data}
+        criteria={companyCriteria}
         members={members}
         standards={standards}
         initialStandardId={order.draft_data.standardId ?? null}

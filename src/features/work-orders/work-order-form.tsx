@@ -1,4 +1,5 @@
 "use client";
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 import {
   cloneElement,
   useActionState,
@@ -83,7 +84,6 @@ function mergeStandardIntoDraft(
     name: prefill.name || base.name,
     method: prefill.method || base.method,
     ptwRequired: prefill.ptw_required,
-    // criteria 는 회사 기준을 따르므로 표준서가 덮어쓰지 않는다.
     safetyInfo: prefill.safetyInfo,
     risks:
       prefill.risks.length > 0
@@ -159,6 +159,7 @@ export function WorkOrderForm({
   standards = [],
   initialStandardId = null,
   locations = [],
+  criteria,
   title,
   description,
   notice,
@@ -172,6 +173,8 @@ export function WorkOrderForm({
   standards?: StandardPickerOption[];
   initialStandardId?: string | null;
   locations?: LocationOption[];
+  /** 회사의 위험성 판단 기준 (읽기만). 초안에 싣지 않는다 — 서버가 평가 때 회사 값을 사본으로 남긴다. */
+  criteria: RiskCriteria;
   /** 작업명이 비어 있을 때 머리말에 보일 제목 */
   title: string;
   description?: ReactNode;
@@ -373,7 +376,7 @@ export function WorkOrderForm({
               index={i}
               value={risk}
               members={members}
-              criteria={data.criteria}
+              criteria={criteria}
               onChange={(v) =>
                 set(
                   "risks",

@@ -79,7 +79,6 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       endDate: seoulToday(start),
       startTime: time(start),
       endTime: time(end),
-      criteria: "현장 판단 기준",
       participantIds: [worker],
       assigneeIds: [worker],
       safetyInfo: {

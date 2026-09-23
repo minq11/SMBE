@@ -1,4 +1,5 @@
 "use client";
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { PeoplePicker } from "@/components/ui/people-picker";
 
 import { useActionState, useState } from "react";
@@ -89,7 +90,7 @@ export function StandardForm({
   isPro,
 }: {
   /** 회사의 위험성 판단 기준 (읽기만) */
-  criteria: string;
+  criteria: RiskCriteria;
   members: Member[];
   returnHref?: string;
   /** 유료면 저장 뒤 단계마다 사진을 붙일 수 있다. */

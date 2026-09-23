@@ -10,6 +10,7 @@ import { AllowablePicker, RiskLevelPicker } from "./risk-level-picker";
 import { recordRiskActionAction } from "./actions";
 import { LEVEL_LABEL, koDate } from "./model";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 
 /**
  * 위험요인·대책과 조치 이행. 계획(감소대책·담당·예정일)과 실제(조치·완료일·조치 후
@@ -77,7 +78,7 @@ function ActionBlock({
   assessmentId: string;
   canRecord: boolean;
   /** 이 평가에 복사된 판단 기준. 조치 후 수준도 같은 기준으로 고른다. */
-  criteria: string;
+  criteria: RiskCriteria;
 }) {
   const done = Boolean(item.actual_completion_date);
   const [open, setOpen] = useState(false);

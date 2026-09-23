@@ -3,6 +3,7 @@
 import { useId, type ReactNode } from "react";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { CriteriaHelp } from "./criteria-help";
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 
 /**
  * 위험성 수준(상·중·하)과 허용 여부를 고르는 단추 묶음.
@@ -88,7 +89,7 @@ export function RiskLevelPicker({
   onChange: (v: "HIGH" | "MID" | "LOW") => void;
   label?: string;
   /** 회사의 판단 기준. 있으면 라벨 옆 물음표가 그것을 보여 준다. */
-  criteria?: string;
+  criteria?: RiskCriteria;
   /** 그 기준이 평가에 복사된 사본이면 참. 안내 문구가 달라진다. */
   criteriaSnapshot?: boolean;
 }) {

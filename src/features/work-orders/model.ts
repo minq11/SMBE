@@ -26,7 +26,6 @@ export const draftSchema = z.object({
   ptwRequired: z.boolean(),
   assessmentKind: z.enum(["FIRST", "PERIODIC", "AD_HOC", "CONTINUOUS"]),
   performedOn: z.string().max(10),
-  criteria: text,
   safetyInfo: z.object({
     equipment: text,
     materials: text,
@@ -63,8 +62,8 @@ export function shiftMinutes(start: string, end: string) {
   return (minutes(end) - minutes(start) + 1440) % 1440;
 }
 export function validateAssessment(d: WorkDraft) {
-  if (!d.method.trim() || !d.criteria.trim() || !validDate(d.performedOn))
-    throw new WorkOrderError("작업방법·평가일·위험성 판단 기준을 입력하세요.");
+  if (!d.method.trim() || !validDate(d.performedOn))
+    throw new WorkOrderError("작업방법과 평가일을 입력하세요.");
   if (d.performedOn > seoulToday())
     throw new WorkOrderError("평가일은 미래일 수 없습니다.");
   if (!d.participantIds.length)
@@ -144,7 +143,6 @@ export function blankDraft(): WorkDraft {
     ptwRequired: false,
     assessmentKind: "AD_HOC",
     performedOn: seoulToday(),
-    criteria: "",
     safetyInfo: { equipment: "", materials: "", environment: "", history: "" },
     risks: [
       {

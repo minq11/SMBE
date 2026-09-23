@@ -13,6 +13,7 @@ import { ASSESSMENT_KIND_LABEL } from "@/features/standards/constants";
 import { AssessmentItems } from "@/features/assessments/detail-view";
 import { STATUS_LABEL, koDate } from "@/features/assessments/model";
 import "@/features/assessments/assessments.css";
+import { CriteriaList } from "@/features/company/criteria-list";
 
 export const metadata = { title: "위험성평가 · 심플안전" };
 
@@ -132,7 +133,7 @@ export default async function AssessmentPage({
 
       <section className="asmt-section" aria-label="판단 기준과 참여자">
         <h2>적용한 판단 기준</h2>
-        <p className="asmt-note">{detail.criteria}</p>
+        <CriteriaList criteria={detail.criteria} />
         <h2>참여 근로자</h2>
         <p className="asmt-note">
           {detail.participants.length ? detail.participants.join(", ") : "—"}

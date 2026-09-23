@@ -5,6 +5,7 @@ import { getCurrentSession } from "@/server/session";
 import { withTransaction } from "@/server/db";
 import { updateRiskCriteria } from "@/server/company-settings";
 import { WorkOrderError } from "@/features/work-orders/model";
+import { RISK_LEVELS } from "./risk-criteria";
 
 export type CriteriaActionState =
   { error?: string; message?: string } | undefined;
@@ -24,7 +25,11 @@ export async function updateRiskCriteriaAction(
       updateRiskCriteria(
         c,
         session.membership!.company_id,
-        form.get("risk_criteria"),
+        RISK_LEVELS.map((level) => ({
+          level,
+          description: form.get("description_" + level),
+          acceptance: form.get("acceptance_" + level),
+        })),
       ),
     );
   } catch (error) {

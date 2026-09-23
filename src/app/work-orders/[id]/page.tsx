@@ -25,6 +25,9 @@ import { InspectionSummary } from "@/features/inspections/inspection-summary";
 import { sessionState } from "@/features/inspections/model";
 import { withTransaction } from "@/server/db";
 import { readPermit } from "@/server/ptw-service";
+import { CriteriaList } from "@/features/company/criteria-list";
+import type { RiskCriteria } from "@/features/company/risk-criteria";
+import { readRiskCriteria } from "@/server/company-settings";
 
 const ACTIONS: Record<string, string> = {
   CREATE: "초안 생성",
@@ -126,7 +129,7 @@ export default async function OrderDetailPage({
     (s) => s.snapshot_kind === "RISK_ASSESSMENT",
   )?.payload as
     | {
-        criteria_snapshot: string;
+        criteria_snapshot: RiskCriteria;
         safety_info: WorkDraft["safetyInfo"];
         items: Array<{
           hazard: string;
@@ -140,6 +143,10 @@ export default async function OrderDetailPage({
         participants: Array<{ user_id: string; snapshot_display_name: string }>;
       }
     | undefined;
+  // 발급 전에는 사본이 없다. 발급하면 지금의 회사 기준이 그대로 사본이 된다.
+  const criteria =
+    riskSnapshot?.criteria_snapshot ??
+    (await withTransaction((c) => readRiskCriteria(c, actor.companyId)));
   const method = detail.snapshots.find((s) => s.snapshot_kind === "WORK_METHOD")
     ?.payload.method;
   const standardMeta = detail.snapshots.find(
@@ -385,9 +392,7 @@ export default async function OrderDetailPage({
               </p>
             )}
           <h3>적용한 판단 기준</h3>
-          <p className="wo-detail-text">
-            {riskSnapshot?.criteria_snapshot ?? (d.criteria || "미입력")}
-          </p>
+          <CriteriaList criteria={criteria} />
           {risks.map((r, i) => (
             <article className="wo-risk" key={i}>
               <h3>

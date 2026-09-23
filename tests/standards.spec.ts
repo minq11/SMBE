@@ -63,6 +63,21 @@ test("standard: create, edit, add a seeded assessment round", async ({
       },
     ]);
 
+    // 0) 회사 판단 기준을 등급별로 고친다. 이후 평가는 이 값을 들고 간다.
+    await page.goto("/company/criteria");
+    const mid = page.getByRole("group", { name: "중" });
+    await mid.getByLabel("정의").fill("병원 치료가 필요한 부상");
+    await mid
+      .getByRole("radiogroup", { name: "허용 여부" })
+      .getByLabel("허용 불가", { exact: true })
+      .check();
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByRole("status")).toContainText("저장했습니다");
+    await page.reload();
+    await expect(
+      page.getByRole("group", { name: "중" }).getByLabel("정의"),
+    ).toHaveValue("병원 치료가 필요한 부상");
+
     // 1) 만들기. 이름만 쓰고 저장하면 오류가 위의 띠가 아니라 안내 창으로 뜬다.
     await page.goto("/standards/new");
     await page.getByLabel("표준서명").fill("프레스 금형 교체");
@@ -113,6 +128,9 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.locator("dialog.help-dialog[open]")).toContainText(
       "회사가 정한 기준",
     );
+    await expect(
+      page.locator("dialog.help-dialog[open] .criteria-row").nth(1),
+    ).toContainText("병원 치료가 필요한 부상허용 불가");
     await page
       .locator("dialog.help-dialog[open]")
       .getByRole("button", { name: "확인" })
@@ -139,6 +157,10 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.locator("#main")).toContainText("프레스 금형 교체");
     await expect(page.locator("#main")).toContainText("전원 차단");
     await expect(page.locator("#main")).toContainText("끼임");
+    // 상세의 판단 기준은 평가에 복사된 사본이다.
+    await expect(page.locator("#main .criteria-list")).toContainText(
+      "병원 치료가 필요한 부상",
+    );
 
     // 2) 고치기 → 저장하면 상세로 돌아온다
     await page.getByRole("link", { name: "수정", exact: true }).click();

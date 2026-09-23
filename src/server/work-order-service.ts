@@ -263,13 +263,13 @@ export async function requestAssessment(
   const { rows } = await client.query<{ id: string }>(
     `INSERT INTO risk_assessments(company_id,name,assessment_kind,performed_on,criteria_snapshot,work_method_snapshot,
       safety_info,created_by,retention_until,is_simple,standard_id)
-      VALUES ($1,$2,$3,$4::date,$5,$6,$7::jsonb,$8,($4::date + interval '3 years')::date,$9,$10) RETURNING id`,
+      VALUES ($1,$2,$3,$4::date,$5::jsonb,$6,$7::jsonb,$8,($4::date + interval '3 years')::date,$9,$10) RETURNING id`,
     [
       actor.companyId,
       d.name,
       d.assessmentKind,
       d.performedOn,
-      criteriaSnapshot,
+      JSON.stringify(criteriaSnapshot),
       d.method,
       JSON.stringify(d.safetyInfo),
       actor.userId,

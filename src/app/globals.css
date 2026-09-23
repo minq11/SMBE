@@ -4337,15 +4337,6 @@ html[data-banner-hidden] .preview-banner {
   line-height: 1.7;
   color: var(--ink-2);
 }
-.help-dialog-content .criteria-readonly {
-  white-space: pre-wrap;
-  font: inherit;
-  margin: 10px 0;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--ink);
-}
 /* 구간 안내의 세 줄: 무엇 · 어떻게 · 왜 */
 .help-rows {
   display: grid;
@@ -6199,29 +6190,110 @@ body.sidebar-lock {
   line-height: 1.6;
 }
 
-/* 위험성 판단 기준 — 회사가 정한 값을 그대로 보여 주는 읽기 전용 블록 */
-.criteria-readonly {
-  margin: 0;
-  padding: 14px 16px;
+/* 위험성 판단 기준 — 상·중·하 세 행 (features/company/criteria-list.tsx).
+   물음표 창·평가·표준서·지시서 상세·작업자 화면이 같은 모양을 쓴다. */
+.criteria-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+}
+.criteria-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--line-soft);
-  font-family: inherit;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.criteria-row dd {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.criteria-row p {
+  margin: 0 0 4px;
   font-size: 14px;
-  line-height: 1.7;
-  white-space: pre-wrap;
+  line-height: 1.6;
+  color: var(--ink);
   word-break: keep-all;
 }
-.wo-criteria {
-  margin: 8px 0 20px;
+.criteria-level {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
 }
-.wo-criteria h3 {
-  font-size: 15px;
-  margin-bottom: 8px;
+.criteria-level--high {
+  background: var(--danger-soft);
+  color: var(--danger);
 }
-.wo-criteria .wo-muted {
-  margin-top: 8px;
+.criteria-level--mid {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.criteria-level--low {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.criteria-accept {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.criteria-accept--acceptable {
+  color: var(--ok);
+}
+.criteria-accept--not_acceptable {
+  color: var(--danger);
+}
+
+/* 판단 기준 수정 (/company/criteria). 등급마다 한 칸. */
+.criteria-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.criteria-form-level {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.criteria-form-level legend {
+  padding: 0 4px;
+}
+.criteria-form-field {
+  display: grid;
+  gap: 6px;
   font-size: 13px;
+  font-weight: 600;
+}
+.criteria-form-field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  resize: vertical;
+}
+.criteria-form > .primary-button {
+  align-self: flex-start;
 }
 
 /* TBM 화면: 위험성 수준 배지와 접어 둔 판단 기준 안내 */
@@ -6663,15 +6735,4 @@ body.sidebar-lock {
 }
 .std-fold[open] {
   padding-bottom: 14px;
-}
-.std-fold .criteria-readonly {
-  white-space: pre-wrap;
-  font: inherit;
-  font-size: 13.5px;
-  line-height: 1.7;
-  margin: 0 0 8px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--ink-2);
 }

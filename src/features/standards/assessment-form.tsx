@@ -1,5 +1,6 @@
 "use client";
 
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Plus, Save, X } from "lucide-react";
@@ -58,7 +59,7 @@ export function AssessmentForm({
   standardName: string;
   members: Member[];
   /** 회사의 위험성 판단 기준 (읽기만) */
-  criteria: string;
+  criteria: RiskCriteria;
   seed?: AssessmentSeed;
 }) {
   const [kind, setKind] = useState<Kind>("PERIODIC");

@@ -118,7 +118,9 @@ async function assessment(
          (company_id, is_simple, name, assessment_kind, performed_on, status,
           criteria_snapshot, work_method_snapshot, safety_info, created_by,
           approved_by, approved_at, retention_until, standard_id)
-       VALUES ($1, $2, $3, $4, $5::date, $6, '기준', '방법', '{"equipment":"","materials":"","environment":"","history":""}',
+       VALUES ($1, $2, $3, $4, $5::date, $6,
+               '[{"level":"HIGH","description":"상","acceptance":"NOT_ACCEPTABLE"},{"level":"MID","description":"중","acceptance":"AFTER_REDUCTION"},{"level":"LOW","description":"하","acceptance":"ACCEPTABLE"}]',
+               '방법', '{"equipment":"","materials":"","environment":"","history":""}',
                $7::uuid, CASE WHEN $6::text = 'APPROVED' THEN $7::uuid END,
                CASE WHEN $6::text = 'APPROVED' THEN now() END, ($5::date + interval '3 years')::date, $8::uuid)
        RETURNING id`,

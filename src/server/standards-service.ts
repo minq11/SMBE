@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { query, queryOne, withTransaction } from "@/server/db";
 import { readRiskCriteria } from "@/server/company-settings";
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 import {
   ASSESSMENT_KIND_LABEL,
   VALIDITY_MONTHS,
@@ -92,8 +93,7 @@ export const assessmentRoundSchema = z.object({
     .min(1, "작업방법 요약을 입력하세요.")
     .max(4000),
   // 판단 기준은 회사가 정한 값이 원본이다. 클라이언트 값은 받지 않고 서버가
-  // 회사 기준을 사본으로 남긴다 (0013). 옛 클라이언트가 보내도 무시한다.
-  criteria: z.string().max(2000).optional(),
+  // 회사 기준을 사본으로 남긴다 (0013, 0020). 스키마에 없으니 보내도 버려진다.
   safety_info: safetyInfoSchema,
   risks: z.array(riskItemSchema).min(1).max(30),
   participant_user_ids: z
@@ -287,7 +287,7 @@ export async function getStandardDetail(
   let current: StandardDetail["current_assessment"] = null;
   if (currentApproved) {
     const info = await queryOne<{
-      criteria_snapshot: string;
+      criteria_snapshot: RiskCriteria;
       work_method_snapshot: string;
       safety_info: SafetyInfo;
     }>(
@@ -318,7 +318,7 @@ export async function getStandardDetail(
       assessment_id: currentApproved.assessment_id,
       kind: currentApproved.kind,
       performed_on: currentApproved.performed_on,
-      criteria: info?.criteria_snapshot ?? "",
+      criteria: info?.criteria_snapshot ?? [],
       work_method: info?.work_method_snapshot ?? "",
       safety_info: info?.safety_info ?? {
         equipment: "",
@@ -359,7 +359,6 @@ export async function getStandardForPrefill(
   work_method: string;
   checklist_tbm: string[];
   checklist_during: string[];
-  criteria: string;
   safety_info: SafetyInfo;
   risks: RiskItem[];
   participant_ids: string[];
@@ -383,7 +382,6 @@ export async function getStandardForPrefill(
     work_method: ca.work_method,
     checklist_tbm: detail.checklist_tbm,
     checklist_during: detail.checklist_during,
-    criteria: ca.criteria,
     safety_info: ca.safety_info,
     risks: ca.risks,
     participant_ids: parts.map((p) => p.user_id),
@@ -443,14 +441,14 @@ async function insertRiskAssessmentRound(
      VALUES ($1, false,
              (SELECT name FROM standards WHERE id = $2),
              $3, $4::date, 'APPROVED',
-             $5, $6, $7::jsonb, $8, $8, now(), $9::date, $2)
+             $5::jsonb, $6, $7::jsonb, $8, $8, now(), $9::date, $2)
      RETURNING id`,
     [
       companyId,
       standardId,
       payload.kind,
       payload.performed_on,
-      criteria,
+      JSON.stringify(criteria),
       payload.work_method,
       JSON.stringify(payload.safety_info),
       actorId,

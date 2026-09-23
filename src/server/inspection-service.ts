@@ -7,6 +7,7 @@ import {
   type Actor,
 } from "./work-order-service";
 import { WorkOrderError, seoulToday } from "../features/work-orders/model";
+import type { RiskCriteria } from "@/features/company/risk-criteria";
 import {
   inspectionSchema,
   backfillSchema,
@@ -316,7 +317,7 @@ export async function inspectionOverview(
   // 바꿔도 현장에서 보이는 것은 이 지시서가 발급될 때의 기준이다 (0013).
   const { rows: risks } = await client.query<{
     payload: {
-      criteria_snapshot?: string;
+      criteria_snapshot?: RiskCriteria;
       items: Array<{
         hazard: string;
         reduction_measure: string;
@@ -410,7 +411,7 @@ export async function inspectionOverview(
     lockedSessions: sessions.length - visible.length,
     checklist,
     risks: risks[0]?.payload.items ?? [],
-    criteria: risks[0]?.payload.criteria_snapshot ?? "",
+    criteria: risks[0]?.payload.criteria_snapshot ?? [],
     permit: permits[0] ?? null,
     records,
     findings,

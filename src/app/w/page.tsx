@@ -20,6 +20,7 @@ import {
   orderSessionsForDisplay,
 } from "@/features/inspections/model";
 import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
+import { CriteriaList } from "@/features/company/criteria-list";
 
 const RISK_LEVEL: Record<string, string> = { HIGH: "상", MID: "중", LOW: "하" };
 
@@ -164,10 +165,10 @@ export default async function WorkerLinkPage({
           ))}
           {/* 기준 원문은 길어서 항상 펼쳐 두면 체크리스트가 밀린다.
               필요한 사람만 열어 보게 접어 둔다. */}
-          {data.criteria && (
+          {data.criteria.length > 0 && (
             <details className="wo-criteria-help">
               <summary>위험성 수준은 무엇을 기준으로 정했나요?</summary>
-              <pre className="criteria-readonly">{data.criteria}</pre>
+              <CriteriaList criteria={data.criteria} />
               <p className="wo-muted">
                 이 지시서가 발급될 때 회사가 정해 둔 기준입니다.
               </p>

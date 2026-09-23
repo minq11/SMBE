@@ -52,7 +52,6 @@ test("location registration and explicit PTW self approval automatically issue w
           startTime: "09:00",
           endTime: "17:00",
           ptwRequired: true,
-          criteria: "평가 기준",
           safetyInfo: {
             equipment: "용접기",
             materials: "금속",

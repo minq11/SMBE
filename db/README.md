@@ -81,4 +81,11 @@ docker compose --profile tools run --rm migrate
   발급된 지시서에는 삭제 표시가 서지 않도록 CHECK 로 막습니다 — 그 경우의 수단은
   '취소'입니다. 물리 삭제는 하지 않고 목록에서만 감춥니다.
 
+- `0020_company_risk_levels.sql` — 판단 기준을 등급별 행으로(`company_risk_levels`,
+  회사당 상·중·하 세 행). 회사 생성 시 트리거가 기본값을 넣고, `companies.risk_criteria`
+  는 없앴습니다. 평가 사본 `criteria_snapshot` 도 같은 모양의 jsonb 배열입니다.
+
+- `0021_risk_level_defaults_soften.sql` — 기본 기준의 어감 완화, 상도 감소대책 후 허용.
+  0020 기본값을 그대로 둔 행만 바꿉니다.
+
 후속 페이즈(안전사고·과금 등)는 새 파일로 추가합니다.
