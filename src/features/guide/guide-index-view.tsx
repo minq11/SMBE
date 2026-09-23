@@ -40,8 +40,8 @@ export function GuideIndexView() {
           확인하세요.
         </p>
         <p className="guide-hero-meta">
-          검토일 {GUIDE_META.reviewedDate} · 실 적용은 사업 종류·업종 등
-          개별 조건에 따라 다름
+          검토일 {GUIDE_META.reviewedDate} · 실 적용은 사업 종류·업종 등 개별
+          조건에 따라 다름
         </p>
       </section>
 
@@ -63,17 +63,20 @@ export function GuideIndexView() {
           <span className="guide-check-cta-eyebrow">자가진단</span>
           <h2>우리 회사, 위험성평가 인정 준비가 되어있을까요?</h2>
           <p>
-            10문항 안팎의 짧은 문답으로 신청대상 여부와 준비 상태를 확인합니다.
-            결과를 보고 부족한 항목을 심플안전으로 바로 채워 나갈 수 있습니다.
+            25문항, 5분. 공식 심사기준 그대로 우리 회사 점수가 나옵니다. 부족한
+            항목은 심플안전으로 바로 채웁니다.
           </p>
         </div>
-        <Link href="/recognition-check" className="primary-button guide-check-cta-button">
+        <Link
+          href="/recognition-check"
+          className="primary-button guide-check-cta-button"
+        >
           <ClipboardCheck size={14} />
           인정 준비도 진단 시작
         </Link>
       </section>
 
-      <p className="guide-disclaimer">{GUIDE_META.disclaimer}</p>
+      <p className="guide-disclaimer">{GUIDE_META.sourceNote}</p>
     </>
   );
 }

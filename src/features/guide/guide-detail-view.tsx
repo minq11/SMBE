@@ -110,7 +110,7 @@ export function GuideDetailView({ topic }: { topic: LawSummary["topic"] }) {
         </ul>
       </section>
 
-      <p className="guide-disclaimer">{GUIDE_META.disclaimer}</p>
+      <p className="guide-disclaimer">{GUIDE_META.sourceNote}</p>
     </>
   );
 }

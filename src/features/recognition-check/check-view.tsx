@@ -121,9 +121,7 @@ export function CheckView() {
         <IntroPanel
           onStart={() => setStep("targeting")}
           onReset={reset}
-          hasSaved={
-            targetingComplete || Object.keys(answers).length > 0
-          }
+          hasSaved={targetingComplete || Object.keys(answers).length > 0}
         />
       )}
       {step === "targeting" && (
@@ -175,8 +173,7 @@ function ProgressBar({ step }: { step: Step }) {
   return (
     <ol className="check-progress" aria-label="진행 단계">
       {steps.map((s, i) => {
-        const state =
-          i < stepIdx ? "done" : i === stepIdx ? "current" : "todo";
+        const state = i < stepIdx ? "done" : i === stepIdx ? "current" : "todo";
         return (
           <li key={s.key} className={`check-progress-step is-${state}`}>
             <span className="check-progress-dot" aria-hidden="true">
@@ -209,8 +206,8 @@ function IntroPanel({
       <h1>위험성평가 인정 준비도 진단</h1>
       <p className="check-lead">
         안전보건공단 <strong>위험성평가 우수사업장 인정제도</strong> 의 공식
-        심사기준(2024.12.18 개정) 을 그대로 반영해 우리 회사의 준비도를
-        계산합니다. 실제 인정은 KOSHA 별도 심사를 거칩니다.
+        심사기준(2024.12.18 개정) 그대로. 25문항에 답하면 우리 회사 준비도가
+        바로 나옵니다.
       </p>
       <ul className="check-bullet">
         <li>
@@ -221,12 +218,8 @@ function IntroPanel({
           25% · 재해수준 5%.
         </li>
         <li>
-          <Check size={14} /> 인정 부합 판정: <strong>각 항목 70점 이상 AND
-          종합 90점 이상</strong>.
-        </li>
-        <li>
-          <Check size={14} /> 답변은 사용자 응답 기준 자가 진단이며, 실제
-          인정은 KOSHA 심사원 현장 심사가 필요합니다.
+          <Check size={14} /> 인정 부합 판정:{" "}
+          <strong>각 항목 70점 이상 AND 종합 90점 이상</strong>.
         </li>
       </ul>
       <div className="check-actions">
@@ -393,9 +386,7 @@ function SectionStep({
 
       {groups.map((g) => (
         <div key={g.key} className="check-subgroup">
-          {g.title && (
-            <h3 className="check-subgroup-title">{g.title}</h3>
-          )}
+          {g.title && <h3 className="check-subgroup-title">{g.title}</h3>}
           <ol className="check-question-list" role="list">
             {g.qs.map((q) => (
               <QuestionCard
@@ -454,10 +445,8 @@ function QuestionCard({
       <div className="check-answer-row" role="radiogroup" aria-label={q.text}>
         {q.choices.map((c) => {
           const active = chosen === c.key;
-          const isTop =
-            c.score === Math.max(...q.choices.map((x) => x.score));
-          const isBot =
-            c.score === Math.min(...q.choices.map((x) => x.score));
+          const isTop = c.score === Math.max(...q.choices.map((x) => x.score));
+          const isBot = c.score === Math.min(...q.choices.map((x) => x.score));
           const toneCls = active
             ? isTop
               ? " check-answer-choice--top is-active"
@@ -506,8 +495,8 @@ function ResultPanel({
         <span className="check-eyebrow">결과</span>
         <h1>진단 결과</h1>
         <p className="check-lead">
-          아래는 사용자 응답과 안전보건공단 공식 배점을 그대로 계산한 결과입니다.
-          {scoreDiagnostic()} 실제 인정은 KOSHA 현장 심사를 통해 확정됩니다.
+          안전보건공단 공식 배점으로 계산한 우리 회사 점수입니다.{" "}
+          {scoreDiagnostic()}
         </p>
       </header>
 
@@ -529,9 +518,7 @@ function ResultPanel({
           value={`${result.overallScore.toFixed(1)}점 / 100`}
           tone={result.overallPassed ? "good" : "warn"}
           note={
-            result.overallPassed
-              ? "종합 90점 이상 통과"
-              : "종합 90점 이상 필요"
+            result.overallPassed ? "종합 90점 이상 통과" : "종합 90점 이상 필요"
           }
         />
         <ResultTile
@@ -549,8 +536,8 @@ function ResultPanel({
       {!result.answeredAll && (
         <p className="check-notice" role="alert">
           <CircleAlert size={14} /> 아직{" "}
-          {result.totalQuestions - result.answeredQuestions}개 문항이 답변되지
-          않아 계산이 정확하지 않을 수 있습니다.
+          {result.totalQuestions - result.answeredQuestions}개 문항이 비어
+          있습니다. 답하면 점수가 정확해집니다.
         </p>
       )}
 
@@ -572,8 +559,8 @@ function ResultPanel({
         <div>
           <strong>심플안전으로 부족한 항목을 채워보세요</strong>
           <p>
-            무료로 시작해 위험성평가·작업지시·TBM·점검 기록을 실제 업무에 연결할
-            수 있습니다.
+            무료로 시작하면 부족한 항목이 매일의 작업지시·TBM·점검 기록으로
+            채워집니다.
           </p>
         </div>
         <Link href="/login?next=/onboarding" className="primary-button">
@@ -594,9 +581,8 @@ function ResultPanel({
       </div>
 
       <p className="check-result-note">
-        <Info size={12} /> 출처: 사업장 위험성평가에 관한 지침 [별표]
-        위험성평가 인정심사 항목 및 기준 (2024.12.18 개정 · 안전보건공단
-        고시). 세부 심사원 판단·현장 확인은 실제 심사에서 이루어집니다.
+        <Info size={12} /> 출처: 사업장 위험성평가에 관한 지침 [별표] 위험성평가
+        인정심사 항목 및 기준 (2024.12.18 개정 · 안전보건공단 고시).
       </p>
     </section>
   );
@@ -669,8 +655,8 @@ function NeedsList({ result }: { result: CheckResult }) {
   if (items.length === 0) {
     return (
       <p className="check-notice">
-        <Check size={14} /> 모든 응답이 최고 등급입니다. 실제 이행·기록의
-        완결성만 유지하면 인정 심사에 도전할 수 있습니다.
+        <Check size={14} /> 모든 항목이 최고 등급입니다. 지금 바로 인정 신청을
+        준비하세요.
       </p>
     );
   }
@@ -698,8 +684,7 @@ function NeedsList({ result }: { result: CheckResult }) {
             </span>
             <strong>{item.question.text}</strong>
             <span className="check-result-status">
-              현재 {item.status} ({item.earned} / {item.maxScore}점) — 최대
-              {" "}
+              현재 {item.status} ({item.earned} / {item.maxScore}점) — 최대{" "}
               {item.maxScore}점까지 획득 가능
             </span>
           </div>

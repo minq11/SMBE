@@ -16,7 +16,11 @@ export function SizeBandPicker({
       className={`band-picker${compact ? " band-picker--compact" : ""}`}
     >
       <legend>인원 규모</legend>
-      <div className="band-picker-choices" role="radiogroup" aria-label="인원 규모 선택">
+      <div
+        className="band-picker-choices"
+        role="radiogroup"
+        aria-label="인원 규모 선택"
+      >
         {SIZE_BANDS.map(({ key, label, note }) => {
           const active = value === key;
           return (

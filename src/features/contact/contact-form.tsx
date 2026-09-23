@@ -40,8 +40,7 @@ export function ContactForm() {
     <form action={formAction} className="form-shell">
       <h1>사전 예약 · 문의하기</h1>
       <p className="lead">
-        심플안전은 아직 개발 중입니다. 도입 관심·기능 문의·기타 하실 말씀을 남겨
-        주시면 며칠 안에 답장 드릴게요.
+        도입 문의·기능 요청·하실 말씀을 남겨 주세요. 며칠 안에 답장 드립니다.
       </p>
 
       {state?.error && <div className="form-error">{state.error}</div>}

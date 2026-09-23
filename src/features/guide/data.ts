@@ -4,12 +4,13 @@
 
 export type SizeBand = "UNDER_5" | "FROM_5_TO_19" | "FROM_20_TO_49" | "FROM_50";
 
-export const SIZE_BANDS: Array<{ key: SizeBand; label: string; note: string }> = [
-  { key: "UNDER_5", label: "5인 미만", note: "상시근로자 1~4명" },
-  { key: "FROM_5_TO_19", label: "5~19인", note: "상시근로자 5~19명" },
-  { key: "FROM_20_TO_49", label: "20~49인", note: "상시근로자 20~49명" },
-  { key: "FROM_50", label: "50인 이상", note: "상시근로자 50명 이상" },
-];
+export const SIZE_BANDS: Array<{ key: SizeBand; label: string; note: string }> =
+  [
+    { key: "UNDER_5", label: "5인 미만", note: "상시근로자 1~4명" },
+    { key: "FROM_5_TO_19", label: "5~19인", note: "상시근로자 5~19명" },
+    { key: "FROM_20_TO_49", label: "20~49인", note: "상시근로자 20~49명" },
+    { key: "FROM_50", label: "50인 이상", note: "상시근로자 50명 이상" },
+  ];
 
 export type Applicability = "적용" | "일부 적용" | "원칙 미적용";
 
@@ -115,14 +116,14 @@ export const LAW_DETAILS: LawDetail[] = [
     sections: [
       {
         heading: "누구에게 적용되나요",
-        lead:
-          "상시근로자 50명 이상 사업장의 사업주·경영책임자가 원칙 대상입니다. 건설업은 공사금액 기준·특수 업종은 별도 조건이 있으니 개별 확인이 필요합니다.",
+        lead: "상시근로자 50명 이상 사업장의 사업주·경영책임자가 원칙 대상입니다. 건설업은 공사금액 기준·특수 업종은 별도 조건이 있으니 개별 확인이 필요합니다.",
         perBandNotes: {
           UNDER_5:
             "5인 미만은 본 법의 사업주 처벌 조항 원칙 미적용. 다만 안전관리 자체는 소규모 사업장도 자율적으로 필요합니다.",
           FROM_5_TO_19: "50인 미만 구간이라 사업주 처벌 조항 원칙 미적용.",
           FROM_20_TO_49: "50인 미만 구간이라 사업주 처벌 조항 원칙 미적용.",
-          FROM_50: "이 구간부터 사업주·경영책임자의 안전보건확보의무 위반이 형사 처벌 대상.",
+          FROM_50:
+            "이 구간부터 사업주·경영책임자의 안전보건확보의무 위반이 형사 처벌 대상.",
         },
       },
       {
@@ -172,8 +173,7 @@ export const LAW_DETAILS: LawDetail[] = [
     sections: [
       {
         heading: "누구에게 적용되나요",
-        lead:
-          "대부분의 사업장에 폭넓게 적용됩니다. 인원 구간·업종에 따라 세부 의무 강도가 달라집니다.",
+        lead: "대부분의 사업장에 폭넓게 적용됩니다. 인원 구간·업종에 따라 세부 의무 강도가 달라집니다.",
         perBandNotes: {
           UNDER_5:
             "5인 미만도 안전보건 조치 일부 규정은 적용됩니다. 위험성평가 자체는 사업 규모 상관없이 사업주 자율의무.",
@@ -198,8 +198,7 @@ export const LAW_DETAILS: LawDetail[] = [
       },
       {
         heading: "위험성평가 인정제도 (안전보건공단)",
-        lead:
-          "위험성평가를 성실히 실시·이행하는 사업장은 안전보건공단 심사를 거쳐 '위험성평가 인정' 을 받을 수 있습니다. 인정 사업장은 각종 지원·혜택의 우선 대상이 됩니다. 준비 정도는 우리 시스템의 자가진단으로 미리 확인할 수 있습니다.",
+        lead: "위험성평가를 꾸준히 실시하고 기록한 사업장은 안전보건공단의 '위험성평가 인정' 을 받습니다. 인정받으면 3년간 정기 감독 유예, 산재보험료 20% 인하. 준비 정도는 자가진단으로 5분이면 확인합니다.",
       },
     ],
     requiredRecords: [
@@ -211,7 +210,7 @@ export const LAW_DETAILS: LawDetail[] = [
     ],
     nextActions: [
       {
-        text: "심플안전 무료 티어로 위험성평가·작업지시·TBM·현장 점검을 바로 시작할 수 있습니다.",
+        text: "심플안전 무료로 위험성평가·작업지시·TBM·현장 점검을 오늘 시작하세요.",
         ctaLabel: "무료로 시작하기",
         ctaHref: "/login?next=/onboarding",
       },
@@ -227,8 +226,8 @@ export const LAW_DETAILS: LawDetail[] = [
 export const GUIDE_META = {
   effectiveDate: "2026-09-20",
   reviewedDate: "2026-09-20",
-  disclaimer:
-    "본 안내는 안전관리 실무 참고용 요약이며 실제 적용 여부는 사업 종류·업종·계약 관계 등 개별 조건에 따라 다릅니다. 최종 판단은 공식 법령과 담당 기관 안내를 확인하세요.",
+  sourceNote:
+    "출처: 산업안전보건법·중대재해처벌법 및 안전보건공단 고시 (2026-09-20 기준).",
 };
 
 export function getLawSummary(topic: LawSummary["topic"]): LawSummary {
