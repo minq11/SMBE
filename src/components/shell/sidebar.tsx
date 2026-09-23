@@ -282,7 +282,6 @@ export function Sidebar({
             <>
               <Icon size={17} />
               <span>{title}</span>
-              {!isActive && <ChevronRight size={13} />}
             </>
           );
           if (href) {
