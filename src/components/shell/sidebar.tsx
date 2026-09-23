@@ -71,6 +71,33 @@ type NavEntry = {
 
 const NAV: ReadonlyArray<NavEntry> = [
   { key: "home", title: "홈", icon: Home, href: "/" },
+  // 회사정보는 홈 바로 아래. 인원·장소·판단 기준은 처음 쓸 때 가장 먼저 만지는 곳이다.
+  {
+    key: "company",
+    title: "회사정보",
+    icon: Building2,
+    children: [
+      {
+        key: "company",
+        title: "인원관리",
+        icon: Building2,
+        href: "/company/members",
+      },
+      {
+        key: "locations",
+        title: "장소관리",
+        icon: Building2,
+        href: "/company/locations",
+      },
+      {
+        key: "criteria",
+        title: "위험성 판단 기준",
+        icon: ShieldCheck,
+        href: "/company/criteria",
+      },
+      { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
+    ],
+  },
   {
     key: "orders",
     title: "작업지시",
@@ -105,32 +132,6 @@ const NAV: ReadonlyArray<NavEntry> = [
     ],
   },
   { key: "incident", title: "안전사고", icon: TriangleAlert },
-  {
-    key: "company",
-    title: "회사정보",
-    icon: Building2,
-    children: [
-      {
-        key: "company",
-        title: "인원관리",
-        icon: Building2,
-        href: "/company/members",
-      },
-      {
-        key: "locations",
-        title: "장소관리",
-        icon: Building2,
-        href: "/company/locations",
-      },
-      {
-        key: "criteria",
-        title: "위험성 판단 기준",
-        icon: ShieldCheck,
-        href: "/company/criteria",
-      },
-      { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
-    ],
-  },
   {
     key: "permits",
     title: "위험작업허가",
