@@ -251,7 +251,6 @@ export function StandardDetailView({
               {current.valid_until
                 ? `${new Date(current.valid_until).toLocaleDateString("ko-KR")}까지`
                 : "상시"}{" "}
-              — 지시서 발급 시 이 평가가 스냅샷으로 복사됩니다.
             </p>
           </div>
         </div>
