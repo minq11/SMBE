@@ -118,10 +118,24 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await page.getByLabel("작업 시작일").fill(tomorrow);
     await page.getByLabel("작업 종료일").fill(tomorrow);
     await page.getByLabel("작업 장소", { exact: true }).fill("테스트 구역");
+    // 작업자 배정은 팝업에서 고른다. 고른 사람은 칩으로 남는다.
     await page
       .locator("#wo-schedule")
+      .getByRole("button", { name: /^작업자 선택/ })
+      .click();
+    await page
+      .getByRole("dialog")
       .getByRole("checkbox", { name: "검증 작업자", exact: true })
       .check();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "완료", exact: true })
+      .click();
+    await expect(
+      page
+        .locator("#wo-schedule")
+        .getByRole("button", { name: "검증 작업자 빼기" }),
+    ).toBeVisible();
     await page
       .getByLabel("TBM · 작업 전 항목 1", { exact: true })
       .fill("테스트 TBM");
@@ -131,6 +145,16 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await page.getByRole("button", { name: "임시저장", exact: true }).click();
     // 임시저장은 계속 작성할 수 있도록 편집 화면에 머문다 (actions.ts saveDraftAction).
     await expect(page).toHaveURL(/\/work-orders\/[a-f0-9-]{36}\/edit$/);
+    // 저장 뒤 편집 화면: 검토·이력은 접혀 있고 임시저장·발급 띠가 맨 아래에 있다.
+    await page
+      .getByRole("button", { name: "지금 발급하기", exact: true })
+      .waitFor();
+    await expect(page.locator(".wo-review-fold")).toHaveCount(1);
+    await expect(page.locator(".wo-review-fold[open]")).toHaveCount(0);
+    await page.screenshot({
+      path: testInfo.outputPath("work-order-edit.png"),
+      fullPage: true,
+    });
     const id = new URL(page.url()).pathname.split("/")[2];
     const path = "/work-orders/" + id;
     // 작성 중인 지시서는 조회가 아니라 편집으로 열린다 ([id]/page.tsx redirect).
@@ -288,8 +312,8 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(
       page
         .locator("#wo-schedule")
-        .getByRole("checkbox", { name: "검증 작업자", exact: true }),
-    ).toBeChecked();
+        .getByRole("button", { name: "검증 작업자 빼기" }),
+    ).toBeVisible();
 
     const workerContext = await browser.newContext({
       ...testInfo.project.use,

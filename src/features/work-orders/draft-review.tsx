@@ -44,8 +44,7 @@ export function DraftReview({
       {!assessmentStatus && (
         <>
           <p className="wo-muted">
-            다른 관리자가 평가를 검토·승인하게 하려면 요청하세요. 본인이 바로
-            발급하려면 위의 <strong>지금 발급하기</strong>를 누르면 됩니다.
+            위험성평가를 다른 관리자가 검토·승인하게 하려면 요청하세요.
           </p>
           <OrderCommand
             id={id}
@@ -80,11 +79,11 @@ export function DraftReview({
         />
       )}
       {ptwRequired && (
-        <p className="wo-notice">
-          <Link href={"/work-orders/" + id + "/permit"}>
-            위험성평가 검토 및 PTW 신청
-          </Link>{" "}
-          · 허가 승인 시 지시서가 자동 발급됩니다.
+        <p className="wo-muted">
+          위험작업허가는 위 <strong>지금 발급하기</strong>가 신청까지 함께
+          합니다. 신청 상태와 승인자 변경은{" "}
+          <Link href={"/work-orders/" + id + "/permit"}>위험작업허가 화면</Link>
+          에서 봅니다.
         </p>
       )}
     </>

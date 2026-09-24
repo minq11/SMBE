@@ -19,6 +19,51 @@ export const riskSchema = z.object({
   responsibleId: z.string().max(36),
   dueDate: z.string().max(10),
 });
+/**
+ * 지시서 안의 위험작업허가 항목. 초안은 비워 둘 수 있으니 전부 느슨하고, 발급 때
+ * `permitProblem` 과 서버(`permitInput`)가 채웠는지 본다.
+ */
+export const permitDraftSchema = z.object({
+  approverId: z.string().max(36).default(""),
+  responsibleId: z.string().max(36).default(""),
+  locationId: z.string().max(36).default(""),
+  equipment: z.string().max(2000).default(""),
+  notes: z.string().max(4000).default(""),
+  hotWork: z.boolean().default(false),
+  fireWatcherId: z.string().max(36).default(""),
+  contacts: z
+    .array(z.object({ name: z.string().max(100), phone: z.string().max(30) }))
+    .max(10)
+    .default([]),
+});
+export type PermitDraft = z.infer<typeof permitDraftSchema>;
+export const blankPermit = (): PermitDraft => ({
+  approverId: "",
+  responsibleId: "",
+  locationId: "",
+  equipment: "",
+  notes: "",
+  hotWork: false,
+  fireWatcherId: "",
+  contacts: [{ name: "", phone: "" }],
+});
+const PHONE = /^\+?[0-9 ()-]{7,30}$/;
+/** 발급 전 허가 항목 검사. 문제가 없으면 null. 서버가 다시 검사한다. */
+export function permitProblem(p: PermitDraft): string | null {
+  const uuid = (v: string) => z.string().uuid().safeParse(v).success;
+  if (!uuid(p.approverId)) return "허가 승인자를 고르세요.";
+  if (!uuid(p.responsibleId)) return "작업책임자를 고르세요.";
+  if (!uuid(p.locationId)) return "등록된 허가 장소를 고르세요.";
+  if (!p.equipment.trim()) return "대상 설비를 적으세요.";
+  if (p.hotWork && !uuid(p.fireWatcherId)) return "화기작업은 화재감시자가 필요합니다.";
+  const contacts = p.contacts.filter((c) => c.name.trim() || c.phone.trim());
+  if (contacts.length === 0) return "비상연락처를 하나 이상 적으세요.";
+  for (const c of contacts) {
+    if (!c.name.trim()) return "비상연락처 이름을 적으세요.";
+    if (!PHONE.test(c.phone.trim())) return "비상연락처 전화번호를 확인하세요.";
+  }
+  return null;
+}
 export const draftSchema = z.object({
   standardId: z.string().uuid().nullable().optional().default(null),
   // 표준서를 고를 때 그 내용이 어느 판이었나. 발급 때 지시서에 박힌다 — 초안을 쓰는
@@ -42,6 +87,8 @@ export const draftSchema = z.object({
     history: text,
   }),
   workerOpinion: text.optional().default(""),
+  // PTW 필요일 때 지시서 안에서 적는 허가 항목. 옛 초안에는 없다.
+  permit: permitDraftSchema.optional().default(blankPermit),
   risks: z.array(riskSchema).min(1).max(50),
   participantIds: ids,
   assigneeIds: ids,
@@ -132,7 +179,7 @@ export function validateIssue(d: WorkDraft) {
   validateSchedule(d);
   if (d.ptwRequired)
     throw new WorkOrderError(
-      "PTW가 필요한 작업은 아직 발급할 수 없습니다. 허가 기능 구현 후 진행하세요.",
+      "PTW가 필요한 작업은 허가가 승인돼야 발급됩니다.",
     );
   if (
     ![d.tbm, d.during].every(
@@ -148,6 +195,7 @@ export function blankDraft(): WorkDraft {
   return {
     standardId: null,
     standardRevisionId: null,
+    permit: blankPermit(),
     name: "",
     groupLabel: "",
     method: "",

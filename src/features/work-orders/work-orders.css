@@ -151,6 +151,38 @@
   }
 }
 /* 저장된 초안의 검토·발급 명령. 폼이 고쳐진 채면 fieldset 째로 잠긴다. */
+/* 허가 항목 (permit-fields.tsx) */
+.wo-permit {
+  margin: 12px 0 8px;
+  padding: 14px 16px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.wo-permit-contacts {
+  border: 0;
+  padding: 0;
+  margin: 12px 0 0;
+  min-width: 0;
+}
+.wo-permit-contacts > legend {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+}
+.wo-contact-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0 10px;
+  align-items: end;
+}
+.wo-contact-remove {
+  margin-bottom: 16px;
+}
+.wo-review-fold,
+.wo-history-fold {
+  margin-top: 24px;
+}
 .wo-review {
   border: 0;
   border-top: 1px solid var(--line);
@@ -781,6 +813,12 @@
 @media (max-width: 520px) {
   .wo-columns {
     grid-template-columns: 1fr;
+  }
+  .wo-contact-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .wo-contact-row > .wo-field:first-child {
+    grid-column: 1 / -1;
   }
   .wo-doc-tabs {
     /* 옆으로 미는 띠의 내용 너비가 문서의 최소 너비로 번지면 모바일 브라우저가

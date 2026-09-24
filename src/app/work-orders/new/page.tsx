@@ -138,6 +138,7 @@ export default async function NewOrderPage({
         standards={standards}
         initialStandardId={initialStandardId}
         locations={locations}
+        userId={session.user.id}
       />
     </OrderShell>
   );

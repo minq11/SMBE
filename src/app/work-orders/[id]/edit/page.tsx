@@ -159,8 +159,11 @@ export default async function EditOrderPage({
                 next="/work-orders?tab=draft"
               />
             </section>
-            <section className="wo-section">
-              <h2>변경 이력</h2>
+            <details className="std-fold wo-fold wo-history-fold">
+              <summary>
+                변경 이력 ({detail.history.length}건)
+                <small>펼쳐서 보기</small>
+              </summary>
               <ul className="wo-history">
                 {detail.history.map((h, i) => (
                   <li key={i}>
@@ -172,7 +175,7 @@ export default async function EditOrderPage({
                   </li>
                 ))}
               </ul>
-            </section>
+            </details>
           </>
         }
         initial={order.draft_data}
@@ -181,6 +184,7 @@ export default async function EditOrderPage({
         standards={standards}
         initialStandardId={order.draft_data.standardId ?? null}
         locations={locations}
+        userId={session.user.id}
       />
     </OrderShell>
   );

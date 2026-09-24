@@ -14,7 +14,8 @@ import {
   deleteDraftOrder,
 } from "@/server/work-order-service";
 import { deliverOrder } from "@/server/work-order-delivery";
-import { WorkOrderError } from "./model";
+import { requestPermit } from "@/server/ptw-service";
+import { WorkOrderError, draftSchema } from "./model";
 
 export type WorkActionState = { error?: string; message?: string } | undefined;
 async function actor() {
@@ -80,6 +81,8 @@ export async function saveAndIssueAction(
   let id = "";
   let saved = false;
   let issued = false;
+  // PTW 를 다른 관리자가 승인해야 하면 발급은 그때. 허가 화면으로 보낸다.
+  let permitPending = false;
   let errorMessage: string | null = null;
 
   try {
@@ -99,28 +102,62 @@ export async function saveAndIssueAction(
     );
     saved = true;
 
-    // 2) request → approveIssue (own tx, revision 이 매 단계 증가)
-    await withTransaction(async (client) => {
-      let cur = await client.query<{ revision: number }>(
-        "SELECT revision FROM work_orders WHERE id = $1 AND company_id = $2",
-        [id, context.companyId],
-      );
-      if (!cur.rows[0]) throw new WorkOrderError("지시서를 찾을 수 없습니다.");
-      await requestAssessment(client, context, id, cur.rows[0].revision);
+    const draft = draftSchema.parse(JSON.parse(raw));
+    if (draft.ptwRequired) {
+      // 2-PTW) 허가 신청이 평가 요청·승인을 안고 간다. 승인자가 본인이면 그 자리에서
+      // 승인·발급까지 (ptw-service.requestPermit → decidePermit → issueOrder).
+      await withTransaction(async (client) => {
+        const cur = await client.query<{ revision: number }>(
+          "SELECT revision FROM work_orders WHERE id = $1 AND company_id = $2",
+          [id, context.companyId],
+        );
+        if (!cur.rows[0]) throw new WorkOrderError("지시서를 찾을 수 없습니다.");
+        await requestPermit(
+          client,
+          context,
+          id,
+          cur.rows[0].revision,
+          {
+            ...draft.permit,
+            contacts: draft.permit.contacts.filter(
+              (c) => c.name.trim() || c.phone.trim(),
+            ),
+          },
+          true,
+        );
+        const after = await client.query<{ status: string }>(
+          "SELECT status FROM work_orders WHERE id = $1",
+          [id],
+        );
+        if (after.rows[0]?.status === "ISSUED") issued = true;
+        else permitPending = true;
+      });
+    } else {
+      // 2) request → approveIssue (own tx, revision 이 매 단계 증가)
+      await withTransaction(async (client) => {
+        let cur = await client.query<{ revision: number }>(
+          "SELECT revision FROM work_orders WHERE id = $1 AND company_id = $2",
+          [id, context.companyId],
+        );
+        if (!cur.rows[0]) throw new WorkOrderError("지시서를 찾을 수 없습니다.");
+        await requestAssessment(client, context, id, cur.rows[0].revision);
 
-      cur = await client.query<{ revision: number }>(
-        "SELECT revision FROM work_orders WHERE id = $1 AND company_id = $2",
-        [id, context.companyId],
-      );
-      await approveAndIssueOrder(client, context, id, cur.rows[0]!.revision);
-    });
-    issued = true;
+        cur = await client.query<{ revision: number }>(
+          "SELECT revision FROM work_orders WHERE id = $1 AND company_id = $2",
+          [id, context.companyId],
+        );
+        await approveAndIssueOrder(client, context, id, cur.rows[0]!.revision);
+      });
+      issued = true;
+    }
 
     // 3) 링크 전달 (실패해도 발급 자체는 성공)
-    try {
-      await deliverOrder(context, id);
-    } catch {
-      /* ignore delivery failure */
+    if (issued) {
+      try {
+        await deliverOrder(context, id);
+      } catch {
+        /* ignore delivery failure */
+      }
     }
   } catch (error) {
     errorMessage =
@@ -133,6 +170,12 @@ export async function saveAndIssueAction(
     refresh(id);
     // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 탭으로 바로 보낸다.
     redirect("/work-orders/" + id + "?tab=qr");
+  }
+  if (permitPending) {
+    refresh(id);
+    revalidatePath("/permits");
+    // 다른 관리자의 승인을 기다린다. 허가 화면이 상태와 승인 요청 메일 결과를 보여 준다.
+    redirect("/work-orders/" + id + "/permit");
   }
   // 저장은 성공했으나 이후 단계(승인·발급)에서 실패한 경우:
   // 브라우저는 여전히 /new (revision=0) 라 재시도 시 "이미 저장된 요청" 에 갇힘.

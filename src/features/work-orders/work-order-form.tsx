@@ -27,13 +27,20 @@ import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { PageHeader } from "@/components/ui/page-header";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { PeoplePicker } from "@/components/ui/people-picker";
+import { PeoplePicker, PeoplePickerDialog } from "@/components/ui/people-picker";
+import { PermitFields } from "./permit-fields";
 import { PickerDialog } from "@/components/ui/picker-dialog";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { Segmented } from "@/features/assessments/risk-level-picker";
 import { PtwHelp } from "@/features/standards/ptw-help";
 import { saveOrderAction, saveAndIssueAction } from "./actions";
-import { shiftMinutes, type WorkDraft, type MemberOption } from "./model";
+import {
+  blankPermit,
+  permitProblem,
+  shiftMinutes,
+  type WorkDraft,
+  type MemberOption,
+} from "./model";
 
 export type StandardPickerOption = {
   id: string;
@@ -136,16 +143,18 @@ function openingDraft(
   standards: StandardPickerOption[],
   initialStandardId: string | null,
 ): WorkDraft {
+  // 옛 초안(허가 항목이 생기기 전)은 permit 이 없다.
+  const base: WorkDraft = { ...initial, permit: initial.permit ?? blankPermit() };
   if (initialStandardId) {
     const s = standards.find((x) => x.id === initialStandardId);
     if (s?.prefill) {
       return {
-        ...mergeStandardIntoDraft(initial, s.prefill),
+        ...mergeStandardIntoDraft(base, s.prefill),
         standardId: initialStandardId,
       };
     }
   }
-  return { ...initial, standardId: initial.standardId ?? null };
+  return { ...base, standardId: base.standardId ?? null };
 }
 
 /**
@@ -176,6 +185,7 @@ export function WorkOrderForm({
   notice,
   review,
   footer,
+  userId,
 }: {
   id: string;
   revision: number;
@@ -193,6 +203,8 @@ export function WorkOrderForm({
   notice?: ReactNode;
   /** 마지막 단계 폼 뒤에 붙는 검토·발급 명령 */
   review?: ReactNode;
+  /** 허가 승인자·작업책임자의 기본값(본인) */
+  userId?: string;
   /** 폼 전체 아래에 붙는 것 (초안 삭제, 변경 이력) */
   footer?: ReactNode;
 }) {
@@ -297,15 +309,34 @@ export function WorkOrderForm({
     action(form);
   };
 
+  const formDomId = useId();
   const submitIssue = async () => {
+    setIssueError(null);
+    // PTW 필요면 허가 항목이 채워져야 신청까지 간다. 서버가 다시 검사한다.
+    if (data.ptwRequired) {
+      const problem = permitProblem(data.permit ?? blankPermit());
+      if (problem) {
+        setIssueError(problem);
+        return;
+      }
+    }
+    const selfApprove =
+      data.ptwRequired && !!userId && data.permit.approverId === userId;
+    const approverName = members.find(
+      (m) => m.user_id === data.permit.approverId,
+    )?.display_name;
+    const message = !data.ptwRequired
+      ? "저장 → 위험성평가 승인(본인) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다."
+      : selfApprove
+        ? "저장 → 위험성평가 승인(본인) → 위험작업허가 신청·승인(본인, 자가 승인 이력이 남습니다) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다."
+        : `저장 → 위험성평가 승인(본인) → 위험작업허가 신청까지 진행됩니다. 승인자(${approverName ?? "지정 관리자"})가 허가를 승인하면 발급되고 링크가 전송됩니다.`;
     if (
-      !(await confirm(
-        "저장 → 위험성평가 승인(본인) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다.",
-        { title: "지금 발급할까요?", confirmLabel: "발급" },
-      ))
+      !(await confirm(message, {
+        title: data.ptwRequired ? "허가 신청과 함께 발급할까요?" : "지금 발급할까요?",
+        confirmLabel: data.ptwRequired && !selfApprove ? "허가 신청" : "발급",
+      }))
     )
       return;
-    setIssueError(null);
     const form = new FormData();
     form.set("id", id);
     form.set("revision", String(revision));
@@ -571,7 +602,11 @@ export function WorkOrderForm({
       {description && <p className="wo-editor-lead">{description}</p>}
       <div className="wo-editor-grid">
         <div className="wo-section">
-          <form action={submitSave} className="wo-editor-form">
+          <form
+            id={formDomId}
+            action={submitSave}
+            className="wo-editor-form"
+          >
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="revision" value={revision} />
             <input type="hidden" name="payload" value={JSON.stringify(data)} />
@@ -762,7 +797,22 @@ export function WorkOrderForm({
                       label="위험작업허가(PTW)"
                       value={data.ptwRequired ? "yes" : "no"}
                       options={PTW_OPTIONS}
-                      onChange={(v) => set("ptwRequired", v === "yes")}
+                      onChange={(v) => {
+                        const on = v === "yes";
+                        setData((d) => ({
+                          ...d,
+                          ptwRequired: on,
+                          permit:
+                            on && userId
+                              ? {
+                                  ...(d.permit ?? blankPermit()),
+                                  approverId: d.permit?.approverId || userId,
+                                  responsibleId:
+                                    d.permit?.responsibleId || userId,
+                                }
+                              : (d.permit ?? blankPermit()),
+                        }));
+                      }}
                     />
                     <HelpDialog
                       title="위험작업허가(PTW)"
@@ -772,11 +822,13 @@ export function WorkOrderForm({
                     </HelpDialog>
                   </div>
                   {data.ptwRequired && (
-                    <p className="wo-notice">
-                      PTW가 필요한 작업은 저장 후 지시서 화면에서 허가를
-                      신청하세요. 승인되면 자동 발급됩니다. 필요로 저장한 뒤에는
-                      불필요로 내릴 수 없습니다.
-                    </p>
+                    <PermitFields
+                      value={data.permit ?? blankPermit()}
+                      onChange={(permit) => set("permit", permit)}
+                      members={members}
+                      locations={locations}
+                      userId={userId}
+                    />
                   )}
                 </>
               )}
@@ -863,8 +915,9 @@ export function WorkOrderForm({
                       ))}
                     </datalist>
                   )}
-                  <PeoplePicker
-                    legend={`작업자 배정 (${data.assigneeIds.length}명)`}
+                  <PeoplePickerDialog
+                    legend="작업자 배정"
+                    buttonLabel="작업자 선택"
                     members={members}
                     selected={data.assigneeIds}
                     onToggle={(id) => toggle("assigneeIds", id)}
@@ -901,56 +954,59 @@ export function WorkOrderForm({
                 <section className="wo-part" id="wo-issue">
                   <h2>발급</h2>
                   <p className="wo-muted">
-                    <strong>지금 발급하기</strong>는 저장 → 평가 승인(본인) →
-                    발급 → 배정 인원에게 링크 전송을 한 번에 합니다. 다른
-                    관리자의 검토가 필요하면 임시저장한 뒤 아래 검토·발급에서
-                    요청하세요.
-                  </p>
-                  <p className="wo-notice">
-                    발급 후 작업 내용·평가·체크리스트는 고정됩니다. 바꾸려면
-                    취소 후 복사해 다시 발급하세요.
-                    {data.ptwRequired
-                      ? " PTW 필요 작업은 저장 후 허가를 신청하면 승인과 함께 발급됩니다."
-                      : ""}
+                    <strong>지금 발급하기</strong>가 저장·위험성평가 승인(본인)
+                    {data.ptwRequired ? "·위험작업허가 신청" : ""}·발급·배정
+                    인원 링크 전송을 한 번에 합니다. 발급 뒤 내용은 고정되고,
+                    바꾸려면 취소 후 복사해 다시 발급합니다.
                   </p>
                   <FormErrorDialog message={issueError} nonce={issueError} />
                 </section>
               </>
             )}
-            {/* 임시저장·발급. 좁은 화면에서 아래 고정. 주된 행동 하나만 채워진
-              버튼이라 엄지가 갈 곳이 정해진다. */}
-            {mode !== "idle" && (
-              <div className="wo-actions">
-                <button
-                  type="submit"
-                  className="btn-secondary"
-                  disabled={pending || issuePending}
-                >
-                  <Save size={14} />
-                  {pending ? "저장 중…" : "임시저장"}
-                </button>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={submitIssue}
-                  disabled={issuePending || pending || data.ptwRequired}
-                >
-                  <Send size={14} />
-                  {issuePending ? "발급 중..." : "지금 발급하기"}
-                </button>
-              </div>
-            )}
           </form>
+          {/* 다른 관리자 검토 흐름과 삭제·이력은 접어 둔다. 보통은 위 폼과 아래
+              단추 두 개면 끝나고, 저장 뒤에 글이 늘어나 헷갈린다는 지적이 있었다. */}
           {review && (
-            <fieldset className="wo-review" disabled={dirty}>
-              {dirty && (
-                <p className="wo-notice" role="status">
-                  고친 내용이 아직 저장되지 않았습니다. 아래 검토·발급은 마지막
-                  임시저장본에 적용되므로 먼저 임시저장하세요.
-                </p>
-              )}
-              {review}
-            </fieldset>
+            <details className="std-fold wo-fold wo-review-fold">
+              <summary>
+                다른 관리자에게 검토·승인 맡기기 (선택)
+                <small>펼쳐서 요청</small>
+              </summary>
+              <fieldset className="wo-review" disabled={dirty}>
+                {dirty && (
+                  <p className="wo-muted" role="status">
+                    고친 내용은 임시저장해야 여기에 반영됩니다.
+                  </p>
+                )}
+                {review}
+              </fieldset>
+            </details>
+          )}
+          {footer}
+          {/* 임시저장·발급. 좁은 화면에서 아래 고정. 폼 밖(칸의 맨 끝)에 두어야
+              검토·이력이 뒤에 붙어도 띠가 화면 바닥에 남는다 — 단추는 form 속성으로
+              위 폼을 제출한다. */}
+          {mode !== "idle" && (
+            <div className="wo-actions">
+              <button
+                type="submit"
+                form={formDomId}
+                className="btn-secondary"
+                disabled={pending || issuePending}
+              >
+                <Save size={14} />
+                {pending ? "저장 중…" : "임시저장"}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={submitIssue}
+                disabled={issuePending || pending}
+              >
+                <Send size={14} />
+                {issuePending ? "발급 중..." : "지금 발급하기"}
+              </button>
+            </div>
           )}
         </div>
         <aside className="wo-summary">
@@ -968,14 +1024,13 @@ export function WorkOrderForm({
             <dt>평가 참여</dt>
             <dd>{data.participantIds.length}명</dd>
             <dt>PTW</dt>
-            <dd>{data.ptwRequired ? "필요 · 발급 차단" : "불필요"}</dd>
+            <dd>{data.ptwRequired ? "필요 · 발급 시 허가 신청" : "불필요"}</dd>
           </dl>
           <p className="wo-muted">
             입력은 이 기기에 잠시 보관됩니다. 화면을 나가기 전에 임시저장하세요.
           </p>
         </aside>
       </div>
-      {footer}
       {dialog}
     </div>
   );
