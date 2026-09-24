@@ -221,8 +221,14 @@ test("PTW fields inside the work-order form: 지금 발급하기 requests, self-
       .getByRole("checkbox", { name: "허가 작업자", exact: true })
       .check();
     const tomorrow = seoulToday(new Date(Date.now() + 86400000));
-    await page.getByLabel("작업 시작일").fill(tomorrow);
-    await page.getByLabel("작업 종료일").fill(tomorrow);
+    await page.getByRole("button", { name: "작업 회차 만들기" }).click();
+    await page.getByRole("dialog").getByLabel("시작일").fill(tomorrow);
+    await page.getByRole("dialog").getByLabel("마감일").fill(tomorrow);
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "회차 만들기" })
+      .click();
+    await expect(page.locator(".wo-session-row")).toHaveCount(1);
     await page.getByLabel("작업 장소", { exact: true }).fill("도장장");
     await page
       .locator("#wo-schedule")

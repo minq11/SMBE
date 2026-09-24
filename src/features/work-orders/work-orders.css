@@ -151,6 +151,90 @@
   }
 }
 /* 저장된 초안의 검토·발급 명령. 폼이 고쳐진 채면 fieldset 째로 잠긴다. */
+/* 작업 회차 (session-editor.tsx) */
+.wo-sessions {
+  margin: 8px 0 16px;
+}
+.wo-sessions-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.wo-sessions-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+.wo-session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wo-session-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) 44px;
+  gap: 0 8px;
+  align-items: center;
+  padding: 6px 8px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.wo-session-row.is-dup {
+  border-color: var(--danger);
+}
+.wo-session-row .float-field {
+  margin: 0;
+}
+.wo-session-no {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--muted-soft);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.wo-session-hint {
+  grid-column: 2 / -1;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.wo-session-row.is-dup .wo-session-hint {
+  color: var(--danger);
+}
+.wo-session-preview {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0;
+}
+.wo-session-dialog {
+  width: min(520px, calc(100vw - 32px));
+}
+@media (max-width: 520px) {
+  .wo-session-row {
+    grid-template-columns: 28px minmax(0, 1fr) 44px;
+  }
+  .wo-session-row > .float-field:nth-of-type(2),
+  .wo-session-row > .float-field:nth-of-type(3) {
+    grid-column: 2;
+  }
+  .wo-session-row .wo-session-remove {
+    grid-row: 1;
+    grid-column: 3;
+  }
+  .wo-session-hint {
+    grid-column: 2 / -1;
+  }
+}
+
 /* 허가 항목 (permit-fields.tsx) */
 .wo-permit {
   margin: 12px 0 8px;

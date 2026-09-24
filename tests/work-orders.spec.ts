@@ -115,8 +115,30 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .getByRole("checkbox", { name: "검증 작업자", exact: true })
       .check();
     const tomorrow = seoulToday(new Date(Date.now() + 86400_000));
-    await page.getByLabel("작업 시작일").fill(tomorrow);
-    await page.getByLabel("작업 종료일").fill(tomorrow);
+    // 회차는 팝업에서 기간을 적어 만들고, 화면에서 하나씩 고치고 지우고 더한다.
+    await page.getByRole("button", { name: "작업 회차 만들기" }).click();
+    const rangeDialog = page.getByRole("dialog");
+    await rangeDialog.getByLabel("시작일").fill(tomorrow);
+    await rangeDialog.getByLabel("마감일").fill(tomorrow);
+    await expect(rangeDialog.getByRole("status")).toContainText("1회차");
+    await page.screenshot({
+      path: testInfo.outputPath("session-dialog.png"),
+    });
+    await rangeDialog.getByRole("button", { name: "회차 만들기" }).click();
+    await expect(page.locator(".wo-session-row")).toHaveCount(1);
+    await page.getByRole("button", { name: "회차 추가", exact: true }).click();
+    await expect(page.locator(".wo-session-row")).toHaveCount(2);
+    await page
+      .locator(".wo-sessions")
+      .screenshot({ path: testInfo.outputPath("session-list.png") });
+    await page.getByRole("button", { name: "회차 2 삭제" }).click();
+    await expect(page.locator(".wo-session-row")).toHaveCount(1);
+    await expect(page.getByLabel("회차 1 날짜")).toHaveValue(tomorrow);
+    // 요일 힌트는 날짜 글자 그대로 (시간대로 하루가 밀리지 않는다).
+    const [, mm, dd] = tomorrow.split("-");
+    await expect(page.locator(".wo-session-hint").first()).toContainText(
+      `${Number(mm)}/${Number(dd)} (`,
+    );
     await page.getByLabel("작업 장소", { exact: true }).fill("테스트 구역");
     // 작업자 배정은 팝업에서 고른다. 고른 사람은 칩으로 남는다.
     await page
@@ -314,7 +336,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .locator(".jump-nav")
       .getByRole("link", { name: "일정·인원", exact: true })
       .click();
-    await expect(page.getByLabel("작업 시작일")).toHaveValue("");
+    await expect(page.locator(".wo-session-row")).toHaveCount(0);
     await expect(
       page
         .locator("#wo-schedule")

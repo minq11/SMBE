@@ -47,6 +47,7 @@ export default async function NewOrderPage({
         ...order.draft_data,
         startDate: "",
         endDate: "",
+        sessions: [],
         participantIds: order.draft_data.participantIds.filter((id) =>
           active.has(id),
         ),
