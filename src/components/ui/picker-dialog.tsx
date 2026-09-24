@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
 
 /**
@@ -8,6 +8,9 @@ import { Search } from "lucide-react";
  * 확인 창과 같은 틀(넓은 화면은 카드, 좁은 화면은 아래 시트)이고, 검색칸은 늘
  * 보이며 목록만 안에서 스크롤한다. 닫기는 "완료" 하나 — 고른 것은 그때그때 반영되고
  * 창은 목록을 보여 줄 뿐이라 취소가 따로 없다.
+ *
+ * 처음엔 전체가 보이고, 검색어를 넣고 [검색](또는 Enter)해야 거른다. 지우면 다시 전체
+ * (사장님 결정). `query` 는 적용된 검색어, 입력 중인 글은 안에서 든다.
  */
 export function PickerDialog({
   open,
@@ -29,6 +32,11 @@ export function PickerDialog({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [text, setText] = useState(query);
+  useEffect(() => {
+    if (open) setText(query);
+  }, [open, query]);
+  const apply = () => onQuery(text.trim());
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -49,19 +57,34 @@ export function PickerDialog({
       {open && (
         <div className="confirm-dialog-body picker-dialog-body">
           <h2>{title}</h2>
-          <label className="people-picker-search picker-dialog-search">
-            <Search size={14} aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => onQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label={searchLabel}
-              enterKeyHint="search"
-              autoComplete="off"
-              autoFocus
-            />
-          </label>
+          <div className="picker-dialog-search-row">
+            <label className="people-picker-search picker-dialog-search">
+              <Search size={14} aria-hidden="true" />
+              <input
+                type="search"
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  // 지우면 전체로 돌아간다 — 검색을 다시 누를 필요 없이.
+                  if (e.target.value.trim() === "") onQuery("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    apply();
+                  }
+                }}
+                placeholder={searchPlaceholder}
+                aria-label={searchLabel}
+                enterKeyHint="search"
+                autoComplete="off"
+                autoFocus
+              />
+            </label>
+            <button type="button" className="btn-secondary" onClick={apply}>
+              검색
+            </button>
+          </div>
           <div className="picker-dialog-scroll">{children}</div>
           <div className="confirm-dialog-actions">
             <button type="button" className="btn-primary" onClick={onClose}>

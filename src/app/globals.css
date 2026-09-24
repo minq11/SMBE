@@ -4418,8 +4418,26 @@ html[data-banner-hidden] .preview-banner {
 .picker-dialog-body {
   max-height: min(80vh, 680px);
 }
+.picker-dialog-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
 .picker-dialog-search {
+  flex: 1;
+  min-width: 0;
   margin-bottom: 0;
+}
+.picker-dialog-search-row .btn-secondary {
+  flex-shrink: 0;
+  min-height: 44px;
+}
+.wo-std-option.is-blocked {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.wo-std-option.is-blocked small {
+  color: var(--warn);
 }
 .picker-dialog-scroll {
   overflow-y: auto;

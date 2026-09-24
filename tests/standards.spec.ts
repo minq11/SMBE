@@ -326,7 +326,16 @@ test("standard: create, edit, add a seeded assessment round", async ({
     ).toBeVisible();
     // 팝업에서 이름으로 찾아 다시 고른다.
     await page.getByRole("button", { name: "작업표준서 찾기" }).click();
-    await page.getByRole("dialog").getByLabel("표준서 이름 검색").fill("금형");
+    // 처음엔 확정된 표준서 전체가 보이고, 검색어를 넣고 검색해야 거른다.
+    const finder = page.getByRole("dialog");
+    await expect(finder.locator(".wo-std-option")).toHaveCount(1);
+    await finder.getByLabel("표준서 이름 검색").fill("없는 이름");
+    await expect(finder.locator(".wo-std-option")).toHaveCount(1);
+    await finder.getByRole("button", { name: "검색", exact: true }).click();
+    await expect(finder.locator(".wo-std-option")).toHaveCount(0);
+    await finder.getByLabel("표준서 이름 검색").fill("금형");
+    await finder.getByLabel("표준서 이름 검색").press("Enter");
+    await expect(finder.locator(".wo-std-option")).toHaveCount(1);
     await page.screenshot({ path: testInfo.outputPath("std-finder.png") });
     await page
       .getByRole("dialog")

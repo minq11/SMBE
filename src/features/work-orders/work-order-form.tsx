@@ -39,6 +39,9 @@ export type StandardPickerOption = {
   id: string;
   name: string;
   ptw_required: boolean;
+  /** 고를 수 있나. 위험성평가가 없거나 만료면 목록에는 보이되 못 고른다. */
+  usable: boolean;
+  blockedReason: string | null;
   prefill: {
     name: string;
     ptw_required: boolean;
@@ -324,7 +327,7 @@ export function WorkOrderForm({
     );
   const applyStandard = (nextId: string) => {
     const s = standards.find((x) => x.id === nextId);
-    if (!s?.prefill) return;
+    if (!s?.prefill || !s.usable) return;
     setData((d) => ({
       ...mergeStandardIntoDraft(d, s.prefill!),
       standardId: nextId,
@@ -676,7 +679,9 @@ export function WorkOrderForm({
                         <li key={s.id}>
                           <button
                             type="button"
-                            className={`wo-std-option${active ? " is-active" : ""}`}
+                            className={`wo-std-option${active ? " is-active" : ""}${s.usable ? "" : " is-blocked"}`}
+                            disabled={!s.usable}
+                            aria-disabled={!s.usable}
                             onClick={() => {
                               applyStandard(s.id);
                               setStdOpen(false);
@@ -692,7 +697,9 @@ export function WorkOrderForm({
                             <span className="wo-std-option-copy">
                               <strong>{s.name}</strong>
                               <small>
-                                현재 승인 위험성평가 포함
+                                {s.usable
+                                  ? "현재 승인 위험성평가 포함"
+                                  : s.blockedReason}
                                 {s.prefill?.revisionNo
                                   ? ` · ${s.prefill.revisionNo}판`
                                   : ""}

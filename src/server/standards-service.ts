@@ -209,17 +209,29 @@ export async function listStandards(
   });
 }
 
-export async function listUsableStandards(companyId: string): Promise<
+/**
+ * 지시서에서 고를 표준서 — 확정된 것 전체. 위험성평가가 없거나 만료된 것도 목록에는
+ * 보이되 고를 수 없고 이유가 붙는다 (사장님 결정: 일단 전체가 뜨고 검색으로 거른다).
+ */
+export async function listApprovedStandards(companyId: string): Promise<
   Array<{
     standard_id: string;
     name: string;
     ptw_required: boolean;
+    usable: boolean;
+    blocked_reason: string | null;
   }>
 > {
   const all = await listStandards(companyId);
   return all
-    .filter((s) => s.usable)
+    .filter((s) => s.status === "APPROVED")
     .map((s) => ({
+      usable: s.usable,
+      blocked_reason: s.usable
+        ? null
+        : s.approved_assessment_count === 0
+          ? "승인된 위험성평가 없음 · 위험성평가 다시하기 필요"
+          : "위험성평가 만료 · 위험성평가 다시하기 필요",
       standard_id: s.standard_id,
       name: s.name,
       ptw_required: s.ptw_required,

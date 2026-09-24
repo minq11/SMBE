@@ -10,7 +10,7 @@ import {
 } from "@/server/work-orders";
 import {
   getStandardForPrefill,
-  listUsableStandards,
+  listApprovedStandards,
 } from "@/server/standards-service";
 import { WorkOrderError } from "@/features/work-orders/model";
 import {
@@ -56,7 +56,7 @@ export default async function EditOrderPage({
   const [members, locations, usable] = await Promise.all([
     orderMembers(actor),
     listLocationSuggestions(actor.companyId),
-    listUsableStandards(actor.companyId),
+    listApprovedStandards(actor.companyId),
   ]);
   const activeMemberIds = new Set(members.map((m) => m.user_id));
   const standards: StandardPickerOption[] = await Promise.all(
@@ -69,6 +69,8 @@ export default async function EditOrderPage({
         id: s.standard_id,
         name: s.name,
         ptw_required: s.ptw_required,
+        usable: s.usable && prefill !== null,
+        blockedReason: s.blocked_reason,
         prefill: prefill
           ? {
               name: prefill.name,

@@ -11,7 +11,7 @@ import {
 } from "@/server/work-orders";
 import {
   getStandardForPrefill,
-  listUsableStandards,
+  listApprovedStandards,
 } from "@/server/standards-service";
 import { WorkOrderError, blankDraft } from "@/features/work-orders/model";
 import {
@@ -64,7 +64,7 @@ export default async function NewOrderPage({
     }
   }
 
-  const usable = await listUsableStandards(actor.companyId);
+  const usable = await listApprovedStandards(actor.companyId);
   const activeMemberIds = new Set(members.map((m) => m.user_id));
 
   const standards: StandardPickerOption[] = await Promise.all(
@@ -77,6 +77,8 @@ export default async function NewOrderPage({
         id: s.standard_id,
         name: s.name,
         ptw_required: s.ptw_required,
+        usable: s.usable && prefill !== null,
+        blockedReason: s.blocked_reason,
         prefill: prefill
           ? {
               name: prefill.name,
@@ -112,7 +114,7 @@ export default async function NewOrderPage({
   const initialStandardId =
     standardParam &&
     z.string().uuid().safeParse(standardParam).success &&
-    standards.some((s) => s.id === standardParam)
+    standards.some((s) => s.id === standardParam && s.usable)
       ? standardParam
       : null;
 
