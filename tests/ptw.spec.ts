@@ -195,8 +195,8 @@ test("PTW fields inside the work-order form: 지금 발급하기 requests, self-
       label: "도장장",
     });
     await permit.getByLabel("대상 설비").fill("도장 부스");
-    await permit.getByLabel("비상연락처 이름 1").fill("비상담당");
-    await permit.getByLabel("비상연락처 전화 1").fill("01012345678");
+    await permit.getByLabel("이름 1", { exact: true }).fill("비상담당");
+    await permit.getByLabel("휴대폰 1", { exact: true }).fill("01012345678");
     await page.screenshot({
       path: info.outputPath("permit-fields.png"),
       fullPage: true,

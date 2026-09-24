@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
+import { FloatField } from "@/components/ui/float-field";
 import { Segmented } from "@/features/assessments/risk-level-picker";
 import type { MemberOption, PermitDraft } from "./model";
 import type { LocationOption } from "./work-order-form";
@@ -150,33 +151,27 @@ export function PermitFields({
       <fieldset className="wo-permit-contacts">
         <legend>비상연락처</legend>
         {contacts.map((c, i) => (
+          // 한 사람당 한 줄. 라벨을 칸 안에 넣어(FloatField) 390px 에서도 이름·휴대폰이
+          // 나란히 선다. "비상연락처" 는 묶음 제목이 말하므로 칸 라벨은 짧게.
           <div key={i} className="wo-contact-row">
-            <div className="wo-field">
-              <label htmlFor={`wo-permit-contact-name-${i}`}>
-                비상연락처 이름 {i + 1}
-              </label>
-              <input
-                id={`wo-permit-contact-name-${i}`}
-                maxLength={100}
-                value={c.name}
-                onChange={(e) => setContact(i, { name: e.target.value })}
-                autoComplete="off"
-              />
-            </div>
-            <div className="wo-field">
-              <label htmlFor={`wo-permit-contact-phone-${i}`}>
-                비상연락처 전화 {i + 1}
-              </label>
-              <input
-                id={`wo-permit-contact-phone-${i}`}
-                type="tel"
-                inputMode="tel"
-                maxLength={30}
-                value={c.phone}
-                onChange={(e) => setContact(i, { phone: e.target.value })}
-                autoComplete="off"
-              />
-            </div>
+            <FloatField
+              id={`wo-permit-contact-name-${i}`}
+              label={`이름 ${i + 1}`}
+              maxLength={100}
+              value={c.name}
+              onChange={(e) => setContact(i, { name: e.target.value })}
+              autoComplete="off"
+            />
+            <FloatField
+              id={`wo-permit-contact-phone-${i}`}
+              label={`휴대폰 ${i + 1}`}
+              type="tel"
+              inputMode="tel"
+              maxLength={30}
+              value={c.phone}
+              onChange={(e) => setContact(i, { phone: e.target.value })}
+              autoComplete="off"
+            />
             {contacts.length > 1 && (
               <button
                 type="button"

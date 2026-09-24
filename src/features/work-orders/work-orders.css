@@ -170,14 +170,19 @@
   font-weight: 600;
   padding: 0;
 }
+.wo-permit-contacts > legend {
+  margin-bottom: 10px;
+}
 .wo-contact-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  gap: 0 10px;
-  align-items: end;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
 }
 .wo-contact-remove {
-  margin-bottom: 16px;
+  min-width: 44px;
+  min-height: 44px;
 }
 .wo-review-fold,
 .wo-history-fold {
@@ -813,12 +818,6 @@
 @media (max-width: 520px) {
   .wo-columns {
     grid-template-columns: 1fr;
-  }
-  .wo-contact-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .wo-contact-row > .wo-field:first-child {
-    grid-column: 1 / -1;
   }
   .wo-doc-tabs {
     /* 옆으로 미는 띠의 내용 너비가 문서의 최소 너비로 번지면 모바일 브라우저가
