@@ -742,9 +742,6 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.wo-cancel-row {
-  margin-top: 24px;
-}
 /* 발급된 지시서는 한 장. 구간 칩(.jump-nav)이 위에, 구간은 앵커로 내려앉는다. */
 .wo-print .jump-nav {
   margin-bottom: 8px;

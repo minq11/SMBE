@@ -13,6 +13,7 @@ import {
 } from "@/features/work-orders/model";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import {
+  CancelOrderButton,
   OrderCommand,
   PrintButton,
   CopyLinkButton,
@@ -278,6 +279,9 @@ export default async function OrderDetailPage({
                 >
                   <Copy size={14} /> 복사
                 </Link>
+                {active && (
+                  <CancelOrderButton id={id} revision={order.revision} />
+                )}
               </div>
             ) : undefined
           }
@@ -531,17 +535,6 @@ export default async function OrderDetailPage({
               ))}
             </ul>
           </details>
-        )}
-        {isManager && active && (
-          <div className="wo-no-print wo-cancel-row">
-            <OrderCommand
-              id={id}
-              revision={order.revision}
-              command="cancel"
-              label="지시서 취소"
-              confirmText="이 작업지시를 취소하시겠습니까? 기존 기록은 보존됩니다."
-            />
-          </div>
         )}
       </div>
     </OrderShell>

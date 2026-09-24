@@ -368,18 +368,18 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       await workerContext.close();
     }
     await page.goto(path);
-    // 루트 loading.tsx 로 스트리밍되는 화면이라, 하이드레이션 전에 채우면 값이 지워진다.
-    // 값이 남을 때까지 다시 채운다 (required 가 빈 값이면 제출 자체가 막힌다).
-    const reason = page.getByLabel("취소 사유");
+    // 취소는 머리의 단추 하나. 누르면 창이 열리고 사유를 적어 확인한다.
+    // 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전 클릭은 삼켜진다.
+    const cancelDialog = page.getByRole("dialog");
     await expect(async () => {
-      await reason.fill("화면검증 종료");
-      await expect(reason).toHaveValue("화면검증 종료", { timeout: 1000 });
+      await page
+        .getByRole("button", { name: "지시서 취소", exact: true })
+        .click();
+      await expect(cancelDialog).toBeVisible({ timeout: 1000 });
     }).toPass({ timeout: 15000 });
-    await page
-      .getByRole("button", { name: "지시서 취소", exact: true })
-      .click();
-    await page
-      .getByRole("dialog")
+    await cancelDialog.getByLabel("취소 사유").fill("화면검증 종료");
+    await page.screenshot({ path: testInfo.outputPath("cancel-dialog.png") });
+    await cancelDialog
       .getByRole("button", { name: "지시서 취소", exact: true })
       .click();
     await expect(

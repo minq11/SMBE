@@ -85,20 +85,7 @@ export function OrderCommand({
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="revision" value={revision} />
       <input type="hidden" name="command" value={command} />
-      {command === "cancel" && (
-        <FloatTextarea
-          id={`wo-cancel-reason-${id}`}
-          label="취소 사유"
-          name="reason"
-          required
-          maxLength={1000}
-        />
-      )}
-      <button
-        className={command === "cancel" ? "btn-secondary" : "btn-primary"}
-        type="submit"
-        disabled={pending}
-      >
+      <button className="btn-primary" type="submit" disabled={pending}>
         {(() => {
           const Icon = COMMAND_ICON[command];
           return <Icon size={14} />;
@@ -112,6 +99,92 @@ export function OrderCommand({
         </p>
       )}
     </form>
+  );
+}
+/**
+ * 지시서 취소. 머리의 복사 옆 단추 하나. 누르면 창이 열리고, 사유를 적어 확인하면
+ * 취소된다 — 화면에 사유 칸을 늘 펼쳐 두지 않는다 (사장님 결정).
+ */
+export function CancelOrderButton({
+  id,
+  revision,
+}: {
+  id: string;
+  revision: number;
+}) {
+  const [state, action, pending] = useActionState(
+    orderCommandAction,
+    undefined,
+  );
+  const ref = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (open && !el.open) el.showModal();
+    if (!open && el.open) el.close();
+  }, [open]);
+  // 취소되면 화면이 "취소된 지시서" 로 다시 그려진다. 창은 닫는다 (렌더 중 상태
+  // 맞추기 — 효과보다 한 번 덜 그린다).
+  const done = state?.message;
+  const [seenDone, setSeenDone] = useState(done);
+  if (done !== seenDone) {
+    setSeenDone(done);
+    if (done) setOpen(false);
+  }
+  return (
+    <>
+      <button
+        type="button"
+        className="btn-secondary"
+        onClick={() => setOpen(true)}
+      >
+        <Ban size={14} /> 지시서 취소
+      </button>
+      <dialog
+        ref={ref}
+        className="confirm-dialog"
+        aria-labelledby={`wo-cancel-title-${id}`}
+        onCancel={(event) => {
+          event.preventDefault();
+          if (!pending) setOpen(false);
+        }}
+        onClose={() => setOpen(false)}
+      >
+        <form action={action} className="confirm-dialog-body">
+          <h2 id={`wo-cancel-title-${id}`}>지시서 취소</h2>
+          <p className="confirm-dialog-message">
+            취소하면 QR·링크가 막히고 기존 기록은 보존됩니다.
+          </p>
+          <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="revision" value={revision} />
+          <input type="hidden" name="command" value="cancel" />
+          <FloatTextarea
+            id={`wo-cancel-reason-${id}`}
+            label="취소 사유"
+            name="reason"
+            required
+            maxLength={1000}
+            disabled={pending}
+          />
+          <div className="confirm-dialog-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={pending}
+              onClick={() => setOpen(false)}
+            >
+              닫기
+            </button>
+            <button className="btn-danger" type="submit" disabled={pending}>
+              <Ban size={14} />
+              {pending ? "처리 중…" : "지시서 취소"}
+            </button>
+          </div>
+        </form>
+        <FormErrorDialog message={state?.error} nonce={state} />
+      </dialog>
+    </>
   );
 }
 /**
