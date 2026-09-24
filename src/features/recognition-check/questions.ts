@@ -157,7 +157,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 누락", score: 3 },
       { key: "OK", label: "우수", detail: "의견 수렴·특성 반영", score: 5 },
     ],
-    offlineTip: "평가 목적·방법·역할·시기를 담은 실시규정을 문서로 작성하세요.",
+    smbeHint: { href: "/company/criteria", label: "실시규정" },
   },
   {
     id: "II-1-2",
@@ -170,7 +170,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 누락", score: 3 },
       { key: "OK", label: "우수", detail: "구체적으로 분류·활용", score: 5 },
     ],
-    offlineTip: "작업방법·설비·물질·환경 정보를 미리 조사해 목록으로 정리하세요.",
+    smbeHint: { href: "/standards/new", label: "표준서 · 안전보건정보" },
   },
   {
     id: "II-2-1",
@@ -280,7 +280,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "형식적", score: 7 },
       { key: "OK", label: "우수", detail: "직접 참여·독려", score: 15 },
     ],
-    offlineTip: "사업주·임원이 이행 여부를 주기적으로 직접 점검하세요.",
+    smbeHint: { href: "/assessments", label: "반기 이행 점검" },
   },
   {
     id: "III-1-3",
@@ -382,7 +382,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 알음", score: 7 },
       { key: "OK", label: "우수", detail: "정확히 알고 제보 중", score: 15 },
     ],
-    offlineTip: "근로자가 위험요인을 알고 제보할 수 있는 통로를 마련하세요.",
+    smbeHint: { href: "/inspections", label: "TBM · 부적합 기록" },
   },
 
   // ----------------------------------------------------------------- SECTION IV

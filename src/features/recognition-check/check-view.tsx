@@ -27,6 +27,7 @@ import {
   SECTION_ORDER,
   computeResult,
   scoreDiagnostic,
+  smbeCoverage,
   type CheckResult,
   type SectionResult,
 } from "./scoring";
@@ -579,6 +580,8 @@ function ResultPanel({
         />
       </div>
 
+      <SmbeSummary result={result} />
+
       {!result.answeredAll && (
         <p className="check-notice" role="alert">
           <CircleAlert size={14} /> 아직{" "}
@@ -596,23 +599,7 @@ function ResultPanel({
         </div>
       </section>
 
-      <section className="stack">
-        <h2 className="check-result-heading">보완이 필요한 세부항목</h2>
-        <NeedsList result={result} />
-      </section>
-
-      <section className="check-cta-card">
-        <div>
-          <strong>심플안전으로 부족한 항목을 채워보세요</strong>
-          <p>
-            무료로 시작하면 부족한 항목이 매일의 작업지시·TBM·점검 기록으로
-            채워집니다.
-          </p>
-        </div>
-        <Link href="/login?next=/onboarding" className="primary-button">
-          무료로 시작 <ArrowRight size={14} />
-        </Link>
-      </section>
+      <NeedsList result={result} />
 
       <div className="check-actions">
         <button type="button" className="ghost-button" onClick={onReset}>
@@ -694,6 +681,39 @@ function SectionScoreCard({ section }: { section: SectionResult }) {
   );
 }
 
+/**
+ * 결과의 본론: 보완 항목 중 몇 개를 심플안전으로 채우고 종합 점수가 얼마나
+ * 오르나. 점수 타일 바로 아래에 둔다 — 목록 끝에 있으면 아무도 거기까지 안 간다.
+ */
+function SmbeSummary({ result }: { result: CheckResult }) {
+  const coverage = smbeCoverage(result);
+  if (coverage.covered === 0) return null;
+  return (
+    <section className="check-smbe-summary">
+      <div>
+        <span className="check-smbe-eyebrow">
+          <Sparkles size={14} /> 심플안전으로 채우는 항목
+        </span>
+        <strong>
+          보완 항목 {coverage.needs}개 중 <em>{coverage.covered}개</em>를
+          심플안전으로 채웁니다
+        </strong>
+        <p>
+          종합 점수 최대 <em>+{coverage.gain}점</em> · 매일의 작업지시·TBM·점검
+          기록이 그대로 증빙이 됩니다.
+        </p>
+      </div>
+      <Link href="/login?next=/onboarding" className="primary-button">
+        무료로 시작 <ArrowRight size={14} />
+      </Link>
+    </section>
+  );
+}
+
+/**
+ * 보완 항목을 둘로 나눈다. 심플안전으로 채우는 것이 먼저 — 섞여 있으면
+ * "이걸로 얼마나 해결되나" 가 안 보인다. 직접 챙길 항목은 그 뒤에 흐리게.
+ */
 function NeedsList({ result }: { result: CheckResult }) {
   const items = result.sections
     .flatMap((s) => s.items)
@@ -706,55 +726,87 @@ function NeedsList({ result }: { result: CheckResult }) {
       </p>
     );
   }
+  const covered = items.filter((i) => i.question.smbeHint);
+  const offline = items.filter((i) => !i.question.smbeHint);
   return (
-    <ul className="check-result-list" role="list">
-      {items.map((item) => (
-        <li
-          key={item.question.id}
-          className={`check-result-item ${
-            item.status === "미흡"
-              ? "check-result-item--warn"
-              : "check-result-item--unknown"
-          }`}
-        >
-          <span className="check-result-icon" aria-hidden="true">
-            {item.status === "미흡" ? (
-              <CircleAlert size={14} />
-            ) : (
-              <CircleHelp size={14} />
-            )}
+    <>
+      {covered.length > 0 && (
+        <section className="stack">
+          <h2 className="check-result-heading">
+            심플안전으로 채우는 항목 ({covered.length})
+          </h2>
+          <ul className="check-result-list" role="list">
+            {covered.map((item) => (
+              <NeedItem key={item.question.id} item={item} />
+            ))}
+          </ul>
+        </section>
+      )}
+      {offline.length > 0 && (
+        <section className="stack">
+          <h2 className="check-result-heading">직접 챙길 항목</h2>
+          <ul className="check-result-list" role="list">
+            {offline.map((item) => (
+              <NeedItem key={item.question.id} item={item} />
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  );
+}
+
+function NeedItem({
+  item,
+}: {
+  item: CheckResult["sections"][number]["items"][number];
+}) {
+  const hint = item.question.smbeHint;
+  return (
+    <li
+      className={`check-result-item ${
+        item.status === "미흡"
+          ? "check-result-item--warn"
+          : "check-result-item--unknown"
+      }${hint ? " check-result-item--smbe" : ""}`}
+    >
+      <span className="check-result-icon" aria-hidden="true">
+        {item.status === "미흡" ? (
+          <CircleAlert size={14} />
+        ) : (
+          <CircleHelp size={14} />
+        )}
+      </span>
+      <div className="check-result-body">
+        <span className="check-result-category">
+          {item.question.categoryLabel}
+        </span>
+        <strong>{item.question.text}</strong>
+        <span className="check-result-status">
+          현재 {item.status} ({item.earned} / {item.maxScore}점) — 최대{" "}
+          {item.maxScore}점까지 획득 가능
+        </span>
+        {hint ? (
+          <span className="check-result-hint">
+            <span className="check-smbe-badge">
+              <Check size={12} strokeWidth={3} /> 심플안전 대응
+            </span>{" "}
+            &lsquo;{hint.label}&rsquo; 에서 바로 기록합니다
           </span>
-          <div className="check-result-body">
-            <span className="check-result-category">
-              {item.question.categoryLabel}
-            </span>
-            <strong>{item.question.text}</strong>
-            <span className="check-result-status">
-              현재 {item.status} ({item.earned} / {item.maxScore}점) — 최대{" "}
-              {item.maxScore}점까지 획득 가능
-            </span>
-            {item.question.smbeHint ? (
-              <span className="check-result-hint">
-                심플안전에서는{" "}
-                <strong>&lsquo;{item.question.smbeHint.label}&rsquo;</strong>{" "}
-                메뉴로 대응 가능!
-              </span>
-            ) : (
-              <span className="check-result-hint check-result-hint--offline">
-                {item.question.offlineTip}
-              </span>
-            )}
-          </div>
-          {item.question.smbeHint && (
-            <Link
-              href={`/login?next=${encodeURIComponent(item.question.smbeHint.href)}`}
-              className="check-result-cta"
-            >
-              바로가기 <ArrowRight size={12} />
-            </Link>
-          )}
-        </li>
-      ))}
-    </ul>
+        ) : (
+          <span className="check-result-hint check-result-hint--offline">
+            {item.question.offlineTip}
+          </span>
+        )}
+      </div>
+      {hint && (
+        <Link
+          href={`/login?next=${encodeURIComponent(hint.href)}`}
+          className="check-result-cta"
+        >
+          바로가기 <ArrowRight size={14} />
+        </Link>
+      )}
+    </li>
   );
 }

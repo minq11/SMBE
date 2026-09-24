@@ -174,3 +174,25 @@ export const SECTION_ORDER: SectionKey[] = [
 export function scoreDiagnostic(): string {
   return `각 항목 ${SECTION_MIN}점 이상 · 종합 ${OVERALL_MIN}점 이상 → 인정 부합. 인정 유효기간 3년.`;
 }
+
+/**
+ * 보완이 필요한 항목 중 심플안전 메뉴로 채울 수 있는 것과, 그 항목을 모두 최고
+ * 등급으로 올렸을 때 종합 점수가 오르는 폭. 항목 점수 → 영역 원점수 → 가중치
+ * 순으로 공식 배점과 같게 계산하고, 과장하지 않도록 소수 첫째 자리에서 내린다.
+ */
+export function smbeCoverage(result: CheckResult) {
+  let gain = 0;
+  let covered = 0;
+  let needs = 0;
+  for (const s of result.sections) {
+    const totalMax = s.items.reduce((a, i) => a + i.maxScore, 0);
+    for (const i of s.items) {
+      if (i.chosenKey === null || i.status === "우수") continue;
+      needs++;
+      if (!i.question.smbeHint) continue;
+      covered++;
+      gain += ((i.maxScore - i.earned) / totalMax) * 100 * s.weight;
+    }
+  }
+  return { needs, covered, gain: Math.floor(gain * 10) / 10 };
+}

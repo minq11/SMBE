@@ -3448,44 +3448,87 @@ html[data-banner-hidden] .preview-banner {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
-  font-weight: 700;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
   color: var(--brand);
-  padding: 6px 10px;
-  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
   transition: background 0.15s;
 }
 .check-result-cta:hover {
   background: var(--brand-softer);
 }
 
-.check-cta-card {
+/* 심플안전으로 채우는 항목 — 요약 카드와 그 아래 항목들 (check-view.tsx NeedsList).
+   "이걸로 얼마나 해결되나" 가 결과 화면의 본론이라 초록으로 묶는다. */
+.check-smbe-summary {
   display: flex;
-  gap: 20px;
+  gap: 16px 20px;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  padding: 24px 28px;
-  background: var(--ink);
-  color: #fff;
+  padding: 20px 22px;
+  border: 1px solid var(--brand);
   border-radius: var(--radius-lg);
+  background: var(--brand-softer);
 }
-.check-cta-card strong {
-  display: block;
-  font-size: 16px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 6px;
+.check-smbe-summary > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 260px;
 }
-.check-cta-card p {
+.check-smbe-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--brand);
+}
+.check-smbe-summary strong {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.check-smbe-summary p {
+  margin: 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.7;
-  max-width: 46ch;
+  line-height: 1.6;
+  color: var(--ink-2);
 }
-.check-cta-card .primary-button {
+.check-smbe-summary em {
+  font-style: normal;
+  color: var(--brand-strong);
+}
+.check-smbe-summary .primary-button {
   min-height: 44px;
-  padding: 12px 22px;
+  white-space: nowrap;
+}
+.check-result-item--smbe {
+  border-color: var(--brand-soft);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+.check-smbe-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+.check-result-item--smbe .check-result-hint {
+  color: var(--ink-2);
+  font-weight: 600;
 }
 
 /* =========================================================================
