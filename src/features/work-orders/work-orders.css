@@ -290,105 +290,6 @@
   opacity: 0.5;
 }
 
-/* 발급된 지시서 열람의 다섯 단계 띠(.wo-doc-tabs, 링크). URL 에 남겨
-   새로고침·뒤로가기·링크 공유가 그대로 된다. 작성 폼은 단계가 아니라 한 장에
-   구간 칩(.jump-nav)을 쓴다. 목록 화면의 상태 탭(.wo-tabs)과는 다른 물건이다. */
-.wo-doc-tabs {
-  display: flex;
-  align-items: stretch;
-  margin-bottom: 24px;
-  /* 다섯 단계가 한 줄에 안 들어가면 줄바꿈이 아니라 옆으로 민다 — 접힌 단계는
-     이어지는 선이 끊겨 순서로 읽히지 않는다. */
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.wo-doc-tabs::-webkit-scrollbar {
-  display: none;
-}
-.wo-doc-tabs a {
-  position: relative;
-  flex: 1 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 10px 10px;
-  /* 짧은 이름(검토)도 누를 자리는 남긴다. */
-  min-width: 44px;
-  color: var(--ink-3);
-  font: inherit;
-  font-size: 12px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-/* 번호와 번호를 잇는 선. 원의 중심 높이(패딩 8px + 반지름 14px)에 맞춘다. */
-.wo-doc-tabs a::before,
-.wo-doc-tabs a::after {
-  content: "";
-  position: absolute;
-  top: 21px;
-  height: 2px;
-  background: var(--line);
-}
-.wo-doc-tabs a::before {
-  left: 0;
-  right: 50%;
-  margin-right: 18px;
-}
-.wo-doc-tabs a::after {
-  left: 50%;
-  right: 0;
-  margin-left: 18px;
-}
-.wo-doc-tabs a:first-child::before,
-.wo-doc-tabs a:last-child::after {
-  content: none;
-}
-/* 지나온 길에만 색이 찬다. 어디까지 왔는지가 번호를 세지 않아도 보인다. */
-.wo-doc-tabs a[data-state="done"]::before,
-.wo-doc-tabs a[data-state="done"]::after,
-.wo-doc-tabs a[data-state="current"]::before {
-  background: var(--brand);
-}
-.wo-doc-tab-no {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 2px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink-3);
-  font-size: 12px;
-  font-weight: 700;
-  transition:
-    border-color 0.15s,
-    background 0.15s,
-    color 0.15s;
-}
-.wo-doc-tabs a[data-state="done"] {
-  color: var(--ink-2);
-}
-.wo-doc-tabs a[data-state="done"] .wo-doc-tab-no {
-  border-color: var(--brand);
-  color: var(--brand-strong);
-}
-.wo-doc-tabs a:hover {
-  color: var(--brand-strong);
-}
-.wo-doc-tabs a:hover .wo-doc-tab-no {
-  border-color: var(--brand);
-}
-.wo-doc-tabs [aria-current] {
-  color: var(--brand-strong);
-  font-weight: 700;
-}
-.wo-doc-tabs [aria-current] .wo-doc-tab-no {
-  border-color: var(--brand);
-  background: var(--brand);
-  color: #fff;
-}
 .wo-editor-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
@@ -836,13 +737,62 @@
   width: 180px;
   height: 180px;
 }
-.wo-meta-standard a {
+.wo-facts a {
   color: var(--brand-strong);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .wo-cancel-row {
   margin-top: 24px;
+}
+/* 발급된 지시서는 한 장. 구간 칩(.jump-nav)이 위에, 구간은 앵커로 내려앉는다. */
+.wo-print .jump-nav {
+  margin-bottom: 8px;
+}
+.wo-print .wo-section {
+  scroll-margin-top: 16px;
+}
+@media (max-width: 960px) {
+  .wo-print .wo-section {
+    scroll-margin-top: 68px;
+  }
+}
+/* 작업 정보의 사실 줄: 이름 · 값 */
+.wo-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 16px 0 0;
+  font-size: 14px;
+}
+.wo-facts dt {
+  color: var(--ink-3);
+}
+.wo-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+/* 회차 목록: 오늘 회차가 굵다 */
+.wo-session-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  columns: 2;
+  column-gap: 24px;
+  font-size: 14px;
+}
+.wo-session-list li {
+  padding: 4px 0;
+  break-inside: avoid;
+}
+.wo-session-list li[data-today] {
+  font-weight: 700;
+  color: var(--brand-strong);
+}
+@media (max-width: 520px) {
+  .wo-session-list {
+    columns: 1;
+  }
 }
 /* 위험요인 머리 오른쪽의 수준·허용 표식 */
 .wo-risk h3 {
@@ -1016,17 +966,6 @@
   .wo-columns {
     grid-template-columns: 1fr;
   }
-  .wo-doc-tabs {
-    /* 옆으로 미는 띠의 내용 너비가 문서의 최소 너비로 번지면 모바일 브라우저가
-       화면을 그 너비로 넓혀(축소해) 버린다. 띠 크기는 내용과 무관하게 잡는다. */
-    contain: inline-size;
-    margin-inline: -16px;
-    padding-inline: 16px;
-  }
-  .wo-doc-tabs a {
-    font-size: 11px;
-    padding-inline: 6px;
-  }
   .monitor-summary {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -1197,7 +1136,6 @@
   /* 인쇄물은 화면 문서 전체가 아니라 A4 한 장짜리 게시물이다.
      화면 문서(.wo-print)는 통째로 빠지고 .wo-sheet 만 나간다. */
   .wo-print,
-  .wo-doc-tabs,
   .sidebar,
   .topbar,
   .preview-banner,

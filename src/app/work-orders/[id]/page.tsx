@@ -18,6 +18,8 @@ import {
   CopyLinkButton,
 } from "@/features/work-orders/order-controls";
 import { PageHeader } from "@/components/ui/page-header";
+import { JumpNav } from "@/components/ui/jump-nav";
+import { dayLabel } from "@/features/inspections/format";
 import { PrintSheet } from "@/features/work-orders/print-sheet";
 import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
 import { InspectionSummary } from "@/features/inspections/inspection-summary";
@@ -67,7 +69,7 @@ export default async function OrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ via?: string; tab?: string }>;
+  searchParams: Promise<{ via?: string }>;
 }) {
   const { id } = await params;
   const query = await searchParams;
@@ -96,36 +98,21 @@ export default async function OrderDetailPage({
       : null;
   const members = !issued && isManager ? await orderMembers(actor) : [];
   /**
-   * 발급된 지시서는 한 장짜리 긴 문서가 아니라 작성할 때와 같은 단계로 읽는다.
-   * "3번에 뭘 넣었더라" 를 같은 자리에서 찾게 하려는 것이고, 발급 직후 정작
-   * 할 일(QR 붙이기·링크 전달)이 스크롤 맨 아래 있던 문제도 같이 풀린다.
-   * QR 탭은 발급 후에만 생긴다 — 없는 QR 자리를 미리 만들지 않는다.
+   * 발급된 지시서는 한 장이다. 작성 폼과 같은 순서(작업 정보 → 위험성평가 →
+   * 일정·인원 → 체크리스트 → QR·전달)로 이어지고, 위의 구간 칩은 내려가기만
+   * 한다. 탭이었을 때는 "작업 정보" 한 구간만 보여서 나머지가 없는 줄 알았다.
+   * 발급 직후에는 할 일이 있는 QR 구간(#qr)으로 바로 내려간다.
    */
-  const TABS = [
-    { key: "info", label: "작업 정보" },
-    { key: "risk", label: "위험성평가" },
-    { key: "schedule", label: "일정·인원" },
-    { key: "checklist", label: "체크리스트" },
-    ...(qr ? [{ key: "qr", label: "QR·전달" }] : []),
+  const PARTS = [
+    { id: "info", label: "작업 정보" },
+    { id: "risk", label: "위험성평가" },
+    { id: "schedule", label: "일정·인원" },
+    { id: "checklist", label: "체크리스트" },
+    ...(qr ? [{ id: "qr", label: "QR·전달" }] : []),
   ];
-  // 작업자에게 필요한 건 탭이 아니라 "내가 할 일" 이라, 탭은 관리자 화면에서만 쓴다.
-  const tabbed = isManager;
-  const tab = TABS.some((t) => t.key === query.tab) ? query.tab! : "info";
-  // 탭은 나란한 버튼이 아니라 작성 순서를 그린 띠다. 지나온 단계는 선에 색이
-  // 차서, 지금 어디를 보고 있는지가 번호를 세지 않아도 보인다.
-  const tabIndex = TABS.findIndex((t) => t.key === tab);
-  const tabHref = (key: string) =>
-    `/work-orders/${id}?tab=${key}` + (via !== "web" ? "&via=" + via : "");
-  /**
-   * 안 보이는 탭도 DOM 에는 남긴다. 지시서는 법정 서류라 인쇄는 언제나 전체가
-   * 한 장으로 나와야 하고, 그건 hidden 을 print 에서만 푸는 것으로 해결된다.
-   */
   // 출력물은 유료 기능이다. 무료 회사는 버튼을 눌렀을 때 안내로 막는다.
   const canPrint = (session.membership?.pro_state ?? "FREE") !== "FREE";
-  const panel = (key: string, extra = "") => ({
-    className: "wo-section wo-tabpanel" + (extra ? " " + extra : ""),
-    hidden: tabbed && tab !== key,
-  });
+  const panel = (key: string) => ({ id: key, className: "wo-section" });
   const names = new Map([
     ...members.map((m) => [m.user_id, m.display_name] as const),
     ...detail.assignments.map(
@@ -223,6 +210,11 @@ export default async function OrderDetailPage({
     ? (PERMIT_LABEL[permitStatus(permit?.status ?? "NONE", order.status, d)] ??
       "미신청")
     : "불필요";
+  const assigneeNames = issued
+    ? detail.assignments.map((m) => m.snapshot_display_name).join(", ")
+    : d.assigneeIds
+        .map((id) => names.get(id) || "소속 변경된 구성원")
+        .join(", ") || "배정 없음";
   const todaySession = detail.currentSession;
   const todayDone = todaySession
     ? todaySession.expected_assignees.length -
@@ -266,7 +258,7 @@ export default async function OrderDetailPage({
       )}
       <div className="wo-print">
         {/* 지시서 번호·발행 버전·출력 기준시각은 출력물(PrintSheet)에만. 화면에는
-            장소 옆에 언제 발급됐고 어느 표준서 몇 판에서 왔는지까지면 된다. */}
+            장소 옆에 언제 발급됐는지까지. 표준서·기간·인원은 작업 정보 구간에. */}
         <PageHeader
           title={order.name}
           description={
@@ -275,15 +267,6 @@ export default async function OrderDetailPage({
                 ? d.groupLabel + " · " + d.location
                 : d.location || "장소 미입력"}
               {order.issued_at && " · 발급 " + shortTime(order.issued_at)}
-              {linkedStandardId && linkedHref && (
-                <span className="wo-meta-standard">
-                  {" · 표준서 "}
-                  <Link href={linkedHref}>{linkedStandardName ?? "열기"}</Link>
-                  {!linkedIsCurrent && linked?.current_revision_no
-                    ? ` (그 뒤 ${linked.current_revision_no}판으로 개정됨)`
-                    : ""}
-                </span>
-              )}
             </>
           }
           actions={
@@ -353,46 +336,47 @@ export default async function OrderDetailPage({
             via={via}
           />
         )}
-        {tabbed && (
-          <nav className="wo-doc-tabs wo-no-print" aria-label="지시서 구성">
-            {TABS.map((t, i) => (
-              <Link
-                key={t.key}
-                href={tabHref(t.key)}
-                aria-current={tab === t.key ? "page" : undefined}
-                data-state={
-                  i < tabIndex ? "done" : i === tabIndex ? "current" : "todo"
-                }
-              >
-                <span className="wo-doc-tab-no" aria-hidden="true">
-                  {i + 1}
-                </span>
-                <span className="wo-doc-tab-label">{t.label}</span>
-              </Link>
-            ))}
-          </nav>
-        )}
+        <div className="wo-no-print">
+          <JumpNav items={PARTS} label="지시서 구간" />
+        </div>
         <section {...panel("info")}>
           <h2>작업 정보</h2>
-          <p className="wo-detail-text">
-            {typeof method === "string"
-              ? method
-              : d.method || "작업방법 미입력"}
-          </p>
-        </section>
-        <section {...panel("schedule")}>
-          <h2>일정·인원</h2>
-          <p>{printPeriod}</p>
-          <h3>배정 인원</h3>
-          <p>
-            {issued
-              ? detail.assignments
-                  .map((m) => m.snapshot_display_name)
-                  .join(", ")
-              : d.assigneeIds
-                  .map((id) => names.get(id) || "소속 변경된 구성원")
-                  .join(", ") || "배정 없음"}
-          </p>
+          <dl className="wo-facts">
+            <dt>작업방법</dt>
+            <dd className="wo-detail-text">
+              {typeof method === "string"
+                ? method
+                : d.method || "작업방법 미입력"}
+            </dd>
+            <dt>장소</dt>
+            <dd>
+              {d.location || "미입력"}
+              {d.groupLabel ? ` · ${d.groupLabel}` : ""}
+            </dd>
+            <dt>작업기간</dt>
+            <dd>{printPeriod}</dd>
+            <dt>PTW</dt>
+            <dd>
+              {d.ptwRequired ? (
+                <Link href={"/work-orders/" + id + "/permit"}>
+                  필요 · {printPtw}
+                </Link>
+              ) : (
+                "불필요"
+              )}
+            </dd>
+            {linkedStandardId && linkedHref && (
+              <>
+                <dt>표준서</dt>
+                <dd>
+                  <Link href={linkedHref}>{linkedStandardName ?? "열기"}</Link>
+                  {!linkedIsCurrent && linked?.current_revision_no
+                    ? ` · 그 뒤 ${linked.current_revision_no}판으로 개정됨`
+                    : ""}
+                </dd>
+              </>
+            )}
+          </dl>
         </section>
         <section {...panel("risk")}>
           <h2>위험성평가</h2>
@@ -447,6 +431,28 @@ export default async function OrderDetailPage({
               ))}
             </>
           )}
+        </section>
+        <section {...panel("schedule")}>
+          <h2>일정·인원</h2>
+          {/* 회차 목록이 곧 기간이다. 목록이 없는 옛 지시서만 한 줄로. */}
+          {sessionsDraft.length === 0 && <p>{printPeriod}</p>}
+          {sessionsDraft.length > 0 && (
+            <ul className="wo-session-list">
+              {sessionsDraft.map((s, i) => (
+                <li
+                  key={i}
+                  data-today={
+                    s.date === todaySession?.work_date ? "" : undefined
+                  }
+                >
+                  {dayLabel(s.date)} {s.startTime} ~ {s.endTime}
+                  {s.endTime <= s.startTime ? " (다음 날)" : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+          <h3>배정 인원</h3>
+          <p>{assigneeNames}</p>
         </section>
         <section {...panel("checklist")}>
           <h2>체크리스트</h2>

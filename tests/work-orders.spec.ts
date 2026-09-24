@@ -204,8 +204,8 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .getByRole("dialog")
       .getByRole("button", { name: "발급", exact: true })
       .click();
-    // 발급 직후에는 할 일(QR·링크 전달)이 있는 탭으로 바로 간다.
-    await expect(page).toHaveURL(new RegExp(id + "\\?tab=qr$"));
+    // 발급 직후에는 할 일(QR·링크 전달)이 있는 구간으로 바로 간다.
+    await expect(page).toHaveURL(new RegExp(id + "#qr$"));
     await expect(
       page.getByRole("heading", { name: "작업지시 QR", exact: true }),
     ).toBeVisible();
@@ -222,23 +222,14 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       await expect(notice).toBeVisible({ timeout: 1000 });
     }).toPass({ timeout: 15000 });
     await expect(page.locator(".wo-sheet")).toHaveCount(0);
-    // 다른 탭의 내용은 화면에서 접혀 있다.
-    await expect(
-      page.getByRole("heading", { name: "위험성평가", exact: true }),
-    ).toBeHidden();
-    // 단계 띠의 번호는 aria-hidden 이라 이름에 들어가지 않는다.
-    // 메뉴에도 같은 이름의 링크가 있어 본문으로 좁힌다.
-    await page
-      .locator("#main")
-      .getByRole("link", { name: "위험성평가", exact: true })
-      .click();
-    await expect(page).toHaveURL(new RegExp(id + "\\?tab=risk$"));
-    await expect(
-      page.getByRole("heading", { name: "위험성평가", exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "작업지시 QR", exact: true }),
-    ).toBeHidden();
+    // 발급된 지시서는 탭이 아니라 한 장이다. 작업 정보·위험성평가·회차가 QR 과
+    // 같은 화면에 있고, 위의 구간 칩은 내려가기만 한다.
+    for (const name of ["작업 정보", "위험성평가", "일정·인원", "체크리스트"])
+      await expect(
+        page.getByRole("heading", { name, exact: true }),
+      ).toBeVisible();
+    await expect(page.locator("dl.wo-facts")).toContainText("작업방법");
+    await expect(page.locator(".wo-session-list li").first()).toBeVisible();
     // 발급된 지시서는 고칠 수 없고(편집 화면은 조회로 되돌려 보낸다), 지울 수도
     // 없다. 수단은 취소뿐이다.
     await page.goto(path + "/edit");

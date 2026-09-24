@@ -168,8 +168,8 @@ export async function saveAndIssueAction(
 
   if (issued) {
     refresh(id);
-    // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 탭으로 바로 보낸다.
-    redirect("/work-orders/" + id + "?tab=qr");
+    // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 구간으로 바로 보낸다.
+    redirect("/work-orders/" + id + "#qr");
   }
   if (permitPending) {
     refresh(id);
@@ -276,8 +276,8 @@ export async function orderCommandAction(
   } catch (error) {
     result = safeError(error);
   }
-  // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 탭으로 바로 보낸다.
-  if (issuedId) redirect("/work-orders/" + issuedId + "?tab=qr");
+  // 발급 직후 할 일은 QR 을 뽑아 붙이거나 링크를 보내는 것이다. 그 구간으로 바로 보낸다.
+  if (issuedId) redirect("/work-orders/" + issuedId + "#qr");
   // 상세에서 지웠으면 그 자리가 404 이므로 목록으로 보낸다.
   // 목록에서 지웠으면 그 줄만 사라지면 되니 이동하지 않는다.
   if (deleted && deletedNext) redirect(deletedNext);

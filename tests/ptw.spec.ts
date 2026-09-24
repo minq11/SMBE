@@ -257,7 +257,7 @@ test("PTW fields inside the work-order form: 지금 발급하기 requests, self-
       .getByRole("dialog")
       .getByRole("button", { name: "발급", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/work-orders\/[0-9a-f-]{36}\?tab=qr$/);
+    await expect(page).toHaveURL(/\/work-orders\/[0-9a-f-]{36}#qr$/);
     const row = (
       await pool.query(
         `SELECT w.status, p.status AS permit_status, p.self_approval,
