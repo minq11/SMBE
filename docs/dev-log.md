@@ -1,5 +1,28 @@
 # 심플안전 개발일지
 
+## 2026-09-24 표준서 개정본 — 승인된 판은 못 고친다, 개정은 복사본을 고쳐 승인
+
+사장님 결정: 승인 완료된 표준서는 수정 불가. 고치려면 개정본을 새로 따서(모든 내용
+하드카피) 그것을 고치고 승인받는다. 표준서에 연결된 모든 일에 개정본 정보가 있어야
+"그날 그 표준서" 로 돌아간다. 0006 이 버전 테이블을 없앴던 판단은 반만 맞았다 —
+사고가 나면 "그때 표준서에 뭐라고 적혀 있었나" 를 묻는다.
+
+- `standard_revisions` (0023): 표준서당 여러 판, 상태 DRAFT/APPROVED/SUPERSEDED,
+  초안은 한 번에 하나(부분 유니크). 단계·체크리스트는 `revision_id` 에 달린다.
+  `standards.current_revision_id` 가 승인된 현재 판이고 이름·PTW 는 그 판의 거울.
+  기존 표준서는 지금 내용이 1판.
+- **개정 시작**(`startRevision`)이 현재 판을 복사한 초안을 만든다. 단계 사진은 같은
+  파일을 새 단계가 가리키는 첨부 행을 더 만든다 → `attachments.storage_key` UNIQUE 를
+  풀고, 지울 때 마지막 참조일 때만 S3 파일을 지운다.
+- 수정 화면은 초안에만 열린다(없으면 상세로). "초안 저장" 과 "저장하고 승인". 승인
+  (`approveRevision`)은 초안→APPROVED, 이전 판→SUPERSEDED, 표준서 현재 판 갱신.
+  상세에 초안 띠(이어서 수정·이대로 승인·버리기)와 개정 이력(판마다 보기,
+  `/standards/[id]/revisions/[no]`).
+- 지시서 발급 시 `work_orders.standard_revision_id` 와 사본의 `standard_revision_no`
+  를 박고 상세에 "(2판)" 으로 보인다. 평가 회차는 `risk_assessments.standard_revision_id`.
+- `updateStandardMutable` 은 없어졌다. 검증: `standards.spec` 이 개정 시작 → 복사본
+  확인 → 초안 저장(현재 판 그대로) → 승인 → 2판·이력·지난 판 읽기까지 돈다.
+
 ## 2026-09-23 안전사고 모듈 — 법 분석과 설계 제안 (`docs/incident-plan.md`)
 
 개발 전 산안법·중처법·위험성평가 고시를 훑고 우리 시스템의 빈 자리를 맞췄다. 결론:

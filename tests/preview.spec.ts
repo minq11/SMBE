@@ -39,7 +39,7 @@ test("preview renders without secrets and only shows preparation dialogs", async
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "심플안전 해야하는 이유" }),
+    page.getByRole("heading", { name: "심플안전 해야합니다." }),
   ).toBeVisible();
   // 로그인 전 화면에는 가짜 데이터를 두지 않는다. 실제로 하는 일과 시작 경로만 있다.
   // 상단바에도 같은 이름의 링크가 있어 본문으로 좁힌다.
@@ -66,7 +66,10 @@ test("preview renders without secrets and only shows preparation dialogs", async
   // 카드에 늘 보이고, 자세한 설명은 카드를 누르면 창으로 뜬다.
   await expect(page.getByText("요금·도입 문의")).toHaveCount(0);
   await expect(page.getByText("인원 제한 없이 무료.")).toBeVisible();
-  await expect(page.getByText("인정 시 3년 감독 유예")).toBeVisible();
+  // 혜택 칩은 문구 개편(9-23)으로 빠졌다. 한 줄 설명이 카드에 보이면 된다.
+  await expect(
+    page.getByText("중처법/산안법 요구사항 대비", { exact: false }),
+  ).toBeVisible();
   const dialog = page.locator("dialog.reason-dialog");
   const firstDetail = page.getByText("문의·협의 없이 가입 즉시", {
     exact: false,

@@ -1,6 +1,6 @@
 // Generate an isolated browser-test build. The production DB adapter is never
 // changed: only the temporary copy connects to disposable local PostgreSQL.
-import { cp, mkdtemp, readFile, writeFile, readdir } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -116,7 +116,8 @@ try {
   ).catch((error) => {
     if (error.code !== "ENOENT") throw error;
   });
-  console.log(
-    "Screenshots and traces retained in: " + join(directory, "test-results"),
-  );
+  // 결과는 위에서 저장소의 test-results/orders-ui 로 옮겼다. 1.1GB 짜리 복사본을
+  // 남겨 두면 한 세션에 수십 번 돌리다 디스크가 찬다 (28개 = 30GB).
+  await rm(directory, { recursive: true, force: true });
+  console.log("Screenshots and traces: test-results/orders-ui");
 }

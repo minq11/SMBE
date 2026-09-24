@@ -119,6 +119,30 @@ export type SafetyInfo = {
   history: string;
 };
 
+export type RevisionStatus = "DRAFT" | "APPROVED" | "SUPERSEDED";
+
+/** 개정본 한 줄 (이력 목록용). */
+export type StandardRevisionSummary = {
+  id: string;
+  revision_no: number;
+  status: RevisionStatus;
+  change_note: string | null;
+  created_at: string;
+  created_by_name: string;
+  approved_at: string | null;
+  approved_by_name: string | null;
+};
+
+/** 개정본 내용 통째 — 옛 판 읽기, 초안 수정에 쓴다. */
+export type StandardRevisionContent = StandardRevisionSummary & {
+  standard_id: string;
+  name: string;
+  ptw_required: boolean;
+  steps: StandardStep[];
+  checklist_tbm: string[];
+  checklist_during: string[];
+};
+
 export type StandardDetail = {
   standard_id: string;
   name: string;
@@ -127,6 +151,12 @@ export type StandardDetail = {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  /** 승인된 현재 판. 표준서를 막 만들었으면 1판. */
+  revision: StandardRevisionSummary | null;
+  /** 작성 중인 개정 초안 (있으면 하나) */
+  draft: StandardRevisionSummary | null;
+  /** 모든 판, 최신이 앞 */
+  revisions: StandardRevisionSummary[];
   steps: StandardStep[];
   checklist_tbm: string[];
   checklist_during: string[];

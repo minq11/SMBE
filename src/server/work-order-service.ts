@@ -402,13 +402,22 @@ export async function issueOrder(
     name: string;
     ptw_required: boolean;
     updated_at: string;
+    revision_id: string | null;
+    revision_no: number | null;
   }>(
-    `SELECT s.id, s.name, s.ptw_required, s.updated_at
+    `SELECT s.id, s.name, s.ptw_required, s.updated_at,
+            r.id AS revision_id, r.revision_no
        FROM standards s JOIN work_orders w ON w.standard_id = s.id
+       LEFT JOIN standard_revisions r ON r.id = s.current_revision_id
       WHERE w.id = $1`,
     [id],
   );
   if (stdMeta.length > 0) {
+    // 발급 시점의 판을 지시서에 박는다 — 표준서가 나중에 개정돼도 "그날 그 판".
+    await client.query(
+      "UPDATE work_orders SET standard_revision_id = $2 WHERE id = $1",
+      [id, stdMeta[0].revision_id],
+    );
     await client.query(
       `INSERT INTO work_order_snapshots(work_order_id,snapshot_kind,payload)
        VALUES ($1,'STANDARD_META',$2::jsonb)
@@ -420,6 +429,8 @@ export async function issueOrder(
           standard_name: stdMeta[0].name,
           ptw_required: stdMeta[0].ptw_required,
           standard_updated_at: stdMeta[0].updated_at,
+          standard_revision_id: stdMeta[0].revision_id,
+          standard_revision_no: stdMeta[0].revision_no,
           captured_at: new Date().toISOString(),
         }),
       ],

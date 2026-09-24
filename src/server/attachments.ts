@@ -465,6 +465,14 @@ export async function deleteAttachment(
     `UPDATE attachments SET status = 'DELETED', deleted_at = now() WHERE id = $1`,
     [attachmentId],
   );
+  // 표준서 개정본이 같은 파일을 다른 단계로 가리킬 수 있다 (0023). 마지막 참조일
+  // 때만 파일을 지운다 — 옛 판의 사진이 새 판에서 지웠다고 사라지면 안 된다.
+  const others = await query<{ n: string }>(
+    `SELECT count(*) AS n FROM attachments
+      WHERE storage_key = $1 AND status <> 'DELETED'`,
+    [row.storage_key],
+  );
+  if (Number(others[0]?.n ?? 0) > 0) return;
   try {
     await s3().send(
       new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: row.storage_key }),

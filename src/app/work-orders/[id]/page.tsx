@@ -158,10 +158,16 @@ export default async function OrderDetailPage({
         standard_name: string;
         ptw_required: boolean;
         standard_updated_at: string;
+        standard_revision_no?: number | null;
       }
     | undefined;
   const linkedStandardId = standardMeta?.standard_id ?? d.standardId ?? null;
-  const linkedStandardName = standardMeta?.standard_name ?? null;
+  const linkedStandardName = standardMeta
+    ? standardMeta.standard_name +
+      (standardMeta.standard_revision_no
+        ? ` (${standardMeta.standard_revision_no}판)`
+        : "")
+    : null;
   const risks =
     riskSnapshot?.items.map((r) => ({
       hazard: r.hazard,

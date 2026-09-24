@@ -169,17 +169,51 @@ test("standard: create, edit, add a seeded assessment round", async ({
       "병원 치료가 필요한 부상",
     );
 
-    // 2) 고치기 → 저장하면 상세로 돌아온다
-    await page.getByRole("link", { name: "수정", exact: true }).click();
+    // 2) 승인된 판은 못 고친다. 개정 시작 → 복사된 초안을 고쳐 → 승인 → 2판.
+    await expect(page.locator("#main")).toContainText("1판");
+    await page.getByRole("button", { name: "개정 시작", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(id + "/edit$"));
+    await expect(page.getByRole("heading", { name: "2판 개정" })).toBeVisible();
+    // 초안은 현재 판의 복사본이다.
+    await expect(
+      page.locator("#std-steps input[placeholder='1단계']"),
+    ).toHaveValue("전원 차단");
     await page.getByLabel("표준서명").fill("프레스 금형 교체 (개정)");
     await page
-      .getByRole("button", { name: "변경사항 저장", exact: true })
-      .click();
+      .locator("#std-steps input[placeholder='1단계']")
+      .fill("전원 차단 후 잠금");
+    await page.getByLabel("무엇을 왜 바꿨나요").fill("잠금장치 추가");
+    // 초안 저장은 상세로 돌아오고, 현재 판은 아직 1판이다.
+    await page.getByRole("button", { name: "초안 저장", exact: true }).click();
     await expect(page).toHaveURL(new RegExp("/standards/" + id + "$"));
+    await expect(page.locator("#main")).toContainText("2판 개정 작성 중");
+    await expect(page.locator("#main")).not.toContainText("전원 차단 후 잠금");
+    // 이대로 승인 → 2판이 현재 판, 1판은 지난 판으로 남는다.
+    await page
+      .getByRole("button", { name: "이대로 승인", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "승인", exact: true })
+      .click();
     await expect(page.locator("#main")).toContainText(
       "프레스 금형 교체 (개정)",
     );
+    await expect(page.locator("#main")).toContainText("전원 차단 후 잠금");
+    await expect(page.locator("#main")).toContainText("개정 이력 (2판)");
+    await expect(page.locator("#main")).toContainText("잠금장치 추가");
+    const current = await pool.query(
+      `SELECT r.revision_no FROM standards s
+         JOIN standard_revisions r ON r.id = s.current_revision_id WHERE s.id = $1`,
+      [id],
+    );
+    expect(current.rows[0].revision_no).toBe(2);
+    // 지난 판은 그대로 읽힌다.
+    await page.goto(`/standards/${id}/revisions/1`);
+    await expect(page.locator("#main")).toContainText("1판 · 지난 판");
+    await expect(page.locator("#main")).toContainText("전원 차단");
+    await expect(page.locator("#main")).not.toContainText("전원 차단 후 잠금");
+    await page.goto(`/standards/${id}`);
 
     // 3) 평가 회차 추가 — 지난 회차 값이 채워져 있고, 저장하면 회차가 둘
     await page
