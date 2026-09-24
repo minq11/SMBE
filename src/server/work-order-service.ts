@@ -8,6 +8,7 @@ import {
   effectiveStatus,
   validateAssessment,
   validateIssue,
+  withSessionRange,
   WorkOrderError,
   type WorkDraft,
   type OrderStatus,
@@ -195,7 +196,8 @@ export async function saveOrder(
     throw new WorkOrderError(
       parsed.error.issues[0]?.message ?? "입력값을 확인하세요.",
     );
-  const d = parsed.data;
+  // 회차 목록이 있으면 기간·시간 칸은 그 요약이다. 저장본을 늘 맞춰 둔다.
+  const d = withSessionRange(parsed.data);
   await lockCompany(client, actor.companyId);
   await memberAccess(client, actor, true);
   await validatePeople(client, actor.companyId, d);
@@ -492,7 +494,24 @@ export async function issueOrder(
     issueVersion: 1,
     assigneeIds: d.assigneeIds,
   });
-  await client.query("SELECT create_work_sessions($1)", [id]);
+  if (d.sessions && d.sessions.length > 0) {
+    // 지시서가 정한 회차 그대로. 휴무일이 빠지고 회차마다 시간이 다를 수 있다.
+    for (const s of d.sessions)
+      await client.query(
+        `INSERT INTO work_sessions(company_id,work_order_id,work_date,starts_at,ends_at,expected_assignees)
+         SELECT w.company_id,w.id,$2::date,
+           ($2::date + $3::time) AT TIME ZONE 'Asia/Seoul',
+           ($2::date + $4::time + CASE WHEN $4::time <= $3::time THEN interval '1 day' ELSE interval '0 day' END) AT TIME ZONE 'Asia/Seoul',
+           coalesce((SELECT jsonb_agg(jsonb_build_object('userId',a.user_id,'name',a.snapshot_display_name) ORDER BY a.assigned_at,a.id)
+             FROM work_order_assignments a WHERE a.work_order_id=w.id AND a.status='ACTIVE'),'[]'::jsonb)
+         FROM work_orders w WHERE w.id=$1
+         ON CONFLICT(work_order_id,work_date) DO NOTHING`,
+        [id, s.date, s.startTime, s.endTime],
+      );
+  } else {
+    // 회차 목록이 없는 옛 초안: 기간의 매일 (db/0004 create_work_sessions).
+    await client.query("SELECT create_work_sessions($1)", [id]);
+  }
 }
 export async function approveAndIssueOrder(
   client: PoolClient,

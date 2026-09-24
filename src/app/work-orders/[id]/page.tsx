@@ -194,9 +194,19 @@ export default async function OrderDetailPage({
       responsibleName: names.get(r.responsibleId) ?? "",
     }));
   const safety = riskSnapshot?.safety_info ?? d.safetyInfo;
+  // 회차 목록이 있으면 회차 수로, 회차마다 시간이 같으면 "매일 …" 로.
+  const sessionsDraft = d.sessions ?? [];
+  const uniformTimes = sessionsDraft.every(
+    (s) => s.startTime === d.startTime && s.endTime === d.endTime,
+  );
+  const periodTimes = uniformTimes
+    ? `매일 ${d.startTime} ~ ${d.endTime}` +
+      (d.endTime <= d.startTime ? " (다음 날 종료)" : "")
+    : "회차마다 시간 다름";
   const printPeriod =
-    `${d.startDate || "미입력"} ~ ${d.endDate || "미입력"} · 매일 ${d.startTime} ~ ${d.endTime}` +
-    (d.endTime <= d.startTime ? " (다음 날 종료)" : "");
+    `${d.startDate || "미입력"} ~ ${d.endDate || "미입력"}` +
+    (sessionsDraft.length ? ` · ${sessionsDraft.length}회차` : "") +
+    ` · ${periodTimes}`;
   const printPtw = d.ptwRequired
     ? (PERMIT_LABEL[permitStatus(permit?.status ?? "NONE", order.status, d)] ??
       "미신청")
@@ -367,11 +377,7 @@ export default async function OrderDetailPage({
         </section>
         <section {...panel("schedule")}>
           <h2>일정·인원</h2>
-          <p>
-            {d.startDate || "미입력"} ~ {d.endDate || "미입력"} · 매일{" "}
-            {d.startTime} ~ {d.endTime}
-            {d.endTime <= d.startTime ? " (다음 날 종료)" : ""}
-          </p>
+          <p>{printPeriod}</p>
           <h3>배정 인원</h3>
           <p>
             {issued

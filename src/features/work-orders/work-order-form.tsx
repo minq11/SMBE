@@ -35,6 +35,7 @@ import {
   PeoplePickerDialog,
 } from "@/components/ui/people-picker";
 import { PermitFields } from "./permit-fields";
+import { SessionEditor } from "./session-editor";
 import { PickerDialog } from "@/components/ui/picker-dialog";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { Segmented } from "@/features/assessments/risk-level-picker";
@@ -42,8 +43,9 @@ import { PtwHelp } from "@/features/standards/ptw-help";
 import { saveOrderAction, saveAndIssueAction } from "./actions";
 import {
   blankPermit,
+  generateSessions,
   permitProblem,
-  shiftMinutes,
+  withSessionRange,
   type WorkDraft,
   type MemberOption,
 } from "./model";
@@ -134,10 +136,19 @@ function openingDraft(
   standards: StandardPickerOption[],
   initialStandardId: string | null,
 ): WorkDraft {
-  // 옛 초안(허가 항목이 생기기 전)은 permit 이 없다.
+  // 옛 초안(허가 항목·회차 목록이 생기기 전)은 permit 과 sessions 가 없다. 회차는
+  // 그때의 기간(매일)에서 만든다. 새 초안은 빈 목록으로 시작한다.
   const base: WorkDraft = {
     ...initial,
     permit: initial.permit ?? blankPermit(),
+    sessions:
+      initial.sessions ??
+      generateSessions(
+        initial.startDate,
+        initial.endDate,
+        initial.startTime,
+        initial.endTime,
+      ),
   };
   if (initialStandardId) {
     const s = standards.find((x) => x.id === initialStandardId);
@@ -375,7 +386,6 @@ export function WorkOrderForm({
     setSimpleOverride(false);
     setData((d) => ({ ...d, standardId: null, standardRevisionId: null }));
   };
-  const minutes = shiftMinutes(data.startTime, data.endTime);
   const pickedStandard =
     standardId != null ? standards.find((s) => s.id === standardId) : null;
   // 표준서가 많아질 수 있어 목록은 팝업에서 고른다 ("작업표준서 찾기").
@@ -862,44 +872,15 @@ export function WorkOrderForm({
                 <section className="wo-part" id="wo-schedule">
                   <h2>일정·인원</h2>
                   <p className="wo-muted">
-                    한국시간 기준입니다. 종료시간이 시작시간보다 이르면 다음 날
-                    끝나는 야간작업으로 봅니다. 주·야간조는 지시서를 따로
+                    회차는 날짜마다 하나입니다. 주·야간조는 지시서를 따로
                     만드세요.
                   </p>
-                  <div className="wo-columns">
-                    <FloatField
-                      id="wo-start-date"
-                      label="작업 시작일"
-                      type="date"
-                      value={data.startDate}
-                      onChange={(e) => set("startDate", e.target.value)}
-                    />
-                    <FloatField
-                      id="wo-end-date"
-                      label="작업 종료일"
-                      type="date"
-                      value={data.endDate}
-                      onChange={(e) => set("endDate", e.target.value)}
-                    />
-                    <FloatField
-                      id="wo-start-time"
-                      label="시작시간"
-                      type="time"
-                      value={data.startTime}
-                      onChange={(e) => set("startTime", e.target.value)}
-                    />
-                    <FloatField
-                      id="wo-end-time"
-                      label="종료시간"
-                      type="time"
-                      value={data.endTime}
-                      onChange={(e) => set("endTime", e.target.value)}
-                    />
-                  </div>
-                  <p className="wo-muted">
-                    하루 작업시간: {Math.floor(minutes / 60)}시간 {minutes % 60}
-                    분 · 최대 16시간
-                  </p>
+                  <SessionEditor
+                    value={data.sessions ?? []}
+                    onChange={(sessions) =>
+                      setData((d) => withSessionRange({ ...d, sessions }))
+                    }
+                  />
                   <FloatField
                     id="wo-location"
                     label="작업 장소"
@@ -1006,7 +987,9 @@ export function WorkOrderForm({
             <dd>{data.location || "미입력"}</dd>
             <dt>기간</dt>
             <dd>
-              {data.startDate || "미선택"} ~ {data.endDate || "미선택"}
+              {data.sessions?.length
+                ? `${data.startDate} ~ ${data.endDate} · ${data.sessions.length}회차`
+                : "회차 미정"}
             </dd>
             <dt>배정</dt>
             <dd>{data.assigneeIds.length}명</dd>

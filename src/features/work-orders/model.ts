@@ -64,6 +64,81 @@ export function permitProblem(p: PermitDraft): string | null {
   }
   return null;
 }
+/**
+ * 작업 회차 하나 — 날짜와 그날의 시작·종료시간. 지시서는 회차 목록을 들고 있고,
+ * 시작일·종료일·시작시간·종료시간 칸은 그 요약(첫 회차 시작 ~ 마지막 회차 종료)이다.
+ * 사장님 결정: 기간을 적어 회차를 만든 뒤 하나씩 고치고 지우고 더한다.
+ */
+export const workSessionSchema = z.object({
+  date: z.string().max(10),
+  startTime: z.string().max(5),
+  endTime: z.string().max(5),
+});
+export type WorkSessionDraft = z.infer<typeof workSessionSchema>;
+export const MAX_SESSIONS = 366;
+/** 시작일~종료일 하루 하나씩. 잘못된 입력이면 빈 목록. */
+export function generateSessions(
+  startDate: string,
+  endDate: string,
+  startTime: string,
+  endTime: string,
+): WorkSessionDraft[] {
+  if (!validDate(startDate) || !validDate(endDate) || endDate < startDate)
+    return [];
+  const out: WorkSessionDraft[] = [];
+  const start = Date.parse(startDate + "T00:00:00Z");
+  const end = Date.parse(endDate + "T00:00:00Z");
+  for (let t = start; t <= end && out.length < MAX_SESSIONS; t += 86400_000)
+    out.push({
+      date: new Date(t).toISOString().slice(0, 10),
+      startTime,
+      endTime,
+    });
+  return out;
+}
+/** 회차 목록의 문제. 없으면 null. 화면과 서버가 같은 규칙을 쓴다. */
+export function sessionProblem(sessions: WorkSessionDraft[]): string | null {
+  if (sessions.length === 0) return "작업 회차를 하나 이상 만드세요.";
+  if (sessions.length > MAX_SESSIONS)
+    return "한 지시서의 회차는 최대 366개입니다.";
+  const seen = new Set<string>();
+  for (const [i, s] of sessions.entries()) {
+    if (!validDate(s.date)) return `${i + 1}회차의 날짜를 확인하세요.`;
+    if (seen.has(s.date)) return `${s.date} 회차가 두 번 있습니다.`;
+    seen.add(s.date);
+    const minutes = shiftMinutes(s.startTime, s.endTime);
+    if (!minutes || minutes > 960)
+      return `${s.date} 회차의 작업시간은 0시간 초과, 16시간 이하여야 합니다. 야간작업은 다음 날 종료로 계산합니다.`;
+  }
+  const dates = sessions.map((s) => s.date).sort();
+  if (
+    (Date.parse(dates[dates.length - 1]) - Date.parse(dates[0])) / 86400_000 >
+    365
+  )
+    return "한 지시서의 작업기간은 최대 366일입니다.";
+  return null;
+}
+/** 회차 목록이 있으면 기간·시간 요약 칸을 거기서 다시 채운다 (날짜순 정렬 포함). */
+export function withSessionRange<T extends WorkDraftLike>(d: T): T {
+  const sessions = d.sessions ?? [];
+  if (sessions.length === 0) return d;
+  const sorted = [...sessions].sort((a, b) => a.date.localeCompare(b.date));
+  return {
+    ...d,
+    sessions: sorted,
+    startDate: sorted[0].date,
+    endDate: sorted[sorted.length - 1].date,
+    startTime: sorted[0].startTime,
+    endTime: sorted[sorted.length - 1].endTime,
+  };
+}
+type WorkDraftLike = {
+  sessions?: WorkSessionDraft[];
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+};
 export const draftSchema = z.object({
   standardId: z.string().uuid().nullable().optional().default(null),
   // 표준서를 고를 때 그 내용이 어느 판이었나. 발급 때 지시서에 박힌다 — 초안을 쓰는
@@ -89,6 +164,8 @@ export const draftSchema = z.object({
   workerOpinion: text.optional().default(""),
   // PTW 필요일 때 지시서 안에서 적는 허가 항목. 옛 초안에는 없다.
   permit: permitDraftSchema.optional().default(blankPermit),
+  // 작업 회차 목록. 옛 초안에는 없고, 그때는 기간의 매일이 회차다.
+  sessions: z.array(workSessionSchema).max(MAX_SESSIONS).optional().default([]),
   risks: z.array(riskSchema).min(1).max(50),
   participantIds: ids,
   assigneeIds: ids,
@@ -157,6 +234,10 @@ export function validateAssessment(d: WorkDraft, criteria?: RiskCriteria) {
   }
 }
 export function validateSchedule(d: WorkDraft) {
+  if (d.sessions && d.sessions.length > 0) {
+    const problem = sessionProblem(d.sessions);
+    if (problem) throw new WorkOrderError(problem);
+  }
   if (
     !validDate(d.startDate) ||
     !validDate(d.endDate) ||
@@ -196,6 +277,7 @@ export function blankDraft(): WorkDraft {
     standardId: null,
     standardRevisionId: null,
     permit: blankPermit(),
+    sessions: [],
     name: "",
     groupLabel: "",
     method: "",
