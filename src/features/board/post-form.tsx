@@ -13,6 +13,7 @@ import {
   type PostDetail,
 } from "./model";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField } from "@/components/ui/float-field";
 
 /**
  * 글 편집 화면. 제목 + (공지면) 팝업 설정 + 본문 편집기 + 저장/발행/삭제.
@@ -103,23 +104,21 @@ export function PostForm({
   return (
     <div className="board-form">
       {dialog}
-      <div className="form-field">
-        <label htmlFor="post-title">제목</label>
-        <input
-          id="post-title"
-          value={title}
-          maxLength={120}
-          placeholder={
-            post.kind === "NOTICE"
-              ? "예: 10월 정기 안전점검 일정"
-              : "예: 지게차 일상점검표 (2026)"
-          }
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setDirty(true);
-          }}
-        />
-      </div>
+      <FloatField
+        id="post-title"
+        label="제목"
+        value={title}
+        maxLength={120}
+        hint={
+          post.kind === "NOTICE"
+            ? "예: 10월 정기 안전점검 일정"
+            : "예: 지게차 일상점검표 (2026)"
+        }
+        onChange={(e) => {
+          setTitle(e.target.value);
+          setDirty(true);
+        }}
+      />
 
       {post.kind === "NOTICE" && (
         <fieldset className="board-popup-set">
@@ -143,29 +142,29 @@ export function PostForm({
           </label>
           {popup && (
             <div className="board-popup-dates">
-              <label>
-                <span>시작일</span>
-                <input
-                  type="date"
-                  value={from}
-                  onChange={(e) => {
-                    setFrom(e.target.value);
-                    setDirty(true);
-                  }}
-                />
-              </label>
-              <label>
-                <span>종료일</span>
-                <input
-                  type="date"
-                  value={until}
-                  min={from || undefined}
-                  onChange={(e) => {
-                    setUntil(e.target.value);
-                    setDirty(true);
-                  }}
-                />
-              </label>
+              <FloatField
+                id="post-popup-from"
+                label="시작일"
+                type="date"
+                value={from}
+                onChange={(e) => {
+                  setFrom(e.target.value);
+                  setDirty(true);
+                }}
+                className="float-field--flush"
+              />
+              <FloatField
+                id="post-popup-until"
+                label="종료일"
+                type="date"
+                value={until}
+                min={from || undefined}
+                onChange={(e) => {
+                  setUntil(e.target.value);
+                  setDirty(true);
+                }}
+                className="float-field--flush"
+              />
               <small className="hint">비우면 기간 제한 없이 뜹니다.</small>
             </div>
           )}

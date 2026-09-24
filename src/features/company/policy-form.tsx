@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { updateAssessmentPolicyAction } from "./criteria-actions";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatTextarea } from "@/components/ui/float-field";
 
 /**
  * 위험성평가 실시규정 (고시 제9조). 목적·방법·시기·역할·참여·공유·기록을 회사가
@@ -28,17 +29,16 @@ export function AssessmentPolicyForm({
     );
   return (
     <form action={action} className="policy-form">
-      <div className="criteria-form-field">
-        <label htmlFor="assessment-policy">실시규정</label>
-        <textarea
-          id="assessment-policy"
-          name="policy"
-          defaultValue={policy}
-          rows={12}
-          maxLength={4000}
-          required
-        />
-      </div>
+      <FloatTextarea
+        className="float-field--flush"
+        id="assessment-policy"
+        label="실시규정"
+        name="policy"
+        defaultValue={policy}
+        rows={12}
+        maxLength={4000}
+        required
+      />
       <button className="primary-button" disabled={pending}>
         {pending ? "저장 중…" : "실시규정 저장"}
       </button>

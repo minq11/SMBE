@@ -324,39 +324,6 @@
   line-height: 1.7;
   margin: 10px 0 20px;
 }
-.wo-field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  margin: 16px 0;
-  font-size: 13px;
-  font-weight: 600;
-  min-width: 0;
-}
-.wo-field input,
-.wo-field textarea,
-.wo-field select,
-.wo-link-input {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 11px 12px;
-  font: inherit;
-  font-weight: 400;
-  background: var(--surface);
-  color: var(--ink);
-}
-.wo-field textarea {
-  min-height: 85px;
-  resize: vertical;
-}
-.wo-field input:focus,
-.wo-field textarea:focus,
-.wo-field select:focus {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-}
 .wo-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -421,6 +388,10 @@
   align-items: flex-end;
   gap: 12px;
   margin-bottom: 16px;
+}
+/* 조회 칸은 내용 너비로 줄어들지 않게 기본 너비를 준다. 좁으면 줄을 바꾼다. */
+.wo-log-filter > .float-field {
+  flex: 0 1 200px;
 }
 .wo-log-filter label {
   display: flex;
@@ -549,8 +520,9 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  margin: 0 0 12px;
 }
-.wo-check-edit .wo-field {
+.wo-check-edit > .float-field {
   flex: 1;
 }
 .wo-statuses {
@@ -754,9 +726,8 @@
 .wo-detail-list li {
   margin-bottom: 8px;
 }
-.wo-link-input {
+.wo-link-field.float-field {
   margin: 12px 0;
-  font-size: 12px;
 }
 .wo-qr {
   width: 180px;
@@ -1030,7 +1001,7 @@
   .wo-summary {
     position: static;
   }
-  .wo-link-input {
+  .wo-link-field.float-field > .float-field-control {
     border: 0;
   }
   .wo-sheet,

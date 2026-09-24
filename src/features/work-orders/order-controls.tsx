@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { orderCommandAction } from "./actions";
+import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 
 type Command =
@@ -85,10 +86,13 @@ export function OrderCommand({
       <input type="hidden" name="revision" value={revision} />
       <input type="hidden" name="command" value={command} />
       {command === "cancel" && (
-        <label className="wo-field">
-          <span>취소 사유</span>
-          <textarea name="reason" required maxLength={1000} />
-        </label>
+        <FloatTextarea
+          id={`wo-cancel-reason-${id}`}
+          label="취소 사유"
+          name="reason"
+          required
+          maxLength={1000}
+        />
       )}
       <button
         className={command === "cancel" ? "btn-secondary" : "btn-primary"}
@@ -167,11 +171,12 @@ export function CopyLinkButton({ url }: { url: string }) {
         작업 링크 복사
       </button>
       {state && <p role="status">{state}</p>}
-      <input
-        aria-label="작업 링크"
+      <FloatField
+        id="wo-link-url"
+        className="wo-link-field"
+        label="작업 링크"
         readOnly
         value={url}
-        className="wo-link-input"
       />
     </form>
   );

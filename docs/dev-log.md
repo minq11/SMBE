@@ -1,5 +1,25 @@
 # 심플안전 개발일지
 
+## 2026-09-24 앱 전체 입력칸을 플로팅 라벨로
+
+사장님이 비상연락처의 플로팅 라벨을 보고 앱 전체로 넓히라고 했다. 입력칸은 이제 하나다.
+
+- `FloatField` · `FloatTextarea` · `FloatSelect` (components/ui/float-field.tsx). 예시 문구는
+  `hint`(누른 뒤에만 흐리게), 칸 아래 안내는 `note`(aria-describedby). 날짜·시간·select 는
+  칸 안에 늘 글자가 있어 라벨이 처음부터 올라가 있다.
+- 약 100칸을 옮겼다: 지시서·허가·점검·회의·표준서·위험성평가·회사 기준·문의·온보딩·
+  마이페이지·인원 초대·자료실·운영자. 라벨 글자는 그대로라 e2e 의 getByLabel 이 그대로 돈다.
+- 선택자는 전용 클래스 둘(0,2,0). 폼마다 `.account-form label`·`.form-field input` 같은 조상
+  규칙이 있어 태그 선택자로는 순서 싸움이 된다. `.account-form input:not(…):not(…)` 는
+  (0,3,1) 이라 그것만 `:not(.float-field-control)` 을 달았다.
+- 올라간 라벨의 바탕은 아래 절반만 흰색이다. 통째로 흰색이면 종이색 바탕(모니터링·점검
+  필터) 위로 흰 조각이 튀어나왔다.
+- 옮기고 남은 껍데기 CSS(`.wo-field`·`.risk-card-field`·`.invite-field`·`.criteria-form-field`·
+  `.admin-edit-row`, 전부터 안 쓰던 `.std-risk-*`)를 지웠다.
+- 예외: 표준서의 번호 붙은 단계·체크리스트 줄(칸마다 라벨이 없다), 문의 폼 스팸 함정칸,
+  자료실 편집기의 링크 주소 팝오버. 위 줄에 `헌법 3장 예외: 이유` 를 적었다.
+- 헌법 3장에 규칙, `check-constitution.mjs` 에 기계 검사(날 input·textarea·select 금지).
+
 ## 2026-09-24 비상연락처는 한 사람당 한 줄, 플로팅 라벨
 
 사장님 지시. 지시서 허가 항목의 비상연락처를 한 줄에 [이름 1] [휴대폰 1] 로. 전에는

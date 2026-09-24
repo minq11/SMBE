@@ -347,6 +347,7 @@ export function BoardEditor({
             applyLink();
           }}
         >
+          {/* 헌법 3장 예외: 도구줄 아래 한 줄 입력 — 칸과 단추가 한 줄이라 라벨 자리가 없다 */}
           <input
             type="url"
             inputMode="url"

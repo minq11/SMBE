@@ -176,7 +176,50 @@ async function checkFonts() {
   }
 }
 
+// 3장 — 입력칸은 FloatField · FloatTextarea · FloatSelect. 날 <input>/<textarea>/
+// <select> 를 쓰면 라벨 모양이 화면마다 갈린다. 체크박스·라디오·파일·숨김·검색칸은
+// 모양이 달라 예외. 그 밖에 꼭 날 칸이 필요하면 바로 위 줄에 `헌법 3장 예외: 이유`.
+const RAW_FIELD_TYPES_OK = new Set([
+  "checkbox",
+  "radio",
+  "file",
+  "hidden",
+  "search",
+]);
+async function checkRawFields() {
+  const files = (await walk(join(root, "src"))).filter(
+    (f) => f.endsWith(".tsx") && !posix(f).endsWith("ui/float-field.tsx"),
+  );
+  for (const file of files) {
+    const text = await readFile(file, "utf8");
+    const lines = text.split("\n");
+    for (const m of text.matchAll(/<(input|textarea|select)\b/g)) {
+      // 태그 끝(>)까지 — 속성 안의 {…} 에 든 => 는 건너뛴다.
+      let depth = 0;
+      let end = m.index + m[0].length;
+      for (; end < text.length; end++) {
+        const c = text[end];
+        if (c === "{") depth++;
+        else if (c === "}") depth--;
+        else if (c === ">" && depth === 0) break;
+      }
+      const tag = text.slice(m.index, end);
+      const type = tag.match(/\btype=["'{]["'`]?([a-z-]+)/)?.[1];
+      if (m[1] === "input" && type && RAW_FIELD_TYPES_OK.has(type)) continue;
+      const line = text.slice(0, m.index).split("\n").length;
+      const above = lines.slice(Math.max(0, line - 3), line - 1).join("\n");
+      if (above.includes("헌법 3장 예외")) continue;
+      fail(
+        "3장 입력칸",
+        file,
+        `${line}행: <${m[1]}> → FloatField/FloatTextarea/FloatSelect`,
+      );
+    }
+  }
+}
+
 await Promise.all([
+  checkRawFields(),
   checkLoading(),
   checkBrowserDialogs(),
   checkErrorBanner(),
@@ -193,5 +236,5 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(
-  "디자인 헌법 검사 통과 (loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴)",
+  "디자인 헌법 검사 통과 (입력칸 · loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴)",
 );

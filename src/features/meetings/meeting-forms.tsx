@@ -1,6 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { CalendarPlus, CheckCircle2, Save } from "lucide-react";
+import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import {
   openMeetingAction,
   saveMeetingItemAction,
@@ -81,15 +82,15 @@ export function MeetingItemForm({
         />
         이행 확인
       </label>
-      <label className="wo-field">
-        비고
-        <input
-          name="note"
-          maxLength={1000}
-          defaultValue={item.note}
-          disabled={pending}
-        />
-      </label>
+      <FloatField
+        id={`meeting-note-${item.id}`}
+        className="float-field--flush"
+        label="비고"
+        name="note"
+        maxLength={1000}
+        defaultValue={item.note}
+        disabled={pending}
+      />
       <button className="btn-secondary" disabled={pending}>
         <Save size={14} />
         {pending ? "저장 중…" : "저장"}
@@ -140,16 +141,15 @@ export function CompleteMeetingForm({
           </label>
         ))}
       </fieldset>
-      <label className="wo-field">
-        논의 내용 (선택)
-        <textarea
-          name="discussion"
-          maxLength={4000}
-          defaultValue={discussion}
-          disabled={pending}
-          placeholder="확인 위주로 짧게 적어도 됩니다."
-        />
-      </label>
+      <FloatTextarea
+        id="meeting-discussion"
+        label="논의 내용 (선택)"
+        name="discussion"
+        maxLength={4000}
+        defaultValue={discussion}
+        disabled={pending}
+        hint="확인 위주로 짧게 적어도 됩니다."
+      />
       <div className="form-actions sticky-actions">
         <button className="btn-primary" disabled={pending}>
           <CheckCircle2 size={14} />

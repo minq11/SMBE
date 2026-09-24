@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { joinCompanyAction, type FormState } from "./actions";
 import { ContactFields } from "./contact-fields";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField } from "@/components/ui/float-field";
 
 export function JoinForm({
   defaultDisplayName,
@@ -29,34 +30,30 @@ export function JoinForm({
 
       <FormErrorDialog message={state?.error} nonce={state} />
 
-      <div className="form-field">
-        <label htmlFor="display_name">내 이름</label>
-        <input
-          id="display_name"
-          name="display_name"
-          type="text"
-          defaultValue={defaultDisplayName}
-          required
-          maxLength={60}
-        />
-        <span className="hint">회사에 표시될 이름입니다.</span>
-      </div>
+      <FloatField
+        id="display_name"
+        name="display_name"
+        label="내 이름"
+        type="text"
+        defaultValue={defaultDisplayName}
+        required
+        maxLength={60}
+        note="회사에 표시될 이름입니다."
+      />
 
-      <div className="form-field">
-        <label htmlFor="company_code">회사코드</label>
-        <input
-          id="company_code"
-          name="company_code"
-          type="text"
-          required
-          maxLength={32}
-          autoCapitalize="characters"
-          autoCorrect="off"
-          spellCheck={false}
-          placeholder="예: AB2CD3EF"
-          style={{ fontFamily: "ui-monospace, monospace", letterSpacing: 2 }}
-        />
-      </div>
+      <FloatField
+        id="company_code"
+        name="company_code"
+        label="회사코드"
+        type="text"
+        required
+        maxLength={32}
+        autoCapitalize="characters"
+        autoCorrect="off"
+        spellCheck={false}
+        hint="예: AB2CD3EF"
+        style={{ fontFamily: "ui-monospace, monospace", letterSpacing: 2 }}
+      />
 
       <ContactFields defaultEmail={defaultEmail} />
 

@@ -62,7 +62,7 @@
   gap: 10px;
   margin-top: 8px;
 }
-.meeting-item-form .wo-field {
+.meeting-item-form > .float-field {
   flex: 1;
   min-width: 180px;
 }

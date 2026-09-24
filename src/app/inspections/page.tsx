@@ -11,6 +11,7 @@ import {
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { FindingResolution } from "@/features/inspections/inspection-form";
 import { PageHeader } from "@/components/ui/page-header";
+import { FloatField, FloatSelect } from "@/components/ui/float-field";
 import "@/features/work-orders/work-orders.css";
 
 const at = (value: string) =>
@@ -160,19 +161,24 @@ export default async function InspectionsPage({
               <ChevronDown size={14} aria-hidden="true" /> 기간·작업명·상태로
               자세히 찾기
             </summary>
-            <form className="account-form account-panel wo-log-filter">
-              <label>
-                시작일
-                <input
-                  type="date"
-                  name="from"
-                  defaultValue={filters.from ?? ""}
-                />
-              </label>
-              <label>
-                종료일
-                <input type="date" name="to" defaultValue={filters.to ?? ""} />
-              </label>
+            {/* account-form 은 빼 둔다 — 그 입력칸 규칙이 float-field 보다 세다. */}
+            <form className="account-panel wo-log-filter">
+              <FloatField
+                id="inspections-filter-from"
+                className="float-field--flush"
+                label="시작일"
+                type="date"
+                name="from"
+                defaultValue={filters.from ?? ""}
+              />
+              <FloatField
+                id="inspections-filter-to"
+                className="float-field--flush"
+                label="종료일"
+                type="date"
+                name="to"
+                defaultValue={filters.to ?? ""}
+              />
               <label>
                 작업명
                 <input
@@ -184,16 +190,19 @@ export default async function InspectionsPage({
                   enterKeyHint="search"
                 />
               </label>
-              <label>
-                상태
-                <select name="state" defaultValue={state}>
-                  {STATE_OPTIONS.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <FloatSelect
+                id="inspections-filter-state"
+                className="float-field--flush"
+                label="상태"
+                name="state"
+                defaultValue={state}
+              >
+                {STATE_OPTIONS.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </FloatSelect>
               <button className="btn-secondary" type="submit">
                 조회
               </button>

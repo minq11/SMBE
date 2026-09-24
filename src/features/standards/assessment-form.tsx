@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Plus, Save, X } from "lucide-react";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { RiskHelp } from "./section-help";
@@ -33,8 +34,16 @@ export type AssessmentSeed = {
 
 const KIND_OPTIONS: Array<{ key: Kind; label: string; note: string }> = [
   { key: "PERIODIC", label: "정기 위험성평가", note: "매년 1회" },
-  { key: "AD_HOC", label: "수시 위험성평가", note: "설비·물질·인력 변경, 사고 뒤" },
-  { key: "CONTINUOUS", label: "상시 위험성평가", note: "정기 위험성평가를 상시 활동으로" },
+  {
+    key: "AD_HOC",
+    label: "수시 위험성평가",
+    note: "설비·물질·인력 변경, 사고 뒤",
+  },
+  {
+    key: "CONTINUOUS",
+    label: "상시 위험성평가",
+    note: "정기 위험성평가를 상시 활동으로",
+  },
   { key: "FIRST", label: "최초 위험성평가", note: "처음부터 다시" },
 ];
 
@@ -155,26 +164,24 @@ export function AssessmentForm({
             ))}
           </div>
         </div>
-        <div className="form-field">
-          <label htmlFor="asmt-performed-on">위험성평가 실시일</label>
-          <input
-            id="asmt-performed-on"
-            type="date"
-            value={performedOn}
-            onChange={(e) => setPerformedOn(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-field">
-          <label htmlFor="asmt-method">작업방법 요약</label>
-          <textarea
-            id="asmt-method"
-            rows={2}
-            maxLength={4000}
-            value={workMethod}
-            onChange={(e) => setWorkMethod(e.target.value)}
-          />
-        </div>
+        <FloatField
+          className="float-field--flush"
+          id="asmt-performed-on"
+          label="위험성평가 실시일"
+          type="date"
+          value={performedOn}
+          onChange={(e) => setPerformedOn(e.target.value)}
+          required
+        />
+        <FloatTextarea
+          className="float-field--flush"
+          id="asmt-method"
+          label="작업방법 요약"
+          rows={2}
+          maxLength={4000}
+          value={workMethod}
+          onChange={(e) => setWorkMethod(e.target.value)}
+        />
         <details className="std-fold" open={!seeded}>
           <summary>
             사전조사 안전보건정보 {seeded ? "(지난 회차 값 그대로)" : ""}
@@ -188,18 +195,18 @@ export function AssessmentForm({
                 ["history", "재해·아차사고 이력"],
               ] as const
             ).map(([key, label]) => (
-              <div className="form-field" key={key}>
-                <label htmlFor={`asmt-${key}`}>{label}</label>
-                <textarea
-                  id={`asmt-${key}`}
-                  rows={2}
-                  maxLength={2000}
-                  value={safety[key]}
-                  onChange={(e) =>
-                    setSafety({ ...safety, [key]: e.target.value })
-                  }
-                />
-              </div>
+              <FloatTextarea
+                key={key}
+                className="float-field--flush"
+                id={`asmt-${key}`}
+                label={label}
+                rows={2}
+                maxLength={2000}
+                value={safety[key]}
+                onChange={(e) =>
+                  setSafety({ ...safety, [key]: e.target.value })
+                }
+              />
             ))}
           </div>
         </details>
@@ -244,17 +251,16 @@ export function AssessmentForm({
 
       <section className="std-form-section" id="asmt-people">
         <h2>참여자</h2>
-        <div className="form-field">
-          <label htmlFor="asmt-worker-opinion">근로자 의견 (선택)</label>
-          <textarea
-            id="asmt-worker-opinion"
-            rows={2}
-            maxLength={2000}
-            value={workerOpinion}
-            onChange={(e) => setWorkerOpinion(e.target.value)}
-            placeholder="위험요인을 찾을 때 작업자가 말한 것"
-          />
-        </div>
+        <FloatTextarea
+          className="float-field--flush"
+          id="asmt-worker-opinion"
+          label="근로자 의견 (선택)"
+          rows={2}
+          maxLength={2000}
+          value={workerOpinion}
+          onChange={(e) => setWorkerOpinion(e.target.value)}
+          hint="위험요인을 찾을 때 작업자가 말한 것"
+        />
         {members.length === 0 ? (
           <p className="std-form-note">
             구성원이 없어요. 인원관리에서 초대해 주세요.

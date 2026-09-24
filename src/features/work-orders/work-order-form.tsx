@@ -1,14 +1,12 @@
 "use client";
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import {
-  cloneElement,
   useActionState,
   useEffect,
   useId,
   useMemo,
   useState,
   useTransition,
-  type ReactElement,
   type ReactNode,
 } from "react";
 import Link from "next/link";
@@ -22,12 +20,20 @@ import {
   Search,
   X,
 } from "lucide-react";
+import {
+  FloatField,
+  FloatSelect,
+  FloatTextarea,
+} from "@/components/ui/float-field";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { PageHeader } from "@/components/ui/page-header";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { PeoplePicker, PeoplePickerDialog } from "@/components/ui/people-picker";
+import {
+  PeoplePicker,
+  PeoplePickerDialog,
+} from "@/components/ui/people-picker";
 import { PermitFields } from "./permit-fields";
 import { PickerDialog } from "@/components/ui/picker-dialog";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
@@ -76,21 +82,6 @@ export type StandardPickerOption = {
   } | null;
 };
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactElement<{ id?: string }>;
-}) {
-  const id = useId();
-  return (
-    <div className="wo-field">
-      <label htmlFor={id}>{label}</label>
-      {cloneElement(children, { id })}
-    </div>
-  );
-}
 function mergeStandardIntoDraft(
   base: WorkDraft,
   prefill: NonNullable<StandardPickerOption["prefill"]>,
@@ -144,7 +135,10 @@ function openingDraft(
   initialStandardId: string | null,
 ): WorkDraft {
   // 옛 초안(허가 항목이 생기기 전)은 permit 이 없다.
-  const base: WorkDraft = { ...initial, permit: initial.permit ?? blankPermit() };
+  const base: WorkDraft = {
+    ...initial,
+    permit: initial.permit ?? blankPermit(),
+  };
   if (initialStandardId) {
     const s = standards.find((x) => x.id === initialStandardId);
     if (s?.prefill) {
@@ -332,7 +326,9 @@ export function WorkOrderForm({
         : `저장 → 위험성평가 승인(본인) → 위험작업허가 신청까지 진행됩니다. 승인자(${approverName ?? "지정 관리자"})가 허가를 승인하면 발급되고 링크가 전송됩니다.`;
     if (
       !(await confirm(message, {
-        title: data.ptwRequired ? "허가 신청과 함께 발급할까요?" : "지금 발급할까요?",
+        title: data.ptwRequired
+          ? "허가 신청과 함께 발급할까요?"
+          : "지금 발급할까요?",
         confirmLabel: data.ptwRequired && !selfApprove ? "허가 신청" : "발급",
       }))
     )
@@ -394,29 +390,26 @@ export function WorkOrderForm({
         고르세요.
       </p>
       <div className="wo-columns">
-        <Field label="실시 구분">
-          <select
-            value={data.assessmentKind}
-            onChange={(e) =>
-              set(
-                "assessmentKind",
-                e.target.value as WorkDraft["assessmentKind"],
-              )
-            }
-          >
-            <option value="FIRST">최초</option>
-            <option value="PERIODIC">정기</option>
-            <option value="AD_HOC">수시</option>
-            <option value="CONTINUOUS">상시</option>
-          </select>
-        </Field>
-        <Field label="평가 실시일">
-          <input
-            type="date"
-            value={data.performedOn}
-            onChange={(e) => set("performedOn", e.target.value)}
-          />
-        </Field>
+        <FloatSelect
+          id="wo-assessment-kind"
+          label="실시 구분"
+          value={data.assessmentKind}
+          onChange={(e) =>
+            set("assessmentKind", e.target.value as WorkDraft["assessmentKind"])
+          }
+        >
+          <option value="FIRST">최초</option>
+          <option value="PERIODIC">정기</option>
+          <option value="AD_HOC">수시</option>
+          <option value="CONTINUOUS">상시</option>
+        </FloatSelect>
+        <FloatField
+          id="wo-performed-on"
+          label="평가 실시일"
+          type="date"
+          value={data.performedOn}
+          onChange={(e) => set("performedOn", e.target.value)}
+        />
       </div>
       <ol className="risk-card-list">
         {data.risks.map((risk, i) => (
@@ -476,26 +469,27 @@ export function WorkOrderForm({
           ["history", "과거 재해·아차사고 이력"],
         ] as const
       ).map(([key, label]) => (
-        <Field key={key} label={label}>
-          <textarea
-            value={data.safetyInfo[key]}
-            maxLength={4000}
-            onChange={(e) =>
-              set("safetyInfo", { ...data.safetyInfo, [key]: e.target.value })
-            }
-            placeholder="확인한 내용을 적으세요. 해당 없음도 그렇게 적습니다."
-          />
-        </Field>
-      ))}
-      <Field label="근로자 의견 (선택)">
-        <textarea
-          rows={2}
-          maxLength={2000}
-          value={data.workerOpinion}
-          onChange={(e) => set("workerOpinion", e.target.value)}
-          placeholder="위험요인을 찾을 때 작업자가 말한 것"
+        <FloatTextarea
+          key={key}
+          id={"wo-safety-" + key}
+          label={label}
+          value={data.safetyInfo[key]}
+          maxLength={4000}
+          onChange={(e) =>
+            set("safetyInfo", { ...data.safetyInfo, [key]: e.target.value })
+          }
+          hint="확인한 내용을 적으세요. 해당 없음도 그렇게 적습니다."
         />
-      </Field>
+      ))}
+      <FloatTextarea
+        id="wo-worker-opinion"
+        label="근로자 의견 (선택)"
+        rows={2}
+        maxLength={2000}
+        value={data.workerOpinion}
+        onChange={(e) => set("workerOpinion", e.target.value)}
+        hint="위험요인을 찾을 때 작업자가 말한 것"
+      />
       {/* 판단 기준은 회사가 한 번 정하는 값이다. 위험요인 카드의 수준 옆
           물음표가 보여 주고, 저장 시 사본으로 함께 보관된다. */}
       <PeoplePicker
@@ -518,18 +512,19 @@ export function WorkOrderForm({
           <legend>{title}</legend>
           {data[key].map((value, i) => (
             <div className="wo-check-edit" key={i}>
-              <Field label={title + " 항목 " + (i + 1)}>
-                <input
-                  maxLength={500}
-                  value={value}
-                  onChange={(e) =>
-                    set(
-                      key,
-                      data[key].map((v, n) => (n === i ? e.target.value : v)),
-                    )
-                  }
-                />
-              </Field>
+              <FloatField
+                id={`wo-${key}-item-${i}`}
+                className="float-field--flush"
+                label={title + " 항목 " + (i + 1)}
+                maxLength={500}
+                value={value}
+                onChange={(e) =>
+                  set(
+                    key,
+                    data[key].map((v, n) => (n === i ? e.target.value : v)),
+                  )
+                }
+              />
               {data[key].length > 1 && (
                 <button
                   type="button"
@@ -602,11 +597,7 @@ export function WorkOrderForm({
       {description && <p className="wo-editor-lead">{description}</p>}
       <div className="wo-editor-grid">
         <div className="wo-section">
-          <form
-            id={formDomId}
-            action={submitSave}
-            className="wo-editor-form"
-          >
+          <form id={formDomId} action={submitSave} className="wo-editor-form">
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="revision" value={revision} />
             <input type="hidden" name="payload" value={JSON.stringify(data)} />
@@ -617,7 +608,11 @@ export function WorkOrderForm({
                 <h3 className="wo-std-picker-title">이 지시서의 작업표준서</h3>
                 {mode === "standard" && pickedStandard ? (
                   // 고른 표준서 한 장. × 로 취소하면 아래 단추들이 다시 나온다.
-                  <div className="wo-std-picked" role="group" aria-label="선택한 작업표준서">
+                  <div
+                    className="wo-std-picked"
+                    role="group"
+                    aria-label="선택한 작업표준서"
+                  >
                     <span className="wo-std-option-icon is-active">
                       <CheckCircle2 size={16} />
                     </span>
@@ -646,15 +641,15 @@ export function WorkOrderForm({
                   <>
                     {standards.length > 0 ? (
                       <p className="wo-muted">
-                        표준서를 고르면 승인된 위험성평가와 작업방법·체크리스트가
-                        함께 채워집니다. 표준서가 없는 1회성 작업만 &lsquo;표준서
-                        없이 진행&rsquo; 을 쓰세요.
+                        표준서를 고르면 승인된 위험성평가와
+                        작업방법·체크리스트가 함께 채워집니다. 표준서가 없는
+                        1회성 작업만 &lsquo;표준서 없이 진행&rsquo; 을 쓰세요.
                       </p>
                     ) : (
                       <p className="wo-muted">
-                        등록된 작업표준서가 없습니다. 반복 작업이면 표준서를 먼저
-                        만드세요. 1회성이면 표준서 없이 진행하고 위험성평가를
-                        아래에서 직접 적습니다.
+                        등록된 작업표준서가 없습니다. 반복 작업이면 표준서를
+                        먼저 만드세요. 1회성이면 표준서 없이 진행하고
+                        위험성평가를 아래에서 직접 적습니다.
                       </p>
                     )}
                     <div className="wo-std-picker-actions">
@@ -768,30 +763,30 @@ export function WorkOrderForm({
               </div>
               {mode !== "idle" && (
                 <>
-                  <Field label="작업명">
-                    <input
-                      value={data.name}
-                      maxLength={120}
-                      onChange={(e) => set("name", e.target.value)}
-                    />
-                  </Field>
-                  <Field label="작업 단계·방법">
-                    <textarea
-                      rows={6}
-                      value={data.method}
-                      maxLength={4000}
-                      onChange={(e) => set("method", e.target.value)}
-                      placeholder="실제 작업 순서와 방법을 작성하세요."
-                    />
-                  </Field>
-                  <Field label="조 이름 (선택)">
-                    <input
-                      value={data.groupLabel}
-                      maxLength={40}
-                      onChange={(e) => set("groupLabel", e.target.value)}
-                      placeholder="주간조 / 야간조"
-                    />
-                  </Field>
+                  <FloatField
+                    id="wo-name"
+                    label="작업명"
+                    value={data.name}
+                    maxLength={120}
+                    onChange={(e) => set("name", e.target.value)}
+                  />
+                  <FloatTextarea
+                    id="wo-method"
+                    label="작업 단계·방법"
+                    rows={6}
+                    value={data.method}
+                    maxLength={4000}
+                    onChange={(e) => set("method", e.target.value)}
+                    hint="실제 작업 순서와 방법을 작성하세요."
+                  />
+                  <FloatField
+                    id="wo-group-label"
+                    label="조 이름 (선택)"
+                    value={data.groupLabel}
+                    maxLength={40}
+                    onChange={(e) => set("groupLabel", e.target.value)}
+                    hint="주간조 / 야간조"
+                  />
                   <div className="wo-ptw">
                     <Segmented
                       label="위험작업허가(PTW)"
@@ -859,55 +854,53 @@ export function WorkOrderForm({
                     만드세요.
                   </p>
                   <div className="wo-columns">
-                    <Field label="작업 시작일">
-                      <input
-                        type="date"
-                        value={data.startDate}
-                        onChange={(e) => set("startDate", e.target.value)}
-                      />
-                    </Field>
-                    <Field label="작업 종료일">
-                      <input
-                        type="date"
-                        value={data.endDate}
-                        onChange={(e) => set("endDate", e.target.value)}
-                      />
-                    </Field>
-                    <Field label="시작시간">
-                      <input
-                        type="time"
-                        value={data.startTime}
-                        onChange={(e) => set("startTime", e.target.value)}
-                      />
-                    </Field>
-                    <Field label="종료시간">
-                      <input
-                        type="time"
-                        value={data.endTime}
-                        onChange={(e) => set("endTime", e.target.value)}
-                      />
-                    </Field>
+                    <FloatField
+                      id="wo-start-date"
+                      label="작업 시작일"
+                      type="date"
+                      value={data.startDate}
+                      onChange={(e) => set("startDate", e.target.value)}
+                    />
+                    <FloatField
+                      id="wo-end-date"
+                      label="작업 종료일"
+                      type="date"
+                      value={data.endDate}
+                      onChange={(e) => set("endDate", e.target.value)}
+                    />
+                    <FloatField
+                      id="wo-start-time"
+                      label="시작시간"
+                      type="time"
+                      value={data.startTime}
+                      onChange={(e) => set("startTime", e.target.value)}
+                    />
+                    <FloatField
+                      id="wo-end-time"
+                      label="종료시간"
+                      type="time"
+                      value={data.endTime}
+                      onChange={(e) => set("endTime", e.target.value)}
+                    />
                   </div>
                   <p className="wo-muted">
                     하루 작업시간: {Math.floor(minutes / 60)}시간 {minutes % 60}
                     분 · 최대 16시간
                   </p>
-                  <Field label="작업 장소">
-                    <input
-                      value={data.location}
-                      maxLength={200}
-                      onChange={(e) => set("location", e.target.value)}
-                      placeholder={
-                        locations.length > 0
-                          ? "회사 등록 장소 중 선택하거나 직접 입력"
-                          : "직접 입력"
-                      }
-                      list={
-                        locations.length > 0 ? "wo-location-list" : undefined
-                      }
-                      autoComplete="off"
-                    />
-                  </Field>
+                  <FloatField
+                    id="wo-location"
+                    label="작업 장소"
+                    value={data.location}
+                    maxLength={200}
+                    onChange={(e) => set("location", e.target.value)}
+                    hint={
+                      locations.length > 0
+                        ? "회사 등록 장소 중 선택하거나 직접 입력"
+                        : "직접 입력"
+                    }
+                    list={locations.length > 0 ? "wo-location-list" : undefined}
+                    autoComplete="off"
+                  />
                   {locations.length > 0 && (
                     <datalist id="wo-location-list">
                       {locations.map((l) => (

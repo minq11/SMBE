@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { BasicHelp, ChecklistHelp, MethodHelp } from "./section-help";
@@ -146,7 +147,8 @@ export function StandardEditForm({
         <p>
           확정된 판은 고치지 않습니다. 지금 보는 것은 현재 판을 그대로 복사한
           초안입니다. 고친 뒤 확정하면 새 판이 되고, 그 뒤 지시서와 위험성평가는
-          새 판을 가리킵니다. 작업이 크게 바뀌었으면 확정 뒤 수시 위험성평가를 추가하세요.
+          새 판을 가리킵니다. 작업이 크게 바뀌었으면 확정 뒤 수시 위험성평가를
+          추가하세요.
         </p>
       </header>
 
@@ -169,16 +171,15 @@ export function StandardEditForm({
             <BasicHelp />
           </HelpDialog>
         </div>
-        <div className="form-field">
-          <label htmlFor="std-edit-name">표준서명</label>
-          <input
-            id="std-edit-name"
-            value={draft.name}
-            onChange={(e) => setField("name", e.target.value)}
-            required
-            maxLength={120}
-          />
-        </div>
+        <FloatField
+          className="float-field--flush"
+          id="std-edit-name"
+          label="표준서명"
+          value={draft.name}
+          onChange={(e) => setField("name", e.target.value)}
+          required
+          maxLength={120}
+        />
         <div className="std-ptw">
           <label className="std-checkbox">
             <input
@@ -210,6 +211,7 @@ export function StandardEditForm({
               <li key={s.id ?? `new-${i}`}>
                 <div className="std-list-row">
                   <span className="std-list-number">{i + 1}</span>
+                  {/* 헌법 3장 예외: 번호가 붙은 목록 줄이라 칸마다 라벨이 없다 (빈칸 예시가 곧 안내) */}
                   <input
                     type="text"
                     value={s.text}
@@ -292,17 +294,16 @@ export function StandardEditForm({
 
       <section className="std-form-section" id="std-note">
         <h2>개정 사유</h2>
-        <div className="form-field">
-          <label htmlFor="std-change-note">무엇을 왜 바꿨나요</label>
-          <textarea
-            id="std-change-note"
-            rows={2}
-            maxLength={1000}
-            value={draft.change_note}
-            onChange={(e) => setField("change_note", e.target.value)}
-            placeholder="예: 신형 프레스 도입으로 금형 고정 방식 변경"
-          />
-        </div>
+        <FloatTextarea
+          className="float-field--flush"
+          id="std-change-note"
+          label="무엇을 왜 바꿨나요"
+          rows={2}
+          maxLength={1000}
+          value={draft.change_note}
+          onChange={(e) => setField("change_note", e.target.value)}
+          hint="예: 신형 프레스 도입으로 금형 고정 방식 변경"
+        />
       </section>
 
       <div className="std-form-actions sticky-actions">
@@ -346,6 +347,7 @@ function ChecklistBlock({
         {items.map((s, i) => (
           <li key={i}>
             <span className="std-list-number">{i + 1}</span>
+            {/* 헌법 3장 예외: 번호가 붙은 목록 줄이라 칸마다 라벨이 없다 (빈칸 예시가 곧 안내) */}
             <input
               type="text"
               value={s}

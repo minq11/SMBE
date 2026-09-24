@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/shell/admin-shell";
 import { requireOperator } from "@/server/operator";
 import { getCompanyDetail } from "@/server/admin";
 import { CompanyDetailView } from "@/features/admin/company-detail-view";
+import "@/features/admin/admin.css";
 
 export const metadata = { title: "회사 상세 · 심플안전 운영자" };
 

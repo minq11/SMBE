@@ -6,6 +6,11 @@ import {
 } from "@/features/company/risk-criteria";
 import { useEffect, useId } from "react";
 import { Trash2 } from "lucide-react";
+import {
+  FloatField,
+  FloatSelect,
+  FloatTextarea,
+} from "@/components/ui/float-field";
 import { RiskLevelPicker, RiskVerdict } from "./risk-level-picker";
 
 export type RiskCardValue = {
@@ -76,28 +81,26 @@ export function RiskItemCard({
           <Trash2 size={15} />
         </button>
       )}
-      <div className="risk-card-field">
-        <label htmlFor={id + "-hazard"}>유해·위험요인</label>
-        <textarea
-          id={id + "-hazard"}
-          rows={2}
-          maxLength={500}
-          value={value.hazard}
-          onChange={(e) => set("hazard", e.target.value)}
-          placeholder="예: 절단기 회전날에 손이 닿을 수 있음"
-        />
-      </div>
-      <div className="risk-card-field">
-        <label htmlFor={id + "-control"}>현재 안전조치</label>
-        <textarea
-          id={id + "-control"}
-          rows={2}
-          maxLength={1000}
-          value={value.currentControl}
-          onChange={(e) => set("currentControl", e.target.value)}
-          placeholder="지금 하고 있는 것. 예: 방호덮개 있음, 2인 1조. 없으면 '없음'"
-        />
-      </div>
+      <FloatTextarea
+        className="float-field--flush"
+        id={id + "-hazard"}
+        label="유해·위험요인"
+        rows={2}
+        maxLength={500}
+        value={value.hazard}
+        onChange={(e) => set("hazard", e.target.value)}
+        hint="예: 절단기 회전날에 손이 닿을 수 있음"
+      />
+      <FloatTextarea
+        className="float-field--flush"
+        id={id + "-control"}
+        label="현재 안전조치"
+        rows={2}
+        maxLength={1000}
+        value={value.currentControl}
+        onChange={(e) => set("currentControl", e.target.value)}
+        hint="지금 하고 있는 것. 예: 방호덮개 있음, 2인 1조. 없으면 '없음'"
+      />
       <RiskLevelPicker
         value={value.level}
         onChange={(v) =>
@@ -110,47 +113,44 @@ export function RiskItemCard({
         criteria={criteria}
       />
       <RiskVerdict criteria={criteria} level={value.level} phase="initial" />
-      <div className="risk-card-field">
-        <label htmlFor={id + "-measure"}>감소대책</label>
-        <textarea
-          id={id + "-measure"}
-          rows={2}
-          maxLength={1000}
-          value={value.measure}
-          onChange={(e) => set("measure", e.target.value)}
-          placeholder="예: 방호덮개 설치, 절단 시 밀대 사용"
-        />
-      </div>
+      <FloatTextarea
+        className="float-field--flush"
+        id={id + "-measure"}
+        label="감소대책"
+        rows={2}
+        maxLength={1000}
+        value={value.measure}
+        onChange={(e) => set("measure", e.target.value)}
+        hint="예: 방호덮개 설치, 절단 시 밀대 사용"
+      />
       <details
         className="risk-card-more"
         open={needsAction || Boolean(value.responsibleId || value.dueDate)}
       >
         <summary>담당·예정일 {needsAction ? "(조치 필요)" : "(선택)"}</summary>
         <div className="risk-card-more-grid">
-          <div className="risk-card-field">
-            <label htmlFor={id + "-resp"}>조치 담당자</label>
-            <select
-              id={id + "-resp"}
-              value={value.responsibleId}
-              onChange={(e) => set("responsibleId", e.target.value)}
-            >
-              <option value="">선택하세요</option>
-              {members.map((m) => (
-                <option key={m.user_id} value={m.user_id}>
-                  {m.display_name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="risk-card-field">
-            <label htmlFor={id + "-due"}>조치 예정일</label>
-            <input
-              id={id + "-due"}
-              type="date"
-              value={value.dueDate}
-              onChange={(e) => set("dueDate", e.target.value)}
-            />
-          </div>
+          <FloatSelect
+            className="float-field--flush"
+            id={id + "-resp"}
+            label="조치 담당자"
+            value={value.responsibleId}
+            onChange={(e) => set("responsibleId", e.target.value)}
+          >
+            <option value="">선택하세요</option>
+            {members.map((m) => (
+              <option key={m.user_id} value={m.user_id}>
+                {m.display_name}
+              </option>
+            ))}
+          </FloatSelect>
+          <FloatField
+            className="float-field--flush"
+            id={id + "-due"}
+            label="조치 예정일"
+            type="date"
+            value={value.dueDate}
+            onChange={(e) => set("dueDate", e.target.value)}
+          />
         </div>
       </details>
     </fieldset>

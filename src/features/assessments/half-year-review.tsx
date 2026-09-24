@@ -7,6 +7,7 @@ import { recordHalfYearReviewAction } from "./actions";
 import { koDate } from "./model";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatTextarea } from "@/components/ui/float-field";
 
 const halfLabel = (half: 1 | 2) => (half === 1 ? "상반기" : "하반기");
 
@@ -102,16 +103,16 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
         </div>
       ) : (
         <div className="asmt-review-form">
-          <label className="form-field">
-            <span>점검 의견 (선택)</span>
-            <textarea
-              rows={2}
-              maxLength={2000}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="예: 남은 조치 2건은 10월까지 마무리"
-            />
-          </label>
+          <FloatTextarea
+            className="float-field--flush"
+            id="half-year-review-note"
+            label="점검 의견 (선택)"
+            rows={2}
+            maxLength={2000}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            hint="예: 남은 조치 2건은 10월까지 마무리"
+          />
           <div className="asmt-review-actions">
             <button
               type="button"
@@ -141,8 +142,8 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
                   {r.period_year}년 {halfLabel(r.period_half)}
                 </strong>{" "}
                 · {koDate(r.reviewed_at.slice(0, 10))} · {r.reviewed_by_name} ·
-                위험성평가 {r.stats.assessments}건 · 남은 조치 {r.stats.actions_open}
-                건{r.note ? ` · ${r.note}` : ""}
+                위험성평가 {r.stats.assessments}건 · 남은 조치{" "}
+                {r.stats.actions_open}건{r.note ? ` · ${r.note}` : ""}
               </li>
             ))}
           </ul>

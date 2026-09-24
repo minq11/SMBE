@@ -2,6 +2,11 @@
 import { useActionState, useState } from "react";
 import { permitAction, bulkApproveAction } from "./actions";
 import Link from "next/link";
+import {
+  FloatField,
+  FloatSelect,
+  FloatTextarea,
+} from "@/components/ui/float-field";
 import type { PermitInput } from "@/server/ptw-service";
 import type { MemberOption } from "@/features/work-orders/model";
 export function PermitList({
@@ -79,55 +84,57 @@ export function PermitRequestForm({
       <input type="hidden" name="orderId" value={orderId} />
       <input type="hidden" name="revision" value={revision} />
       <input type="hidden" name="payload" value={JSON.stringify(data)} />
-      <label>
-        작업 장소
-        <select
+      <FloatSelect
+        id="permit-request-location"
+        className="float-field--flush"
+        label="작업 장소"
+        required
+        value={data.locationId}
+        onChange={(e) => setData({ ...data, locationId: e.target.value })}
+      >
+        <option value="">등록된 장소 선택</option>
+        {locations.map((l) => (
+          <option key={l.id} value={l.id}>
+            {l.label}
+          </option>
+        ))}
+      </FloatSelect>
+      {(["approverId", "responsibleId"] as const).map((key) => (
+        <FloatSelect
+          key={key}
+          id={"permit-request-" + key}
+          className="float-field--flush"
+          label={key === "approverId" ? "승인자" : "작업책임자"}
           required
-          value={data.locationId}
-          onChange={(e) => setData({ ...data, locationId: e.target.value })}
+          value={data[key]}
+          onChange={(e) => setData({ ...data, [key]: e.target.value })}
         >
-          <option value="">등록된 장소 선택</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.label}
+          <option value="">관리자 선택</option>
+          {managers.map((m) => (
+            <option key={m.user_id} value={m.user_id}>
+              {m.display_name}
             </option>
           ))}
-        </select>
-      </label>
-      {(["approverId", "responsibleId"] as const).map((key) => (
-        <label key={key}>
-          {key === "approverId" ? "승인자" : "작업책임자"}
-          <select
-            required
-            value={data[key]}
-            onChange={(e) => setData({ ...data, [key]: e.target.value })}
-          >
-            <option value="">관리자 선택</option>
-            {managers.map((m) => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.display_name}
-              </option>
-            ))}
-          </select>
-        </label>
+        </FloatSelect>
       ))}
-      <label>
-        대상 설비
-        <input
-          required
-          maxLength={2000}
-          value={data.equipment}
-          onChange={(e) => setData({ ...data, equipment: e.target.value })}
-        />
-      </label>
-      <label>
-        특이사항
-        <textarea
-          maxLength={4000}
-          value={data.notes}
-          onChange={(e) => setData({ ...data, notes: e.target.value })}
-        />
-      </label>
+      <FloatField
+        id="permit-request-equipment"
+        className="float-field--flush"
+        label="대상 설비"
+        required
+        maxLength={2000}
+        hint="예: 용접기, 크레인"
+        value={data.equipment}
+        onChange={(e) => setData({ ...data, equipment: e.target.value })}
+      />
+      <FloatTextarea
+        id="permit-request-notes"
+        className="float-field--flush"
+        label="특이사항"
+        maxLength={4000}
+        value={data.notes}
+        onChange={(e) => setData({ ...data, notes: e.target.value })}
+      />
       <label className="account-confirm">
         <input
           type="checkbox"
@@ -137,61 +144,58 @@ export function PermitRequestForm({
         화기작업
       </label>
       {data.hotWork && (
-        <label>
-          화재감시자
-          <select
-            required
-            value={data.fireWatcherId}
-            onChange={(e) =>
-              setData({ ...data, fireWatcherId: e.target.value })
-            }
-          >
-            <option value="">구성원 선택</option>
-            {members.map((m) => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.display_name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FloatSelect
+          id="permit-request-fire-watcher"
+          className="float-field--flush"
+          label="화재감시자"
+          required
+          value={data.fireWatcherId}
+          onChange={(e) => setData({ ...data, fireWatcherId: e.target.value })}
+        >
+          <option value="">구성원 선택</option>
+          {members.map((m) => (
+            <option key={m.user_id} value={m.user_id}>
+              {m.display_name}
+            </option>
+          ))}
+        </FloatSelect>
       )}
       <h3>비상연락처</h3>
       {data.contacts.map((c, i) => (
         <fieldset key={i}>
           <legend>연락처 {i + 1}</legend>
-          <label>
-            이름
-            <input
-              required
-              maxLength={100}
-              value={c.name}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  contacts: data.contacts.map((v, j) =>
-                    j === i ? { ...v, name: e.target.value } : v,
-                  ),
-                })
-              }
-            />
-          </label>
-          <label>
-            전화번호
-            <input
-              required
-              type="tel"
-              maxLength={30}
-              value={c.phone}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  contacts: data.contacts.map((v, j) =>
-                    j === i ? { ...v, phone: e.target.value } : v,
-                  ),
-                })
-              }
-            />
-          </label>
+          <FloatField
+            id={`permit-contact-${i}-name`}
+            label="이름"
+            required
+            maxLength={100}
+            value={c.name}
+            onChange={(e) =>
+              setData({
+                ...data,
+                contacts: data.contacts.map((v, j) =>
+                  j === i ? { ...v, name: e.target.value } : v,
+                ),
+              })
+            }
+          />
+          <FloatField
+            id={`permit-contact-${i}-phone`}
+            label="전화번호"
+            required
+            type="tel"
+            inputMode="tel"
+            maxLength={30}
+            value={c.phone}
+            onChange={(e) =>
+              setData({
+                ...data,
+                contacts: data.contacts.map((v, j) =>
+                  j === i ? { ...v, phone: e.target.value } : v,
+                ),
+              })
+            }
+          />
           {data.contacts.length > 1 && (
             <button
               type="button"
@@ -269,23 +273,31 @@ export function PermitCommand({
       <input type="hidden" name="orderId" value={orderId} />
       <input type="hidden" name="revision" value={revision} />
       {command === "reject" && (
-        <label>
-          반려 사유
-          <textarea name="value" required maxLength={1000} />
-        </label>
+        <FloatTextarea
+          id="permit-reject-reason"
+          className="float-field--flush"
+          label="반려 사유"
+          name="value"
+          required
+          maxLength={1000}
+        />
       )}
       {command === "reassign" && (
-        <label>
-          새 승인자
-          <select name="value" required>
-            <option value="">관리자 선택</option>
-            {members.map((m) => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.display_name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FloatSelect
+          id="permit-reassign-approver"
+          className="float-field--flush"
+          label="새 승인자"
+          name="value"
+          required
+          defaultValue=""
+        >
+          <option value="">관리자 선택</option>
+          {members.map((m) => (
+            <option key={m.user_id} value={m.user_id}>
+              {m.display_name}
+            </option>
+          ))}
+        </FloatSelect>
       )}
       <button disabled={pending} className="secondary-button">
         {pending ? "처리 중…" : labels[command]}
@@ -300,10 +312,15 @@ export function LocationForm() {
   return (
     <form action={action} className="account-form">
       <input type="hidden" name="command" value="location" />
-      <label>
-        장소 이름
-        <input name="name" required maxLength={200} />
-      </label>
+      <FloatField
+        id="location-name"
+        className="float-field--flush"
+        label="장소 이름"
+        name="name"
+        required
+        maxLength={200}
+        hint="예: 용접장"
+      />
       <button className="primary-button" disabled={pending}>
         장소 등록
       </button>

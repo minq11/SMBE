@@ -1,5 +1,6 @@
 "use client";
 import { useActionState } from "react";
+import { FloatField } from "@/components/ui/float-field";
 import { saveProfileAction, leaveCompanyAction } from "./actions";
 export function ProfileForm({
   name,
@@ -18,38 +19,38 @@ export function ProfileForm({
   return (
     <form action={action} className="account-form">
       <input type="hidden" name="version" value={state?.version ?? version} />
-      <label>
-        이름
-        <input
-          name="displayName"
-          autoComplete="name"
-          defaultValue={name}
-          required
-          maxLength={60}
-        />
-      </label>
-      <label>
-        알림 받을 메일 <span className="account-muted">(선택)</span>
-        <input
-          type="email"
-          name="contactEmail"
-          autoComplete="email"
-          defaultValue={contactEmail ?? loginEmail ?? ""}
-          maxLength={254}
-          placeholder="example@company.com"
-        />
-      </label>
-      <label>
-        전화번호 <span className="account-muted">(선택)</span>
-        <input
-          type="tel"
-          name="phone"
-          autoComplete="tel"
-          defaultValue={phone ?? ""}
-          maxLength={30}
-          placeholder="010-1234-5678"
-        />
-      </label>
+      <FloatField
+        id="profile-name"
+        name="displayName"
+        label="이름"
+        autoComplete="name"
+        defaultValue={name}
+        required
+        maxLength={60}
+        className="float-field--flush"
+      />
+      <FloatField
+        id="profile-contact-email"
+        type="email"
+        name="contactEmail"
+        label="알림 받을 메일 (선택)"
+        autoComplete="email"
+        defaultValue={contactEmail ?? loginEmail ?? ""}
+        maxLength={254}
+        hint="example@company.com"
+        className="float-field--flush"
+      />
+      <FloatField
+        id="profile-phone"
+        type="tel"
+        name="phone"
+        label="전화번호 (선택)"
+        autoComplete="tel"
+        defaultValue={phone ?? ""}
+        maxLength={30}
+        hint="010-1234-5678"
+        className="float-field--flush"
+      />
       <p className="account-muted">
         이름 변경은 앞으로 표시되는 정보에 적용됩니다. 기존 지시서·점검 기록의
         이름은 유지됩니다. 작업지시 링크·승인 요청·회의 알림은 위 메일로 가고,

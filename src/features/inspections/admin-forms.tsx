@@ -1,10 +1,8 @@
 "use client";
 import { useActionState, useState } from "react";
 import { History, Save, UserPlus } from "lucide-react";
-import {
-  backfillInspectionAction,
-  reviseInspectionAction,
-} from "./actions";
+import { backfillInspectionAction, reviseInspectionAction } from "./actions";
+import { FloatSelect, FloatTextarea } from "@/components/ui/float-field";
 import { RESULT_LABEL } from "./model";
 
 type Member = { user_id: string; display_name: string };
@@ -84,33 +82,36 @@ export function BackfillForm({
         남고, 저장 시각은 지금 시각으로 기록됩니다. 과거 현장 입력으로 보이게
         만들 수 없습니다.
       </p>
-      <label className="wo-field">
-        누구의 점검인가
-        <select name="inspectorId" required defaultValue="" disabled={pending}>
-          <option value="" disabled>
-            대상 선택
+      <FloatSelect
+        id="bf-inspector"
+        label="누구의 점검인가"
+        name="inspectorId"
+        required
+        defaultValue=""
+        disabled={pending}
+      >
+        <option value="" disabled>
+          대상 선택
+        </option>
+        {candidates.map((m) => (
+          <option key={m.user_id} value={m.user_id}>
+            {m.display_name}
           </option>
-          {candidates.map((m) => (
-            <option key={m.user_id} value={m.user_id}>
-              {m.display_name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="wo-field">
-        점검 구분
-        <select
-          value={category}
-          disabled={pending}
-          onChange={(e) => {
-            setCategory(e.target.value as "TBM" | "DURING_WORK");
-            setAnswers({});
-          }}
-        >
-          <option value="TBM">TBM · 작업 전</option>
-          <option value="DURING_WORK">작업 중</option>
-        </select>
-      </label>
+        ))}
+      </FloatSelect>
+      <FloatSelect
+        id="bf-category"
+        label="점검 구분"
+        value={category}
+        disabled={pending}
+        onChange={(e) => {
+          setCategory(e.target.value as "TBM" | "DURING_WORK");
+          setAnswers({});
+        }}
+      >
+        <option value="TBM">TBM · 작업 전</option>
+        <option value="DURING_WORK">작업 중</option>
+      </FloatSelect>
       {items.map((c, index) => (
         <fieldset className="wo-risk" key={c.id}>
           <legend>
@@ -133,33 +134,31 @@ export function BackfillForm({
               </label>
             ))}
           </div>
-          <label className="wo-field">
-            코멘트
-            <textarea
-              name={"bf-comment-" + c.id}
-              maxLength={2000}
-              disabled={pending}
-            />
-          </label>
+          <FloatTextarea
+            id={"bf-comment-" + c.id}
+            label="코멘트"
+            name={"bf-comment-" + c.id}
+            maxLength={2000}
+            disabled={pending}
+          />
           {answers[c.id] === "FAIL" && (
-            <label className="wo-field">
-              알림 대상 관리자
-              <select
-                name={"bf-manager-" + c.id}
-                defaultValue=""
-                required
-                disabled={pending}
-              >
-                <option value="" disabled>
-                  담당 관리자 선택
+            <FloatSelect
+              id={"bf-manager-" + c.id}
+              label="알림 대상 관리자"
+              name={"bf-manager-" + c.id}
+              defaultValue=""
+              required
+              disabled={pending}
+            >
+              <option value="" disabled>
+                담당 관리자 선택
+              </option>
+              {managers.map((m) => (
+                <option key={m.user_id} value={m.user_id}>
+                  {m.display_name}
                 </option>
-                {managers.map((m) => (
-                  <option key={m.user_id} value={m.user_id}>
-                    {m.display_name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              ))}
+            </FloatSelect>
           )}
         </fieldset>
       ))}
@@ -238,47 +237,44 @@ export function ReviseForm({
               </label>
             ))}
           </div>
-          <label className="wo-field">
-            코멘트
-            <textarea
-              name={"rv-comment-" + r.result_id}
-              maxLength={2000}
-              defaultValue={r.comment}
-              disabled={pending}
-            />
-          </label>
+          <FloatTextarea
+            id={"rv-comment-" + r.result_id}
+            label="코멘트"
+            name={"rv-comment-" + r.result_id}
+            maxLength={2000}
+            defaultValue={r.comment}
+            disabled={pending}
+          />
           {answers[r.result_id] === "FAIL" && (
-            <label className="wo-field">
-              알림 대상 관리자
-              <select
-                name={"rv-manager-" + r.result_id}
-                defaultValue={r.assigned_manager_id ?? ""}
-                required
-                disabled={pending}
-              >
-                <option value="" disabled>
-                  담당 관리자 선택
+            <FloatSelect
+              id={"rv-manager-" + r.result_id}
+              label="알림 대상 관리자"
+              name={"rv-manager-" + r.result_id}
+              defaultValue={r.assigned_manager_id ?? ""}
+              required
+              disabled={pending}
+            >
+              <option value="" disabled>
+                담당 관리자 선택
+              </option>
+              {managers.map((m) => (
+                <option key={m.user_id} value={m.user_id}>
+                  {m.display_name}
                 </option>
-                {managers.map((m) => (
-                  <option key={m.user_id} value={m.user_id}>
-                    {m.display_name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              ))}
+            </FloatSelect>
           )}
         </fieldset>
       ))}
-      <label className="wo-field">
-        수정 사유 (필수)
-        <textarea
-          name="reason"
-          required
-          maxLength={500}
-          disabled={pending}
-          placeholder="예) 현장에서 항목을 잘못 눌러 적합으로 저장됨"
-        />
-      </label>
+      <FloatTextarea
+        id={"rv-reason-" + inspectionId}
+        label="수정 사유 (필수)"
+        name="reason"
+        required
+        maxLength={500}
+        disabled={pending}
+        hint="예) 현장에서 항목을 잘못 눌러 적합으로 저장됨"
+      />
       <button className="btn-primary" disabled={pending}>
         <Save size={14} />
         {pending ? "저장 중…" : "수정하고 이력 남기기"}

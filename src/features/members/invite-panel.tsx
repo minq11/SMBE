@@ -10,6 +10,7 @@ import {
   type ActionState,
 } from "./actions";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField, FloatSelect } from "@/components/ui/float-field";
 
 const ROLE_LABEL: Record<MembershipRole, string> = {
   MANAGER_SUPERVISOR: "관리감독자",
@@ -83,34 +84,38 @@ export function InvitePanel({
       {open && (
         <form action={formAction} className="invite-form">
           <div className="invite-form-row">
-            <label className="form-field invite-field">
-              <span>대상 역할</span>
-              <select name="target_role" defaultValue="WORKER" required>
-                <option value="WORKER">작업자</option>
-                <option value="MANAGER_SAFETY">안전관리자</option>
-                {managerRole === "MANAGER_SUPERVISOR" && (
-                  <option value="MANAGER_SUPERVISOR">관리감독자</option>
-                )}
-              </select>
-            </label>
-            <label className="form-field invite-field">
-              <span>이메일 (선택)</span>
-              <input
-                type="email"
-                name="contact_email"
-                placeholder="worker@example.com"
-                autoComplete="off"
-              />
-            </label>
-            <label className="form-field invite-field">
-              <span>전화번호 (선택)</span>
-              <input
-                type="tel"
-                name="contact_phone"
-                placeholder="010-0000-0000"
-                autoComplete="off"
-              />
-            </label>
+            <FloatSelect
+              id="invite-target-role"
+              name="target_role"
+              label="대상 역할"
+              defaultValue="WORKER"
+              required
+              className="float-field--flush"
+            >
+              <option value="WORKER">작업자</option>
+              <option value="MANAGER_SAFETY">안전관리자</option>
+              {managerRole === "MANAGER_SUPERVISOR" && (
+                <option value="MANAGER_SUPERVISOR">관리감독자</option>
+              )}
+            </FloatSelect>
+            <FloatField
+              id="invite-contact-email"
+              type="email"
+              name="contact_email"
+              label="이메일 (선택)"
+              hint="worker@example.com"
+              autoComplete="off"
+              className="float-field--flush"
+            />
+            <FloatField
+              id="invite-contact-phone"
+              type="tel"
+              name="contact_phone"
+              label="전화번호 (선택)"
+              hint="010-0000-0000"
+              autoComplete="off"
+              className="float-field--flush"
+            />
           </div>
           <p className="invite-form-hint">
             이메일을 입력하면 초대 메일이 자동으로 발송됩니다. 전화번호만 입력한

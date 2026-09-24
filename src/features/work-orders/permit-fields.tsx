@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
-import { FloatField } from "@/components/ui/float-field";
+import {
+  FloatField,
+  FloatSelect,
+  FloatTextarea,
+} from "@/components/ui/float-field";
 import { Segmented } from "@/features/assessments/risk-level-picker";
 import type { MemberOption, PermitDraft } from "./model";
 import type { LocationOption } from "./work-order-form";
@@ -48,83 +52,75 @@ export function PermitFields({
         관리자가 승인할 때 발급됩니다.
       </p>
       <div className="wo-columns">
-        <div className="wo-field">
-          <label htmlFor="wo-permit-approver">허가 승인자</label>
-          <select
-            id="wo-permit-approver"
-            value={value.approverId}
-            onChange={(e) => set("approverId", e.target.value)}
-          >
-            <option value="">관리자 선택</option>
-            {managers.map((m) => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.display_name}
-                {m.user_id === userId ? " (본인)" : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="wo-field">
-          <label htmlFor="wo-permit-responsible">작업책임자</label>
-          <select
-            id="wo-permit-responsible"
-            value={value.responsibleId}
-            onChange={(e) => set("responsibleId", e.target.value)}
-          >
-            <option value="">관리자 선택</option>
-            {managers.map((m) => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.display_name}
-                {m.user_id === userId ? " (본인)" : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div className="wo-field">
-        <label htmlFor="wo-permit-location">허가 장소 (등록된 장소)</label>
-        <select
-          id="wo-permit-location"
-          value={value.locationId}
-          onChange={(e) => set("locationId", e.target.value)}
+        <FloatSelect
+          id="wo-permit-approver"
+          label="허가 승인자"
+          value={value.approverId}
+          onChange={(e) => set("approverId", e.target.value)}
         >
-          <option value="">등록된 장소 선택</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.label}
+          <option value="">관리자 선택</option>
+          {managers.map((m) => (
+            <option key={m.user_id} value={m.user_id}>
+              {m.display_name}
+              {m.user_id === userId ? " (본인)" : ""}
             </option>
           ))}
-        </select>
-        {locations.length === 0 && (
-          <span className="wo-muted">
-            등록된 장소가 없습니다.{" "}
-            <Link href="/company/locations" target="_blank" rel="noopener">
-              장소 등록 (새 탭)
-            </Link>{" "}
-            뒤 임시저장하고 다시 여세요.
-          </span>
-        )}
+        </FloatSelect>
+        <FloatSelect
+          id="wo-permit-responsible"
+          label="작업책임자"
+          value={value.responsibleId}
+          onChange={(e) => set("responsibleId", e.target.value)}
+        >
+          <option value="">관리자 선택</option>
+          {managers.map((m) => (
+            <option key={m.user_id} value={m.user_id}>
+              {m.display_name}
+              {m.user_id === userId ? " (본인)" : ""}
+            </option>
+          ))}
+        </FloatSelect>
       </div>
-      <div className="wo-field">
-        <label htmlFor="wo-permit-equipment">대상 설비</label>
-        <input
-          id="wo-permit-equipment"
-          maxLength={2000}
-          value={value.equipment}
-          onChange={(e) => set("equipment", e.target.value)}
-          placeholder="예: 용접기, 크레인"
-        />
-      </div>
-      <div className="wo-field">
-        <label htmlFor="wo-permit-notes">특이사항 (선택)</label>
-        <textarea
-          id="wo-permit-notes"
-          rows={2}
-          maxLength={4000}
-          value={value.notes}
-          onChange={(e) => set("notes", e.target.value)}
-        />
-      </div>
+      <FloatSelect
+        id="wo-permit-location"
+        label="허가 장소 (등록된 장소)"
+        value={value.locationId}
+        onChange={(e) => set("locationId", e.target.value)}
+        note={
+          locations.length === 0 && (
+            <>
+              등록된 장소가 없습니다.{" "}
+              <Link href="/company/locations" target="_blank" rel="noopener">
+                장소 등록 (새 탭)
+              </Link>{" "}
+              뒤 임시저장하고 다시 여세요.
+            </>
+          )
+        }
+      >
+        <option value="">등록된 장소 선택</option>
+        {locations.map((l) => (
+          <option key={l.id} value={l.id}>
+            {l.label}
+          </option>
+        ))}
+      </FloatSelect>
+      <FloatField
+        id="wo-permit-equipment"
+        label="대상 설비"
+        hint="예: 용접기, 크레인"
+        maxLength={2000}
+        value={value.equipment}
+        onChange={(e) => set("equipment", e.target.value)}
+      />
+      <FloatTextarea
+        id="wo-permit-notes"
+        label="특이사항 (선택)"
+        rows={2}
+        maxLength={4000}
+        value={value.notes}
+        onChange={(e) => set("notes", e.target.value)}
+      />
       <Segmented
         label="화기작업"
         value={value.hotWork ? "yes" : "no"}
@@ -132,21 +128,19 @@ export function PermitFields({
         onChange={(v) => set("hotWork", v === "yes")}
       />
       {value.hotWork && (
-        <div className="wo-field">
-          <label htmlFor="wo-permit-firewatcher">화재감시자</label>
-          <select
-            id="wo-permit-firewatcher"
-            value={value.fireWatcherId}
-            onChange={(e) => set("fireWatcherId", e.target.value)}
-          >
-            <option value="">구성원 선택</option>
-            {members.map((m) => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.display_name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <FloatSelect
+          id="wo-permit-firewatcher"
+          label="화재감시자"
+          value={value.fireWatcherId}
+          onChange={(e) => set("fireWatcherId", e.target.value)}
+        >
+          <option value="">구성원 선택</option>
+          {members.map((m) => (
+            <option key={m.user_id} value={m.user_id}>
+              {m.display_name}
+            </option>
+          ))}
+        </FloatSelect>
       )}
       <fieldset className="wo-permit-contacts">
         <legend>비상연락처</legend>
@@ -155,6 +149,7 @@ export function PermitFields({
           // 나란히 선다. "비상연락처" 는 묶음 제목이 말하므로 칸 라벨은 짧게.
           <div key={i} className="wo-contact-row">
             <FloatField
+              className="float-field--flush"
               id={`wo-permit-contact-name-${i}`}
               label={`이름 ${i + 1}`}
               maxLength={100}
@@ -163,6 +158,7 @@ export function PermitFields({
               autoComplete="off"
             />
             <FloatField
+              className="float-field--flush"
               id={`wo-permit-contact-phone-${i}`}
               label={`휴대폰 ${i + 1}`}
               type="tel"

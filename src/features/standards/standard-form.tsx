@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { PtwHelp } from "./ptw-help";
@@ -247,18 +248,17 @@ export function StandardForm({
             <BasicHelp />
           </HelpDialog>
         </div>
-        <div className="form-field">
-          <label htmlFor="std-name">표준서명</label>
-          <input
-            id="std-name"
-            name="name-display"
-            value={draft.name}
-            onChange={(e) => setField("name", e.target.value)}
-            required
-            maxLength={120}
-            placeholder="예: 프레스 설비 정기 점검"
-          />
-        </div>
+        <FloatField
+          className="float-field--flush"
+          id="std-name"
+          label="표준서명"
+          name="name-display"
+          value={draft.name}
+          onChange={(e) => setField("name", e.target.value)}
+          required
+          maxLength={120}
+          hint="예: 프레스 설비 정기 점검"
+        />
         <div className="std-ptw">
           <label className="std-checkbox">
             <input
@@ -284,23 +284,23 @@ export function StandardForm({
             <MethodHelp />
           </HelpDialog>
         </div>
-        <div className="form-field">
-          <label htmlFor="std-method">작업방법 요약</label>
-          <textarea
-            id="std-method"
-            rows={3}
-            maxLength={4000}
-            value={draft.work_method}
-            onChange={(e) => setField("work_method", e.target.value)}
-            placeholder="이 작업의 전체 개요를 짧게 요약합니다."
-          />
-        </div>
+        <FloatTextarea
+          className="float-field--flush"
+          id="std-method"
+          label="작업방법 요약"
+          rows={3}
+          maxLength={4000}
+          value={draft.work_method}
+          onChange={(e) => setField("work_method", e.target.value)}
+          hint="이 작업의 전체 개요를 짧게 요약합니다."
+        />
         <div className="form-field">
           <label>작업 단계</label>
           <ol className="std-list">
             {draft.steps.map((s, i) => (
               <li key={i}>
                 <span className="std-list-number">{i + 1}</span>
+                {/* 헌법 3장 예외: 번호가 붙은 목록 줄이라 칸마다 라벨이 없다 (빈칸 예시가 곧 안내) */}
                 <input
                   type="text"
                   value={s}
@@ -382,16 +382,15 @@ export function StandardForm({
           정기·수시 위험성평가는 표준서 상세 화면에서 회차별로 추가합니다.
         </p>
 
-        <div className="form-field">
-          <label htmlFor="std-performed-on">위험성평가 실시일</label>
-          <input
-            id="std-performed-on"
-            type="date"
-            value={draft.performed_on}
-            onChange={(e) => setField("performed_on", e.target.value)}
-            required
-          />
-        </div>
+        <FloatField
+          className="float-field--flush"
+          id="std-performed-on"
+          label="위험성평가 실시일"
+          type="date"
+          value={draft.performed_on}
+          onChange={(e) => setField("performed_on", e.target.value)}
+          required
+        />
 
         {/* 판단 기준은 회사가 한 번 정하는 값이다. 여기서 다시 쓰지 않고, 위험
             요인 카드의 수준 옆 물음표가 보여 준다. */}
@@ -404,36 +403,35 @@ export function StandardForm({
               ["history", "재해·아차사고 정보"],
             ] as const
           ).map(([key, label]) => (
-            <div className="form-field" key={key}>
-              <label htmlFor={`std-safety-${key}`}>{label}</label>
-              <textarea
-                id={`std-safety-${key}`}
-                rows={2}
-                maxLength={2000}
-                value={draft.safety_info[key]}
-                onChange={(e) =>
-                  setField("safety_info", {
-                    ...draft.safety_info,
-                    [key]: e.target.value,
-                  })
-                }
-                placeholder="해당사항이 없으면 '해당없음'으로 적어주세요."
-              />
-            </div>
+            <FloatTextarea
+              key={key}
+              className="float-field--flush"
+              id={`std-safety-${key}`}
+              label={label}
+              rows={2}
+              maxLength={2000}
+              value={draft.safety_info[key]}
+              onChange={(e) =>
+                setField("safety_info", {
+                  ...draft.safety_info,
+                  [key]: e.target.value,
+                })
+              }
+              hint="해당사항이 없으면 '해당없음'으로 적어주세요."
+            />
           ))}
         </div>
 
-        <div className="form-field">
-          <label htmlFor="std-worker-opinion">근로자 의견 (선택)</label>
-          <textarea
-            id="std-worker-opinion"
-            rows={2}
-            maxLength={2000}
-            value={draft.worker_opinion}
-            onChange={(e) => setField("worker_opinion", e.target.value)}
-            placeholder="위험요인을 찾을 때 작업자가 말한 것. 예: 야간엔 조명이 어둡다"
-          />
-        </div>
+        <FloatTextarea
+          className="float-field--flush"
+          id="std-worker-opinion"
+          label="근로자 의견 (선택)"
+          rows={2}
+          maxLength={2000}
+          value={draft.worker_opinion}
+          onChange={(e) => setField("worker_opinion", e.target.value)}
+          hint="위험요인을 찾을 때 작업자가 말한 것. 예: 야간엔 조명이 어둡다"
+        />
 
         <div className="form-field">
           <label>위험요인 · 감소대책</label>
@@ -528,6 +526,7 @@ function ChecklistBlock({
         {items.map((s, i) => (
           <li key={i}>
             <span className="std-list-number">{i + 1}</span>
+            {/* 헌법 3장 예외: 번호가 붙은 목록 줄이라 칸마다 라벨이 없다 (빈칸 예시가 곧 안내) */}
             <input
               type="text"
               value={s}

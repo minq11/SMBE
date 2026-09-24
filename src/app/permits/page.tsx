@@ -8,6 +8,7 @@ import { seoulToday, type WorkDraft } from "@/features/work-orders/model";
 import "@/features/profile/profile.css";
 import "@/features/ptw/ptw.css";
 import { PageHeader } from "@/components/ui/page-header";
+import { FloatField, FloatSelect } from "@/components/ui/float-field";
 export default async function PermitsPage({
   searchParams,
 }: {
@@ -62,33 +63,44 @@ export default async function PermitsPage({
       </nav>
       <form className="account-form account-panel">
         <input type="hidden" name="tab" value={filters.tab ?? ""} />
-        <label>
-          상태
-          <select name="status" defaultValue={filters.status ?? ""}>
-            <option value="">전체</option>
-            {Object.entries(PERMIT_LABEL).map(([v, l]) => (
-              <option key={v} value={v}>
-                {l}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          기간 시작
-          <input type="date" name="from" defaultValue={filters.from} />
-        </label>
-        <label>
-          기간 종료
-          <input type="date" name="to" defaultValue={filters.to} />
-        </label>
-        <label>
-          신청자
-          <input
-            name="applicant"
-            defaultValue={filters.applicant}
-            maxLength={100}
-          />
-        </label>
+        <FloatSelect
+          id="permits-filter-status"
+          className="float-field--flush"
+          label="상태"
+          name="status"
+          defaultValue={filters.status ?? ""}
+        >
+          <option value="">전체</option>
+          {Object.entries(PERMIT_LABEL).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </FloatSelect>
+        <FloatField
+          id="permits-filter-from"
+          className="float-field--flush"
+          label="기간 시작"
+          type="date"
+          name="from"
+          defaultValue={filters.from}
+        />
+        <FloatField
+          id="permits-filter-to"
+          className="float-field--flush"
+          label="기간 종료"
+          type="date"
+          name="to"
+          defaultValue={filters.to}
+        />
+        <FloatField
+          id="permits-filter-applicant"
+          className="float-field--flush"
+          label="신청자"
+          name="applicant"
+          defaultValue={filters.applicant}
+          maxLength={100}
+        />
         <label className="account-confirm">
           <input
             type="checkbox"

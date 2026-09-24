@@ -303,22 +303,6 @@
   gap: 12px;
   margin-top: 10px;
 }
-.asmt-action-form .form-field {
-  margin: 0;
-}
-.asmt-action-form .form-field span {
-  font-size: 13px;
-  font-weight: 600;
-}
-.asmt-action-form textarea {
-  width: 100%;
-  min-height: 72px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  font: inherit;
-  background: var(--surface);
-}
 .asmt-action-form .form-error {
   margin: 0;
 }
@@ -451,16 +435,6 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-.asmt-review-form .form-field textarea {
-  width: 100%;
-  min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  font: inherit;
-  font-size: 16px;
 }
 .asmt-review-actions {
   display: flex;

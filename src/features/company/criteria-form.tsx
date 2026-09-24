@@ -12,6 +12,7 @@ import { CriteriaList } from "./criteria-list";
 import { Segmented } from "@/features/assessments/risk-level-picker";
 import { LEVEL_LABEL } from "@/features/assessments/model";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatTextarea } from "@/components/ui/float-field";
 
 const ACCEPTANCE_OPTIONS = [
   { value: "ACCEPTABLE", label: ACCEPTANCE_LABEL.ACCEPTABLE, tone: "ok" },
@@ -66,16 +67,16 @@ export function RiskCriteriaForm({
               {LEVEL_LABEL[c.level]}
             </span>
           </legend>
-          <label className="criteria-form-field">
-            <span>정의</span>
-            <textarea
-              name={"description_" + c.level}
-              defaultValue={c.description}
-              rows={2}
-              maxLength={MAX_DESCRIPTION_LENGTH}
-              required
-            />
-          </label>
+          <FloatTextarea
+            className="float-field--flush"
+            id={"criteria-description-" + c.level}
+            label="정의"
+            name={"description_" + c.level}
+            defaultValue={c.description}
+            rows={2}
+            maxLength={MAX_DESCRIPTION_LENGTH}
+            required
+          />
           <Segmented
             label="허용 여부"
             name={"acceptance_" + c.level}

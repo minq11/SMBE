@@ -3,6 +3,7 @@ import { useActionState, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, CheckCheck, CheckCircle2, Save, X } from "lucide-react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { FloatSelect, FloatTextarea } from "@/components/ui/float-field";
 import { uploadImage } from "@/features/attachments/upload";
 import { submitInspectionAction, resolveFindingAction } from "./actions";
 import { RESULT_LABEL, type InspectionInput } from "./model";
@@ -222,14 +223,13 @@ export function InspectionForm({
                 </label>
               ))}
             </div>
-            <label className="wo-field">
-              코멘트
-              <textarea
-                name={"comment-" + c.id}
-                maxLength={2000}
-                disabled={pending}
-              />
-            </label>
+            <FloatTextarea
+              id={"inspection-comment-" + c.id}
+              label="코멘트"
+              name={"comment-" + c.id}
+              maxLength={2000}
+              disabled={pending}
+            />
             {canAttach && (
               <div className="inspection-photos">
                 <label className="attach-uploader-cta">
@@ -278,24 +278,23 @@ export function InspectionForm({
               </div>
             )}
             {answers[c.id] === "FAIL" && (
-              <label className="wo-field">
-                알림 대상 관리자
-                <select
-                  name={"manager-" + c.id}
-                  defaultValue=""
-                  required
-                  disabled={pending}
-                >
-                  <option value="" disabled>
-                    담당 관리자 선택
+              <FloatSelect
+                id={"inspection-manager-" + c.id}
+                label="알림 대상 관리자"
+                name={"manager-" + c.id}
+                defaultValue=""
+                required
+                disabled={pending}
+              >
+                <option value="" disabled>
+                  담당 관리자 선택
+                </option>
+                {managers.map((m) => (
+                  <option value={m.user_id} key={m.user_id}>
+                    {m.display_name}
                   </option>
-                  {managers.map((m) => (
-                    <option value={m.user_id} key={m.user_id}>
-                      {m.display_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                ))}
+              </FloatSelect>
             )}
           </fieldset>
         ))}
@@ -353,15 +352,14 @@ export function FindingResolution({ id }: { id: string }) {
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />
-      <label className="wo-field">
-        조치 내용
-        <textarea
-          name="resolution"
-          required
-          maxLength={4000}
-          disabled={pending}
-        />
-      </label>
+      <FloatTextarea
+        id={"finding-resolution-" + id}
+        label="조치 내용"
+        name="resolution"
+        required
+        maxLength={4000}
+        disabled={pending}
+      />
       {state?.error && (
         <p role="alert" className="wo-error">
           {state.error}

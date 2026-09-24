@@ -10,6 +10,7 @@ import { RiskLevelPicker, RiskVerdict } from "./risk-level-picker";
 import { recordRiskActionAction } from "./actions";
 import { LEVEL_LABEL, koDate } from "./model";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import {
   postAllowable,
   type RiskCriteria,
@@ -164,24 +165,24 @@ function ActionBlock({
       )}
       {open && (
         <div className="asmt-action-form">
-          <label className="form-field">
-            <span>실제 조치 내용</span>
-            <textarea
-              rows={2}
-              maxLength={1000}
-              value={action}
-              onChange={(e) => setAction(e.target.value)}
-              placeholder="무엇을 어떻게 했는지"
-            />
-          </label>
-          <label className="form-field">
-            <span>완료일</span>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </label>
+          <FloatTextarea
+            className="float-field--flush"
+            id={`asmt-action-${item.id}`}
+            label="실제 조치 내용"
+            rows={2}
+            maxLength={1000}
+            value={action}
+            onChange={(e) => setAction(e.target.value)}
+            hint="무엇을 어떻게 했는지"
+          />
+          <FloatField
+            className="float-field--flush"
+            id={`asmt-action-date-${item.id}`}
+            label="완료일"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
           <RiskLevelPicker
             label="조치 후 위험성 수준"
             value={level}
@@ -196,16 +197,16 @@ function ActionBlock({
             phase="post"
           />
           {allowable === false && (
-            <label className="form-field">
-              <span>추가 대책 (허용 수준이 될 때까지)</span>
-              <textarea
-                rows={2}
-                maxLength={1000}
-                value={followUp}
-                onChange={(e) => setFollowUp(e.target.value)}
-                placeholder="다음에 무엇을 더 할지, 언제까지"
-              />
-            </label>
+            <FloatTextarea
+              className="float-field--flush"
+              id={`asmt-follow-up-${item.id}`}
+              label="추가 대책 (허용 수준이 될 때까지)"
+              rows={2}
+              maxLength={1000}
+              value={followUp}
+              onChange={(e) => setFollowUp(e.target.value)}
+              hint="다음에 무엇을 더 할지, 언제까지"
+            />
           )}
           <FormErrorDialog message={error} nonce={error} />
           <div className="asmt-action-buttons">

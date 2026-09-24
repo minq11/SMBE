@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createCompanyAction, type FormState } from "./actions";
 import { ContactFields } from "./contact-fields";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField, FloatSelect } from "@/components/ui/float-field";
 
 const bands = [
   { value: "UNDER_5", label: "5인 미만" },
@@ -36,88 +37,76 @@ export function CreateCompanyForm({
 
       <FormErrorDialog message={state?.error} nonce={state} />
 
-      <div className="form-field">
-        <label htmlFor="display_name">내 이름</label>
-        <input
-          id="display_name"
-          name="display_name"
-          type="text"
-          defaultValue={defaultDisplayName}
-          required
-          maxLength={60}
-        />
-        <span className="hint">회사 내에서 표시될 이름입니다.</span>
-      </div>
+      <FloatField
+        id="display_name"
+        name="display_name"
+        label="내 이름"
+        type="text"
+        defaultValue={defaultDisplayName}
+        required
+        maxLength={60}
+        note="회사 내에서 표시될 이름입니다."
+      />
 
-      <div className="form-field">
-        <label htmlFor="name">회사명</label>
-        <input id="name" name="name" type="text" required maxLength={80} />
-      </div>
+      <FloatField
+        id="name"
+        name="name"
+        label="회사명"
+        type="text"
+        required
+        maxLength={80}
+      />
 
-      <div className="form-field">
-        <label htmlFor="business_type">업종</label>
-        <input
-          id="business_type"
-          name="business_type"
-          type="text"
-          placeholder="예: 금속가공, 물류, 건설"
-          required
-          maxLength={80}
-        />
-        <span className="hint">
-          업종별 표준서·체크리스트 템플릿 제공에 사용됩니다.
-        </span>
-      </div>
+      <FloatField
+        id="business_type"
+        name="business_type"
+        label="업종"
+        type="text"
+        hint="예: 금속가공, 물류, 건설"
+        required
+        maxLength={80}
+        note="업종별 표준서·체크리스트 템플릿 제공에 사용됩니다."
+      />
 
-      <div className="form-field">
-        <label htmlFor="initial_employee_size_band">초기 인원규모</label>
-        <select
-          id="initial_employee_size_band"
-          name="initial_employee_size_band"
-          required
-          defaultValue=""
-        >
-          <option value="" disabled>
-            선택하세요
+      <FloatSelect
+        id="initial_employee_size_band"
+        name="initial_employee_size_band"
+        label="초기 인원규모"
+        required
+        defaultValue=""
+        note="법률 안내 개인화에 사용되며, 실제 등록 인원과 별도로 표시됩니다."
+      >
+        <option value="" disabled>
+          선택하세요
+        </option>
+        {bands.map((band) => (
+          <option key={band.value} value={band.value}>
+            {band.label}
           </option>
-          {bands.map((band) => (
-            <option key={band.value} value={band.value}>
-              {band.label}
-            </option>
-          ))}
-        </select>
-        <span className="hint">
-          법률 안내 개인화에 사용되며, 실제 등록 인원과 별도로 표시됩니다.
-        </span>
-      </div>
+        ))}
+      </FloatSelect>
 
-      <div className="form-field">
-        <label htmlFor="business_start_date">사업개시일</label>
-        <input
-          id="business_start_date"
-          name="business_start_date"
-          type="date"
-          required
-        />
-        <span className="hint">최초 위험성평가 기한 안내에 사용됩니다.</span>
-      </div>
+      <FloatField
+        id="business_start_date"
+        name="business_start_date"
+        label="사업개시일"
+        type="date"
+        required
+        note="최초 위험성평가 기한 안내에 사용됩니다."
+      />
 
-      <div className="form-field">
-        <label htmlFor="expected_annual_revenue_manwon">
-          예상 연매출액 (만원)
-        </label>
-        <input
-          id="expected_annual_revenue_manwon"
-          name="expected_annual_revenue_manwon"
-          type="number"
-          inputMode="numeric"
-          min={0}
-          step={1}
-          required
-          placeholder="예: 50000  (= 5억)"
-        />
-        <span className="hint">만원 단위로 입력하세요. 예: 1억 원 → 10000</span>
-      </div>
+      <FloatField
+        id="expected_annual_revenue_manwon"
+        name="expected_annual_revenue_manwon"
+        label="예상 연매출액 (만원)"
+        type="number"
+        inputMode="numeric"
+        min={0}
+        step={1}
+        required
+        hint="예: 50000  (= 5억)"
+        note="만원 단위로 입력하세요. 예: 1억 원 → 10000"
+      />
 
       <ContactFields defaultEmail={defaultEmail} />
 

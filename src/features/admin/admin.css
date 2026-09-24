@@ -1,0 +1,16 @@
+/* 운영자 화면의 한 칸 + 단추 줄. 단추를 칸 높이(48px)에 맞춰 위쪽에 붙인다 —
+   칸 아래 안내(note)가 있어도 단추가 가운데로 내려앉지 않는다. */
+.admin-field-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 520px;
+}
+.admin-field-row .float-field {
+  flex: 1 1 auto;
+}
+.admin-field-row > button {
+  flex: none;
+  min-height: 48px;
+  white-space: nowrap;
+}

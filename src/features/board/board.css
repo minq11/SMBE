@@ -363,20 +363,8 @@
   margin-top: 10px;
   padding-left: 32px;
 }
-.board-popup-dates label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12.5px;
-  font-weight: 600;
-}
-.board-popup-dates input {
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  font: inherit;
-  background: var(--surface);
+.board-popup-dates .float-field {
+  flex: 1 1 180px;
 }
 .board-popup-dates .hint {
   flex-basis: 100%;
@@ -471,8 +459,5 @@
   }
   .board-popup-dates {
     padding-left: 0;
-  }
-  .board-popup-dates label {
-    flex: 1;
   }
 }

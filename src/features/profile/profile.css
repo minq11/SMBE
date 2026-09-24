@@ -49,7 +49,9 @@
   font-size: 14px;
   font-weight: 600;
 }
-.account-form input:not([type="checkbox"]):not([type="hidden"]) {
+/* 떠 있는 라벨 칸(.float-field-control)은 제 규칙을 쓴다 — 이 선택자가 더 세다. */
+.account-form
+  input:not([type="checkbox"]):not([type="hidden"]):not(.float-field-control) {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -119,7 +121,10 @@
   .account-panel {
     padding: 20px 16px;
   }
-  .account-form input:not([type="checkbox"]):not([type="hidden"]) {
+  .account-form
+    input:not([type="checkbox"]):not([type="hidden"]):not(
+      .float-field-control
+    ) {
     font-size: 16px;
   }
 }

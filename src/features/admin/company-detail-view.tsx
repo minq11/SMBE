@@ -11,6 +11,7 @@ import {
 } from "./actions";
 import { PAID_PLANS, seatCapFor, planName } from "@/features/billing/plans";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField, FloatSelect } from "@/components/ui/float-field";
 
 const SIZE_LABEL: Record<CompanyDetail["initial_employee_size_band"], string> =
   {
@@ -94,20 +95,23 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
           구간을 올려야 인원 등록이 다시 열립니다. 상향하면 결제 기준일이 오늘로
           갱신됩니다.
         </p>
-        <form action={planFormAction} className="admin-inline-form">
+        <form action={planFormAction} className="admin-field-row">
           <input type="hidden" name="company_id" value={company.company_id} />
-          <label>
-            <span>구간</span>
-            <select name="plan" defaultValue={company.plan ?? "FREE"}>
-              <option value="FREE">무료</option>
-              {PAID_PLANS.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.name} (~{plan.maxHeadcount}인)
-                </option>
-              ))}
-              <option value="ENTERPRISE">개별 협의 (상한 없음)</option>
-            </select>
-          </label>
+          <FloatSelect
+            id="admin-plan"
+            name="plan"
+            label="구간"
+            defaultValue={company.plan ?? "FREE"}
+            className="float-field--flush"
+          >
+            <option value="FREE">무료</option>
+            {PAID_PLANS.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name} (~{plan.maxHeadcount}인)
+              </option>
+            ))}
+            <option value="ENTERPRISE">개별 협의 (상한 없음)</option>
+          </FloatSelect>
           <button type="submit" className="btn-primary" disabled={planPending}>
             <Save size={13} /> {planPending ? "변경 중…" : "변경"}
           </button>
@@ -170,21 +174,20 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
         <h2>운영자 조정</h2>
         <form action={formAction} className="admin-edit-form">
           <input type="hidden" name="company_id" value={company.company_id} />
-          <div className="admin-edit-row">
-            <label htmlFor="free_limit">무료 인원 한도</label>
-            <input
+          <div className="admin-field-row">
+            <FloatField
               id="free_limit"
               name="free_limit"
+              label="무료 인원 한도"
               type="number"
               min={0}
               max={10000}
               value={freeLimit}
               onChange={(e) => setFreeLimit(e.target.value)}
               disabled={pending}
+              note="기본 10명. 100인 이상 개별 협의 시 이 값으로 조정."
+              className="float-field--flush"
             />
-            <span className="admin-edit-hint">
-              기본 10명. 100인 이상 개별 협의 시 이 값으로 조정.
-            </span>
             <button type="submit" className="primary-button" disabled={pending}>
               <Save size={13} />
               {pending ? "저장 중..." : "저장"}

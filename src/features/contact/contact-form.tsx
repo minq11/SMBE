@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Mail, X } from "lucide-react";
 import { submitContactAction, type ContactState } from "./actions";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 
 export function ContactForm() {
   const [state, formAction, pending] = useActionState<ContactState, FormData>(
@@ -46,45 +47,39 @@ export function ContactForm() {
 
       <FormErrorDialog message={state?.error} nonce={state} />
 
-      <div className="form-field">
-        <label htmlFor="name">이름</label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          maxLength={60}
-          autoComplete="name"
-          defaultValue={prev?.name ?? ""}
-        />
-      </div>
+      <FloatField
+        id="name"
+        name="name"
+        label="이름"
+        type="text"
+        required
+        maxLength={60}
+        autoComplete="name"
+        defaultValue={prev?.name ?? ""}
+      />
 
-      <div className="form-field">
-        <label htmlFor="email">이메일</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          maxLength={180}
-          autoComplete="email"
-          placeholder="you@example.com"
-          defaultValue={prev?.email ?? ""}
-        />
-        <span className="hint">답장을 받을 이메일 주소입니다.</span>
-      </div>
+      <FloatField
+        id="email"
+        name="email"
+        label="이메일"
+        type="email"
+        required
+        maxLength={180}
+        autoComplete="email"
+        hint="you@example.com"
+        note="답장을 받을 이메일 주소입니다."
+        defaultValue={prev?.email ?? ""}
+      />
 
-      <div className="form-field">
-        <label htmlFor="company">회사 (선택)</label>
-        <input
-          id="company"
-          name="company"
-          type="text"
-          maxLength={80}
-          autoComplete="organization"
-          defaultValue={prev?.company ?? ""}
-        />
-      </div>
+      <FloatField
+        id="company"
+        name="company"
+        label="회사 (선택)"
+        type="text"
+        maxLength={80}
+        autoComplete="organization"
+        defaultValue={prev?.company ?? ""}
+      />
 
       <fieldset className="form-field">
         <legend>문의 유형</legend>
@@ -119,23 +114,22 @@ export function ContactForm() {
         </div>
       </fieldset>
 
-      <div className="form-field">
-        <label htmlFor="message">메시지</label>
-        <textarea
-          id="message"
-          name="message"
-          rows={6}
-          required
-          maxLength={2000}
-          placeholder="회사 규모·업종·기대하는 기능 등을 자유롭게 적어 주세요."
-          defaultValue={prev?.message ?? ""}
-        />
-      </div>
+      <FloatTextarea
+        id="message"
+        name="message"
+        label="메시지"
+        rows={6}
+        required
+        maxLength={2000}
+        hint="회사 규모·업종·기대하는 기능 등을 자유롭게 적어 주세요."
+        defaultValue={prev?.message ?? ""}
+      />
 
       {/* honeypot: 봇 방지용, 사용자에게는 안 보이게 */}
       <div className="honeypot" aria-hidden="true">
         <label>
           Website
+          {/* 헌법 3장 예외: 봇 함정 칸이라 사람 눈에 보이지 않는다 */}
           <input type="text" name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>

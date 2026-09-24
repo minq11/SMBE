@@ -5,6 +5,7 @@ import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { inspectionMonitor } from "@/server/inspection-service";
 import { OrderShell } from "@/features/work-orders/order-shell";
+import { FloatField, FloatSelect } from "@/components/ui/float-field";
 import { PageHeader } from "@/components/ui/page-header";
 import { PERMIT_LABEL } from "@/features/ptw/model";
 import "@/features/work-orders/work-orders.css";
@@ -66,21 +67,28 @@ export default async function MonitoringPage({
       ) : (
         <>
           <form className="account-form account-panel wo-log-filter">
-            <label>
-              날짜
-              <input type="date" name="date" defaultValue={data.date} />
-            </label>
-            <label>
-              장소
-              <select name="location" defaultValue={filters.location ?? ""}>
-                <option value="">전체</option>
-                {data.locations.map((place) => (
-                  <option key={place} value={place}>
-                    {place}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <FloatField
+              id="monitor-filter-date"
+              className="float-field--flush"
+              label="날짜"
+              type="date"
+              name="date"
+              defaultValue={data.date}
+            />
+            <FloatSelect
+              id="monitor-filter-location"
+              className="float-field--flush"
+              label="장소"
+              name="location"
+              defaultValue={filters.location ?? ""}
+            >
+              <option value="">전체</option>
+              {data.locations.map((place) => (
+                <option key={place} value={place}>
+                  {place}
+                </option>
+              ))}
+            </FloatSelect>
             <button className="btn-secondary" type="submit">
               조회
             </button>
