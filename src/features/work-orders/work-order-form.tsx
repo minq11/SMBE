@@ -19,6 +19,8 @@ import {
   Save,
   Send,
   ShieldCheck,
+  Search,
+  X,
 } from "lucide-react";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { HelpDialog } from "@/components/ui/help-dialog";
@@ -26,6 +28,7 @@ import { JumpNav } from "@/components/ui/jump-nav";
 import { PageHeader } from "@/components/ui/page-header";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PeoplePicker } from "@/components/ui/people-picker";
+import { PickerDialog } from "@/components/ui/picker-dialog";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { Segmented } from "@/features/assessments/risk-level-picker";
 import { PtwHelp } from "@/features/standards/ptw-help";
@@ -342,6 +345,13 @@ export function WorkOrderForm({
   const minutes = shiftMinutes(data.startTime, data.endTime);
   const pickedStandard =
     standardId != null ? standards.find((s) => s.id === standardId) : null;
+  // 표준서가 많아질 수 있어 목록은 팝업에서 고른다 ("작업표준서 찾기").
+  const [stdOpen, setStdOpen] = useState(false);
+  const [stdQuery, setStdQuery] = useState("");
+  const stdNeedle = stdQuery.trim().toLowerCase();
+  const visibleStandards = stdNeedle
+    ? standards.filter((s) => s.name.toLowerCase().includes(stdNeedle))
+    : standards;
   // 위험성평가·체크리스트 본문. 표준서 모드에서는 접힘 안에, 간이평가는 그대로.
   const riskBody = (
     <>
@@ -567,93 +577,139 @@ export function WorkOrderForm({
               <h2>작업 정보</h2>
               <div className="wo-std-picker">
                 <h3 className="wo-std-picker-title">이 지시서의 작업표준서</h3>
-                {standards.length > 0 ? (
-                  <>
-                    <p className="wo-muted">
-                      표준서를 고르면 승인된 위험성평가와 작업방법·체크리스트가
-                      함께 채워집니다. 표준서가 없는 1회성 작업만 &lsquo;표준서
-                      없이 진행&rsquo; 을 쓰세요.
-                    </p>
-                    <ul className="wo-std-list" role="list">
-                      {standards.map((s) => {
-                        const active = standardId === s.id;
-                        return (
-                          <li key={s.id}>
-                            <button
-                              type="button"
-                              className={`wo-std-option${active ? " is-active" : ""}`}
-                              onClick={() => applyStandard(s.id)}
-                            >
-                              <span className="wo-std-option-icon">
-                                {active ? (
-                                  <CheckCircle2 size={16} />
-                                ) : (
-                                  <ShieldCheck size={16} />
-                                )}
-                              </span>
-                              <span className="wo-std-option-copy">
-                                <strong>{s.name}</strong>
-                                <small>
-                                  현재 승인 평가 포함
-                                  {s.prefill?.revisionNo
-                                    ? ` · ${s.prefill.revisionNo}판`
-                                    : ""}
-                                  {s.ptw_required ? " · PTW 필요" : ""}
-                                </small>
-                              </span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </>
-                ) : (
-                  <p className="wo-muted">
-                    등록된 작업표준서가 없습니다. 반복 작업이면 표준서를 먼저
-                    만드세요. 1회성이면 표준서 없이 진행하고 위험성평가를
-                    아래에서 직접 적습니다.
-                  </p>
-                )}
-                <div className="wo-std-picker-actions">
-                  <Link
-                    href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
-                    className={
-                      standards.length === 0 ? "primary-button" : "ghost-button"
-                    }
-                    prefetch={false}
-                  >
-                    <Plus size={13} /> 새 표준서 만들기
-                  </Link>
-                  <button
-                    type="button"
-                    className={`ghost-button wo-std-exception${mode === "simple" ? " is-on" : ""}`}
-                    onClick={chooseSimple}
-                    aria-pressed={mode === "simple"}
-                  >
-                    <FileText size={13} /> 표준서 없이 진행 (예외)
-                  </button>
-                  {mode !== "idle" && (
+                {mode === "standard" && pickedStandard ? (
+                  // 고른 표준서 한 장. × 로 취소하면 아래 단추들이 다시 나온다.
+                  <div className="wo-std-picked" role="group" aria-label="선택한 작업표준서">
+                    <span className="wo-std-option-icon is-active">
+                      <CheckCircle2 size={16} />
+                    </span>
+                    <span className="wo-std-option-copy">
+                      <strong>
+                        {pickedStandard.name}
+                        {pickedStandard.prefill?.revisionNo
+                          ? ` ${pickedStandard.prefill.revisionNo}판`
+                          : ""}
+                      </strong>
+                      <small>
+                        현재 승인 위험성평가 포함
+                        {pickedStandard.ptw_required ? " · PTW 필요" : ""}
+                      </small>
+                    </span>
                     <button
                       type="button"
-                      className="text-button"
+                      className="wo-std-clear"
+                      aria-label="표준서 선택 취소"
                       onClick={resetChoice}
                     >
-                      다시 선택
+                      <X size={18} />
                     </button>
-                  )}
-                </div>
-                {mode === "standard" && pickedStandard && (
-                  <p className="wo-std-note">
-                    <ShieldCheck size={13} />{" "}
-                    <strong>{pickedStandard.name}</strong>
-                    {pickedStandard.prefill?.revisionNo
-                      ? ` ${pickedStandard.prefill.revisionNo}판`
-                      : ""}{" "}
-                    의 위험성평가·작업방법·체크리스트가 아래에 채워졌습니다. 이번
-                    작업에 맞게 고칠 수 있고, 발급 시 표준서 사본이 함께
-                    남습니다.
-                  </p>
+                  </div>
+                ) : (
+                  <>
+                    {standards.length > 0 ? (
+                      <p className="wo-muted">
+                        표준서를 고르면 승인된 위험성평가와 작업방법·체크리스트가
+                        함께 채워집니다. 표준서가 없는 1회성 작업만 &lsquo;표준서
+                        없이 진행&rsquo; 을 쓰세요.
+                      </p>
+                    ) : (
+                      <p className="wo-muted">
+                        등록된 작업표준서가 없습니다. 반복 작업이면 표준서를 먼저
+                        만드세요. 1회성이면 표준서 없이 진행하고 위험성평가를
+                        아래에서 직접 적습니다.
+                      </p>
+                    )}
+                    <div className="wo-std-picker-actions">
+                      {standards.length > 0 && (
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() => setStdOpen(true)}
+                        >
+                          <Search size={13} /> 작업표준서 찾기
+                        </button>
+                      )}
+                      <Link
+                        href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
+                        className={
+                          standards.length === 0
+                            ? "primary-button"
+                            : "ghost-button"
+                        }
+                        prefetch={false}
+                      >
+                        <Plus size={13} /> 새 표준서 만들기
+                      </Link>
+                      <button
+                        type="button"
+                        className={`ghost-button wo-std-exception${mode === "simple" ? " is-on" : ""}`}
+                        onClick={chooseSimple}
+                        aria-pressed={mode === "simple"}
+                      >
+                        <FileText size={13} /> 표준서 없이 진행 (예외)
+                      </button>
+                      {mode === "simple" && (
+                        <button
+                          type="button"
+                          className="text-button"
+                          onClick={resetChoice}
+                        >
+                          다시 선택
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
+                <PickerDialog
+                  open={stdOpen}
+                  onClose={() => setStdOpen(false)}
+                  title="작업표준서 찾기"
+                  query={stdQuery}
+                  onQuery={setStdQuery}
+                  searchLabel="표준서 이름 검색"
+                  searchPlaceholder="표준서 이름 검색"
+                >
+                  <ul className="wo-std-list wo-std-list--dialog" role="list">
+                    {visibleStandards.map((s) => {
+                      const active = standardId === s.id;
+                      return (
+                        <li key={s.id}>
+                          <button
+                            type="button"
+                            className={`wo-std-option${active ? " is-active" : ""}`}
+                            onClick={() => {
+                              applyStandard(s.id);
+                              setStdOpen(false);
+                            }}
+                          >
+                            <span className="wo-std-option-icon">
+                              {active ? (
+                                <CheckCircle2 size={16} />
+                              ) : (
+                                <ShieldCheck size={16} />
+                              )}
+                            </span>
+                            <span className="wo-std-option-copy">
+                              <strong>{s.name}</strong>
+                              <small>
+                                현재 승인 위험성평가 포함
+                                {s.prefill?.revisionNo
+                                  ? ` · ${s.prefill.revisionNo}판`
+                                  : ""}
+                                {s.ptw_required ? " · PTW 필요" : ""}
+                              </small>
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                    {visibleStandards.length === 0 && (
+                      <li className="wo-muted">
+                        &lsquo;{stdQuery}&rsquo; 에 맞는 표준서가 없습니다.
+                      </li>
+                    )}
+                  </ul>
+                </PickerDialog>
                 {mode === "simple" && (
                   <p className="wo-std-note wo-std-note--warn">
                     <FileText size={13} /> 표준서 없이 진행합니다. 위험성평가를

@@ -1,6 +1,6 @@
 "use client";
 import type { RiskCriteria } from "@/features/company/risk-criteria";
-import { PeoplePicker } from "@/components/ui/people-picker";
+import { PeoplePickerDialog } from "@/components/ui/people-picker";
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
@@ -484,7 +484,7 @@ export function StandardForm({
           <p className="std-form-note">
             실제 위험성평가에 참여한 근로자를 선택합니다.
           </p>
-          <PeoplePicker
+          <PeoplePickerDialog
             legend="위험성평가 참여자"
             members={members}
             selected={draft.participant_user_ids}

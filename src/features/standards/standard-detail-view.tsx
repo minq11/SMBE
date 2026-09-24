@@ -174,7 +174,7 @@ export function StandardDetailView({
                 href={`/standards/${detail.standard_id}/assessments/new`}
                 className="ghost-button"
               >
-                <Plus size={13} /> 위험성평가 회차 추가
+                <Plus size={13} /> 위험성평가 다시하기
               </Link>
               <button
                 type="button"

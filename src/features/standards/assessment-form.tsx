@@ -8,7 +8,7 @@ import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { RiskHelp } from "./section-help";
-import { PeoplePicker } from "@/components/ui/people-picker";
+import { PeoplePickerDialog } from "@/components/ui/people-picker";
 import {
   RiskItemCard,
   blankRiskCard,
@@ -42,7 +42,7 @@ const todayKst = () =>
   new Date(new Date().getTime() + 9 * 3600_000).toISOString().slice(0, 10);
 
 /**
- * 평가 회차 추가. 세 덩어리 — 실시 정보, 위험요인·대책, 참여자.
+ * 위험성평가 다시하기(회차 추가). 세 덩어리 — 실시 정보, 위험요인·대책, 참여자.
  *
  * 정기평가는 지난 평가를 다시 보는 일이다. 그래서 지난 회차의 위험요인·대책·
  * 안전보건정보를 그대로 채워 두고, 바뀐 것만 고치게 한다. 판단 기준은 회사가
@@ -118,7 +118,7 @@ export function AssessmentForm({
   return (
     <form action={formAction} onSubmit={handleSubmit} className="std-form">
       <header className="std-form-hero">
-        <h1>{standardName} · 위험성평가 회차 추가</h1>
+        <h1>{standardName} · 위험성평가 다시하기</h1>
         <p>
           {seeded
             ? "지난 회차의 위험요인과 대책이 채워져 있습니다. 조치가 끝난 항목은 조치 후 판정입니다. 바뀐 것만 고치고 저장하세요."
@@ -260,7 +260,7 @@ export function AssessmentForm({
             구성원이 없어요. 인원관리에서 초대해 주세요.
           </p>
         ) : (
-          <PeoplePicker
+          <PeoplePickerDialog
             legend="위험성평가에 실제 참여한 근로자"
             members={members}
             selected={participants}

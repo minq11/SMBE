@@ -164,9 +164,23 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await page.getByLabel("감소대책", { exact: true }).fill("방호덮개 설치");
     for (const label of ["설비", "물질", "주변 환경", "재해·아차사고 정보"])
       await page.getByLabel(label, { exact: true }).fill("확인함");
+    // 인원은 팝업에서 고른다. 고른 사람은 칩으로 남고 × 로 뺀다.
+    await page.getByRole("button", { name: /^인원 선택/ }).click();
     await page
+      .getByRole("dialog")
       .getByRole("checkbox", { name: "표준 작업자", exact: true })
       .check();
+    await page.screenshot({ path: testInfo.outputPath("people-dialog.png") });
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "완료", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "표준 작업자 빼기" }),
+    ).toBeVisible();
+    await page
+      .locator(".people-picker--dialog")
+      .screenshot({ path: testInfo.outputPath("people-picked.png") });
     await page
       .getByRole("button", { name: "표준서 저장 · 확정", exact: true })
       .click();
@@ -244,7 +258,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
 
     // 3) 평가 회차 추가 — 지난 회차 값이 채워져 있고, 저장하면 회차가 둘
     await page
-      .getByRole("link", { name: "위험성평가 회차 추가", exact: true })
+      .getByRole("link", { name: "위험성평가 다시하기", exact: true })
       .click();
     await expect(page).toHaveURL(new RegExp(id + "/assessments/new$"));
     await expect(page.getByLabel("유해·위험요인", { exact: true })).toHaveValue(
@@ -253,9 +267,15 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.locator(".risk-verdict").first()).toContainText(
       "중 → 허용 불가 · 조치 필요",
     );
+    await page.getByRole("button", { name: /^인원 선택/ }).click();
     await page
+      .getByRole("dialog")
       .getByRole("checkbox", { name: "표준 작업자", exact: true })
       .check();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "완료", exact: true })
+      .click();
     // 지난 회차의 현재 안전조치도 채워져 온다.
     await expect(page.getByLabel("현재 안전조치", { exact: true })).toHaveValue(
       "작업자 주의, 장갑 착용",
@@ -294,6 +314,25 @@ test("standard: create, edit, add a seeded assessment round", async ({
     // 6) 지시서는 표준서를 고를 때 그 판을 보여 주고 초안에 들고 간다.
     await page.goto(`/work-orders/new?standard=${id}`);
     await expect(page.locator("#main")).toContainText(
+      "프레스 금형 교체 (개정) 2판",
+    );
+    // 고른 동안은 새 표준서·표준서 없이 단추가 없다. × 로 취소하면 돌아온다.
+    await expect(
+      page.getByRole("button", { name: /표준서 없이 진행/ }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "표준서 선택 취소" }).click();
+    await expect(
+      page.getByRole("button", { name: /표준서 없이 진행/ }),
+    ).toBeVisible();
+    // 팝업에서 이름으로 찾아 다시 고른다.
+    await page.getByRole("button", { name: "작업표준서 찾기" }).click();
+    await page.getByRole("dialog").getByLabel("표준서 이름 검색").fill("금형");
+    await page.screenshot({ path: testInfo.outputPath("std-finder.png") });
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: /프레스 금형 교체/ })
+      .click();
+    await expect(page.locator(".wo-std-picked")).toContainText(
       "프레스 금형 교체 (개정) 2판",
     );
     await page.screenshot({

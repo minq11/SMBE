@@ -1,6 +1,7 @@
 "use client";
 import { useId, useState } from "react";
-import { Check, Search } from "lucide-react";
+import { Check, Search, UserPlus, X } from "lucide-react";
+import { PickerDialog } from "./picker-dialog";
 
 export type Person = { user_id: string; display_name: string };
 
@@ -76,6 +77,106 @@ export function PeoplePicker({
           <p className="wo-muted">&lsquo;{q}&rsquo; 에 맞는 이름이 없습니다.</p>
         )}
       </div>
+    </fieldset>
+  );
+}
+
+/**
+ * 인원이 많아질 때의 사람 고르기 — 고른 사람만 화면에 칩으로 남고, 목록은 팝업에서.
+ * 칩의 × 로 뺀다. 팝업 속 목록은 위와 같은 체크 칩이라 테스트·스크린리더에는
+ * 체크박스로 보인다. 표준서 신규 작성·위험성평가 다시하기가 쓴다 (사장님 결정).
+ */
+export function PeoplePickerDialog({
+  legend,
+  members,
+  selected,
+  onToggle,
+  buttonLabel = "인원 선택",
+}: {
+  legend: string;
+  members: Person[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  buttonLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const needle = q.trim().toLowerCase();
+  const visible = needle
+    ? members.filter((m) => m.display_name.toLowerCase().includes(needle))
+    : members;
+  const chosen = members.filter((m) => selected.includes(m.user_id));
+  return (
+    <fieldset className="people-picker people-picker--dialog">
+      <legend>{legend}</legend>
+      {members.length === 0 ? (
+        <p className="wo-muted">구성원이 없습니다. 인원관리에서 초대하세요.</p>
+      ) : (
+        <div className="people-picker-summary">
+          {chosen.map((m) => (
+            <span key={m.user_id} className="people-chip is-on people-chip--picked">
+              <span className="people-chip-mark" aria-hidden="true">
+                <Check size={14} />
+              </span>
+              {m.display_name}
+              <button
+                type="button"
+                className="people-chip-remove"
+                aria-label={`${m.display_name} 빼기`}
+                onClick={() => onToggle(m.user_id)}
+              >
+                <X size={14} />
+              </button>
+            </span>
+          ))}
+          {chosen.length === 0 && (
+            <p className="wo-muted">아직 고른 사람이 없습니다.</p>
+          )}
+          <button
+            type="button"
+            className="ghost-button people-picker-open"
+            onClick={() => setOpen(true)}
+          >
+            <UserPlus size={14} /> {buttonLabel}
+            {chosen.length > 0 ? ` (${chosen.length}명)` : ""}
+          </button>
+        </div>
+      )}
+      <PickerDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={legend}
+        query={q}
+        onQuery={setQ}
+        searchLabel={legend + " 이름 검색"}
+      >
+        <div className="people-picker-chips">
+          {visible.map((m) => {
+            const on = selected.includes(m.user_id);
+            return (
+              <label
+                key={m.user_id}
+                className={`people-chip${on ? " is-on" : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={on}
+                  onChange={() => onToggle(m.user_id)}
+                />
+                <span className="people-chip-mark" aria-hidden="true">
+                  {on && <Check size={14} />}
+                </span>
+                {m.display_name}
+              </label>
+            );
+          })}
+          {members.length > 0 && visible.length === 0 && (
+            <p className="wo-muted">
+              &lsquo;{q}&rsquo; 에 맞는 이름이 없습니다.
+            </p>
+          )}
+        </div>
+      </PickerDialog>
     </fieldset>
   );
 }
