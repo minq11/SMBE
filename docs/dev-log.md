@@ -21,7 +21,7 @@
   개정본은 기존 표준서를 복사하여 만들어지며, 수정하여 확정하면 됩니다." 확인 창 뒤 진행.
 - 단추는 두 줄: [이 표준서로 지시서 작성] 아래에 [표준서 개정] [위험성평가 회차 추가]
   [폐기]. 이 표준서로 할 일과 표준서 자체를 다루는 일을 가른다.
-- 상세의 "현재 사용 중 위험성평가" 에서 판단 기준 표를 뺐다. 기준은 회사정보와
+- 상세의 "이 표준서의 위험성평가" 에서 판단 기준 표를 뺐다. 기준은 회사정보와
   평가 상세에서 본다.
 - 표준서·위험성평가 메뉴에서 "평가" 라고만 쓴 곳을 **"위험성평가"** 로. 최초평가 →
   최초 위험성평가, 평가 회차 추가 → 위험성평가 회차 추가, 평가 저장, 평가 작성, 평가
@@ -1414,7 +1414,7 @@ TBM·안전점검을 본격적으로 만들기 전에, 그동안 바꾼 설계�
 - 스토리지 키 규칙: `{companyId}/{targetType}/{targetId}/{uuid}.{ext}`. FK 안 걸고 앱단에서 target 소유권 검증 (`verifyTargetOwnership`) 해 cross-tenant 오염 방지.
 - 서버 헬퍼 `src/server/attachments.ts` — 승인 → presign → confirm(HeadObject 검증) → list → signed GET → soft delete. Pro 게이트: `standard_step`·`risk_item_*` 은 회사 `pro_state !== 'FREE'` 인 경우만 업로드 허용, Free 는 기존 사진 열람만.
 - 클라이언트: `browser-image-compression` (~30KB, Web Worker) 로 업로드 전 1600px · 품질 0.85 · 최대 1MB 자동 압축. 원본 유지 옵션 준비되어 있으며 첫 릴리스는 압축 기본값만. iOS Safari 카메라 즉시 촬영 (`capture="environment"`) 지원, 다중 파일 순차 진행률 표시.
-- 배선 지점: `/standards/[id]` 상세와 `/standards/[id]/edit` 편집에서 작업 단계 각각에 사진 첨부, 현재 사용 중 위험성평가의 위험요인마다 조치 전·후 사진 슬롯 노출. 상세는 Pro 안내 문구, 편집은 업로더 자체를 Pro 조건부.
+- 배선 지점: `/standards/[id]` 상세와 `/standards/[id]/edit` 편집에서 작업 단계 각각에 사진 첨부, 이 표준서의 위험성평가의 위험요인마다 조치 전·후 사진 슬롯 노출. 상세는 Pro 안내 문구, 편집은 업로더 자체를 Pro 조건부.
 - 표준서 저장 로직 리팩터: `standard_steps.id` 를 클라이언트에서 보내고 서버가 diff-based 로 UPDATE/INSERT/DELETE. UNIQUE `(standard_id, order_no)` 충돌은 두 패스 (`order_no` 음수화 후 재부여) 로 회피. 이로써 스텝 첨부 사진의 `target_id` 가 편집을 넘어 유지됨.
 - `.env` 규약: AWS SDK 표준 이름 (`AWS_REGION`·`AWS_ACCESS_KEY_ID`·`AWS_SECRET_ACCESS_KEY`) + `S3_BUCKET`. `AWS_SESSION_TOKEN` 은 SSO/STS 임시 크리덴셜 전용, 장기 IAM 키만 쓰는 지금은 비워둠.
 - 검증: 크리덴셜·CORS·IAM 스모크 (`node scripts/smoke-s3.mjs`) 전 단계 통과, 타입·lint·마이그레이션 apply 정상, 로컬 Docker 재빌드 완료. E2E 첨부 테스트는 별도 후속.
