@@ -4,7 +4,10 @@ import { z } from "zod";
 import { query, queryOne, withTransaction } from "@/server/db";
 import { readRiskCriteria } from "@/server/company-settings";
 import { deleteObjects, retireAttachments } from "@/server/attachments";
-import type { RiskCriteria } from "@/features/company/risk-criteria";
+import {
+  initialAllowable,
+  type RiskCriteria,
+} from "@/features/company/risk-criteria";
 import {
   ASSESSMENT_KIND_LABEL,
   VALIDITY_MONTHS,
@@ -46,7 +49,8 @@ const riskItemSchema = z.object({
   // 평가 시점에 이미 하던 안전조치. 3단계 판단법 양식의 둘째 칸. 비워도 된다.
   current_control: z.string().trim().max(1000).optional().default(""),
   initial_risk_level: z.enum(["HIGH", "MID", "LOW"]),
-  initial_allowable: z.boolean(),
+  // 화면이 보내도 무시한다. 허용 여부는 수준 + 회사 기준에서 서버가 정한다.
+  initial_allowable: z.boolean().optional(),
   reduction_measure: z.string().trim().min(1).max(1000),
   responsible_user_id: z.string().uuid().nullable(),
   planned_completion_date: z
@@ -555,7 +559,7 @@ async function insertRiskAssessmentRound(
         i + 1,
         r.hazard,
         r.initial_risk_level,
-        r.initial_allowable,
+        initialAllowable(criteria, r.initial_risk_level),
         r.reduction_measure,
         r.responsible_user_id,
         r.planned_completion_date,

@@ -3,7 +3,13 @@
 import { useId, type ReactNode } from "react";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { CriteriaHelp } from "./criteria-help";
-import type { RiskCriteria } from "@/features/company/risk-criteria";
+import {
+  acceptanceFor,
+  INITIAL_VERDICT_LABEL,
+  POST_VERDICT_LABEL,
+  type RiskCriteria,
+  type RiskLevel,
+} from "@/features/company/risk-criteria";
 
 /**
  * 위험성 수준(상·중·하)과 허용 여부를 고르는 단추 묶음.
@@ -73,11 +79,6 @@ export const RISK_LEVEL_OPTIONS = [
   { value: "LOW", label: "하", tone: "low" },
 ] as const;
 
-export const ALLOWABLE_OPTIONS = [
-  { value: "yes", label: "허용 가능", tone: "ok" },
-  { value: "no", label: "허용 불가 · 조치 필요", tone: "warn" },
-] as const;
-
 export function RiskLevelPicker({
   value,
   onChange,
@@ -110,21 +111,46 @@ export function RiskLevelPicker({
   );
 }
 
-export function AllowablePicker({
-  value,
-  onChange,
+const LEVEL_KO: Record<RiskLevel, string> = { HIGH: "상", MID: "중", LOW: "하" };
+
+/**
+ * 허용 여부는 고르는 것이 아니라 수준과 회사 기준에서 나오는 결과다. 그래서 단추가
+ * 아니라 판정 글 한 줄이다. 처음 평가는 "감소대책 후 허용" 도 조치 필요, 조치 뒤에는
+ * 허용이다 (risk-criteria.ts).
+ */
+export function RiskVerdict({
   label = "허용 가능 여부",
+  criteria,
+  level,
+  phase,
 }: {
-  value: "" | "yes" | "no";
-  onChange: (v: "yes" | "no") => void;
   label?: string;
+  criteria: RiskCriteria;
+  level: "" | RiskLevel;
+  phase: "initial" | "post";
 }) {
+  const acceptance = level ? acceptanceFor(criteria, level) : null;
+  const ok =
+    acceptance === null
+      ? null
+      : phase === "initial"
+        ? acceptance === "ACCEPTABLE"
+        : acceptance !== "NOT_ACCEPTABLE";
+  const text =
+    acceptance && level
+      ? `${LEVEL_KO[level]} → ${(phase === "initial" ? INITIAL_VERDICT_LABEL : POST_VERDICT_LABEL)[acceptance]}`
+      : "수준을 고르면 회사 기준에 따라 정해집니다";
   return (
-    <Segmented
-      label={label}
-      value={value}
-      options={ALLOWABLE_OPTIONS}
-      onChange={onChange}
-    />
+    <div className="seg">
+      <div className="seg-head">
+        <span className="seg-label">{label}</span>
+      </div>
+      <p
+        className={`risk-verdict${ok === null ? "" : ok ? " risk-verdict--ok" : " risk-verdict--warn"}`}
+        aria-label={label}
+      >
+        {text}
+      </p>
+    </div>
   );
 }

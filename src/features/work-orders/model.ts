@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  initialAllowable,
+  type RiskCriteria,
+} from "@/features/company/risk-criteria";
 
 const text = z.string().max(4000);
 const ids = z
@@ -67,7 +71,11 @@ export function shiftMinutes(start: string, end: string) {
     Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
   return (minutes(end) - minutes(start) + 1440) % 1440;
 }
-export function validateAssessment(d: WorkDraft) {
+/**
+ * 평가 입력 검사. `criteria` 가 있으면 허용 여부를 수준 + 회사 기준으로 정해 담당·예정일
+ * 필수 여부를 판단한다 (서버). 없으면 화면이 같은 규칙으로 채워 둔 값을 쓴다 (클라이언트).
+ */
+export function validateAssessment(d: WorkDraft, criteria?: RiskCriteria) {
   if (!d.method.trim() || !validDate(d.performedOn))
     throw new WorkOrderError("작업방법과 평가일을 입력하세요.");
   if (d.performedOn > seoulToday())
@@ -79,12 +87,13 @@ export function validateAssessment(d: WorkDraft) {
       "사전조사 정보를 모두 입력하세요. 해당사항이 없으면 그 사실을 적어 주세요.",
     );
   for (const r of d.risks) {
-    if (!r.hazard.trim() || !r.level || !r.allowable || !r.measure.trim())
-      throw new WorkOrderError(
-        "모든 위험요인의 수준·허용 여부·감소대책을 확인하세요.",
-      );
+    if (!r.hazard.trim() || !r.level || !r.measure.trim())
+      throw new WorkOrderError("모든 위험요인의 수준·감소대책을 확인하세요.");
+    const needsAction = criteria
+      ? !initialAllowable(criteria, r.level)
+      : r.allowable === "no";
     if (
-      r.allowable === "no" &&
+      needsAction &&
       (!z.string().uuid().safeParse(r.responsibleId).success ||
         !validDate(r.dueDate))
     )

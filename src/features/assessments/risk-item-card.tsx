@@ -1,9 +1,12 @@
 "use client";
 
-import type { RiskCriteria } from "@/features/company/risk-criteria";
-import { useId } from "react";
+import {
+  initialAllowable,
+  type RiskCriteria,
+} from "@/features/company/risk-criteria";
+import { useEffect, useId } from "react";
 import { Trash2 } from "lucide-react";
-import { AllowablePicker, RiskLevelPicker } from "./risk-level-picker";
+import { RiskLevelPicker, RiskVerdict } from "./risk-level-picker";
 
 export type RiskCardValue = {
   hazard: string;
@@ -23,7 +26,8 @@ export type RiskCardMember = { user_id: string; display_name: string };
  *
  * 순서는 현장에서 생각하는 순서이자 3단계 판단법 양식의 순서다: 무엇이 위험한가
  * → 지금 뭘 하고 있나 → 얼마나 → 그대로 둬도 되나 → 어떻게 줄일까. 담당·예정일은 허용 불가일 때만 의미가 있어 접어 둔다.
- * 선택은 전부 한 번 누르면 끝나는 단추(상·중·하, 허용 가능·불가)다.
+ * 수준은 한 번 누르면 끝나는 단추(상·중·하)이고, 허용 여부는 수준과 회사 기준에서
+ * 자동으로 정해진다 — 손으로 못 바꾼다 (2026-09-24 사장님 결정).
  */
 export function RiskItemCard({
   index,
@@ -39,13 +43,22 @@ export function RiskItemCard({
   onChange: (next: RiskCardValue) => void;
   /** 없으면 삭제 단추를 두지 않는다 (마지막 한 장). */
   onRemove?: () => void;
-  /** 회사의 위험성 판단 기준. 수준 옆 물음표로 보여 준다. */
-  criteria?: RiskCriteria;
+  /** 회사의 위험성 판단 기준. 허용 여부를 정하고, 수준 옆 물음표로도 보여 준다. */
+  criteria: RiskCriteria;
 }) {
   const id = useId();
   const set = <K extends keyof RiskCardValue>(key: K, v: RiskCardValue[K]) =>
     onChange({ ...value, [key]: v });
-  const needsAction = value.allowable === "no";
+  const derived: "" | "yes" | "no" = value.level
+    ? initialAllowable(criteria, value.level)
+      ? "yes"
+      : "no"
+    : "";
+  const needsAction = derived === "no";
+  // 옛 초안(손으로 고르던 때)의 값이 기준과 다르면 기준 쪽으로 맞춘다.
+  useEffect(() => {
+    if (value.allowable !== derived) onChange({ ...value, allowable: derived });
+  }, [derived, value, onChange]);
 
   return (
     <fieldset className="risk-card">
@@ -87,13 +100,16 @@ export function RiskItemCard({
       </div>
       <RiskLevelPicker
         value={value.level}
-        onChange={(v) => set("level", v)}
+        onChange={(v) =>
+          onChange({
+            ...value,
+            level: v,
+            allowable: initialAllowable(criteria, v) ? "yes" : "no",
+          })
+        }
         criteria={criteria}
       />
-      <AllowablePicker
-        value={value.allowable}
-        onChange={(v) => set("allowable", v)}
-      />
+      <RiskVerdict criteria={criteria} level={value.level} phase="initial" />
       <div className="risk-card-field">
         <label htmlFor={id + "-measure"}>감소대책</label>
         <textarea

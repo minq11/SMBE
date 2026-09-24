@@ -96,10 +96,10 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .getByRole("radiogroup", { name: "위험성 수준" })
       .getByLabel("하", { exact: true })
       .check();
-    await page
-      .getByRole("radiogroup", { name: "허용 가능 여부" })
-      .getByLabel("허용 가능", { exact: true })
-      .check();
+    // 하는 기본 기준에서 허용 가능 — 고르지 않아도 판정이 붙는다.
+    await expect(page.locator("#wo-risk .risk-verdict").first()).toContainText(
+      "하 → 허용 가능",
+    );
     await page.getByLabel("감소대책", { exact: true }).fill("테스트 감소대책");
     for (const label of [
       "기계·기구·설비 사양",

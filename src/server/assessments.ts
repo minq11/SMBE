@@ -4,8 +4,11 @@ import { z } from "zod";
 import { query, queryOne } from "./db";
 import { memberAccess, type Actor } from "./work-order-service";
 import { computeValidUntil } from "./standards-service";
+import {
+  postAllowable,
+  type RiskCriteria,
+} from "../features/company/risk-criteria";
 import { WorkOrderError, seoulToday } from "../features/work-orders/model";
-import type { RiskCriteria } from "../features/company/risk-criteria";
 import type {
   AssessmentKind,
   AssessmentStatus,
@@ -295,13 +298,7 @@ const actionSchema = z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "완료일을 선택하세요."),
     postRiskLevel: z.enum(["HIGH", "MID", "LOW"]),
-    postAllowable: z.boolean(),
     followUpMeasure: z.string().trim().max(1000).optional().default(""),
-  })
-  // 고시 제13조: 대책을 실행했는데도 허용 수준이 아니면 추가 대책을 세운다.
-  .refine((v) => v.postAllowable || v.followUpMeasure.length > 0, {
-    message: "조치 뒤에도 허용 불가면 추가 대책을 적으세요.",
-    path: ["followUpMeasure"],
   });
 export type RiskActionInput = z.input<typeof actionSchema>;
 
@@ -320,8 +317,11 @@ export async function recordRiskAction(
     throw new WorkOrderError(
       parsed.error.issues[0]?.message ?? "입력을 확인하세요.",
     );
-  const { rows } = await client.query<{ status: string }>(
-    `SELECT ra.status FROM risk_assessment_items i
+  const { rows } = await client.query<{
+    status: string;
+    criteria_snapshot: RiskCriteria;
+  }>(
+    `SELECT ra.status, ra.criteria_snapshot FROM risk_assessment_items i
        JOIN risk_assessments ra ON ra.id = i.assessment_id
       WHERE i.id = $1 AND ra.id = $2 AND ra.company_id = $3 FOR UPDATE OF ra`,
     [input.itemId, input.assessmentId, actor.companyId],
@@ -329,6 +329,11 @@ export async function recordRiskAction(
   if (!rows[0]) throw new WorkOrderError("위험요인을 찾을 수 없습니다.");
   if (rows[0].status !== "APPROVED")
     throw new WorkOrderError("승인된 평가에만 조치를 적을 수 있습니다.");
+  // 조치 후 허용 여부는 수준 + 이 평가의 기준 사본에서 나온다. 고시 제13조: 대책을
+  // 실행했는데도 허용 수준이 아니면 추가 대책을 세운다.
+  const allowed = postAllowable(rows[0].criteria_snapshot, parsed.data.postRiskLevel);
+  if (!allowed && parsed.data.followUpMeasure.length === 0)
+    throw new WorkOrderError("조치 뒤에도 허용 불가면 추가 대책을 적으세요.");
   await client.query(
     `UPDATE risk_assessment_items
         SET actual_action = $2, actual_completion_date = $3::date,
@@ -339,8 +344,8 @@ export async function recordRiskAction(
       parsed.data.actualAction,
       parsed.data.actualCompletionDate,
       parsed.data.postRiskLevel,
-      parsed.data.postAllowable,
-      parsed.data.postAllowable ? null : parsed.data.followUpMeasure,
+      allowed,
+      allowed ? null : parsed.data.followUpMeasure,
     ],
   );
   await client.query(
@@ -350,7 +355,11 @@ export async function recordRiskAction(
       actor.companyId,
       actor.userId,
       input.assessmentId,
-      JSON.stringify({ item_id: input.itemId, ...parsed.data }),
+      JSON.stringify({
+        item_id: input.itemId,
+        ...parsed.data,
+        post_allowable: allowed,
+      }),
     ],
   );
 }

@@ -20,7 +20,6 @@ export type RiskActionPayload = {
   actualAction: string;
   actualCompletionDate: string;
   postRiskLevel: "HIGH" | "MID" | "LOW";
-  postAllowable: boolean;
   /** 조치 뒤에도 허용 불가일 때 필수 */
   followUpMeasure?: string;
 };

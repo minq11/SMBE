@@ -6,11 +6,14 @@ import type {
   AssessmentDetail,
   AssessmentItemDetail,
 } from "@/server/assessments";
-import { AllowablePicker, RiskLevelPicker } from "./risk-level-picker";
+import { RiskLevelPicker, RiskVerdict } from "./risk-level-picker";
 import { recordRiskActionAction } from "./actions";
 import { LEVEL_LABEL, koDate } from "./model";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
-import type { RiskCriteria } from "@/features/company/risk-criteria";
+import {
+  postAllowable,
+  type RiskCriteria,
+} from "@/features/company/risk-criteria";
 
 /**
  * 위험요인·대책과 조치 이행. 계획(감소대책·담당·예정일)과 실제(조치·완료일·조치 후
@@ -92,9 +95,9 @@ function ActionBlock({
   const [level, setLevel] = useState<"" | "HIGH" | "MID" | "LOW">(
     item.post_risk_level ?? "",
   );
-  const [allowable, setAllowable] = useState<"" | "yes" | "no">(
-    item.post_allowable === null ? "" : item.post_allowable ? "yes" : "no",
-  );
+  // 조치 후 허용 여부는 수준과 이 평가의 기준 사본에서 나온다. 서버가 같은 규칙으로
+  // 다시 계산한다.
+  const allowable = level ? postAllowable(criteria, level) : null;
   const [followUp, setFollowUp] = useState(item.follow_up_measure ?? "");
   // 조치를 적었는데도 허용 불가면 끝난 게 아니다 (고시 제13조).
   const stillOpen = done && item.post_allowable === false;
@@ -104,8 +107,8 @@ function ActionBlock({
   const save = () =>
     start(async () => {
       setError(null);
-      if (!level || !allowable) {
-        setError("조치 후 수준과 허용 여부를 고르세요.");
+      if (!level) {
+        setError("조치 후 위험성 수준을 고르세요.");
         return;
       }
       const result = await recordRiskActionAction({
@@ -114,7 +117,6 @@ function ActionBlock({
         actualAction: action,
         actualCompletionDate: date,
         postRiskLevel: level,
-        postAllowable: allowable === "yes",
         followUpMeasure: followUp,
       });
       if (!result.ok) setError(result.error);
@@ -187,12 +189,13 @@ function ActionBlock({
             criteria={criteria}
             criteriaSnapshot
           />
-          <AllowablePicker
+          <RiskVerdict
             label="조치 후 허용 여부"
-            value={allowable}
-            onChange={setAllowable}
+            criteria={criteria}
+            level={level}
+            phase="post"
           />
-          {allowable === "no" && (
+          {allowable === false && (
             <label className="form-field">
               <span>추가 대책 (허용 수준이 될 때까지)</span>
               <textarea

@@ -458,14 +458,14 @@ erDiagram
 | order_no | int | |
 | hazard | text | 유해·위험요인 |
 | initial_risk_level | enum(`HIGH`,`MID`,`LOW`) | |
-| initial_allowable | bool | 위험성 허용 여부 |
+| initial_allowable | bool | 위험성 허용 여부. 서버가 `initial_risk_level` + `criteria_snapshot` 에서 계산해 넣는다(`ACCEPTABLE` 만 참). 화면 입력이 아니다 (v5.6) |
 | reduction_measure | text | 감소대책 |
 | responsible_user_id | uuid FK users NULL | 조치 담당자 |
 | planned_completion_date | date NULL | |
 | actual_action | text NULL | 실제 조치 내용 |
 | actual_completion_date | date NULL | 완료일 |
 | post_risk_level | enum(`HIGH`,`MID`,`LOW`) NULL | 조치 후 수준 |
-| post_allowable | bool NULL | |
+| post_allowable | bool NULL | 서버가 `post_risk_level` + `criteria_snapshot` 에서 계산(`NOT_ACCEPTABLE` 만 거짓). 거짓이면 `follow_up_measure` 필수 |
 
 ### 6-4. `risk_assessment_participants` (참여 근로자)
 

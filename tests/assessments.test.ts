@@ -232,7 +232,8 @@ test("assessments: post-action 허용 불가 needs a follow-up and stays open (�
   });
   const item = (await transaction((c) => readAssessment(c, manager, id)))
     .items[0];
-  // 조치 뒤에도 허용 불가인데 추가 대책이 없으면 거부.
+  // 조치 후 허용 여부는 수준 + 기준 사본에서 나온다. 사본에서 상은 허용 불가 —
+  // 조치 뒤에도 상이면 허용 불가이고, 추가 대책이 없으면 거부.
   await assert.rejects(
     transaction((c) =>
       recordRiskAction(c, manager, {
@@ -240,8 +241,7 @@ test("assessments: post-action 허용 불가 needs a follow-up and stays open (�
         itemId: item.id,
         actualAction: "임시 덮개",
         actualCompletionDate: daysAgo(0),
-        postRiskLevel: "MID",
-        postAllowable: false,
+        postRiskLevel: "HIGH",
       }),
     ),
     /추가 대책/,
@@ -252,8 +252,33 @@ test("assessments: post-action 허용 불가 needs a follow-up and stays open (�
       itemId: item.id,
       actualAction: "임시 덮개",
       actualCompletionDate: daysAgo(0),
+      postRiskLevel: "HIGH",
+      followUpMeasure: "고정 덮개 발주, 다음 달 설치",
+    }),
+  );
+  let detail0 = await transaction((c) => readAssessment(c, manager, id));
+  assert.equal(detail0.items[0].post_allowable, false);
+  // 중은 "감소대책 후 허용" — 대책을 실행했으니 조치 뒤에는 허용이다.
+  await transaction((c) =>
+    recordRiskAction(c, manager, {
+      assessmentId: id,
+      itemId: item.id,
+      actualAction: "임시 덮개",
+      actualCompletionDate: daysAgo(0),
       postRiskLevel: "MID",
-      postAllowable: false,
+    }),
+  );
+  detail0 = await transaction((c) => readAssessment(c, manager, id));
+  assert.equal(detail0.items[0].post_allowable, true);
+  assert.equal(detail0.items[0].follow_up_measure, null);
+  // 다시 상으로 — 남은 조치.
+  await transaction((c) =>
+    recordRiskAction(c, manager, {
+      assessmentId: id,
+      itemId: item.id,
+      actualAction: "임시 덮개",
+      actualCompletionDate: daysAgo(0),
+      postRiskLevel: "HIGH",
       followUpMeasure: "고정 덮개 발주, 다음 달 설치",
     }),
   );
@@ -274,7 +299,6 @@ test("assessments: post-action 허용 불가 needs a follow-up and stays open (�
       actualAction: "고정 덮개 설치",
       actualCompletionDate: daysAgo(0),
       postRiskLevel: "LOW",
-      postAllowable: true,
     }),
   );
   detail = await transaction((c) => readAssessment(c, manager, id));
@@ -337,7 +361,6 @@ test("assessments: read detail and record action on an approved item", async () 
         actualAction: "덮개 설치",
         actualCompletionDate: daysAgo(0),
         postRiskLevel: "LOW",
-        postAllowable: true,
       }),
     ),
     /권한/,
@@ -350,7 +373,6 @@ test("assessments: read detail and record action on an approved item", async () 
         actualAction: "  ",
         actualCompletionDate: daysAgo(0),
         postRiskLevel: "LOW",
-        postAllowable: true,
       }),
     ),
     /조치 내용/,
@@ -362,7 +384,6 @@ test("assessments: read detail and record action on an approved item", async () 
       actualAction: "방호덮개 설치 완료",
       actualCompletionDate: daysAgo(0),
       postRiskLevel: "LOW",
-      postAllowable: true,
     }),
   );
   const after = await transaction((c) => readAssessment(c, manager, id));
@@ -385,7 +406,6 @@ test("assessments: read detail and record action on an approved item", async () 
         actualAction: "x",
         actualCompletionDate: daysAgo(0),
         postRiskLevel: "LOW",
-        postAllowable: true,
       }),
     ),
     /승인된 평가/,

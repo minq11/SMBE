@@ -1,5 +1,6 @@
 import type { PoolClient } from "@neondatabase/serverless";
 import { readRiskCriteria } from "./company-settings";
+import { initialAllowable } from "../features/company/risk-criteria";
 import { lockCompany } from "./membership-mutations";
 import {
   archiveLocked,
@@ -266,11 +267,12 @@ export async function requestAssessment(
       "이미 평가를 요청했습니다. 내용 변경은 편집에서 진행하세요.",
     );
   const d = row.draft_data;
-  validateAssessment(d);
+  // 허용 여부는 회사 기준으로 정해지니 기준을 읽은 뒤에 검사한다 (아래).
   const members = await validatePeople(client, actor.companyId, d);
   // 판단 기준은 회사가 정한 값이 원본이다. 클라이언트가 보낸 값을 믿지 않고
   // 이 시점의 회사 기준을 그대로 스냅샷으로 남긴다.
   const criteriaSnapshot = await readRiskCriteria(client, actor.companyId);
+  validateAssessment(d, criteriaSnapshot);
   const linked = await resolveStandardLink(
     client,
     actor.companyId,
@@ -307,7 +309,8 @@ export async function requestAssessment(
         i,
         risk.hazard,
         risk.level,
-        risk.allowable === "yes",
+        // validateAssessment 가 수준 없는 항목을 거른 뒤라 빈 값은 오지 않는다.
+        risk.level ? initialAllowable(criteriaSnapshot, risk.level) : false,
         risk.measure,
         risk.responsibleId || null,
         risk.dueDate || null,

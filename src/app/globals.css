@@ -6697,6 +6697,30 @@ body.sidebar-lock {
   background: var(--danger-soft);
   color: var(--danger);
 }
+/* 허용 여부 판정 — 단추가 아니라 결과 한 줄. 높이는 단추와 맞춘다 */
+.risk-verdict {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+.risk-verdict--ok {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.risk-verdict--warn {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
 
 /* 위험요인 카드 (features/assessments/risk-item-card.tsx). 세 폼이 같이 쓴다. */
 .risk-card {

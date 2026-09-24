@@ -139,14 +139,28 @@ test("standard: create, edit, add a seeded assessment round", async ({
       .locator("dialog.help-dialog[open]")
       .getByRole("button", { name: "확인" })
       .click();
+    // 허용 여부는 고르지 않는다 — 수준과 회사 기준(중 = 허용 불가)에서 나온다.
+    await expect(page.locator(".risk-verdict").first()).toContainText(
+      "수준을 고르면",
+    );
     await page
       .getByRole("radiogroup", { name: "위험성 수준" })
       .getByLabel("중", { exact: true })
       .check();
+    await expect(page.locator(".risk-verdict").first()).toContainText(
+      "중 → 허용 불가 · 조치 필요",
+    );
+    await expect(
+      page.getByRole("radiogroup", { name: "허용 가능 여부" }),
+    ).toHaveCount(0);
     await page
-      .getByRole("radiogroup", { name: "허용 가능 여부" })
-      .getByLabel(/^허용 불가/)
-      .check();
+      .locator(".risk-verdict")
+      .first()
+      .screenshot({ path: testInfo.outputPath("risk-verdict.png") });
+    await page.screenshot({
+      path: testInfo.outputPath("standard-new-risk-card.png"),
+      fullPage: true,
+    });
     await page.getByLabel("감소대책", { exact: true }).fill("방호덮개 설치");
     for (const label of ["설비", "물질", "주변 환경", "재해·아차사고 정보"])
       await page.getByLabel(label, { exact: true }).fill("확인함");
@@ -223,11 +237,9 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.getByLabel("유해·위험요인", { exact: true })).toHaveValue(
       "끼임",
     );
-    await expect(
-      page
-        .getByRole("radiogroup", { name: "허용 가능 여부" })
-        .getByLabel(/^허용 불가/),
-    ).toBeChecked();
+    await expect(page.locator(".risk-verdict").first()).toContainText(
+      "중 → 허용 불가 · 조치 필요",
+    );
     await page
       .getByRole("checkbox", { name: "표준 작업자", exact: true })
       .check();
