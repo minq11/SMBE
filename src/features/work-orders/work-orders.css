@@ -96,10 +96,17 @@
 .wo-fold > summary {
   font-weight: 600;
 }
+.wo-fold > summary {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+/* "펼쳐서 확인·수정" 은 오른쪽 끝. 요약 글이 길면 다음 줄 오른쪽으로 내려간다. */
 .wo-fold > summary small {
   font-weight: 400;
   color: var(--ink-3);
-  margin-left: 6px;
+  margin-left: auto;
+  padding-left: 12px;
+  white-space: nowrap;
 }
 /* PTW 줄: 불필요·필요 단추와 "어떤 작업이 해당되나요?" */
 .wo-ptw {

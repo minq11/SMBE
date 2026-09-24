@@ -704,6 +704,7 @@ export function WorkOrderForm({
                   onQuery={setStdQuery}
                   searchLabel="표준서 이름 검색"
                   searchPlaceholder="표준서 이름 검색"
+                  done={false}
                   extra={
                     <Link
                       href={NEW_STANDARD_HREF}

@@ -4408,6 +4408,38 @@ html[data-banner-hidden] .preview-banner {
 .picker-dialog-body {
   max-height: min(80vh, 680px);
 }
+.picker-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+/* 창은 폼 안(예: .wo-part)에 그려지므로 그 구간 제목 규칙이 따라 들어온다. 창
+   제목은 창의 것으로 되돌린다. */
+.picker-dialog .picker-dialog-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+/* 44px 누르는 자리, 그림은 오른쪽 끝선에 맞춘다 */
+.picker-dialog-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -8px -10px -8px 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.picker-dialog-close:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
 .picker-dialog-search-row {
   display: flex;
   gap: 8px;

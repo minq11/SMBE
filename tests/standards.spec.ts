@@ -341,6 +341,13 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(
       finder.getByRole("link", { name: "새 표준서 만들기" }),
     ).toBeVisible();
+    // 하나 고르면 닫히는 창이라 "완료" 가 없다. 닫기는 오른쪽 위 ×.
+    await expect(
+      finder.getByRole("button", { name: "완료", exact: true }),
+    ).toHaveCount(0);
+    await finder.getByRole("button", { name: "닫기", exact: true }).click();
+    await expect(finder).toBeHidden();
+    await page.getByRole("button", { name: "작업표준서 찾기" }).click();
     await expect(finder.locator(".wo-std-option")).toHaveCount(1);
     await finder.getByLabel("표준서 이름 검색").fill("없는 이름");
     await expect(finder.locator(".wo-std-option")).toHaveCount(1);
