@@ -1,8 +1,12 @@
 import { expect, test } from "@playwright/test";
 test("contact honeypot silently succeeds without email credentials", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/contact");
+  await page.screenshot({
+    path: testInfo.outputPath("contact.png"),
+    fullPage: true,
+  });
   await page.getByLabel("이름", { exact: true }).fill("테스트");
   await page.getByLabel("이메일", { exact: true }).fill("test@example.com");
   await page.getByLabel("메시지", { exact: true }).fill("회귀 테스트 메시지");

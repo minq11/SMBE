@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, MessageCircle } from "lucide-react";
+import { ArrowDown, Check, MessageCircle } from "lucide-react";
 import type { CompanyOverview } from "@/server/members";
 import { PRO_FEATURES } from "./pro-features";
 import {
@@ -50,20 +50,15 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
             </p>
           )}
         </div>
+        {/* 요금표는 같은 화면 아래에 있다. 문의는 공개 문의 폼 그대로. */}
         <div className="billing-current-actions">
-          {!isPro && (
-            <Link
-              href="/contact"
-              className="primary-button billing-cta"
-              prefetch={false}
-            >
-              유료 전환 문의
-              <ArrowRight size={14} />
-            </Link>
-          )}
+          <a href="#billing-pricing" className="primary-button billing-cta">
+            요금표 보기
+            <ArrowDown size={14} />
+          </a>
           <Link href="/contact" className="ghost-button" prefetch={false}>
             <MessageCircle size={13} />
-            영업·계약 문의
+            문의하기
           </Link>
         </div>
       </section>
@@ -114,7 +109,7 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
         </ul>
       </section>
 
-      <section className="billing-pricing" aria-label="가격 안내">
+      <section id="billing-pricing" className="billing-pricing" aria-label="가격 안내">
         <header className="billing-section-header">
           <h2>가격</h2>
           <p className="billing-section-note">

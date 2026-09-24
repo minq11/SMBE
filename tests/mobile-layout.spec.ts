@@ -142,6 +142,24 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
         await page.goto(route);
         await page.locator("h1").first().waitFor();
         await fits();
+        if (route === "/billing") {
+          // "요금표 보기" 는 같은 화면의 가격 구간으로 내려간다. 상단바 밑에
+          // 가리지 않고 화면 안에 들어와야 한다.
+          await page.getByRole("link", { name: "요금표 보기" }).click();
+          await expect
+            .poll(async () => {
+              const r = await page.locator("#billing-pricing").boundingBox();
+              const top = await page.evaluate(
+                () =>
+                  document.querySelector(".topbar")!.getBoundingClientRect()
+                    .bottom,
+              );
+              return r ? r.y >= top - 1 && r.y < 400 : false;
+            })
+            .toBe(true);
+          await page.goto(route);
+          await page.locator("h1").first().waitFor();
+        }
         if (route === "/standards/new" && width <= 390) {
           // 담당·예정일은 접혀 있다. 펴서 날짜 칸이 눌리지 않았는지 잰다.
           await page.locator(".risk-card-more summary").first().click();

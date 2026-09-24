@@ -2119,6 +2119,10 @@ html[data-banner-hidden] .preview-banner {
 .billing-cta {
   min-height: 40px;
 }
+/* 상단바에 가리지 않게 요금표 앵커는 위를 띄운다 */
+.billing-pricing {
+  scroll-margin-top: calc(var(--topbar-h) + var(--banner-h) + 12px);
+}
 
 .billing-section-header {
   display: flex;
@@ -5232,9 +5236,12 @@ body.sidebar-lock {
 .auth-main {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 48px 24px;
+}
+/* 가운데 정렬은 자식의 margin:auto 로. align-items:center 는 내용이 화면보다 길 때
+   위쪽을 잘라 스크롤로도 못 올라간다 (좁은 화면의 문의 폼이 그랬다). */
+.auth-main > * {
+  margin: auto;
 }
 .auth-card {
   width: 100%;
@@ -5428,6 +5435,20 @@ body.sidebar-lock {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 8px;
+}
+/* 라디오 묶음도 다른 칸과 같은 얼굴 — 브라우저 기본 fieldset 테두리를 지운다 */
+fieldset.form-field {
+  border: 0;
+  padding: 0;
+  margin-left: 0;
+  margin-right: 0;
+  min-width: 0;
+}
+fieldset.form-field legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
 }
 .btn-primary {
   display: inline-flex;
