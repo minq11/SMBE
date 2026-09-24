@@ -229,7 +229,10 @@ test("PTW fields inside the work-order form: 지금 발급하기 requests, self-
       .getByRole("button", { name: "회차 만들기" })
       .click();
     await expect(page.locator(".wo-session-row")).toHaveCount(1);
-    await page.getByLabel("작업 장소", { exact: true }).fill("도장장");
+    // 등록 장소가 있으면 작업 장소는 고르는 칸이다.
+    await page
+      .getByLabel("작업 장소", { exact: true })
+      .selectOption({ label: "도장장" });
     await page
       .locator("#wo-schedule")
       .getByRole("button", { name: /^작업자 선택/ })

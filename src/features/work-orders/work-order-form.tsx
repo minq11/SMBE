@@ -125,6 +125,7 @@ const PARTS = [
   { id: "wo-check", label: "체크리스트" },
 ];
 const NEW_STANDARD_HREF = `/standards/new?return=${encodeURIComponent("/work-orders/new")}`;
+const CUSTOM_LOCATION = "__custom__";
 const PTW_OPTIONS = [
   { value: "no", label: "불필요" },
   { value: "yes", label: "필요", tone: "warn" },
@@ -225,6 +226,13 @@ export function WorkOrderForm({
     [initial, standards, initialStandardId],
   );
   const dirty = JSON.stringify(data) !== saved;
+  // 등록 장소에 없는 값이면 직접 입력 칸을 연다 (예전 초안·복사본).
+  const [locationCustom, setLocationCustom] = useState(
+    () =>
+      locations.length > 0 &&
+      initial.location !== "" &&
+      !locations.some((l) => l.label === initial.location),
+  );
   const [standardId, setStandardId] = useState<string | null>(
     initialStandardId,
   );
@@ -881,26 +889,41 @@ export function WorkOrderForm({
                       setData((d) => withSessionRange({ ...d, sessions }))
                     }
                   />
-                  <FloatField
-                    id="wo-location"
-                    label="작업 장소"
-                    value={data.location}
-                    maxLength={200}
-                    onChange={(e) => set("location", e.target.value)}
-                    hint={
-                      locations.length > 0
-                        ? "회사 등록 장소 중 선택하거나 직접 입력"
-                        : "직접 입력"
-                    }
-                    list={locations.length > 0 ? "wo-location-list" : undefined}
-                    autoComplete="off"
-                  />
+                  {/* 등록 장소는 고르는 칸으로. datalist 는 아이폰에서 목록이 안 열리고
+                      값이 있으면 목록을 걸러 버려, 고를 수 있는 칸으로 안 보였다. */}
                   {locations.length > 0 && (
-                    <datalist id="wo-location-list">
+                    <FloatSelect
+                      id="wo-location-pick"
+                      label="작업 장소"
+                      value={locationCustom ? CUSTOM_LOCATION : data.location}
+                      onChange={(e) => {
+                        const custom = e.target.value === CUSTOM_LOCATION;
+                        setLocationCustom(custom);
+                        set("location", custom ? "" : e.target.value);
+                      }}
+                    >
+                      <option value="">장소 선택</option>
                       {locations.map((l) => (
-                        <option key={l.id} value={l.label} />
+                        <option key={l.id} value={l.label}>
+                          {l.label}
+                        </option>
                       ))}
-                    </datalist>
+                      <option value={CUSTOM_LOCATION}>직접 입력…</option>
+                    </FloatSelect>
+                  )}
+                  {(locations.length === 0 || locationCustom) && (
+                    <FloatField
+                      id="wo-location"
+                      label={
+                        locations.length > 0
+                          ? "작업 장소 직접 입력"
+                          : "작업 장소"
+                      }
+                      value={data.location}
+                      maxLength={200}
+                      onChange={(e) => set("location", e.target.value)}
+                      autoComplete="off"
+                    />
                   )}
                   <PeoplePickerDialog
                     legend="작업자 배정"
