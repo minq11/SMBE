@@ -33,9 +33,13 @@ export function PickerDialog({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [text, setText] = useState(query);
-  useEffect(() => {
+  // 열릴 때 입력칸을 적용된 검색어로 되돌린다 (렌더 중 상태 맞추기 — 효과보다 한 번
+  // 덜 그린다).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) setText(query);
-  }, [open, query]);
+  }
   const apply = () => onQuery(text.trim());
   useEffect(() => {
     const el = ref.current;

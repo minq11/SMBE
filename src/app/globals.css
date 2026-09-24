@@ -5178,6 +5178,25 @@ html[data-banner-hidden] .preview-banner {
   textarea {
     font-size: 16px !important;
   }
+  /* iOS Safari 의 날짜·시간 칸은 제 크기로 그려 width:100% 를 무시하고 오른쪽으로
+     삐져나간다 (지시서 일정·인원). 사파리 모양을 끄면 보통 칸처럼 줄에 맞는다.
+     값은 사파리가 가운데 두므로 왼쪽으로. 빈 칸은 높이가 꺼지니 최소 높이. */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+  }
+  input::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1.4em;
+  }
   /* 지시서 폼의 '작성 중인 작업' 요약 사이드 패널은 모바일에서 감춤.
      좁은 화면에선 폼 위/아래의 실제 값이 이미 보이므로 중복이다. */
   .wo-summary {
