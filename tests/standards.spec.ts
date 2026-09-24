@@ -11,7 +11,7 @@ import { randomUUID } from "node:crypto";
 test("standard: create, edit, add a seeded assessment round", async ({
   page,
   context,
-}) => {
+}, testInfo) => {
   test.skip(
     process.env.SMBE_ORDER_UI_TESTS !== "1",
     "Run npm run test:orders-ui against isolated local PostgreSQL.",
@@ -265,6 +265,45 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.getByRole("status")).toContainText(
       "실시규정을 저장했습니다",
     );
+
+    // 6) 지시서는 표준서를 고를 때 그 판을 보여 주고 초안에 들고 간다.
+    await page.goto(`/work-orders/new?standard=${id}`);
+    await expect(page.locator("#main")).toContainText(
+      "프레스 금형 교체 (개정) 2판",
+    );
+    await page.screenshot({
+      path: testInfo.outputPath("work-order-picker-revision.png"),
+      fullPage: true,
+    });
+
+    // 7) 개정 초안이 있는 채로 폐기하면 초안도 같이 사라진다 — 폐기된 표준서에
+    //    새 판이 승인되는 길이 없다.
+    await page.goto(`/standards/${id}`);
+    await page.getByRole("button", { name: "개정 시작", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "3판 개정" })).toBeVisible();
+    await page.goto(`/standards/${id}`);
+    await expect(page.locator("#main")).toContainText("3판 개정 작성 중");
+    await page.screenshot({
+      path: testInfo.outputPath("standard-detail-draft.png"),
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "폐기", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "폐기", exact: true })
+      .click();
+    await expect(page.locator("#main")).not.toContainText("3판 개정 작성 중");
+    const drafts = await pool.query(
+      `SELECT count(*)::int AS n FROM standard_revisions
+        WHERE standard_id = $1 AND status = 'DRAFT'`,
+      [id],
+    );
+    expect(drafts.rows[0].n).toBe(0);
+    await expect(page.locator("#main")).toContainText("개정 이력 (2판)");
+    await page.screenshot({
+      path: testInfo.outputPath("standard-detail-archived.png"),
+      fullPage: true,
+    });
   } finally {
     await pool.end();
   }

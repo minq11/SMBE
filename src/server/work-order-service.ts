@@ -54,6 +54,15 @@ export async function resolveStandardLink(
   return rows[0].id;
 }
 
+// 지시서가 들고 있는 판. 초안이 복사해 온 판이 이 표준서의 것이면 그것, 아니면(옛 초안·
+// 판 정보 없음) 현재 판. 초안(DRAFT) 판은 지시서에 못 박는다.
+function revisionForOrderSql(revisionParam: string, standardExpr: string) {
+  return `COALESCE(
+    (SELECT id FROM standard_revisions
+      WHERE id = ${revisionParam}::uuid AND standard_id = ${standardExpr} AND status <> 'DRAFT'),
+    (SELECT current_revision_id FROM standards WHERE id = ${standardExpr}))`;
+}
+
 export async function memberAccess(
   client: PoolClient,
   actor: Actor,
@@ -262,8 +271,9 @@ export async function requestAssessment(
   );
   const { rows } = await client.query<{ id: string }>(
     `INSERT INTO risk_assessments(company_id,name,assessment_kind,performed_on,criteria_snapshot,work_method_snapshot,
-      safety_info,created_by,retention_until,is_simple,standard_id,worker_opinion)
-      VALUES ($1,$2,$3,$4::date,$5::jsonb,$6,$7::jsonb,$8,($4::date + interval '3 years')::date,$9,$10,$11) RETURNING id`,
+      safety_info,created_by,retention_until,is_simple,standard_id,worker_opinion,standard_revision_id)
+      VALUES ($1,$2,$3,$4::date,$5::jsonb,$6,$7::jsonb,$8,($4::date + interval '3 years')::date,$9,$10,$11,
+              ${revisionForOrderSql("$12", "$10::uuid")}) RETURNING id`,
     [
       actor.companyId,
       d.name,
@@ -276,6 +286,7 @@ export async function requestAssessment(
       linkedStandardId === null, // 표준서 없으면 간이평가
       linkedStandardId,
       d.workerOpinion?.trim() || null,
+      linkedStandardId ? (d.standardRevisionId ?? null) : null,
     ],
   );
   const assessmentId = rows[0].id;
@@ -408,12 +419,12 @@ export async function issueOrder(
     `SELECT s.id, s.name, s.ptw_required, s.updated_at,
             r.id AS revision_id, r.revision_no
        FROM standards s JOIN work_orders w ON w.standard_id = s.id
-       LEFT JOIN standard_revisions r ON r.id = s.current_revision_id
+       LEFT JOIN standard_revisions r ON r.id = ${revisionForOrderSql("$2", "s.id")}
       WHERE w.id = $1`,
-    [id],
+    [id, d.standardRevisionId ?? null],
   );
   if (stdMeta.length > 0) {
-    // 발급 시점의 판을 지시서에 박는다 — 표준서가 나중에 개정돼도 "그날 그 판".
+    // 초안이 복사해 온 판을 지시서에 박는다 — 표준서가 나중에 개정돼도 "그날 그 판".
     await client.query(
       "UPDATE work_orders SET standard_revision_id = $2 WHERE id = $1",
       [id, stdMeta[0].revision_id],

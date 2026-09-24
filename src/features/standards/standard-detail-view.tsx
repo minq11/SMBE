@@ -263,17 +263,9 @@ export function StandardDetailView({
                   <AttachmentList
                     items={stepAttachments[s.id] ?? []}
                     invalidatePath={invalidatePath}
-                    canDelete={isPro}
+                    canDelete={false}
                     emptyLabel=""
                     compact
-                  />
-                )}
-                {isPro && (
-                  <AttachmentUploader
-                    targetType="standard_step"
-                    targetId={s.id}
-                    invalidatePath={invalidatePath}
-                    label="이 단계 사진 추가"
                   />
                 )}
               </li>
@@ -282,9 +274,16 @@ export function StandardDetailView({
         ) : (
           <p className="std-form-note">등록된 단계가 없습니다.</p>
         )}
+        {/* 승인된 판은 사진도 고정이다. 붙이거나 지우는 건 개정 초안에서. */}
         {!isPro && detail.steps.length > 0 && (
           <p className="attach-uploader-hint">
             유료 요금제에서 작업 단계별 사진을 첨부할 수 있습니다.
+          </p>
+        )}
+        {isPro && !archived && detail.steps.length > 0 && (
+          <p className="attach-uploader-hint">
+            사진을 붙이거나 지우려면 개정을 시작해 초안에서 하세요. 승인된 판은
+            사진도 그대로 남습니다.
           </p>
         )}
       </section>

@@ -17,6 +17,9 @@ export const riskSchema = z.object({
 });
 export const draftSchema = z.object({
   standardId: z.string().uuid().nullable().optional().default(null),
+  // 표준서를 고를 때 그 내용이 어느 판이었나. 발급 때 지시서에 박힌다 — 초안을 쓰는
+  // 사이 표준서가 개정돼도 지시서는 자기가 복사한 판을 가리킨다.
+  standardRevisionId: z.string().uuid().nullable().optional().default(null),
   name: z.string().trim().min(1, "작업명을 입력하세요.").max(120),
   groupLabel: z.string().max(40),
   method: text,
@@ -135,6 +138,7 @@ export function blankDraft(): WorkDraft {
   const today = seoulToday();
   return {
     standardId: null,
+    standardRevisionId: null,
     name: "",
     groupLabel: "",
     method: "",

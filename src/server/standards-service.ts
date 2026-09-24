@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { query, queryOne, withTransaction } from "@/server/db";
 import { readRiskCriteria } from "@/server/company-settings";
+import { deleteObjects, retireAttachments } from "@/server/attachments";
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import {
   ASSESSMENT_KIND_LABEL,
@@ -442,6 +443,9 @@ export async function getStandardForPrefill(
   assessment_id: string;
   valid_until: string | null;
   expired: boolean;
+  /** 이 내용이 어느 판인가. 지시서 초안이 들고 있다가 발급 때 박는다. */
+  revision_id: string | null;
+  revision_no: number | null;
 } | null> {
   const detail = await getStandardDetail(companyId, standardId);
   if (!detail || detail.status !== "APPROVED" || !detail.current_assessment)
@@ -465,6 +469,8 @@ export async function getStandardForPrefill(
     assessment_id: ca.assessment_id,
     valid_until: ca.valid_until,
     expired: ca.expired,
+    revision_id: detail.revision?.id ?? null,
+    revision_no: detail.revision?.revision_no ?? null,
   };
 }
 
@@ -656,7 +662,8 @@ async function writeRevisionBody(
   revisionId: string,
   payload: StandardEditPayload,
   keepIds: boolean,
-) {
+): Promise<string[]> {
+  let orphanKeys: string[] = [];
   if (keepIds) {
     const incoming = new Set(
       payload.steps.map((s) => s.id).filter((v): v is string => Boolean(v)),
@@ -668,11 +675,14 @@ async function writeRevisionBody(
     const toDelete = existing.rows
       .map((r) => r.id)
       .filter((id) => !incoming.has(id));
-    if (toDelete.length)
+    if (toDelete.length) {
+      // 단계가 사라지면 그 사진도. 파일은 다른 판이 아직 쓸 수 있어 키만 모아 둔다.
+      orphanKeys = await retireAttachments(client, "standard_step", toDelete);
       await client.query(
         "DELETE FROM standard_steps WHERE id = ANY($1::uuid[])",
         [toDelete],
       );
+    }
     // UNIQUE (revision_id, order_no) 충돌을 피해 음수로 밀었다가 다시 매긴다.
     await client.query(
       "UPDATE standard_steps SET order_no = -order_no WHERE revision_id = $1",
@@ -712,6 +722,36 @@ async function writeRevisionBody(
       );
     }
   }
+  return orphanKeys;
+}
+
+/**
+ * 초안 행을 지운다 (단계·체크리스트는 CASCADE, 사진은 DELETED 표시). 버리기와 폐기가
+ * 같이 쓴다. 돌려주는 키는 커밋 뒤 `deleteObjects` 로.
+ */
+async function dropDraft(
+  client: Q,
+  standardId: string,
+): Promise<{ revisionNo: number; orphanKeys: string[] } | null> {
+  const draft = await client.query<{ id: string; revision_no: number }>(
+    `SELECT id, revision_no FROM standard_revisions
+      WHERE standard_id = $1 AND status = 'DRAFT' FOR UPDATE`,
+    [standardId],
+  );
+  if (!draft.rows[0]) return null;
+  const steps = await client.query<{ id: string }>(
+    "SELECT id FROM standard_steps WHERE revision_id = $1",
+    [draft.rows[0].id],
+  );
+  const orphanKeys = await retireAttachments(
+    client,
+    "standard_step",
+    steps.rows.map((r) => r.id),
+  );
+  await client.query("DELETE FROM standard_revisions WHERE id = $1", [
+    draft.rows[0].id,
+  ]);
+  return { revisionNo: draft.rows[0].revision_no, orphanKeys };
 }
 
 /**
@@ -830,11 +870,12 @@ export async function updateRevisionDraft(input: {
   payload: StandardEditPayload;
 }): Promise<{ revisionId: string }> {
   const { companyId, actorId, standardId, payload } = input;
-  return withTransaction(async (client) => {
+  const { revisionId, orphanKeys } = await withTransaction(async (client) => {
     const draft = await client.query<{ id: string; revision_no: number }>(
       `SELECT r.id, r.revision_no FROM standard_revisions r
          JOIN standards s ON s.id = r.standard_id
         WHERE r.standard_id = $1 AND s.company_id = $2 AND r.status = 'DRAFT'
+          AND s.status <> 'ARCHIVED'
         FOR UPDATE OF r`,
       [standardId, companyId],
     );
@@ -853,7 +894,13 @@ export async function updateRevisionDraft(input: {
         payload.change_note || null,
       ],
     );
-    await writeRevisionBody(client, standardId, revisionId, payload, true);
+    const orphanKeys = await writeRevisionBody(
+      client,
+      standardId,
+      revisionId,
+      payload,
+      true,
+    );
     await client.query(
       `INSERT INTO audit_logs
          (company_id, actor_id, action, target_type, target_id, path, after_json)
@@ -865,8 +912,10 @@ export async function updateRevisionDraft(input: {
         JSON.stringify({ revision_no: draft.rows[0].revision_no, ...payload }),
       ],
     );
-    return { revisionId };
+    return { revisionId, orphanKeys };
   });
+  await deleteObjects(orphanKeys);
+  return { revisionId };
 }
 
 /**
@@ -886,6 +935,8 @@ export async function approveRevision(input: {
       [standardId, companyId],
     );
     if (!std.rows[0]) throw new Error("표준서를 찾을 수 없습니다.");
+    if (std.rows[0].status === "ARCHIVED")
+      throw new Error("폐기된 표준서는 승인할 수 없습니다.");
     const draft = await client.query<{
       id: string;
       revision_no: number;
@@ -945,25 +996,14 @@ export async function discardRevision(input: {
   standardId: string;
 }): Promise<void> {
   const { companyId, actorId, standardId } = input;
-  await withTransaction(async (client) => {
-    const draft = await client.query<{ id: string; revision_no: number }>(
-      `SELECT r.id, r.revision_no FROM standard_revisions r
-         JOIN standards s ON s.id = r.standard_id
-        WHERE r.standard_id = $1 AND s.company_id = $2 AND r.status = 'DRAFT'
-        FOR UPDATE OF r`,
+  const orphanKeys = await withTransaction(async (client) => {
+    const std = await client.query<{ id: string }>(
+      `SELECT id FROM standards WHERE id = $1 AND company_id = $2 FOR UPDATE`,
       [standardId, companyId],
     );
-    if (!draft.rows[0]) return;
-    // 파일은 다른 판이 아직 가리키므로 행만 지운다 (attachments.ts 의 마지막 참조 규칙).
-    await client.query(
-      `DELETE FROM attachments
-        WHERE target_type = 'standard_step'
-          AND target_id IN (SELECT id FROM standard_steps WHERE revision_id = $1)`,
-      [draft.rows[0].id],
-    );
-    await client.query("DELETE FROM standard_revisions WHERE id = $1", [
-      draft.rows[0].id,
-    ]);
+    if (!std.rows[0]) throw new Error("표준서를 찾을 수 없습니다.");
+    const dropped = await dropDraft(client, standardId);
+    if (!dropped) return [];
     await client.query(
       `INSERT INTO audit_logs
          (company_id, actor_id, action, target_type, target_id, path, after_json)
@@ -972,10 +1012,12 @@ export async function discardRevision(input: {
         companyId,
         actorId,
         standardId,
-        JSON.stringify({ revision_no: draft.rows[0].revision_no }),
+        JSON.stringify({ revision_no: dropped.revisionNo }),
       ],
     );
+    return dropped.orphanKeys;
   });
+  await deleteObjects(orphanKeys);
 }
 
 /**
@@ -1040,13 +1082,15 @@ export async function archiveStandard(input: {
   standardId: string;
 }): Promise<void> {
   const { companyId, actorId, standardId } = input;
-  await withTransaction(async (client) => {
+  const orphanKeys = await withTransaction(async (client) => {
     const cur = await client.query<{ status: StandardStatus }>(
       `SELECT status FROM standards WHERE id = $1 AND company_id = $2 FOR UPDATE`,
       [standardId, companyId],
     );
     if (cur.rows.length === 0) throw new Error("표준서를 찾을 수 없습니다.");
-    if (cur.rows[0].status === "ARCHIVED") return;
+    if (cur.rows[0].status === "ARCHIVED") return [];
+    // 폐기된 표준서에 작성 중인 개정본이 남아 승인되는 일이 없도록 초안은 같이 버린다.
+    const dropped = await dropDraft(client, standardId);
 
     await client.query(
       `UPDATE standards
@@ -1057,11 +1101,18 @@ export async function archiveStandard(input: {
 
     await client.query(
       `INSERT INTO audit_logs
-         (company_id, actor_id, action, target_type, target_id, path)
-       VALUES ($1, $2, 'STANDARD_ARCHIVE', 'standard', $3, 'WEB')`,
-      [companyId, actorId, standardId],
+         (company_id, actor_id, action, target_type, target_id, path, after_json)
+       VALUES ($1, $2, 'STANDARD_ARCHIVE', 'standard', $3, 'WEB', $4::jsonb)`,
+      [
+        companyId,
+        actorId,
+        standardId,
+        JSON.stringify({ discarded_draft_no: dropped?.revisionNo ?? null }),
+      ],
     );
+    return dropped?.orphanKeys ?? [];
   });
+  await deleteObjects(orphanKeys);
 }
 
 // Export utility for other server modules

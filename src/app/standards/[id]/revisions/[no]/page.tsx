@@ -6,6 +6,8 @@ import { AppShell } from "@/components/shell/app-shell";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
 import { getRevisionContent } from "@/server/standards-service";
+import { listAttachments } from "@/server/attachments";
+import { AttachmentList } from "@/features/attachments/attachment-list";
 
 export const metadata = { title: "표준서 개정본 · 심플안전" };
 
@@ -38,6 +40,15 @@ export default async function RevisionPage({
   ]);
   if (!rev) notFound();
   const when = rev.approved_at ?? rev.created_at;
+  // 그때의 사진도 그 판의 것이다. 읽기만 — 고치려면 개정.
+  const actor = {
+    companyId: session.membership.company_id,
+    userId: session.user.id,
+  };
+  const photos: Record<string, Awaited<ReturnType<typeof listAttachments>>> =
+    {};
+  for (const s of rev.steps)
+    photos[s.id] = await listAttachments(actor, "standard_step", s.id);
 
   return (
     <AppShell
@@ -73,10 +84,18 @@ export default async function RevisionPage({
       </header>
       <section className="std-detail-section">
         <h2>작업 단계</h2>
-        <ol className="std-detail-list">
+        <ol className="std-detail-list std-detail-list--with-attach">
           {rev.steps.map((s) => (
             <li key={s.id}>
               <div className="std-detail-step-text">{s.step_text}</div>
+              {(photos[s.id]?.length ?? 0) > 0 && (
+                <AttachmentList
+                  items={photos[s.id]}
+                  canDelete={false}
+                  emptyLabel=""
+                  compact
+                />
+              )}
             </li>
           ))}
         </ol>

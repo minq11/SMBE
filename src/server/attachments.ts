@@ -183,6 +183,23 @@ async function verifyTargetOwnership(
  * 같은 회사라는 것만으로는 링크 방문자에게 충분하지 않다. 토큰이 가리키는
  * 작업지시(와 그 지시서에서 나온 부적합)에만 붙일 수 있어야 한다.
  */
+/**
+ * 승인된 판은 고치지 않는다 (0023). 단계 사진을 붙이거나 지우는 것도 개정 초안에서만.
+ * 읽기는 어느 판이든 된다 — 옛 판 화면이 그때의 사진을 보여 준다.
+ */
+async function assertStepInDraft(stepId: string) {
+  const rows = await query<{ status: string }>(
+    `SELECT r.status FROM standard_steps ss
+       JOIN standard_revisions r ON r.id = ss.revision_id
+      WHERE ss.id = $1`,
+    [stepId],
+  );
+  if (rows[0]?.status !== "DRAFT")
+    throw new AttachmentError(
+      "승인된 판의 사진은 고칠 수 없습니다. 개정을 시작한 뒤 초안에서 붙이거나 지우세요.",
+    );
+}
+
 async function assertLinkScope(
   actor: ScopedActor,
   target: AttachmentTarget,
@@ -259,6 +276,8 @@ export async function presignUpload(
   const parsed = presignSchema.parse(input);
   await verifyActor(actor, parsed.targetType);
   await verifyTargetOwnership(actor, parsed.targetType, parsed.targetId);
+  if (parsed.targetType === "standard_step")
+    await assertStepInDraft(parsed.targetId);
   if (parsed.targetType === "board_post")
     await assertBoardQuota(actor.companyId, parsed.sizeBytes);
 
@@ -461,6 +480,7 @@ export async function deleteAttachment(
   const { role } = await verifyActor(actor, row.target_type, false);
   assertOwnAttachment(actor, role, row.uploaded_by);
   await verifyTargetOwnership(actor, row.target_type, row.target_id);
+  if (row.target_type === "standard_step") await assertStepInDraft(row.target_id);
   await query(
     `UPDATE attachments SET status = 'DELETED', deleted_at = now() WHERE id = $1`,
     [attachmentId],
@@ -479,5 +499,52 @@ export async function deleteAttachment(
     );
   } catch {
     /* silent - lifecycle 로 정리 */
+  }
+}
+
+type Q = {
+  query: <T = unknown>(
+    text: string,
+    params?: unknown[],
+  ) => Promise<{ rows: T[] }>;
+};
+
+/**
+ * 대상이 사라질 때(단계 삭제·초안 버리기·표준서 폐기) 그 첨부를 DELETED 로 표시하고,
+ * 이제 아무 행도 가리키지 않게 된 파일 키를 돌려준다. 트랜잭션 안에서 부르고 커밋
+ * 뒤에 `deleteObjects` 로 파일을 지운다 — 롤백되면 파일은 그대로다. 개정본이 같은
+ * 파일을 나눠 쓰므로(0023) 행만 보고 파일을 지우면 다른 판의 사진이 사라진다.
+ */
+export async function retireAttachments(
+  client: Q,
+  target: AttachmentTarget,
+  targetIds: string[],
+): Promise<string[]> {
+  if (targetIds.length === 0) return [];
+  const gone = await client.query<{ storage_key: string }>(
+    `UPDATE attachments SET status = 'DELETED', deleted_at = now()
+      WHERE target_type = $1 AND target_id = ANY($2::uuid[]) AND status <> 'DELETED'
+      RETURNING storage_key`,
+    [target, targetIds],
+  );
+  const keys = [...new Set(gone.rows.map((r) => r.storage_key))];
+  if (keys.length === 0) return [];
+  const live = await client.query<{ storage_key: string }>(
+    `SELECT DISTINCT storage_key FROM attachments
+      WHERE storage_key = ANY($1::text[]) AND status <> 'DELETED'`,
+    [keys],
+  );
+  const stillUsed = new Set(live.rows.map((r) => r.storage_key));
+  return keys.filter((k) => !stillUsed.has(k));
+}
+
+/** best-effort S3 삭제. 실패해도 버킷 lifecycle 이 결국 정리한다. */
+export async function deleteObjects(keys: string[]): Promise<void> {
+  for (const key of keys) {
+    try {
+      await s3().send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: key }));
+    } catch {
+      /* lifecycle */
+    }
   }
 }
