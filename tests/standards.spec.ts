@@ -207,8 +207,12 @@ test("standard: create, edit, add a seeded assessment round", async ({
 
     // 2) 확정된 판은 못 고친다. 표준서 개정(확인 창) → 복사된 초안을 고쳐 → 확정 → 2판.
     await expect(page.locator("#main")).toContainText("1판");
-    await page.getByRole("button", { name: "표준서 개정", exact: true }).click();
-    await expect(page.getByRole("dialog")).toContainText("개정본을 만드시겠습니까");
+    await page
+      .getByRole("button", { name: "표준서 개정", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).toContainText(
+      "개정본을 만드시겠습니까",
+    );
     await page
       .getByRole("dialog")
       .getByRole("button", { name: "확인", exact: true })
@@ -280,7 +284,9 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.getByLabel("현재 안전조치", { exact: true })).toHaveValue(
       "작업자 주의, 장갑 착용",
     );
-    await page.getByRole("button", { name: "위험성평가 저장", exact: true }).click();
+    await page
+      .getByRole("button", { name: "위험성평가 저장", exact: true })
+      .click();
     await expect(page).toHaveURL(new RegExp("/standards/" + id + "$"));
     await expect(page.locator("#main")).toContainText("회차 이력 (2건)");
 
@@ -324,10 +330,17 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(
       page.getByRole("button", { name: /표준서 없이 진행/ }),
     ).toBeVisible();
+    // 표준서가 있는 회사는 "새 표준서 만들기" 가 찾기 창 안에만 있다.
+    await expect(
+      page.getByRole("link", { name: "새 표준서 만들기" }),
+    ).toHaveCount(0);
     // 팝업에서 이름으로 찾아 다시 고른다.
     await page.getByRole("button", { name: "작업표준서 찾기" }).click();
     // 처음엔 확정된 표준서 전체가 보이고, 검색어를 넣고 검색해야 거른다.
     const finder = page.getByRole("dialog");
+    await expect(
+      finder.getByRole("link", { name: "새 표준서 만들기" }),
+    ).toBeVisible();
     await expect(finder.locator(".wo-std-option")).toHaveCount(1);
     await finder.getByLabel("표준서 이름 검색").fill("없는 이름");
     await expect(finder.locator(".wo-std-option")).toHaveCount(1);
@@ -352,7 +365,9 @@ test("standard: create, edit, add a seeded assessment round", async ({
     // 7) 개정 초안이 있는 채로는 폐기되지 않는다 — 먼저 버리거나 확정하라고 안내.
     //    초안을 버린 뒤에야 폐기된다.
     await page.goto(`/standards/${id}`);
-    await page.getByRole("button", { name: "표준서 개정", exact: true }).click();
+    await page
+      .getByRole("button", { name: "표준서 개정", exact: true })
+      .click();
     await page
       .getByRole("dialog")
       .getByRole("button", { name: "확인", exact: true })

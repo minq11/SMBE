@@ -122,6 +122,7 @@ const PARTS = [
   { id: "wo-schedule", label: "일정·인원" },
   { id: "wo-check", label: "체크리스트" },
 ];
+const NEW_STANDARD_HREF = `/standards/new?return=${encodeURIComponent("/work-orders/new")}`;
 const PTW_OPTIONS = [
   { value: "no", label: "불필요" },
   { value: "yes", label: "필요", tone: "warn" },
@@ -664,17 +665,17 @@ export function WorkOrderForm({
                           <Search size={13} /> 작업표준서 찾기
                         </button>
                       )}
-                      <Link
-                        href={`/standards/new?return=${encodeURIComponent("/work-orders/new")}`}
-                        className={
-                          standards.length === 0
-                            ? "primary-button"
-                            : "ghost-button"
-                        }
-                        prefetch={false}
-                      >
-                        <Plus size={13} /> 새 표준서 만들기
-                      </Link>
+                      {/* 표준서가 하나라도 있으면 새로 만들기는 찾기 창 안에만 있다 —
+                          찾아보고 없을 때 만드는 순서라서. */}
+                      {standards.length === 0 && (
+                        <Link
+                          href={NEW_STANDARD_HREF}
+                          className="primary-button"
+                          prefetch={false}
+                        >
+                          <Plus size={13} /> 새 표준서 만들기
+                        </Link>
+                      )}
                       <button
                         type="button"
                         className={`ghost-button wo-std-exception${mode === "simple" ? " is-on" : ""}`}
@@ -703,6 +704,15 @@ export function WorkOrderForm({
                   onQuery={setStdQuery}
                   searchLabel="표준서 이름 검색"
                   searchPlaceholder="표준서 이름 검색"
+                  extra={
+                    <Link
+                      href={NEW_STANDARD_HREF}
+                      className="text-button"
+                      prefetch={false}
+                    >
+                      <Plus size={14} /> 새 표준서 만들기
+                    </Link>
+                  }
                 >
                   <ul className="wo-std-list wo-std-list--dialog" role="list">
                     {visibleStandards.map((s) => {

@@ -226,12 +226,12 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
         if (route === "/work-orders/new") {
           // 표준서가 없는 회사라 시작 방식을 먼저 고른다. 그러면 한 장 폼이
           // 다 펼쳐지고 구간 칩이 생긴다.
+          // 표준서가 없는 회사는 "새 표준서 만들기" 가 밖에 보인다.
+          await expect(
+            page.getByRole("link", { name: "새 표준서 만들기" }),
+          ).toBeVisible();
           await page.getByRole("button", { name: /표준서 없이 진행/ }).click();
-          for (const label of [
-            "위험성평가",
-            "일정·인원",
-            "체크리스트",
-          ]) {
+          for (const label of ["위험성평가", "일정·인원", "체크리스트"]) {
             await page.locator(".jump-nav a", { hasText: label }).click();
             await fits();
           }

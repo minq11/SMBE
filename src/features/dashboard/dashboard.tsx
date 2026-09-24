@@ -82,7 +82,7 @@ const REASONS: Reason[] = [
     icon: ShieldCheck,
     body: "표준서·지시서·허가서·TBM·점검·사고등록 등 중처법/산안법 요구사항 대비",
     detail:
-      "어려운 중처법, 산안법을 주기적으로 파악하여 시스템에 반영합니다." + 
+      "어려운 중처법, 산안법을 주기적으로 파악하여 시스템에 반영합니다." +
       " 또, 시스템 안에서 매일 쌓이는 표준서·지시서·허가서·점검 기록이 그대로 위험성평가 인정 준비가 됩니다. (인정받으면 3년간 정기 감독 유예, 산재보험료 20% 인하)",
   },
   {
@@ -535,10 +535,22 @@ function DashboardBody({
             <span className="action-card-icon">
               <ClipboardList size={17} />
             </span>
-            <h2>{isManager ? "오늘의 작업 지시하기" : "내 작업 확인하기"}</h2>
+            <h2>
+              {isManager ? (
+                // 좁은 폰에서 줄이 바뀌면 "·PTW" 처럼 가운뎃점이 줄 머리에 온다.
+                // 점은 앞말에 붙이고, 끊을 자리는 점 뒤로 준다.
+                <>
+                  <span style={{ whiteSpace: "nowrap" }}>작업지시·</span>
+                  <wbr />
+                  PTW 발급하기
+                </>
+              ) : (
+                "내 작업 확인하기"
+              )}
+            </h2>
             <p>
               {isManager
-                ? "표준서 없이도 간이평가로 시작합니다."
+                ? "위험작업이면 허가서까지 한 번에"
                 : "배정된 작업의 위험요인과 대책을 확인하세요."}
             </p>
             <span className="action-card-cta">
