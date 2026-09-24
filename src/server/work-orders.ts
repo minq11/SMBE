@@ -170,6 +170,25 @@ export async function orderDetail(actor: Actor, id: string) {
       "SELECT category,text FROM work_order_checklist_items WHERE work_order_id=$1 ORDER BY category,order_no",
       [id],
     );
+    // 연결된 표준서와 그 판. 발급 전에도 보인다 — 고른 순간부터 판이 붙어 있다.
+    const { rows: standardRows } = order.standard_id
+      ? await client.query<{
+          standard_id: string;
+          name: string;
+          revision_no: number | null;
+          is_current: boolean;
+          current_revision_no: number | null;
+        }>(
+          `SELECT s.id AS standard_id, s.name, r.revision_no,
+                  (r.id IS NOT DISTINCT FROM s.current_revision_id) AS is_current,
+                  c.revision_no AS current_revision_no
+             FROM standards s
+             LEFT JOIN standard_revisions r ON r.id = COALESCE($2::uuid, s.current_revision_id)
+             LEFT JOIN standard_revisions c ON c.id = s.current_revision_id
+            WHERE s.id = $1`,
+          [order.standard_id, order.standard_revision_id],
+        )
+      : { rows: [] };
     const now = new Date();
     const sessions = order.issued_at
       ? await inspectionSessions(client, id)
@@ -182,6 +201,7 @@ export async function orderDetail(actor: Actor, id: string) {
     );
     return {
       order,
+      standard: standardRows[0] ?? null,
       assignments,
       outputs,
       history,

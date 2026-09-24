@@ -726,8 +726,8 @@ async function writeRevisionBody(
 }
 
 /**
- * 초안 행을 지운다 (단계·체크리스트는 CASCADE, 사진은 DELETED 표시). 버리기와 폐기가
- * 같이 쓴다. 돌려주는 키는 커밋 뒤 `deleteObjects` 로.
+ * 초안 행을 지운다 (단계·체크리스트는 CASCADE, 사진은 DELETED 표시). 돌려주는 키는
+ * 커밋 뒤 `deleteObjects` 로.
  */
 async function dropDraft(
   client: Q,
@@ -1082,15 +1082,23 @@ export async function archiveStandard(input: {
   standardId: string;
 }): Promise<void> {
   const { companyId, actorId, standardId } = input;
-  const orphanKeys = await withTransaction(async (client) => {
+  await withTransaction(async (client) => {
     const cur = await client.query<{ status: StandardStatus }>(
       `SELECT status FROM standards WHERE id = $1 AND company_id = $2 FOR UPDATE`,
       [standardId, companyId],
     );
     if (cur.rows.length === 0) throw new Error("표준서를 찾을 수 없습니다.");
-    if (cur.rows[0].status === "ARCHIVED") return [];
-    // 폐기된 표준서에 작성 중인 개정본이 남아 승인되는 일이 없도록 초안은 같이 버린다.
-    const dropped = await dropDraft(client, standardId);
+    if (cur.rows[0].status === "ARCHIVED") return;
+    // 사장님 결정: 초안이 있으면 조용히 버리지 않고 막는다. 사람이 먼저 버리거나 승인한다.
+    const draft = await client.query<{ revision_no: number }>(
+      `SELECT revision_no FROM standard_revisions
+        WHERE standard_id = $1 AND status = 'DRAFT'`,
+      [standardId],
+    );
+    if (draft.rows[0])
+      throw new Error(
+        `작성 중인 ${draft.rows[0].revision_no}판 개정 초안이 있습니다. 먼저 초안을 버리거나 승인한 뒤 폐기하세요.`,
+      );
 
     await client.query(
       `UPDATE standards
@@ -1102,17 +1110,10 @@ export async function archiveStandard(input: {
     await client.query(
       `INSERT INTO audit_logs
          (company_id, actor_id, action, target_type, target_id, path, after_json)
-       VALUES ($1, $2, 'STANDARD_ARCHIVE', 'standard', $3, 'WEB', $4::jsonb)`,
-      [
-        companyId,
-        actorId,
-        standardId,
-        JSON.stringify({ discarded_draft_no: dropped?.revisionNo ?? null }),
-      ],
+       VALUES ($1, $2, 'STANDARD_ARCHIVE', 'standard', $3, 'WEB', NULL)`,
+      [companyId, actorId, standardId],
     );
-    return dropped?.orphanKeys ?? [];
   });
-  await deleteObjects(orphanKeys);
 }
 
 // Export utility for other server modules

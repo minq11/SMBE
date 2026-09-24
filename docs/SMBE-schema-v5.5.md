@@ -347,7 +347,7 @@ erDiagram
 | ptw_required | bool | 현재 판의 거울 |
 | status | text(`DRAFT`,`APPROVED`,`ARCHIVED`) | 생성 즉시 `APPROVED`. `DRAFT` 는 예약값 |
 | current_revision_id | uuid FK standard_revisions NULL | 승인된 현재 판 |
-| archived_at, archived_by | | 폐기. 남은 초안은 함께 지운다 |
+| archived_at, archived_by | | 폐기. 작성 중인 초안이 있으면 거부 (먼저 버리거나 승인) |
 | created_by, created_at, updated_at | | |
 
 ### 5-3. `standard_revisions` (판)
@@ -367,7 +367,7 @@ erDiagram
 
 - **개정 시작**: 현재 판의 name·ptw_required·단계·체크리스트·단계 사진 참조를 복사한 `DRAFT` 를 만든다 (revision_no = max + 1).
 - **승인**: 초안 → `APPROVED`, 이전 `APPROVED` → `SUPERSEDED`, `standards.current_revision_id`·name·ptw_required 갱신. 그 뒤 그 판은 불변 (단계·체크리스트·사진 모두).
-- **버리기·폐기**: 초안 행 삭제(단계·체크리스트 CASCADE). 초안 단계의 사진 행은 `DELETED` 표시하고, 다른 판이 쓰지 않는 파일만 S3 에서 지운다.
+- **버리기**: 초안 행 삭제(단계·체크리스트 CASCADE). 초안 단계의 사진 행은 `DELETED` 표시하고, 다른 판이 쓰지 않는 파일만 S3 에서 지운다. **폐기**는 초안이 있으면 거부한다.
 - 승인 대기(`PENDING`)·반려(`REJECTED`)는 두지 않는다 (관리자 자기 승인).
 
 ### 5-4. `standard_steps` (작업방법 단계)
@@ -520,7 +520,7 @@ erDiagram
 | name | text | 작업명 |
 | group_label | text NULL | 조 추가 시 조 이름(주간/야간 등). 원 설계상 조별 지시서 분리 |
 | standard_id | uuid FK standards NULL | 표준서 기반이면 |
-| standard_revision_id | uuid FK standard_revisions NULL | 발급 시 기록 (v5.6). 초안이 표준서를 고를 때 복사한 판(`draft_data.standardRevisionId`), 없으면 발급 시점의 현재 판 |
+| standard_revision_id | uuid FK standard_revisions NULL | 초안 저장 때부터 기록 (v5.6). 화면에서 표준서를 고를 때 복사한 판(`draft_data.standardRevisionId`)이 그 표준서의 승인된 판이면 그것, 아니면 그때의 현재 판. 발급 사본·지시서에서 요청한 평가도 이 판을 쓴다 |
 | risk_assessment_id | uuid FK risk_assessments | 승인된 평가만 사용 |
 | work_period_start, work_period_end | date | |
 | work_start_time, work_end_time | time | 1일 작업시간 상한 16시간(앱 검증) |

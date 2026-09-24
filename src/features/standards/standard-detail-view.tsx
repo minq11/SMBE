@@ -50,6 +50,7 @@ export function StandardDetailView({
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [errorTitle, setErrorTitle] = useState<string | undefined>(undefined);
   const invalidatePath = `/standards/${detail.standard_id}`;
 
   const { confirm, dialog } = useConfirm();
@@ -58,6 +59,7 @@ export function StandardDetailView({
   ) =>
     startTransition(async () => {
       setError(null);
+      setErrorTitle(undefined);
       const form = new FormData();
       form.set("standard_id", detail.standard_id);
       const result = await action(form);
@@ -89,6 +91,13 @@ export function StandardDetailView({
     run(discardRevisionAction);
   };
   const onArchive = async () => {
+    if (detail.draft) {
+      setErrorTitle("폐기할 수 없습니다");
+      setError(
+        `작성 중인 ${detail.draft.revision_no}판 개정 초안이 있습니다. 먼저 초안을 버리거나 승인한 뒤 폐기하세요.`,
+      );
+      return;
+    }
     if (
       !(await confirm(
         `${detail.name} 을 폐기할까요? 폐기된 표준서는 새 지시서 작성에서 선택할 수 없습니다. 기존에 발급된 지시서에는 영향이 없습니다.`,
@@ -96,11 +105,7 @@ export function StandardDetailView({
       ))
     )
       return;
-    startTransition(async () => {
-      const form = new FormData();
-      form.set("standard_id", detail.standard_id);
-      await archiveStandardAction(form);
-    });
+    run(archiveStandardAction);
   };
 
   const active = detail.status === "APPROVED";
@@ -111,7 +116,7 @@ export function StandardDetailView({
   return (
     <>
       {dialog}
-      <FormErrorDialog message={error} nonce={error} />
+      <FormErrorDialog message={error} nonce={error} title={errorTitle} />
       <Link href="/standards" className="text-button std-back-link">
         <ArrowLeft size={13} /> 표준서 목록
       </Link>

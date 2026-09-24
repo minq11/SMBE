@@ -276,8 +276,8 @@ test("standard: create, edit, add a seeded assessment round", async ({
       fullPage: true,
     });
 
-    // 7) 개정 초안이 있는 채로 폐기하면 초안도 같이 사라진다 — 폐기된 표준서에
-    //    새 판이 승인되는 길이 없다.
+    // 7) 개정 초안이 있는 채로는 폐기되지 않는다 — 먼저 버리거나 승인하라고 안내.
+    //    초안을 버린 뒤에야 폐기된다.
     await page.goto(`/standards/${id}`);
     await page.getByRole("button", { name: "개정 시작", exact: true }).click();
     await expect(page.getByRole("heading", { name: "3판 개정" })).toBeVisible();
@@ -288,18 +288,36 @@ test("standard: create, edit, add a seeded assessment round", async ({
       fullPage: true,
     });
     await page.getByRole("button", { name: "폐기", exact: true }).click();
+    const blocked = page.getByRole("alertdialog");
+    await expect(blocked).toContainText("폐기할 수 없습니다");
+    await expect(blocked).toContainText("먼저 초안을 버리거나 승인한 뒤");
+    await page.screenshot({
+      path: testInfo.outputPath("standard-archive-blocked.png"),
+      fullPage: true,
+    });
+    await blocked.getByRole("button").first().click();
+    await expect(page.locator("#main")).toContainText("3판 개정 작성 중");
+    await page.getByRole("button", { name: "버리기", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "버리기", exact: true })
+      .click();
+    await expect(page.locator("#main")).not.toContainText("3판 개정 작성 중");
+    await page.getByRole("button", { name: "폐기", exact: true }).click();
     await page
       .getByRole("dialog")
       .getByRole("button", { name: "폐기", exact: true })
       .click();
-    await expect(page.locator("#main")).not.toContainText("3판 개정 작성 중");
-    const drafts = await pool.query(
-      `SELECT count(*)::int AS n FROM standard_revisions
-        WHERE standard_id = $1 AND status = 'DRAFT'`,
+    await expect(page.locator("#main")).toContainText("개정 이력 (2판)");
+    const after = await pool.query(
+      `SELECT s.status,
+              (SELECT count(*)::int FROM standard_revisions
+                WHERE standard_id = s.id AND status = 'DRAFT') AS drafts
+         FROM standards s WHERE s.id = $1`,
       [id],
     );
-    expect(drafts.rows[0].n).toBe(0);
-    await expect(page.locator("#main")).toContainText("개정 이력 (2판)");
+    expect(after.rows[0].status).toBe("ARCHIVED");
+    expect(after.rows[0].drafts).toBe(0);
     await page.screenshot({
       path: testInfo.outputPath("standard-detail-archived.png"),
       fullPage: true,
