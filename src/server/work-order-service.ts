@@ -34,24 +34,37 @@ export type OrderRow = {
   assessment_created_by: string | null;
   approved_by: string | null;
   approved_at: string | null;
+  standard_id: string | null;
+  standard_revision_id: string | null;
 };
-// 표준서 링크: 지정된 표준서가 자기 회사의 승인된 · 유효 평가를 가진 상태인지 검증.
-// nullable string 리턴 (없거나 매칭 실패 시 null).
+// 표준서 링크: 지정된 표준서가 자기 회사의 승인된 상태인지 검증하고, 지시서가 들고 갈
+// 판을 정한다 — 화면에서 표준서를 고를 때 복사한 판이 이 표준서의 승인된 판이면 그것,
+// 아니면(옛 초안·판 정보 없음) 지금의 현재 판. 초안(DRAFT) 판은 지시서에 못 붙는다.
 export async function resolveStandardLink(
   client: PoolClient,
   companyId: string,
   standardId: string | null,
-): Promise<string | null> {
+  revisionId: string | null = null,
+): Promise<{ id: string; revisionId: string | null } | null> {
   if (!standardId) return null;
-  const { rows } = await client.query<{ id: string; status: string }>(
-    `SELECT id, status FROM standards
-      WHERE id = $1 AND company_id = $2`,
-    [standardId, companyId],
+  const { rows } = await client.query<{
+    id: string;
+    status: string;
+    revision_id: string | null;
+  }>(
+    `SELECT s.id, s.status,
+            COALESCE(
+              (SELECT r.id FROM standard_revisions r
+                WHERE r.id = $3::uuid AND r.standard_id = s.id AND r.status <> 'DRAFT'),
+              s.current_revision_id) AS revision_id
+       FROM standards s
+      WHERE s.id = $1 AND s.company_id = $2`,
+    [standardId, companyId, revisionId],
   );
   if (rows.length === 0) throw new WorkOrderError("표준서를 찾을 수 없습니다.");
   if (rows[0].status !== "APPROVED")
     throw new WorkOrderError("폐기된 표준서는 지시서에 사용할 수 없습니다.");
-  return rows[0].id;
+  return { id: rows[0].id, revisionId: rows[0].revision_id };
 }
 
 export async function memberAccess(
@@ -185,16 +198,17 @@ export async function saveOrder(
   await lockCompany(client, actor.companyId);
   await memberAccess(client, actor, true);
   await validatePeople(client, actor.companyId, d);
-  const linkedStandardId = await resolveStandardLink(
+  const linked = await resolveStandardLink(
     client,
     actor.companyId,
     d.standardId ?? null,
+    d.standardRevisionId ?? null,
   );
 
   if (revision === 0) {
     const inserted = await client.query(
-      `INSERT INTO work_orders(id,company_id,name,group_label,draft_data,ptw_required,created_by,standard_id)
-       VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8) ON CONFLICT(id) DO NOTHING RETURNING id`,
+      `INSERT INTO work_orders(id,company_id,name,group_label,draft_data,ptw_required,created_by,standard_id,standard_revision_id)
+       VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING RETURNING id`,
       [
         id,
         actor.companyId,
@@ -203,7 +217,8 @@ export async function saveOrder(
         JSON.stringify(d),
         d.ptwRequired,
         actor.userId,
-        linkedStandardId,
+        linked?.id ?? null,
+        linked?.revisionId ?? null,
       ],
     );
     if (!inserted.rows.length)
@@ -220,14 +235,15 @@ export async function saveOrder(
       throw new WorkOrderError("PTW 필요 여부를 불필요로 낮출 수 없습니다.");
     await client.query(
       `UPDATE work_orders SET name=$2,group_label=$3,draft_data=$4::jsonb,ptw_required=$5,
-       risk_assessment_id=NULL,standard_id=$6,revision=revision+1 WHERE id=$1`,
+       risk_assessment_id=NULL,standard_id=$6,standard_revision_id=$7,revision=revision+1 WHERE id=$1`,
       [
         id,
         d.name,
         d.groupLabel,
         JSON.stringify(d),
         d.ptwRequired,
-        linkedStandardId,
+        linked?.id ?? null,
+        linked?.revisionId ?? null,
       ],
     );
   }
@@ -255,15 +271,17 @@ export async function requestAssessment(
   // 판단 기준은 회사가 정한 값이 원본이다. 클라이언트가 보낸 값을 믿지 않고
   // 이 시점의 회사 기준을 그대로 스냅샷으로 남긴다.
   const criteriaSnapshot = await readRiskCriteria(client, actor.companyId);
-  const linkedStandardId = await resolveStandardLink(
+  const linked = await resolveStandardLink(
     client,
     actor.companyId,
     d.standardId ?? null,
+    row.standard_revision_id ?? d.standardRevisionId ?? null,
   );
+  const linkedStandardId = linked?.id ?? null;
   const { rows } = await client.query<{ id: string }>(
     `INSERT INTO risk_assessments(company_id,name,assessment_kind,performed_on,criteria_snapshot,work_method_snapshot,
-      safety_info,created_by,retention_until,is_simple,standard_id,worker_opinion)
-      VALUES ($1,$2,$3,$4::date,$5::jsonb,$6,$7::jsonb,$8,($4::date + interval '3 years')::date,$9,$10,$11) RETURNING id`,
+      safety_info,created_by,retention_until,is_simple,standard_id,worker_opinion,standard_revision_id)
+      VALUES ($1,$2,$3,$4::date,$5::jsonb,$6,$7::jsonb,$8,($4::date + interval '3 years')::date,$9,$10,$11,$12) RETURNING id`,
     [
       actor.companyId,
       d.name,
@@ -276,6 +294,7 @@ export async function requestAssessment(
       linkedStandardId === null, // 표준서 없으면 간이평가
       linkedStandardId,
       d.workerOpinion?.trim() || null,
+      linked?.revisionId ?? null,
     ],
   );
   const assessmentId = rows[0].id;
@@ -402,13 +421,24 @@ export async function issueOrder(
     name: string;
     ptw_required: boolean;
     updated_at: string;
+    revision_id: string | null;
+    revision_no: number | null;
   }>(
-    `SELECT s.id, s.name, s.ptw_required, s.updated_at
+    `SELECT s.id, s.name, s.ptw_required, s.updated_at,
+            r.id AS revision_id, r.revision_no
        FROM standards s JOIN work_orders w ON w.standard_id = s.id
+       LEFT JOIN standard_revisions r
+         ON r.id = COALESCE(w.standard_revision_id, s.current_revision_id)
       WHERE w.id = $1`,
     [id],
   );
   if (stdMeta.length > 0) {
+    // 표준서를 고를 때 연결된 판이 사본에도 남는다 — 표준서가 나중에 개정돼도 "그날 그 판".
+    // (0023 이전 초안은 판이 비어 있으니 여기서 현재 판으로 채운다.)
+    await client.query(
+      "UPDATE work_orders SET standard_revision_id = $2 WHERE id = $1",
+      [id, stdMeta[0].revision_id],
+    );
     await client.query(
       `INSERT INTO work_order_snapshots(work_order_id,snapshot_kind,payload)
        VALUES ($1,'STANDARD_META',$2::jsonb)
@@ -420,6 +450,8 @@ export async function issueOrder(
           standard_name: stdMeta[0].name,
           ptw_required: stdMeta[0].ptw_required,
           standard_updated_at: stdMeta[0].updated_at,
+          standard_revision_id: stdMeta[0].revision_id,
+          standard_revision_no: stdMeta[0].revision_no,
           captured_at: new Date().toISOString(),
         }),
       ],

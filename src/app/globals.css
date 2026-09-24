@@ -3614,6 +3614,31 @@ html[data-banner-hidden] .preview-banner {
   align-items: center;
   gap: 10px;
 }
+/* 수정 폼의 단계 줄: 번호·글·삭제 한 줄, 그 아래 사진 (standard-edit-form.tsx).
+   이 세 클래스에 규칙이 없어 번호가 한 줄을 다 차지하고 삭제가 밑으로 떨어졌다. */
+.std-list--with-attach li {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.std-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.std-list-row input {
+  flex: 1;
+  min-width: 0;
+}
+.std-step-attach,
+.std-list--with-attach > li > .attach-uploader-hint {
+  margin: 0 0 4px 38px;
+}
+.std-step-attach {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .std-list-number {
   display: grid;
   place-items: center;
@@ -4058,6 +4083,14 @@ html[data-banner-hidden] .preview-banner {
 }
 
 /* -- Standards: warn banner + assessment history + kind picker -- */
+/* 개정 초안 띠 (standard-detail-view.tsx) — 이어서 수정·승인·버리기 */
+.std-draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
 .std-warn-banner {
   display: flex;
   gap: 12px;

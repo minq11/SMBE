@@ -21,7 +21,14 @@ import {
   type AttachmentItem,
 } from "@/features/attachments/attachment-list";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
-import { archiveStandardAction } from "./actions";
+import {
+  approveRevisionAction,
+  archiveStandardAction,
+  discardRevisionAction,
+  startRevisionAction,
+} from "./actions";
+import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { useState } from "react";
 import { CriteriaList } from "@/features/company/criteria-list";
 
 export type AttachmentMap = Record<string, AttachmentItem[]>;
@@ -42,10 +49,55 @@ export function StandardDetailView({
   riskAfter?: AttachmentMap;
 }) {
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [errorTitle, setErrorTitle] = useState<string | undefined>(undefined);
   const invalidatePath = `/standards/${detail.standard_id}`;
 
   const { confirm, dialog } = useConfirm();
+  const run = (
+    action: (form: FormData) => Promise<{ error?: string } | undefined | void>,
+  ) =>
+    startTransition(async () => {
+      setError(null);
+      setErrorTitle(undefined);
+      const form = new FormData();
+      form.set("standard_id", detail.standard_id);
+      const result = await action(form);
+      if (result?.error) setError(result.error);
+    });
+  const onStartRevision = () => run(startRevisionAction);
+  const onApprove = async () => {
+    if (
+      !(await confirm(
+        `${detail.draft?.revision_no}판으로 확정합니다. 확정된 판은 고칠 수 없고, 이후 지시서와 평가는 이 판을 가리킵니다.`,
+        { title: "개정 확정", confirmLabel: "확정" },
+      ))
+    )
+      return;
+    run(approveRevisionAction);
+  };
+  const onDiscard = async () => {
+    if (
+      !(await confirm(
+        "작성 중인 개정 초안을 버릴까요? 현재 판은 그대로입니다.",
+        {
+          title: "개정 초안 버리기",
+          confirmLabel: "버리기",
+          danger: true,
+        },
+      ))
+    )
+      return;
+    run(discardRevisionAction);
+  };
   const onArchive = async () => {
+    if (detail.draft) {
+      setErrorTitle("폐기할 수 없습니다");
+      setError(
+        `작성 중인 ${detail.draft.revision_no}판 개정 초안이 있습니다. 먼저 초안을 버리거나 확정한 뒤 폐기하세요.`,
+      );
+      return;
+    }
     if (
       !(await confirm(
         `${detail.name} 을 폐기할까요? 폐기된 표준서는 새 지시서 작성에서 선택할 수 없습니다. 기존에 발급된 지시서에는 영향이 없습니다.`,
@@ -53,11 +105,7 @@ export function StandardDetailView({
       ))
     )
       return;
-    startTransition(async () => {
-      const form = new FormData();
-      form.set("standard_id", detail.standard_id);
-      await archiveStandardAction(form);
-    });
+    run(archiveStandardAction);
   };
 
   const active = detail.status === "APPROVED";
@@ -68,6 +116,7 @@ export function StandardDetailView({
   return (
     <>
       {dialog}
+      <FormErrorDialog message={error} nonce={error} title={errorTitle} />
       <Link href="/standards" className="text-button std-back-link">
         <ArrowLeft size={13} /> 표준서 목록
       </Link>
@@ -80,8 +129,14 @@ export function StandardDetailView({
           </span>
           <h1>{detail.name}</h1>
           <p className="std-detail-meta">
-            생성 {new Date(detail.created_at).toLocaleDateString("ko-KR")} ·
-            최근 수정 {new Date(detail.updated_at).toLocaleDateString("ko-KR")}
+            {detail.revision
+              ? `${detail.revision.revision_no}판 · 확정 ${new Date(
+                  detail.revision.approved_at ?? detail.revision.created_at,
+                ).toLocaleDateString("ko-KR")} · ${
+                  detail.revision.approved_by_name ??
+                  detail.revision.created_by_name
+                }`
+              : `생성 ${new Date(detail.created_at).toLocaleDateString("ko-KR")}`}
           </p>
         </div>
         <div className="std-detail-actions">
@@ -94,13 +149,15 @@ export function StandardDetailView({
               <ArrowRight size={13} />
             </Link>
           )}
-          {!archived && (
-            <Link
-              href={`/standards/${detail.standard_id}/edit`}
+          {!archived && !detail.draft && (
+            <button
+              type="button"
               className="ghost-button"
+              onClick={onStartRevision}
+              disabled={pending}
             >
-              <Pencil size={13} /> 수정
-            </Link>
+              <Pencil size={13} /> 개정 시작
+            </button>
           )}
           {!archived && (
             <Link
@@ -122,6 +179,47 @@ export function StandardDetailView({
           )}
         </div>
       </header>
+
+      {detail.draft && (
+        <div className="std-info-banner std-draft-banner" role="status">
+          <Pencil size={16} />
+          <div>
+            <strong>
+              {detail.draft.revision_no}판 개정 작성 중 ·{" "}
+              {detail.draft.created_by_name} ·{" "}
+              {new Date(detail.draft.created_at).toLocaleDateString("ko-KR")}
+            </strong>
+            <p>
+              현재 {detail.revision?.revision_no ?? "-"}판은 그대로입니다.
+              초안을 고친 뒤 확정하면 새 판이 됩니다.
+            </p>
+            <div className="std-draft-actions">
+              <Link
+                href={`/standards/${detail.standard_id}/edit`}
+                className="btn-primary"
+              >
+                이어서 수정
+              </Link>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={onApprove}
+                disabled={pending}
+              >
+                이대로 확정
+              </button>
+              <button
+                type="button"
+                className="text-button"
+                onClick={onDiscard}
+                disabled={pending}
+              >
+                버리기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {active && noValid && (
         <div className="std-warn-banner" role="alert">
@@ -170,17 +268,9 @@ export function StandardDetailView({
                   <AttachmentList
                     items={stepAttachments[s.id] ?? []}
                     invalidatePath={invalidatePath}
-                    canDelete={isPro}
+                    canDelete={false}
                     emptyLabel=""
                     compact
-                  />
-                )}
-                {isPro && (
-                  <AttachmentUploader
-                    targetType="standard_step"
-                    targetId={s.id}
-                    invalidatePath={invalidatePath}
-                    label="이 단계 사진 추가"
                   />
                 )}
               </li>
@@ -189,9 +279,16 @@ export function StandardDetailView({
         ) : (
           <p className="std-form-note">등록된 단계가 없습니다.</p>
         )}
+        {/* 확정된 판은 사진도 고정이다. 붙이거나 지우는 건 개정 초안에서. */}
         {!isPro && detail.steps.length > 0 && (
           <p className="attach-uploader-hint">
             유료 요금제에서 작업 단계별 사진을 첨부할 수 있습니다.
+          </p>
+        )}
+        {isPro && !archived && detail.steps.length > 0 && (
+          <p className="attach-uploader-hint">
+            사진을 붙이거나 지우려면 개정을 시작해 초안에서 하세요. 확정된 판은
+            사진도 그대로 남습니다.
           </p>
         )}
       </section>
@@ -304,6 +401,53 @@ export function StandardDetailView({
           )}
         </section>
       )}
+
+      <section className="std-detail-section">
+        <h2>개정 이력 ({detail.revisions.length}판)</h2>
+        <ul className="std-assessment-history" role="list">
+          {detail.revisions.map((r) => (
+            <li
+              key={r.id}
+              className={`std-assessment-row${r.status === "APPROVED" ? " is-current" : ""}`}
+            >
+              <span className="std-assessment-kind">{r.revision_no}판</span>
+              <span className="std-assessment-date">
+                {r.status === "DRAFT" ? "작성" : "확정"}{" "}
+                {new Date(r.approved_at ?? r.created_at).toLocaleDateString(
+                  "ko-KR",
+                )}{" "}
+                · {r.approved_by_name ?? r.created_by_name}
+              </span>
+              {r.change_note && (
+                <span className="std-assessment-valid">{r.change_note}</span>
+              )}
+              <span
+                className={`std-assessment-status std-assessment-status--${
+                  r.status === "APPROVED"
+                    ? "approved"
+                    : r.status === "DRAFT"
+                      ? "pending"
+                      : "draft"
+                }`}
+              >
+                {r.status === "APPROVED"
+                  ? "현재 판"
+                  : r.status === "DRAFT"
+                    ? "작성 중"
+                    : "지난 판"}
+              </span>
+              {r.status !== "DRAFT" && (
+                <Link
+                  href={`/standards/${detail.standard_id}/revisions/${r.revision_no}`}
+                  className="text-button"
+                >
+                  보기
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="std-detail-section">
         <h2>위험성평가 회차 이력 ({detail.assessments.length}건)</h2>

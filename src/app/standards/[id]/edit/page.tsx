@@ -3,7 +3,10 @@ import { tierOf } from "@/components/shell/tier";
 import { AppShell } from "@/components/shell/app-shell";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
-import { getStandardDetail } from "@/server/standards-service";
+import {
+  getRevisionContent,
+  getStandardDetail,
+} from "@/server/standards-service";
 import { listAttachments } from "@/server/attachments";
 import { query } from "@/server/db";
 import {
@@ -11,7 +14,7 @@ import {
   type StepAttachmentMap,
 } from "@/features/standards/standard-edit-form";
 
-export const metadata = { title: "표준서 수정 · 심플안전" };
+export const metadata = { title: "표준서 개정 · 심플안전" };
 
 export default async function EditStandardPage({
   params,
@@ -39,11 +42,17 @@ export default async function EditStandardPage({
   ]);
   if (!detail) notFound();
   if (detail.status === "ARCHIVED") redirect(`/standards/${id}`);
+  // 승인된 판은 고치지 않는다. 고칠 수 있는 건 개정 초안뿐 — 없으면 상세로 보내
+  // "개정 시작" 을 누르게 한다.
+  const draft = await getRevisionContent(session.membership.company_id, id, {
+    status: "DRAFT",
+  });
+  if (!draft) redirect(`/standards/${id}`);
   const isPro = (proRow[0]?.pro_state ?? "FREE") !== "FREE";
 
   // 스텝별 첨부 (Pro 여부와 관계없이 이미 올라간 사진은 표시).
   const stepAttachments: StepAttachmentMap = {};
-  for (const s of detail.steps) {
+  for (const s of draft.steps) {
     stepAttachments[s.id] = await listAttachments(actor, "standard_step", s.id);
   }
 
@@ -53,7 +62,7 @@ export default async function EditStandardPage({
       breadcrumb={[
         { label: "작업표준서", href: "/standards" },
         { label: detail.name, href: `/standards/${id}` },
-        { label: "수정" },
+        { label: `${draft.revision_no}판 개정` },
       ]}
       companyName={session.membership.company_name}
       tier={tierOf(session.membership)}
@@ -63,19 +72,21 @@ export default async function EditStandardPage({
     >
       <StandardEditForm
         standardId={id}
+        revisionNo={draft.revision_no}
         isPro={isPro}
         stepAttachments={stepAttachments}
         initial={{
-          name: detail.name,
-          ptw_required: detail.ptw_required,
+          name: draft.name,
+          ptw_required: draft.ptw_required,
           steps:
-            detail.steps.length > 0
-              ? detail.steps.map((s) => ({ id: s.id, text: s.step_text }))
+            draft.steps.length > 0
+              ? draft.steps.map((s) => ({ id: s.id, text: s.step_text }))
               : [{ text: "" }],
           checklist_tbm:
-            detail.checklist_tbm.length > 0 ? detail.checklist_tbm : [""],
+            draft.checklist_tbm.length > 0 ? draft.checklist_tbm : [""],
           checklist_during:
-            detail.checklist_during.length > 0 ? detail.checklist_during : [""],
+            draft.checklist_during.length > 0 ? draft.checklist_during : [""],
+          change_note: draft.change_note ?? "",
         }}
       />
     </AppShell>

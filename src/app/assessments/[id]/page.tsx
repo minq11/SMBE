@@ -74,7 +74,11 @@ export default async function AssessmentPage({
               href={`/standards/${detail.standard_id}`}
               className="btn-secondary"
             >
-              표준서 {detail.standard_name} <ArrowRight size={13} />
+              표준서 {detail.standard_name}
+              {detail.standard_revision_no
+                ? ` ${detail.standard_revision_no}판`
+                : ""}{" "}
+              <ArrowRight size={13} />
             </Link>
           )}
           {detail.work_order_id && (

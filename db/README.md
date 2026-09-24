@@ -92,4 +92,9 @@ docker compose --profile tools run --rm migrate
   조치 후 허용 불가 시 추가 대책, 평가의 근로자 의견, 회사의 실시규정(기본 문안),
   경영책임자 반기 점검 기록(`assessment_reviews`).
 
+- `0023_standard_revisions.sql` — 표준서 개정본(`standard_revisions`, 표준서당 여러
+  판, 초안은 하나). 단계·체크리스트는 판에 달리고, `standards.current_revision_id`
+  가 승인된 현재 판. 지시서·위험성평가는 그때의 판(`standard_revision_id`)을 적는다.
+  단계 사진은 개정 시 참조가 복사되므로 `attachments.storage_key` 의 UNIQUE 를 풀었다.
+
 후속 페이즈(안전사고·과금 등)는 새 파일로 추가합니다.

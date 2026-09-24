@@ -2,6 +2,12 @@
 
 - 작성일: 2026-09-18 (v5.5 개정)
 
+**v5.6 변경 요약 (2026-09-24, 표준서 개정본 — `db/0023`)**
+1. 표준서를 **마스터 + 판(개정본)** 으로 확정. 구현 테이블명은 `standards` / `standard_revisions` / `standard_steps` / `standard_checklist_items` (v5.5 의 `work_standards`/`work_standard_versions` 자리). 5장 전체 교체
+2. 판 상태는 `DRAFT` / `APPROVED` / `SUPERSEDED` 셋. 승인 대기·반려 없음. 초안은 표준서당 하나(부분 유니크)
+3. `risk_assessments.standard_revision_id`, `work_orders.standard_revision_id` — 그때의 판. 지시서 `STANDARD_META` 사본에도 `standard_revision_no`
+4. `attachments.storage_key` UNIQUE 해제 — 개정 시 같은 파일을 새 단계가 가리킨다. 삭제는 마지막 참조일 때만 S3 오브젝트 제거
+
 **v5.5 변경 요약**
 1. `users.email` NULL 허용 (카카오 이메일 미동의·이메일 없는 작업자 대응)
 2. 지시서 체크리스트 스냅샷 테이블 `work_order_checklist_items` 신설, 점검 결과가 이를 참조
@@ -62,8 +68,8 @@ flowchart LR
     AR_REG[company_assessment_regulations]
   end
   subgraph 표준서
-    WS[work_standards]
-    WSV[work_standard_versions]
+    WS[standards]
+    WSV[standard_revisions]
   end
   subgraph 평가
     RA[risk_assessments]
@@ -316,66 +322,83 @@ erDiagram
 
 ## 5. 작업표준서
 
+v5.6: 판(개정본) 구조. 확정된 판은 고치지 않고, 개정은 현재 판을 복사한 초안을 고쳐 확정한다(화면 용어 "확정" = 상태값 `APPROVED`) (설계 5-1·14-2). 마이그레이션 `db/0006`(단일 문서화) → `db/0023`(판 구조).
+
 ### 5-1. ER
 
 ```mermaid
 erDiagram
-  work_standards ||--o{ work_standard_versions : "버전"
-  work_standard_versions ||--o{ work_standard_steps : "작업 단계"
-  work_standard_versions ||--o{ work_standard_checklists : "체크리스트(TBM/작업 중)"
-  work_standard_versions ||--o{ risk_assessments : "연계 평가"
+  standards ||--o{ standard_revisions : "판 (초안은 하나)"
+  standards |o--|| standard_revisions : "current_revision_id 현재 판"
+  standard_revisions ||--o{ standard_steps : "작업 단계"
+  standard_revisions ||--o{ standard_checklist_items : "체크리스트(TBM/작업 중)"
+  standard_revisions |o--o{ risk_assessments : "그때의 판"
+  standard_revisions |o--o{ work_orders : "그때의 판"
+  standard_steps |o--o{ attachments : "단계 사진 (target_type=standard_step)"
 ```
 
-### 5-2. `work_standards` (마스터)
+### 5-2. `standards` (마스터)
 
 | 컬럼 | 타입 | 비고 |
 |---|---|---|
-| id | uuid PK | 마스터 ID(예: STD-0012 표시용) |
+| id | uuid PK | |
 | company_id | uuid FK | |
-| display_code | text | UI 표기용(선택) |
-| name | text | |
-| status | enum(`UNAPPROVED`,`ACTIVE`,`DISCARDED`) | v5.4 14-2 마스터 |
-| discarded_at, discarded_by | | |
+| name | text | 현재 판의 거울 (확정 시 갱신) |
+| ptw_required | bool | 현재 판의 거울 |
+| status | text(`DRAFT`,`APPROVED`,`ARCHIVED`) | 생성 즉시 `APPROVED`. `DRAFT` 는 예약값 |
+| current_revision_id | uuid FK standard_revisions NULL | 확정된 현재 판 |
+| archived_at, archived_by | | 폐기. 작성 중인 초안이 있으면 거부 (먼저 버리거나 확정) |
 | created_by, created_at, updated_at | | |
 
-### 5-3. `work_standard_versions`
+### 5-3. `standard_revisions` (판)
 
 | 컬럼 | 타입 | 비고 |
 |---|---|---|
-| id | uuid PK | 지시서·평가는 이 버전 ID를 참조 |
-| standard_id | uuid FK work_standards | |
-| version_no | int | V1, V2, … |
-| status | enum(`DRAFT`,`PENDING`,`REJECTED`,`CURRENT`,`SUPERSEDED`) | v5.4 14-2 버전 |
-| ptw_required | bool | 표준서 단위 PTW 필요 여부 |
-| source_kind | enum(`MANUAL`,`INDUSTRY_TEMPLATE`) | 업종 템플릿에서 시작했는지 |
-| industry_template_key | text NULL | |
-| submitted_at, approved_at, approved_by | | |
-| rejected_at, rejected_by, rejection_reason | | |
-| superseded_at | | 새 버전 승인 시 |
+| id | uuid PK | 지시서·평가는 이 id 를 참조 |
+| standard_id | uuid FK standards | ON DELETE CASCADE |
+| revision_no | int ≥ 1 | 1, 2, … 표시는 "n판" |
+| status | text(`DRAFT`,`APPROVED`,`SUPERSEDED`) | 설계 14-2 |
+| name, ptw_required | | 그 판의 내용 |
+| change_note | text ≤ 1000 NULL | 개정 사유. 확정할 때 적는다 |
 | created_by, created_at, updated_at | | |
-| UNIQUE(standard_id, version_no) | | |
+| approved_by, approved_at | | |
+| UNIQUE(standard_id, revision_no) | | |
+| UNIQUE(standard_id) WHERE status = 'DRAFT' | | 초안은 하나 |
 
-### 5-4. `work_standard_steps` (작업방법 단계)
+- **개정 시작**: 현재 판의 name·ptw_required·단계·체크리스트·단계 사진 참조를 복사한 `DRAFT` 를 만든다 (revision_no = max + 1).
+- **확정**: 초안 → `APPROVED`, 이전 `APPROVED` → `SUPERSEDED`, `standards.current_revision_id`·name·ptw_required 갱신. 그 뒤 그 판은 불변 (단계·체크리스트·사진 모두).
+- **버리기**: 초안 행 삭제(단계·체크리스트 CASCADE). 초안 단계의 사진 행은 `DELETED` 표시하고, 다른 판이 쓰지 않는 파일만 S3 에서 지운다. **폐기**는 초안이 있으면 거부한다.
+- 승인 대기(`PENDING`)·반려(`REJECTED`)는 두지 않는다 (관리자가 곧바로 확정).
+
+### 5-4. `standard_steps` (작업방법 단계)
+
+| 컬럼 | 타입 | 비고 |
+|---|---|---|
+| id | uuid PK | 단계 사진이 이 id 에 붙는다 |
+| standard_id | uuid FK standards | 판과 같은 표준서 (조회 편의) |
+| revision_id | uuid FK standard_revisions | ON DELETE CASCADE |
+| order_no | int | |
+| step_text | text | |
+| UNIQUE(revision_id, order_no) | | |
+
+- 초안 저장은 단계 **id 를 보존**한다 — 사진이 id 에 붙어 있다. 초안에서 사라진 단계의 사진은 `DELETED` 로 표시한다.
+- 사진 업로드·삭제는 **초안(`DRAFT`) 판의 단계에만** 허용 (`attachments.ts`). 읽기는 어느 판이든 된다.
+
+### 5-5. `standard_checklist_items` (체크리스트)
 
 | 컬럼 | 타입 | 비고 |
 |---|---|---|
 | id | uuid PK | |
-| version_id | uuid FK work_standard_versions | |
-| order_no | int | 순서 |
-| description | text | |
-
-### 5-5. `work_standard_checklists` (체크리스트)
-
-| 컬럼 | 타입 | 비고 |
-|---|---|---|
-| id | uuid PK | |
-| version_id | uuid FK | |
-| category | enum(`TBM`,`DURING_WORK`) | 설계 5-1 필수 구분 |
+| standard_id | uuid FK standards | |
+| revision_id | uuid FK standard_revisions | ON DELETE CASCADE |
+| category | text(`TBM`,`DURING_WORK`) | 설계 5-1 필수 구분 |
 | order_no | int | |
 | text | text | 체크 항목 |
-| origin | enum(`TEMPLATE`,`STANDARD`,`FIELD_ADDED`) | 표준서에서 온 항목 삭제 불가 판정 |
+| UNIQUE(revision_id, category, order_no) | | |
 
-### 5-6. `industry_templates` (업종별 공통 템플릿)
+- 초안 저장은 체크리스트를 통째로 갈아 끼운다 (사진 대상이 아니다). `origin` 컬럼은 미구현.
+
+### 5-6. `industry_templates` (업종별 공통 템플릿) — 미구현
 
 | 컬럼 | 타입 | 비고 |
 |---|---|---|
@@ -394,7 +417,8 @@ erDiagram
 
 ```mermaid
 erDiagram
-  work_standard_versions |o--o{ risk_assessments : "표준서 버전 : 평가 N"
+  standards |o--o{ risk_assessments : "표준서 : 평가 N"
+  standard_revisions |o--o{ risk_assessments : "그때의 판"
   risk_assessments ||--o{ risk_assessment_items : "위험요인"
   risk_assessments ||--o{ risk_assessment_participants : "참여 근로자"
   assessment_rounds ||--o{ risk_assessments : "회차 자동 매칭"
@@ -406,7 +430,8 @@ erDiagram
 |---|---|---|
 | id | uuid PK | |
 | company_id | uuid FK | |
-| work_standard_version_id | uuid FK NULL | 간이평가는 NULL |
+| standard_id | uuid FK standards NULL | 간이평가는 NULL |
+| standard_revision_id | uuid FK standard_revisions NULL | 그때의 판 (v5.6). 회차 추가는 현재 판, 지시서에서 평가를 요청할 때는 초안이 복사해 둔 판 |
 | is_simple | bool | 간이평가 여부 (표준서 없는 작업) |
 | name | text | 평가명/작업명 |
 | assessment_kind | enum(`FIRST`,`PERIODIC`,`AD_HOC`,`CONTINUOUS`) | 최초/정기/수시/상시 |
@@ -482,7 +507,8 @@ erDiagram
   work_orders ||--o{ work_sessions : "작업회차"
   work_orders ||--o{ safety_incidents : "연계 사고"
   risk_assessments ||--o{ work_orders : "연계 평가"
-  work_standard_versions ||--o{ work_orders : "연계 표준서 버전"
+  standards |o--o{ work_orders : "연계 표준서"
+  standard_revisions |o--o{ work_orders : "그때의 판"
 ```
 
 ### 7-2. `work_orders`
@@ -493,7 +519,8 @@ erDiagram
 | company_id | uuid FK | |
 | name | text | 작업명 |
 | group_label | text NULL | 조 추가 시 조 이름(주간/야간 등). 원 설계상 조별 지시서 분리 |
-| work_standard_version_id | uuid FK NULL | 표준서 기반이면 |
+| standard_id | uuid FK standards NULL | 표준서 기반이면 |
+| standard_revision_id | uuid FK standard_revisions NULL | 초안 저장 때부터 기록 (v5.6). 화면에서 표준서를 고를 때 복사한 판(`draft_data.standardRevisionId`)이 그 표준서의 확정된 판이면 그것, 아니면 그때의 현재 판. 발급 사본·지시서에서 요청한 평가도 이 판을 쓴다 |
 | risk_assessment_id | uuid FK risk_assessments | 승인된 평가만 사용 |
 | work_period_start, work_period_end | date | |
 | work_start_time, work_end_time | time | 1일 작업시간 상한 16시간(앱 검증) |
@@ -535,6 +562,7 @@ erDiagram
 | taken_at | timestamptz | |
 
 - 지시서 상세는 항상 스냅샷을 우선 표시(설계 7장 · 레이아웃 W-03).
+- `STANDARD_META` payload: `standard_id`, `standard_name`, `ptw_required`, `standard_updated_at`, `standard_revision_id`, `standard_revision_no`, `captured_at`. 상세는 "표준서명 (n판)" 으로 보인다 (v5.6).
 - 체크리스트는 jsonb가 아니라 아래 `work_order_checklist_items`로 행 복사한다(점검 결과가 FK로 참조해야 하므로).
 
 ### 7-5. `work_order_checklist_items` (지시서 체크리스트 스냅샷) — v5.5 신설
@@ -549,7 +577,7 @@ erDiagram
 | order_no | int | |
 | text | text | 발급 시점 항목 원문 |
 | origin | enum(`TEMPLATE`,`STANDARD`,`FIELD_ADDED`,`SIMPLE_ASSESSMENT`) | 표준서 유래 항목은 삭제 불가 판정 |
-| source_checklist_item_id | uuid FK work_standard_checklists NULL | 추적용. 현장 추가·간이평가 항목은 NULL |
+| source_checklist_item_id | uuid FK standard_checklist_items NULL | 추적용. 현장 추가·간이평가 항목은 NULL (미구현 — 지시서는 판 id 로 표준서 원문에 닿는다) |
 | added_at | timestamptz | 발급 후 추가된 항목 구분 |
 
 - 도입 이유
@@ -967,7 +995,7 @@ erDiagram
 | company_id | uuid FK | |
 | uploaded_by | uuid FK users | |
 | kind | enum(`STANDARD_PHOTO`,`INSPECTION_PHOTO`,`INCIDENT_PHOTO`,`CERTIFICATION`,`ASSESSMENT_ATTACH`,`ASSESSMENT_INFO`) | |
-| storage_key | text | S3 오브젝트 키 |
+| storage_key | text | S3 오브젝트 키. v5.6: UNIQUE 해제 — 표준서 개정 시 같은 파일을 새 단계가 가리키는 행이 더 생긴다. 삭제는 마지막 참조일 때만 오브젝트를 지운다 |
 | mime_type | text | |
 | byte_size | bigint | |
 | uploaded_at | timestamptz | |
@@ -1077,7 +1105,7 @@ erDiagram
 
 - **소속 판정**: 지시서·점검·사고 등은 작성 시점 `company_id`를 함께 저장. 재입사·타 회사 이동 시 과거 기록의 회사 매핑이 흔들리지 않음.
 - **사용자 개인정보 파기**: `users`의 email/phone/display_name은 파기 대상. 각 도메인 참조 테이블은 `snapshot_display_name` 컬럼으로 이름을 스냅샷 보존.
-- **문서 스냅샷**: 지시서·PTW·평가·사고는 스냅샷을 우선 표시. 원본 개정·삭제는 스냅샷에 영향 없음.
+- **문서 스냅샷**: 지시서·PTW·평가·사고는 스냅샷을 우선 표시. 원본 개정·삭제는 스냅샷에 영향 없음. 지시서·평가는 표준서의 **판 id** 도 적어 두어, 사본 밖의 원문(단계·사진)도 그 판으로 다시 읽는다 (v5.6).
 - **일할 청구**: `company_members.joined_at/left_at`을 기준으로 `daily_usages`를 매일 재계산, 월 마감 시 `monthly_billings`·`monthly_billing_lines`로 스냅샷 확정.
 - **감사 로그**: 모든 상태 전이·승인·자가승인·발급·취소·수정·삭제는 `audit_logs`에 기록. UI의 자가 승인 태그는 `is_self_approval` 근거.
 
@@ -1113,7 +1141,7 @@ erDiagram
 
 1. 마이그레이션 도구 선정(Prisma/Kysely/Drizzle 중 하나, 또는 raw SQL) — `docs/architecture.md`의 "마이그레이션 도구와 최초 업무 스키마" 결정 사항.
 2. **1페이즈 스키마**: `users`/`user_identities`/`companies`/`company_members`/`work_locations`. 로그인·회사 생성·인원 초대까지 커버.
-3. **2페이즈**: `work_standards`+versions, `risk_assessments`+items, `work_orders`+assignments/snapshots/checklist_items, `ptws`.
+3. **2페이즈**: `standards`+revisions, `risk_assessments`+items, `work_orders`+assignments/snapshots/checklist_items, `ptws`.
 4. **3페이즈**: `work_sessions`/`inspections`/`nonconformances`, `safety_incidents`, `weekly_meetings`, 감사·알림·첨부.
 5. **4페이즈**: 과금 파이프라인(`daily_usages` → `monthly_billings` → `payments`), 운영자 백오피스.
 6. 안전점수는 산식 확정 전까지 시그널 수집만 활성화. 관심도 항목은 하드코딩. UI는 준비 중 안내 유지.

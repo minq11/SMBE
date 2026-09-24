@@ -39,6 +39,8 @@ export type StandardPickerOption = {
   prefill: {
     name: string;
     ptw_required: boolean;
+    revisionId: string | null;
+    revisionNo: number | null;
     method: string;
     tbm: string[];
     during: string[];
@@ -83,6 +85,7 @@ function mergeStandardIntoDraft(
   return {
     ...base,
     name: prefill.name || base.name,
+    standardRevisionId: prefill.revisionId,
     method: prefill.method || base.method,
     ptwRequired: prefill.ptw_required,
     safetyInfo: prefill.safetyInfo,
@@ -328,13 +331,13 @@ export function WorkOrderForm({
   };
   const chooseSimple = () => {
     setStandardId(null);
-    setData((d) => ({ ...d, standardId: null }));
+    setData((d) => ({ ...d, standardId: null, standardRevisionId: null }));
     setSimpleOverride(true);
   };
   const resetChoice = () => {
     setStandardId(null);
     setSimpleOverride(false);
-    setData((d) => ({ ...d, standardId: null }));
+    setData((d) => ({ ...d, standardId: null, standardRevisionId: null }));
   };
   const minutes = shiftMinutes(data.startTime, data.endTime);
   const pickedStandard =
@@ -592,6 +595,9 @@ export function WorkOrderForm({
                                 <strong>{s.name}</strong>
                                 <small>
                                   현재 승인 평가 포함
+                                  {s.prefill?.revisionNo
+                                    ? ` · ${s.prefill.revisionNo}판`
+                                    : ""}
                                   {s.ptw_required ? " · PTW 필요" : ""}
                                 </small>
                               </span>
@@ -639,8 +645,11 @@ export function WorkOrderForm({
                 {mode === "standard" && pickedStandard && (
                   <p className="wo-std-note">
                     <ShieldCheck size={13} />{" "}
-                    <strong>{pickedStandard.name}</strong> 의
-                    위험성평가·작업방법·체크리스트가 아래에 채워졌습니다. 이번
+                    <strong>{pickedStandard.name}</strong>
+                    {pickedStandard.prefill?.revisionNo
+                      ? ` ${pickedStandard.prefill.revisionNo}판`
+                      : ""}{" "}
+                    의 위험성평가·작업방법·체크리스트가 아래에 채워졌습니다. 이번
                     작업에 맞게 고칠 수 있고, 발급 시 표준서 사본이 함께
                     남습니다.
                   </p>

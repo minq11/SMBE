@@ -81,6 +81,8 @@ export default async function NewOrderPage({
           ? {
               name: prefill.name,
               ptw_required: prefill.ptw_required,
+              revisionId: prefill.revision_id,
+              revisionNo: prefill.revision_no,
               method: prefill.work_method,
               tbm: prefill.checklist_tbm,
               during: prefill.checklist_during,

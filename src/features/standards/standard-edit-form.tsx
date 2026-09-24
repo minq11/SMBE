@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { BasicHelp, ChecklistHelp, MethodHelp } from "./section-help";
 import { JumpNav } from "@/components/ui/jump-nav";
@@ -23,6 +24,7 @@ type Draft = {
   steps: StepDraft[];
   checklist_tbm: string[];
   checklist_during: string[];
+  change_note: string;
 };
 
 export type StandardEditInitial = Draft;
@@ -31,11 +33,14 @@ export type StepAttachmentMap = Record<string, AttachmentItem[]>;
 
 export function StandardEditForm({
   standardId,
+  revisionNo,
   initial,
   isPro,
   stepAttachments = {},
 }: {
   standardId: string;
+  /** 지금 고치는 개정 초안의 판 번호 */
+  revisionNo: number;
   initial: Draft;
   isPro: boolean;
   stepAttachments?: StepAttachmentMap;
@@ -46,6 +51,9 @@ export function StandardEditForm({
     StandardActionState,
     FormData
   >(updateStandardAction, undefined);
+  const { confirm, dialog } = useConfirm();
+  // 확정까지 갈지는 누른 단추가 정한다. submit 핸들러가 읽는다.
+  const approveRef = useRef(false);
 
   const setField = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
@@ -89,8 +97,7 @@ export function StandardEditForm({
       return { ...d, [key]: d[key].filter((_, i) => i !== idx) };
     });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = (approve: boolean) => {
     const cleaned = {
       name: draft.name.trim(),
       ptw_required: draft.ptw_required,
@@ -101,11 +108,28 @@ export function StandardEditForm({
       checklist_during: draft.checklist_during
         .map((s) => s.trim())
         .filter(Boolean),
+      change_note: draft.change_note.trim(),
     };
-    const form = new FormData(e.target as HTMLFormElement);
+    const form = new FormData();
     form.set("standard_id", standardId);
     form.set("payload", JSON.stringify(cleaned));
+    if (approve) form.set("approve", "1");
     formAction(form);
+  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submit(approveRef.current);
+    approveRef.current = false;
+  };
+  const saveAndApprove = async () => {
+    if (
+      !(await confirm(
+        `${revisionNo}판으로 승인합니다. 승인된 판은 고칠 수 없고, 이후 지시서와 평가는 이 판을 가리킵니다.`,
+        { title: "개정 확정", confirmLabel: "확정" },
+      ))
+    )
+      return;
+    submit(true);
   };
 
   return (
@@ -118,21 +142,23 @@ export function StandardEditForm({
       </Link>
 
       <header className="std-form-hero">
-        <h1>표준서 수정</h1>
+        <h1>{revisionNo}판 개정</h1>
         <p>
-          작업방법·체크리스트·PTW 설정을 수정합니다. 저장 시 즉시 반영되며 변경
-          이력은 감사 로그에 남습니다. 위험성평가를 새로 실시하려면 상세 화면
-          에서 <strong>정기평가·수시평가 추가</strong> 를 사용하세요.
+          확정된 판은 고치지 않습니다. 지금 보는 것은 현재 판을 그대로 복사한
+          초안입니다. 고친 뒤 승인하면 새 판이 되고, 그 뒤 지시서와 평가는 새
+          판을 가리킵니다. 작업이 크게 바뀌었으면 승인 뒤 수시평가를 추가하세요.
         </p>
       </header>
 
       <FormErrorDialog message={state?.error} nonce={state} />
+      {dialog}
 
       <JumpNav
         items={[
           { id: "std-basic", label: "기본 정보" },
           { id: "std-steps", label: "작업 단계" },
           { id: "std-checklist", label: "안전/품질 체크리스트" },
+          { id: "std-note", label: "개정 사유" },
         ]}
       />
 
@@ -264,13 +290,36 @@ export function StandardEditForm({
         />
       </section>
 
+      <section className="std-form-section" id="std-note">
+        <h2>개정 사유</h2>
+        <div className="form-field">
+          <label htmlFor="std-change-note">무엇을 왜 바꿨나요</label>
+          <textarea
+            id="std-change-note"
+            rows={2}
+            maxLength={1000}
+            value={draft.change_note}
+            onChange={(e) => setField("change_note", e.target.value)}
+            placeholder="예: 신형 프레스 도입으로 금형 고정 방식 변경"
+          />
+        </div>
+      </section>
+
       <div className="std-form-actions sticky-actions">
         <Link href={`/standards/${standardId}`} className="ghost-button">
           취소
         </Link>
-        <button type="submit" className="primary-button" disabled={pending}>
+        <button type="submit" className="btn-secondary" disabled={pending}>
           <Save size={14} />
-          {pending ? "저장 중..." : "변경사항 저장"}
+          {pending ? "저장 중..." : "초안 저장"}
+        </button>
+        <button
+          type="button"
+          className="primary-button"
+          disabled={pending}
+          onClick={saveAndApprove}
+        >
+          {pending ? "저장 중..." : "저장하고 확정"}
         </button>
       </div>
     </form>

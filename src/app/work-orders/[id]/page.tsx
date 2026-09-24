@@ -158,10 +158,26 @@ export default async function OrderDetailPage({
         standard_name: string;
         ptw_required: boolean;
         standard_updated_at: string;
+        standard_revision_no?: number | null;
       }
     | undefined;
-  const linkedStandardId = standardMeta?.standard_id ?? d.standardId ?? null;
-  const linkedStandardName = standardMeta?.standard_name ?? null;
+  // 발급 전에는 연결 정보로, 발급 뒤에는 사본으로. 어느 쪽이든 "이름 (n판)".
+  const linked = detail.standard;
+  const linkedStandardId =
+    standardMeta?.standard_id ?? linked?.standard_id ?? d.standardId ?? null;
+  const linkedRevisionNo =
+    standardMeta?.standard_revision_no ?? linked?.revision_no ?? null;
+  const linkedBaseName = standardMeta?.standard_name ?? linked?.name ?? null;
+  const linkedStandardName = linkedBaseName
+    ? linkedBaseName + (linkedRevisionNo ? ` (${linkedRevisionNo}판)` : "")
+    : null;
+  // 지난 판이면 그 판 화면으로. 표준서가 그 뒤 개정됐다는 것도 같이 보인다.
+  const linkedIsCurrent = linked ? linked.is_current : true;
+  const linkedHref = !linkedStandardId
+    ? null
+    : !linkedIsCurrent && linkedRevisionNo
+      ? `/standards/${linkedStandardId}/revisions/${linkedRevisionNo}`
+      : `/standards/${linkedStandardId}`;
   const risks =
     riskSnapshot?.items.map((r) => ({
       hazard: r.hazard,
@@ -252,22 +268,14 @@ export default async function OrderDetailPage({
           기준시각 <PrintTimestamp initial={new Date().toISOString()} />{" "}
           (한국시간)
         </p>
-        {linkedStandardId && (
+        {linkedStandardId && linkedHref && (
           <p className="wo-standard-chip">
             표준서 기반
-            {linkedStandardName ? (
-              <>
-                {" · "}
-                <Link href={"/standards/" + linkedStandardId}>
-                  {linkedStandardName}
-                </Link>
-              </>
-            ) : (
-              <>
-                {" · "}
-                <Link href={"/standards/" + linkedStandardId}>표준서 열기</Link>
-              </>
-            )}
+            {" · "}
+            <Link href={linkedHref}>{linkedStandardName ?? "표준서 열기"}</Link>
+            {!linkedIsCurrent && linked?.current_revision_no
+              ? ` · 표준서는 그 뒤 ${linked.current_revision_no}판으로 개정됨`
+              : ""}
           </p>
         )}
         <div className="wo-statuses">

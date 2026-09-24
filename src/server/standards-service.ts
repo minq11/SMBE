@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { query, queryOne, withTransaction } from "@/server/db";
 import { readRiskCriteria } from "@/server/company-settings";
+import { deleteObjects, retireAttachments } from "@/server/attachments";
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import {
   ASSESSMENT_KIND_LABEL,
@@ -15,6 +16,8 @@ import {
   type StandardChecklistItem,
   type StandardDetail,
   type StandardListRow,
+  type StandardRevisionContent,
+  type StandardRevisionSummary,
   type StandardStatus,
   type StandardStep,
 } from "@/features/standards/constants";
@@ -82,6 +85,8 @@ export const standardEditSchema = z.object({
     .array(z.string().trim().min(1).max(500))
     .min(1, "작업 중 체크리스트를 하나 이상 입력하세요.")
     .max(30),
+  // 무엇을 왜 바꿨나. 개정 초안에만 있고 승인 이력에 남는다.
+  change_note: z.string().trim().max(1000).optional().default(""),
 });
 export type StandardEditPayload = z.infer<typeof standardEditSchema>;
 
@@ -237,20 +242,16 @@ export async function getStandardDetail(
   );
   if (!std) return null;
 
-  const steps = await query<StandardStep>(
-    `SELECT id, order_no, step_text FROM standard_steps
-      WHERE standard_id = $1 ORDER BY order_no`,
-    [standardId],
-  );
-  const cl = await query<StandardChecklistItem>(
-    `SELECT category, order_no, text FROM standard_checklist_items
-      WHERE standard_id = $1 ORDER BY category, order_no`,
-    [standardId],
-  );
-  const tbm = cl.filter((i) => i.category === "TBM").map((i) => i.text);
-  const during = cl
-    .filter((i) => i.category === "DURING_WORK")
-    .map((i) => i.text);
+  const revisions = await listRevisions(standardId);
+  const revision = revisions.find((r) => r.status === "APPROVED") ?? null;
+  const draft = revisions.find((r) => r.status === "DRAFT") ?? null;
+  const { steps, tbm, during } = revision
+    ? await revisionBody(revision.id)
+    : {
+        steps: [] as StandardStep[],
+        tbm: [] as string[],
+        during: [] as string[],
+      };
 
   const rawAssessments = await query<{
     assessment_id: string;
@@ -345,11 +346,84 @@ export async function getStandardDetail(
     created_at: std.created_at,
     updated_at: std.updated_at,
     archived_at: std.archived_at,
+    revision,
+    draft,
+    revisions,
     steps,
     checklist_tbm: tbm,
     checklist_during: during,
     assessments,
     current_assessment: current,
+  };
+}
+
+async function listRevisions(
+  standardId: string,
+): Promise<StandardRevisionSummary[]> {
+  return query<StandardRevisionSummary>(
+    `SELECT r.id, r.revision_no, r.status, r.change_note,
+            r.created_at::text AS created_at, c.display_name AS created_by_name,
+            r.approved_at::text AS approved_at, a.display_name AS approved_by_name
+       FROM standard_revisions r
+       JOIN users c ON c.id = r.created_by
+       LEFT JOIN users a ON a.id = r.approved_by
+      WHERE r.standard_id = $1
+      ORDER BY r.revision_no DESC`,
+    [standardId],
+  );
+}
+
+async function revisionBody(revisionId: string) {
+  const steps = await query<StandardStep>(
+    `SELECT id, order_no, step_text FROM standard_steps
+      WHERE revision_id = $1 ORDER BY order_no`,
+    [revisionId],
+  );
+  const cl = await query<StandardChecklistItem>(
+    `SELECT category, order_no, text FROM standard_checklist_items
+      WHERE revision_id = $1 ORDER BY category, order_no`,
+    [revisionId],
+  );
+  return {
+    steps,
+    tbm: cl.filter((i) => i.category === "TBM").map((i) => i.text),
+    during: cl.filter((i) => i.category === "DURING_WORK").map((i) => i.text),
+  };
+}
+
+/** 개정본 하나를 통째로. 옛 판 읽기와 초안 수정 화면이 쓴다. */
+export async function getRevisionContent(
+  companyId: string,
+  standardId: string,
+  which: { revisionNo: number } | { status: "DRAFT" },
+): Promise<StandardRevisionContent | null> {
+  const row = await queryOne<
+    StandardRevisionSummary & { name: string; ptw_required: boolean }
+  >(
+    `SELECT r.id, r.revision_no, r.status, r.change_note, r.name, r.ptw_required,
+            r.created_at::text AS created_at, c.display_name AS created_by_name,
+            r.approved_at::text AS approved_at, a.display_name AS approved_by_name
+       FROM standard_revisions r
+       JOIN standards s ON s.id = r.standard_id
+       JOIN users c ON c.id = r.created_by
+       LEFT JOIN users a ON a.id = r.approved_by
+      WHERE r.standard_id = $1 AND s.company_id = $2
+        AND ${"revisionNo" in which ? "r.revision_no = $3" : "r.status = $3"}
+      LIMIT 1`,
+    [
+      standardId,
+      companyId,
+      "revisionNo" in which ? which.revisionNo : which.status,
+    ],
+  );
+  if (!row) return null;
+  const { steps, tbm, during } = await revisionBody(row.id);
+  return {
+    ...row,
+    standard_id: standardId,
+    steps,
+    checklist_tbm: tbm,
+    checklist_during: during,
   };
 }
 
@@ -369,6 +443,9 @@ export async function getStandardForPrefill(
   assessment_id: string;
   valid_until: string | null;
   expired: boolean;
+  /** 이 내용이 어느 판인가. 지시서 초안이 들고 있다가 발급 때 박는다. */
+  revision_id: string | null;
+  revision_no: number | null;
 } | null> {
   const detail = await getStandardDetail(companyId, standardId);
   if (!detail || detail.status !== "APPROVED" || !detail.current_assessment)
@@ -392,6 +469,8 @@ export async function getStandardForPrefill(
     assessment_id: ca.assessment_id,
     valid_until: ca.valid_until,
     expired: ca.expired,
+    revision_id: detail.revision?.id ?? null,
+    revision_no: detail.revision?.revision_no ?? null,
   };
 }
 
@@ -442,11 +521,12 @@ async function insertRiskAssessmentRound(
        (company_id, is_simple, name, assessment_kind, performed_on, status,
         criteria_snapshot, work_method_snapshot, safety_info,
         created_by, approved_by, approved_at, retention_until, standard_id,
-        worker_opinion)
+        worker_opinion, standard_revision_id)
      VALUES ($1, false,
              (SELECT name FROM standards WHERE id = $2),
              $3, $4::date, 'APPROVED',
-             $5::jsonb, $6, $7::jsonb, $8, $8, now(), $9::date, $2, $10)
+             $5::jsonb, $6, $7::jsonb, $8, $8, now(), $9::date, $2, $10,
+             (SELECT current_revision_id FROM standards WHERE id = $2))
      RETURNING id`,
     [
       companyId,
@@ -515,30 +595,20 @@ export async function createStandardWithFirstAssessment(input: {
       [companyId, payload.name, payload.ptw_required, actorId],
     );
     const standardId = std.rows[0].id;
-
-    for (let i = 0; i < payload.steps.length; i++) {
-      await client.query(
-        `INSERT INTO standard_steps (standard_id, order_no, step_text)
-         VALUES ($1, $2, $3)`,
-        [standardId, i + 1, payload.steps[i].text],
-      );
-    }
-    for (let i = 0; i < payload.checklist_tbm.length; i++) {
-      await client.query(
-        `INSERT INTO standard_checklist_items
-           (standard_id, category, order_no, text)
-         VALUES ($1, 'TBM', $2, $3)`,
-        [standardId, i + 1, payload.checklist_tbm[i]],
-      );
-    }
-    for (let i = 0; i < payload.checklist_during.length; i++) {
-      await client.query(
-        `INSERT INTO standard_checklist_items
-           (standard_id, category, order_no, text)
-         VALUES ($1, 'DURING_WORK', $2, $3)`,
-        [standardId, i + 1, payload.checklist_during[i]],
-      );
-    }
+    // 1판. 만든 사람이 곧 승인자다 (표준서 생성은 자기 승인).
+    const rev = await client.query<{ id: string }>(
+      `INSERT INTO standard_revisions
+         (standard_id, revision_no, status, name, ptw_required, created_by,
+          approved_by, approved_at)
+       VALUES ($1, 1, 'APPROVED', $2, $3, $4, $4, now()) RETURNING id`,
+      [standardId, payload.name, payload.ptw_required, actorId],
+    );
+    const revisionId = rev.rows[0].id;
+    await client.query(
+      "UPDATE standards SET current_revision_id = $2 WHERE id = $1",
+      [standardId, revisionId],
+    );
+    await writeRevisionBody(client, standardId, revisionId, payload, false);
 
     const assessmentId = await insertRiskAssessmentRound(client, {
       companyId,
@@ -573,130 +643,381 @@ export async function createStandardWithFirstAssessment(input: {
  * 표준서 편집 (버전 개념 없음, mutable).
  * 변경 이력은 audit_log 에 before/after 로 저장.
  */
-export async function updateStandardMutable(input: {
+type Q = {
+  query: <T = unknown>(
+    text: string,
+    params?: unknown[],
+  ) => Promise<{ rows: T[]; rowCount?: number | null }>;
+};
+
+/**
+ * 개정본의 단계·체크리스트를 payload 대로 맞춘다.
+ * 단계는 id 를 보존한다 — 사진이 단계 id 에 붙어 있다. payload 에 없는 기존 단계만
+ * 지우고, 있는 건 고치고, 새것은 넣는다. 체크리스트는 사진 대상이 아니라 통째로 갈아
+ * 끼운다. `keepIds=false` 면 전부 새로 넣는다 (1판 생성).
+ */
+async function writeRevisionBody(
+  client: Q,
+  standardId: string,
+  revisionId: string,
+  payload: StandardEditPayload,
+  keepIds: boolean,
+): Promise<string[]> {
+  let orphanKeys: string[] = [];
+  if (keepIds) {
+    const incoming = new Set(
+      payload.steps.map((s) => s.id).filter((v): v is string => Boolean(v)),
+    );
+    const existing = await client.query<{ id: string }>(
+      "SELECT id FROM standard_steps WHERE revision_id = $1",
+      [revisionId],
+    );
+    const toDelete = existing.rows
+      .map((r) => r.id)
+      .filter((id) => !incoming.has(id));
+    if (toDelete.length) {
+      // 단계가 사라지면 그 사진도. 파일은 다른 판이 아직 쓸 수 있어 키만 모아 둔다.
+      orphanKeys = await retireAttachments(client, "standard_step", toDelete);
+      await client.query(
+        "DELETE FROM standard_steps WHERE id = ANY($1::uuid[])",
+        [toDelete],
+      );
+    }
+    // UNIQUE (revision_id, order_no) 충돌을 피해 음수로 밀었다가 다시 매긴다.
+    await client.query(
+      "UPDATE standard_steps SET order_no = -order_no WHERE revision_id = $1",
+      [revisionId],
+    );
+  }
+  for (let i = 0; i < payload.steps.length; i++) {
+    const st = payload.steps[i];
+    if (keepIds && st.id) {
+      await client.query(
+        `UPDATE standard_steps SET order_no = $2, step_text = $3
+          WHERE id = $1 AND revision_id = $4`,
+        [st.id, i + 1, st.text, revisionId],
+      );
+    } else {
+      await client.query(
+        `INSERT INTO standard_steps (standard_id, revision_id, order_no, step_text)
+         VALUES ($1, $2, $3, $4)`,
+        [standardId, revisionId, i + 1, st.text],
+      );
+    }
+  }
+  await client.query(
+    "DELETE FROM standard_checklist_items WHERE revision_id = $1",
+    [revisionId],
+  );
+  for (const [category, items] of [
+    ["TBM", payload.checklist_tbm],
+    ["DURING_WORK", payload.checklist_during],
+  ] as const) {
+    for (let i = 0; i < items.length; i++) {
+      await client.query(
+        `INSERT INTO standard_checklist_items
+           (standard_id, revision_id, category, order_no, text)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [standardId, revisionId, category, i + 1, items[i]],
+      );
+    }
+  }
+  return orphanKeys;
+}
+
+/**
+ * 초안 행을 지운다 (단계·체크리스트는 CASCADE, 사진은 DELETED 표시). 돌려주는 키는
+ * 커밋 뒤 `deleteObjects` 로.
+ */
+async function dropDraft(
+  client: Q,
+  standardId: string,
+): Promise<{ revisionNo: number; orphanKeys: string[] } | null> {
+  const draft = await client.query<{ id: string; revision_no: number }>(
+    `SELECT id, revision_no FROM standard_revisions
+      WHERE standard_id = $1 AND status = 'DRAFT' FOR UPDATE`,
+    [standardId],
+  );
+  if (!draft.rows[0]) return null;
+  const steps = await client.query<{ id: string }>(
+    "SELECT id FROM standard_steps WHERE revision_id = $1",
+    [draft.rows[0].id],
+  );
+  const orphanKeys = await retireAttachments(
+    client,
+    "standard_step",
+    steps.rows.map((r) => r.id),
+  );
+  await client.query("DELETE FROM standard_revisions WHERE id = $1", [
+    draft.rows[0].id,
+  ]);
+  return { revisionNo: draft.rows[0].revision_no, orphanKeys };
+}
+
+/**
+ * 개정 시작: 승인된 현재 판을 통째로 복사한 초안을 만든다. 이미 초안이 있으면 그것.
+ * 단계 사진도 따라간다 — 같은 파일을 새 단계가 가리키는 행을 더 만든다.
+ */
+export async function startRevision(input: {
   companyId: string;
   actorId: string;
   standardId: string;
-  payload: StandardEditPayload;
-}): Promise<void> {
-  const { companyId, actorId, standardId, payload } = input;
-  await withTransaction(async (client) => {
-    const before = await client.query<{
-      name: string;
-      ptw_required: boolean;
+}): Promise<{ revisionId: string; revisionNo: number; created: boolean }> {
+  const { companyId, actorId, standardId } = input;
+  return withTransaction(async (client) => {
+    const std = await client.query<{
+      status: StandardStatus;
+      current_revision_id: string | null;
     }>(
-      `SELECT name, ptw_required FROM standards
+      `SELECT status, current_revision_id FROM standards
         WHERE id = $1 AND company_id = $2 FOR UPDATE`,
       [standardId, companyId],
     );
-    if (before.rows.length === 0) throw new Error("표준서를 찾을 수 없습니다.");
-    const beforeSteps = await client.query<{
+    if (!std.rows[0]) throw new Error("표준서를 찾을 수 없습니다.");
+    if (std.rows[0].status === "ARCHIVED")
+      throw new Error("폐기된 표준서는 개정할 수 없습니다.");
+    const existing = await client.query<{ id: string; revision_no: number }>(
+      `SELECT id, revision_no FROM standard_revisions
+        WHERE standard_id = $1 AND status = 'DRAFT'`,
+      [standardId],
+    );
+    if (existing.rows[0])
+      return {
+        revisionId: existing.rows[0].id,
+        revisionNo: existing.rows[0].revision_no,
+        created: false,
+      };
+    const cur = await client.query<{
+      id: string;
+      revision_no: number;
+      name: string;
+      ptw_required: boolean;
+    }>(
+      `SELECT id, revision_no, name, ptw_required FROM standard_revisions
+        WHERE id = $1`,
+      [std.rows[0].current_revision_id],
+    );
+    if (!cur.rows[0]) throw new Error("확정된 판이 없습니다.");
+    const next = await client.query<{ id: string; revision_no: number }>(
+      `INSERT INTO standard_revisions
+         (standard_id, revision_no, status, name, ptw_required, created_by)
+       VALUES ($1,
+               (SELECT max(revision_no) + 1 FROM standard_revisions WHERE standard_id = $1),
+               'DRAFT', $2, $3, $4)
+       RETURNING id, revision_no`,
+      [standardId, cur.rows[0].name, cur.rows[0].ptw_required, actorId],
+    );
+    const draftId = next.rows[0].id;
+    // 단계 복사 + 사진 참조 복사. 옛 단계 id → 새 단계 id.
+    const steps = await client.query<{
       id: string;
       order_no: number;
       step_text: string;
     }>(
-      `SELECT id, order_no, step_text FROM standard_steps
-        WHERE standard_id = $1 ORDER BY order_no`,
-      [standardId],
+      "SELECT id, order_no, step_text FROM standard_steps WHERE revision_id = $1 ORDER BY order_no",
+      [cur.rows[0].id],
     );
-    const beforeCl = await client.query<{
-      category: string;
-      order_no: number;
-      text: string;
-    }>(
-      `SELECT category, order_no, text FROM standard_checklist_items
-        WHERE standard_id = $1 ORDER BY category, order_no`,
-      [standardId],
-    );
-
-    await client.query(
-      `UPDATE standards SET name = $2, ptw_required = $3 WHERE id = $1`,
-      [standardId, payload.name, payload.ptw_required],
-    );
-    // 스텝: 첨부 사진 target_id 로 사용되는 id 를 보존.
-    // 클라이언트가 보낸 id 목록에 없는 기존 스텝만 DELETE, 나머지는 UPDATE, 신규는 INSERT.
-    const incomingIds = new Set(
-      payload.steps.map((s) => s.id).filter((v): v is string => Boolean(v)),
-    );
-    const toDelete = beforeSteps.rows
-      .map((r) => r.id)
-      .filter((id) => !incomingIds.has(id));
-    if (toDelete.length > 0) {
+    for (const st of steps.rows) {
+      const ins = await client.query<{ id: string }>(
+        `INSERT INTO standard_steps (standard_id, revision_id, order_no, step_text)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [standardId, draftId, st.order_no, st.step_text],
+      );
       await client.query(
-        `DELETE FROM standard_steps WHERE id = ANY($1::uuid[])`,
-        [toDelete],
+        `INSERT INTO attachments
+           (company_id, target_type, target_id, storage_key, original_filename,
+            mime_type, size_bytes, width, height, status, uploaded_by, created_at, ready_at)
+         SELECT company_id, target_type, $2, storage_key, original_filename,
+                mime_type, size_bytes, width, height, status, uploaded_by, created_at, ready_at
+           FROM attachments
+          WHERE target_type = 'standard_step' AND target_id = $1 AND status = 'READY'`,
+        [st.id, ins.rows[0].id],
       );
     }
-    // UNIQUE (standard_id, order_no) 충돌 방지 위해 남은 스텝의 order_no 를 임시로 음수로 밀고
-    // 새 order_no 로 다시 세팅. (한 트랜잭션 내 두 패스)
     await client.query(
-      `UPDATE standard_steps SET order_no = -order_no WHERE standard_id = $1`,
-      [standardId],
+      `INSERT INTO standard_checklist_items (standard_id, revision_id, category, order_no, text)
+       SELECT standard_id, $2, category, order_no, text
+         FROM standard_checklist_items WHERE revision_id = $1`,
+      [cur.rows[0].id, draftId],
     );
-    for (let i = 0; i < payload.steps.length; i++) {
-      const s = payload.steps[i];
-      if (s.id) {
-        await client.query(
-          `UPDATE standard_steps SET order_no = $2, step_text = $3
-            WHERE id = $1 AND standard_id = $4`,
-          [s.id, i + 1, s.text, standardId],
-        );
-      } else {
-        await client.query(
-          `INSERT INTO standard_steps (standard_id, order_no, step_text)
-           VALUES ($1, $2, $3)`,
-          [standardId, i + 1, s.text],
-        );
-      }
-    }
-    // 체크리스트는 첨부 사진 대상 아님 → 기존대로 wipe + insert.
-    await client.query(
-      `DELETE FROM standard_checklist_items WHERE standard_id = $1`,
-      [standardId],
-    );
-    for (let i = 0; i < payload.checklist_tbm.length; i++) {
-      await client.query(
-        `INSERT INTO standard_checklist_items
-           (standard_id, category, order_no, text)
-         VALUES ($1, 'TBM', $2, $3)`,
-        [standardId, i + 1, payload.checklist_tbm[i]],
-      );
-    }
-    for (let i = 0; i < payload.checklist_during.length; i++) {
-      await client.query(
-        `INSERT INTO standard_checklist_items
-           (standard_id, category, order_no, text)
-         VALUES ($1, 'DURING_WORK', $2, $3)`,
-        [standardId, i + 1, payload.checklist_during[i]],
-      );
-    }
-
     await client.query(
       `INSERT INTO audit_logs
-         (company_id, actor_id, action, target_type, target_id, path,
-          before_json, after_json)
-       VALUES ($1, $2, 'STANDARD_UPDATE', 'standard', $3, 'WEB',
-               $4::jsonb, $5::jsonb)`,
+         (company_id, actor_id, action, target_type, target_id, path, after_json)
+       VALUES ($1, $2, 'STANDARD_REVISION_START', 'standard', $3, 'WEB', $4::jsonb)`,
       [
         companyId,
         actorId,
         standardId,
         JSON.stringify({
-          name: before.rows[0].name,
-          ptw_required: before.rows[0].ptw_required,
-          steps: beforeSteps.rows,
-          checklist: beforeCl.rows,
-        }),
-        JSON.stringify({
-          name: payload.name,
-          ptw_required: payload.ptw_required,
-          steps: payload.steps,
-          checklist_tbm: payload.checklist_tbm,
-          checklist_during: payload.checklist_during,
+          revision_no: next.rows[0].revision_no,
+          from: cur.rows[0].revision_no,
         }),
       ],
     );
+    return {
+      revisionId: draftId,
+      revisionNo: next.rows[0].revision_no,
+      created: true,
+    };
   });
+}
+
+/** 개정 초안 저장. 승인된 판은 여기로 못 온다. */
+export async function updateRevisionDraft(input: {
+  companyId: string;
+  actorId: string;
+  standardId: string;
+  payload: StandardEditPayload;
+}): Promise<{ revisionId: string }> {
+  const { companyId, actorId, standardId, payload } = input;
+  const { revisionId, orphanKeys } = await withTransaction(async (client) => {
+    const draft = await client.query<{ id: string; revision_no: number }>(
+      `SELECT r.id, r.revision_no FROM standard_revisions r
+         JOIN standards s ON s.id = r.standard_id
+        WHERE r.standard_id = $1 AND s.company_id = $2 AND r.status = 'DRAFT'
+          AND s.status <> 'ARCHIVED'
+        FOR UPDATE OF r`,
+      [standardId, companyId],
+    );
+    if (!draft.rows[0])
+      throw new Error(
+        "작성 중인 개정 초안이 없습니다. 개정을 먼저 시작하세요.",
+      );
+    const revisionId = draft.rows[0].id;
+    await client.query(
+      `UPDATE standard_revisions SET name = $2, ptw_required = $3, change_note = $4
+        WHERE id = $1`,
+      [
+        revisionId,
+        payload.name,
+        payload.ptw_required,
+        payload.change_note || null,
+      ],
+    );
+    const orphanKeys = await writeRevisionBody(
+      client,
+      standardId,
+      revisionId,
+      payload,
+      true,
+    );
+    await client.query(
+      `INSERT INTO audit_logs
+         (company_id, actor_id, action, target_type, target_id, path, after_json)
+       VALUES ($1, $2, 'STANDARD_REVISION_SAVE', 'standard', $3, 'WEB', $4::jsonb)`,
+      [
+        companyId,
+        actorId,
+        standardId,
+        JSON.stringify({ revision_no: draft.rows[0].revision_no, ...payload }),
+      ],
+    );
+    return { revisionId, orphanKeys };
+  });
+  await deleteObjects(orphanKeys);
+  return { revisionId };
+}
+
+/**
+ * 개정 승인. 초안 → APPROVED, 이전 승인 판 → SUPERSEDED, 표준서의 현재 판·이름·PTW
+ * 갱신. 그 뒤로 이 판은 고치지 않는다.
+ */
+export async function approveRevision(input: {
+  companyId: string;
+  actorId: string;
+  standardId: string;
+  changeNote?: string;
+}): Promise<{ revisionNo: number }> {
+  const { companyId, actorId, standardId } = input;
+  return withTransaction(async (client) => {
+    const std = await client.query<{ status: StandardStatus }>(
+      `SELECT status FROM standards WHERE id = $1 AND company_id = $2 FOR UPDATE`,
+      [standardId, companyId],
+    );
+    if (!std.rows[0]) throw new Error("표준서를 찾을 수 없습니다.");
+    if (std.rows[0].status === "ARCHIVED")
+      throw new Error("폐기된 표준서는 확정할 수 없습니다.");
+    const draft = await client.query<{
+      id: string;
+      revision_no: number;
+      name: string;
+      ptw_required: boolean;
+      change_note: string | null;
+    }>(
+      `SELECT id, revision_no, name, ptw_required, change_note FROM standard_revisions
+        WHERE standard_id = $1 AND status = 'DRAFT' FOR UPDATE`,
+      [standardId],
+    );
+    const d = draft.rows[0];
+    if (!d) throw new Error("확정할 개정 초안이 없습니다.");
+    const stepCount = await client.query<{ n: string }>(
+      "SELECT count(*) AS n FROM standard_steps WHERE revision_id = $1",
+      [d.id],
+    );
+    if (Number(stepCount.rows[0].n) === 0)
+      throw new Error("작업 단계를 하나 이상 입력하세요.");
+    const note = (input.changeNote ?? "").trim() || d.change_note;
+    await client.query(
+      `UPDATE standard_revisions SET status = 'SUPERSEDED'
+        WHERE standard_id = $1 AND status = 'APPROVED'`,
+      [standardId],
+    );
+    await client.query(
+      `UPDATE standard_revisions
+          SET status = 'APPROVED', approved_by = $2, approved_at = now(), change_note = $3
+        WHERE id = $1`,
+      [d.id, actorId, note],
+    );
+    await client.query(
+      `UPDATE standards SET current_revision_id = $2, name = $3, ptw_required = $4
+        WHERE id = $1`,
+      [standardId, d.id, d.name, d.ptw_required],
+    );
+    await client.query(
+      `INSERT INTO audit_logs
+         (company_id, actor_id, action, target_type, target_id, path,
+          after_json, is_self_approval)
+       VALUES ($1, $2, 'STANDARD_REVISION_APPROVE', 'standard', $3, 'WEB', $4::jsonb, true)`,
+      [
+        companyId,
+        actorId,
+        standardId,
+        JSON.stringify({ revision_no: d.revision_no, change_note: note }),
+      ],
+    );
+    return { revisionNo: d.revision_no };
+  });
+}
+
+/** 개정 초안 버리기. 복사해 둔 단계·사진 참조도 함께 지운다. */
+export async function discardRevision(input: {
+  companyId: string;
+  actorId: string;
+  standardId: string;
+}): Promise<void> {
+  const { companyId, actorId, standardId } = input;
+  const orphanKeys = await withTransaction(async (client) => {
+    const std = await client.query<{ id: string }>(
+      `SELECT id FROM standards WHERE id = $1 AND company_id = $2 FOR UPDATE`,
+      [standardId, companyId],
+    );
+    if (!std.rows[0]) throw new Error("표준서를 찾을 수 없습니다.");
+    const dropped = await dropDraft(client, standardId);
+    if (!dropped) return [];
+    await client.query(
+      `INSERT INTO audit_logs
+         (company_id, actor_id, action, target_type, target_id, path, after_json)
+       VALUES ($1, $2, 'STANDARD_REVISION_DISCARD', 'standard', $3, 'WEB', $4::jsonb)`,
+      [
+        companyId,
+        actorId,
+        standardId,
+        JSON.stringify({ revision_no: dropped.revisionNo }),
+      ],
+    );
+    return dropped.orphanKeys;
+  });
+  await deleteObjects(orphanKeys);
 }
 
 /**
@@ -768,6 +1089,16 @@ export async function archiveStandard(input: {
     );
     if (cur.rows.length === 0) throw new Error("표준서를 찾을 수 없습니다.");
     if (cur.rows[0].status === "ARCHIVED") return;
+    // 사장님 결정: 초안이 있으면 조용히 버리지 않고 막는다. 사람이 먼저 버리거나 확정한다.
+    const draft = await client.query<{ revision_no: number }>(
+      `SELECT revision_no FROM standard_revisions
+        WHERE standard_id = $1 AND status = 'DRAFT'`,
+      [standardId],
+    );
+    if (draft.rows[0])
+      throw new Error(
+        `작성 중인 ${draft.rows[0].revision_no}판 개정 초안이 있습니다. 먼저 초안을 버리거나 확정한 뒤 폐기하세요.`,
+      );
 
     await client.query(
       `UPDATE standards
@@ -778,8 +1109,8 @@ export async function archiveStandard(input: {
 
     await client.query(
       `INSERT INTO audit_logs
-         (company_id, actor_id, action, target_type, target_id, path)
-       VALUES ($1, $2, 'STANDARD_ARCHIVE', 'standard', $3, 'WEB')`,
+         (company_id, actor_id, action, target_type, target_id, path, after_json)
+       VALUES ($1, $2, 'STANDARD_ARCHIVE', 'standard', $3, 'WEB', NULL)`,
       [companyId, actorId, standardId],
     );
   });

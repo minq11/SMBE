@@ -15,9 +15,12 @@ import { CircleAlert } from "lucide-react";
 export function FormErrorDialog({
   message,
   nonce,
+  title = "저장하지 못했습니다",
 }: {
   message?: string | null;
   nonce?: unknown;
+  /** 저장이 아닌 일(폐기 등)이 막혔을 때는 그 일의 이름으로. */
+  title?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   // 닫은 오류는 그 nonce 로 기억한다. 새 오류(새 nonce)는 다시 뜬다.
@@ -35,13 +38,13 @@ export function FormErrorDialog({
       ref={ref}
       className="confirm-dialog form-error-dialog"
       role="alertdialog"
-      aria-label="저장하지 못했습니다"
+      aria-label={title}
       onClose={close}
     >
       {open && (
         <div className="confirm-dialog-body">
           <h2>
-            <CircleAlert size={18} /> 저장하지 못했습니다
+            <CircleAlert size={18} /> {title}
           </h2>
           <div className="confirm-dialog-message">{message}</div>
           <div className="confirm-dialog-actions">

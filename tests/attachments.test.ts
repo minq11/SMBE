@@ -23,7 +23,8 @@ let role = "MANAGER_SUPERVISOR",
   pro = "ACTIVE",
   status = "PENDING",
   targetType = "standard_step",
-  uploadedBy = actor.userId;
+  uploadedBy = actor.userId,
+  stepRevisionStatus = "DRAFT";
 let writes: unknown[][] = [];
 beforeEach(() => {
   role = "MANAGER_SUPERVISOR";
@@ -32,6 +33,7 @@ beforeEach(() => {
   status = "PENDING";
   targetType = "standard_step";
   uploadedBy = actor.userId;
+  stepRevisionStatus = "DRAFT";
   writes = [];
   globalThis.__smbePgPool = {
     query: async (sql: string, params: unknown[]) => {
@@ -40,6 +42,8 @@ beforeEach(() => {
       if (sql.includes("ws.work_order_id = $2"))
         return { rows: linkScope ? [{ ok: true }] : [] };
       if (sql.includes("SELECT true AS ok")) return { rows: [{ ok: true }] };
+      if (sql.includes("JOIN standard_revisions r ON r.id = ss.revision_id"))
+        return { rows: [{ status: stepRevisionStatus }] };
       if (sql.includes("SELECT storage_key"))
         return {
           rows: [
@@ -199,5 +203,23 @@ test("confirmation validates actual size and type, ignores client size", async (
 test("deleted attachment cannot be revived", async () => {
   status = "DELETED";
   await assert.rejects(confirmUpload(actor, actor.userId), /잘못된 상태/);
+  assert.equal(writes.length, 0);
+});
+
+test("an approved edition's step photos are frozen; only a draft takes uploads and deletes", async () => {
+  // 승인된 판은 고치지 않는다 (0023). 사진도 그 판의 내용이다.
+  stepRevisionStatus = "APPROVED";
+  await assert.rejects(
+    presignUpload(actor, {
+      targetType: "standard_step",
+      targetId: actor.userId,
+      filename: "a.png",
+      mimeType: "image/png",
+      sizeBytes: 100,
+    }),
+    /확정된 판/,
+  );
+  status = "READY";
+  await assert.rejects(deleteAttachment(actor, actor.userId), /확정된 판/);
   assert.equal(writes.length, 0);
 });

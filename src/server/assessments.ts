@@ -222,6 +222,8 @@ export type AssessmentDetail = AssessmentRow & {
   approved_by_name: string | null;
   approved_at: string | null;
   standard_name: string | null;
+  /** 평가 당시의 표준서 판 */
+  standard_revision_no: number | null;
   work_order_name: string | null;
   participants: string[];
   items: AssessmentItemDetail[];
@@ -243,7 +245,7 @@ export async function readAssessment(
             ra.criteria_snapshot AS criteria, ra.work_method_snapshot AS work_method,
             ra.safety_info, ra.worker_opinion,
             a.display_name AS approved_by_name, ra.approved_at::text,
-            s.name AS standard_name,
+            s.name AS standard_name, rv.revision_no AS standard_revision_no,
             (SELECT count(*)::int FROM risk_assessment_items i WHERE i.assessment_id = ra.id) AS item_count,
             (SELECT count(*)::int FROM risk_assessment_items i
               WHERE i.assessment_id = ra.id AND NOT i.initial_allowable
@@ -252,6 +254,7 @@ export async function readAssessment(
        JOIN users u ON u.id = ra.created_by
        LEFT JOIN users a ON a.id = ra.approved_by
        LEFT JOIN standards s ON s.id = ra.standard_id
+       LEFT JOIN standard_revisions rv ON rv.id = ra.standard_revision_id
        LEFT JOIN LATERAL (
          SELECT id, name FROM work_orders WHERE risk_assessment_id = ra.id LIMIT 1
        ) wo ON true
