@@ -1,6 +1,6 @@
 // Generate an isolated browser-test build. The production DB adapter is never
 // changed: only the temporary copy connects to disposable local PostgreSQL.
-import { cp, mkdtemp, readFile, rm, writeFile, readdir } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -9,7 +9,11 @@ import { Pool } from "pg";
 
 const source = process.cwd();
 const schema = "orders_ui_" + randomUUID().replaceAll("-", "");
-const directory = await mkdtemp(join(tmpdir(), "smbe-orders-ui-"));
+// 작업 폴더는 하나를 계속 쓴다. 매번 새 폴더에 npm ci(약 50초)를 하던 것을, 설치한
+// node_modules 와 .next 빌드 캐시를 남겨 재사용한다. 소스는 매번 새로 덮는다.
+// 같은 폴더를 쓰므로 이 스크립트를 동시에 두 번 돌리지 않는다.
+const directory = join(tmpdir(), "smbe-orders-ui-work");
+const kept = new Set(["node_modules", ".next", ".installed-lock"]);
 const pool = new Pool({
   connectionString:
     "postgresql://postgres:smbe-test-only@127.0.0.1:55439/smbe_regression",
@@ -59,6 +63,11 @@ try {
     "playwright-report",
     ".claude",
   ]);
+  await mkdir(directory, { recursive: true });
+  // 지난번 소스를 지운다 (지운 파일이 남아 빌드에 섞이지 않게). 설치물·캐시는 남긴다.
+  for (const name of await readdir(directory))
+    if (!kept.has(name))
+      await rm(join(directory, name), { recursive: true, force: true });
   await cp(source, directory, {
     recursive: true,
     filter: (path) =>
@@ -84,7 +93,16 @@ try {
     throw new Error("Test DB adapter replacement failed");
   await writeFile(dbPath, patched);
   console.log("Isolated UI verification: " + directory);
-  run(["ci", "--no-audit", "--no-fund"]);
+  // 잠금 파일이 그대로면 설치도 그대로다.
+  const lock = await readFile(join(source, "package-lock.json"), "utf8");
+  const installed = await readFile(
+    join(directory, ".installed-lock"),
+    "utf8",
+  ).catch(() => "");
+  if (installed !== lock) {
+    run(["ci", "--no-audit", "--no-fund"]);
+    await writeFile(join(directory, ".installed-lock"), lock);
+  }
   run(["run", "build"]);
   run([
     "exec",
@@ -116,8 +134,8 @@ try {
   ).catch((error) => {
     if (error.code !== "ENOENT") throw error;
   });
-  // 결과는 위에서 저장소의 test-results/orders-ui 로 옮겼다. 1.1GB 짜리 복사본을
-  // 남겨 두면 한 세션에 수십 번 돌리다 디스크가 찬다 (28개 = 30GB).
-  await rm(directory, { recursive: true, force: true });
+  // 결과는 위에서 저장소의 test-results/orders-ui 로 옮겼다. 작업 폴더는 하나라
+  // 디스크가 쌓이지 않는다 (전에는 돌릴 때마다 1.1GB 복사본이 새로 생겼다).
+  await rm(join(directory, "test-results"), { recursive: true, force: true });
   console.log("Screenshots and traces: test-results/orders-ui");
 }

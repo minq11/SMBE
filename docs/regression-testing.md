@@ -26,6 +26,10 @@ npm run typecheck
 npm run test:e2e
 ```
 
+`test:orders-ui` 는 `%TEMP%/smbe-orders-ui-work` 한 폴더를 계속 쓴다(설치·빌드 캐시 재사용,
+`npm ci` 는 package-lock.json 이 바뀔 때만). 동시에 두 번 돌리지 않는다. 이상하면 그 폴더를
+지우고 다시 돌린다.
+
 실행 중인 로컬 standalone 서버가 .next/standalone을 잠그고 있으면 빌드가 EBUSY로 실패할 수 있다.
 해당 서버를 종료한 뒤 다시 빌드하거나 시크릿을 제외한 별도 복사본에서 검증한다.
 Playwright 서버에는 DB·이메일 시크릿 대신 빈 값을 전달해 외부 쓰기를 차단한다.
