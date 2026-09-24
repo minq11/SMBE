@@ -75,7 +75,7 @@ export default async function RevisionPage({
           </span>
           <h1>{rev.name}</h1>
           <p className="std-detail-meta">
-            {rev.status === "DRAFT" ? "작성" : "승인"}{" "}
+            {rev.status === "DRAFT" ? "작성" : "확정"}{" "}
             {new Date(when).toLocaleDateString("ko-KR")} ·{" "}
             {rev.approved_by_name ?? rev.created_by_name}
             {rev.change_note ? ` · ${rev.change_note}` : ""}

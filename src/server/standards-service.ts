@@ -797,7 +797,7 @@ export async function startRevision(input: {
         WHERE id = $1`,
       [std.rows[0].current_revision_id],
     );
-    if (!cur.rows[0]) throw new Error("승인된 판이 없습니다.");
+    if (!cur.rows[0]) throw new Error("확정된 판이 없습니다.");
     const next = await client.query<{ id: string; revision_no: number }>(
       `INSERT INTO standard_revisions
          (standard_id, revision_no, status, name, ptw_required, created_by)
@@ -936,7 +936,7 @@ export async function approveRevision(input: {
     );
     if (!std.rows[0]) throw new Error("표준서를 찾을 수 없습니다.");
     if (std.rows[0].status === "ARCHIVED")
-      throw new Error("폐기된 표준서는 승인할 수 없습니다.");
+      throw new Error("폐기된 표준서는 확정할 수 없습니다.");
     const draft = await client.query<{
       id: string;
       revision_no: number;
@@ -949,7 +949,7 @@ export async function approveRevision(input: {
       [standardId],
     );
     const d = draft.rows[0];
-    if (!d) throw new Error("승인할 개정 초안이 없습니다.");
+    if (!d) throw new Error("확정할 개정 초안이 없습니다.");
     const stepCount = await client.query<{ n: string }>(
       "SELECT count(*) AS n FROM standard_steps WHERE revision_id = $1",
       [d.id],
@@ -1089,7 +1089,7 @@ export async function archiveStandard(input: {
     );
     if (cur.rows.length === 0) throw new Error("표준서를 찾을 수 없습니다.");
     if (cur.rows[0].status === "ARCHIVED") return;
-    // 사장님 결정: 초안이 있으면 조용히 버리지 않고 막는다. 사람이 먼저 버리거나 승인한다.
+    // 사장님 결정: 초안이 있으면 조용히 버리지 않고 막는다. 사람이 먼저 버리거나 확정한다.
     const draft = await client.query<{ revision_no: number }>(
       `SELECT revision_no FROM standard_revisions
         WHERE standard_id = $1 AND status = 'DRAFT'`,
@@ -1097,7 +1097,7 @@ export async function archiveStandard(input: {
     );
     if (draft.rows[0])
       throw new Error(
-        `작성 중인 ${draft.rows[0].revision_no}판 개정 초안이 있습니다. 먼저 초안을 버리거나 승인한 뒤 폐기하세요.`,
+        `작성 중인 ${draft.rows[0].revision_no}판 개정 초안이 있습니다. 먼저 초안을 버리거나 확정한 뒤 폐기하세요.`,
       );
 
     await client.query(

@@ -82,7 +82,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await page.goto("/standards/new");
     await page.getByLabel("표준서명").fill("프레스 금형 교체");
     await page
-      .getByRole("button", { name: "표준서 저장 · 승인", exact: true })
+      .getByRole("button", { name: "표준서 저장 · 확정", exact: true })
       .click();
     const errorDialog = page.getByRole("alertdialog");
     await expect(errorDialog).toBeVisible();
@@ -154,7 +154,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
       .getByRole("checkbox", { name: "표준 작업자", exact: true })
       .check();
     await page
-      .getByRole("button", { name: "표준서 저장 · 승인", exact: true })
+      .getByRole("button", { name: "표준서 저장 · 확정", exact: true })
       .click();
     await expect(page).toHaveURL(/\/standards\/[a-f0-9-]{36}$/);
     const id = new URL(page.url()).pathname.split("/")[2];
@@ -169,7 +169,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
       "병원 치료가 필요한 부상",
     );
 
-    // 2) 승인된 판은 못 고친다. 개정 시작 → 복사된 초안을 고쳐 → 승인 → 2판.
+    // 2) 확정된 판은 못 고친다. 개정 시작 → 복사된 초안을 고쳐 → 확정 → 2판.
     await expect(page.locator("#main")).toContainText("1판");
     await page.getByRole("button", { name: "개정 시작", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(id + "/edit$"));
@@ -188,13 +188,13 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page).toHaveURL(new RegExp("/standards/" + id + "$"));
     await expect(page.locator("#main")).toContainText("2판 개정 작성 중");
     await expect(page.locator("#main")).not.toContainText("전원 차단 후 잠금");
-    // 이대로 승인 → 2판이 현재 판, 1판은 지난 판으로 남는다.
+    // 이대로 확정 → 2판이 현재 판, 1판은 지난 판으로 남는다.
     await page
-      .getByRole("button", { name: "이대로 승인", exact: true })
+      .getByRole("button", { name: "이대로 확정", exact: true })
       .click();
     await page
       .getByRole("dialog")
-      .getByRole("button", { name: "승인", exact: true })
+      .getByRole("button", { name: "확정", exact: true })
       .click();
     await expect(page.locator("#main")).toContainText(
       "프레스 금형 교체 (개정)",
@@ -276,7 +276,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
       fullPage: true,
     });
 
-    // 7) 개정 초안이 있는 채로는 폐기되지 않는다 — 먼저 버리거나 승인하라고 안내.
+    // 7) 개정 초안이 있는 채로는 폐기되지 않는다 — 먼저 버리거나 확정하라고 안내.
     //    초안을 버린 뒤에야 폐기된다.
     await page.goto(`/standards/${id}`);
     await page.getByRole("button", { name: "개정 시작", exact: true }).click();
@@ -290,7 +290,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await page.getByRole("button", { name: "폐기", exact: true }).click();
     const blocked = page.getByRole("alertdialog");
     await expect(blocked).toContainText("폐기할 수 없습니다");
-    await expect(blocked).toContainText("먼저 초안을 버리거나 승인한 뒤");
+    await expect(blocked).toContainText("먼저 초안을 버리거나 확정한 뒤");
     await page.screenshot({
       path: testInfo.outputPath("standard-archive-blocked.png"),
       fullPage: true,

@@ -69,8 +69,8 @@ export function StandardDetailView({
   const onApprove = async () => {
     if (
       !(await confirm(
-        `${detail.draft?.revision_no}판으로 승인합니다. 승인된 판은 고칠 수 없고, 이후 지시서와 평가는 이 판을 가리킵니다.`,
-        { title: "개정 승인", confirmLabel: "승인" },
+        `${detail.draft?.revision_no}판으로 확정합니다. 확정된 판은 고칠 수 없고, 이후 지시서와 평가는 이 판을 가리킵니다.`,
+        { title: "개정 확정", confirmLabel: "확정" },
       ))
     )
       return;
@@ -94,7 +94,7 @@ export function StandardDetailView({
     if (detail.draft) {
       setErrorTitle("폐기할 수 없습니다");
       setError(
-        `작성 중인 ${detail.draft.revision_no}판 개정 초안이 있습니다. 먼저 초안을 버리거나 승인한 뒤 폐기하세요.`,
+        `작성 중인 ${detail.draft.revision_no}판 개정 초안이 있습니다. 먼저 초안을 버리거나 확정한 뒤 폐기하세요.`,
       );
       return;
     }
@@ -130,7 +130,7 @@ export function StandardDetailView({
           <h1>{detail.name}</h1>
           <p className="std-detail-meta">
             {detail.revision
-              ? `${detail.revision.revision_no}판 · 승인 ${new Date(
+              ? `${detail.revision.revision_no}판 · 확정 ${new Date(
                   detail.revision.approved_at ?? detail.revision.created_at,
                 ).toLocaleDateString("ko-KR")} · ${
                   detail.revision.approved_by_name ??
@@ -191,7 +191,7 @@ export function StandardDetailView({
             </strong>
             <p>
               현재 {detail.revision?.revision_no ?? "-"}판은 그대로입니다.
-              초안을 고친 뒤 승인하면 새 판이 됩니다.
+              초안을 고친 뒤 확정하면 새 판이 됩니다.
             </p>
             <div className="std-draft-actions">
               <Link
@@ -206,7 +206,7 @@ export function StandardDetailView({
                 onClick={onApprove}
                 disabled={pending}
               >
-                이대로 승인
+                이대로 확정
               </button>
               <button
                 type="button"
@@ -279,7 +279,7 @@ export function StandardDetailView({
         ) : (
           <p className="std-form-note">등록된 단계가 없습니다.</p>
         )}
-        {/* 승인된 판은 사진도 고정이다. 붙이거나 지우는 건 개정 초안에서. */}
+        {/* 확정된 판은 사진도 고정이다. 붙이거나 지우는 건 개정 초안에서. */}
         {!isPro && detail.steps.length > 0 && (
           <p className="attach-uploader-hint">
             유료 요금제에서 작업 단계별 사진을 첨부할 수 있습니다.
@@ -287,7 +287,7 @@ export function StandardDetailView({
         )}
         {isPro && !archived && detail.steps.length > 0 && (
           <p className="attach-uploader-hint">
-            사진을 붙이거나 지우려면 개정을 시작해 초안에서 하세요. 승인된 판은
+            사진을 붙이거나 지우려면 개정을 시작해 초안에서 하세요. 확정된 판은
             사진도 그대로 남습니다.
           </p>
         )}
@@ -412,7 +412,7 @@ export function StandardDetailView({
             >
               <span className="std-assessment-kind">{r.revision_no}판</span>
               <span className="std-assessment-date">
-                {r.status === "DRAFT" ? "작성" : "승인"}{" "}
+                {r.status === "DRAFT" ? "작성" : "확정"}{" "}
                 {new Date(r.approved_at ?? r.created_at).toLocaleDateString(
                   "ko-KR",
                 )}{" "}

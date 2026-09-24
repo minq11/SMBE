@@ -196,7 +196,7 @@ async function assertStepInDraft(stepId: string) {
   );
   if (rows[0]?.status !== "DRAFT")
     throw new AttachmentError(
-      "승인된 판의 사진은 고칠 수 없습니다. 개정을 시작한 뒤 초안에서 붙이거나 지우세요.",
+      "확정된 판의 사진은 고칠 수 없습니다. 개정을 시작한 뒤 초안에서 붙이거나 지우세요.",
     );
 }
 

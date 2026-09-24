@@ -499,7 +499,7 @@ export function StandardForm({
         </Link>
         <button type="submit" className="primary-button" disabled={pending}>
           <Save size={14} />
-          {pending ? "저장 중..." : "표준서 저장 · 승인"}
+          {pending ? "저장 중..." : "표준서 저장 · 확정"}
         </button>
       </div>
     </form>

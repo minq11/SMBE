@@ -52,7 +52,7 @@ export function StandardEditForm({
     FormData
   >(updateStandardAction, undefined);
   const { confirm, dialog } = useConfirm();
-  // 승인까지 갈지는 누른 단추가 정한다. submit 핸들러가 읽는다.
+  // 확정까지 갈지는 누른 단추가 정한다. submit 핸들러가 읽는다.
   const approveRef = useRef(false);
 
   const setField = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -125,7 +125,7 @@ export function StandardEditForm({
     if (
       !(await confirm(
         `${revisionNo}판으로 승인합니다. 승인된 판은 고칠 수 없고, 이후 지시서와 평가는 이 판을 가리킵니다.`,
-        { title: "개정 승인", confirmLabel: "승인" },
+        { title: "개정 확정", confirmLabel: "확정" },
       ))
     )
       return;
@@ -144,7 +144,7 @@ export function StandardEditForm({
       <header className="std-form-hero">
         <h1>{revisionNo}판 개정</h1>
         <p>
-          승인된 판은 고치지 않습니다. 지금 보는 것은 현재 판을 그대로 복사한
+          확정된 판은 고치지 않습니다. 지금 보는 것은 현재 판을 그대로 복사한
           초안입니다. 고친 뒤 승인하면 새 판이 되고, 그 뒤 지시서와 평가는 새
           판을 가리킵니다. 작업이 크게 바뀌었으면 승인 뒤 수시평가를 추가하세요.
         </p>
@@ -319,7 +319,7 @@ export function StandardEditForm({
           disabled={pending}
           onClick={saveAndApprove}
         >
-          {pending ? "저장 중..." : "저장하고 승인"}
+          {pending ? "저장 중..." : "저장하고 확정"}
         </button>
       </div>
     </form>

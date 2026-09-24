@@ -217,9 +217,9 @@ test("an approved edition's step photos are frozen; only a draft takes uploads a
       mimeType: "image/png",
       sizeBytes: 100,
     }),
-    /승인된 판/,
+    /확정된 판/,
   );
   status = "READY";
-  await assert.rejects(deleteAttachment(actor, actor.userId), /승인된 판/);
+  await assert.rejects(deleteAttachment(actor, actor.userId), /확정된 판/);
   assert.equal(writes.length, 0);
 });

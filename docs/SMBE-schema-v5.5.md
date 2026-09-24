@@ -322,7 +322,7 @@ erDiagram
 
 ## 5. 작업표준서
 
-v5.6: 판(개정본) 구조. 승인된 판은 고치지 않고, 개정은 현재 판을 복사한 초안을 고쳐 승인한다 (설계 5-1·14-2). 마이그레이션 `db/0006`(단일 문서화) → `db/0023`(판 구조).
+v5.6: 판(개정본) 구조. 확정된 판은 고치지 않고, 개정은 현재 판을 복사한 초안을 고쳐 확정한다(화면 용어 "확정" = 상태값 `APPROVED`) (설계 5-1·14-2). 마이그레이션 `db/0006`(단일 문서화) → `db/0023`(판 구조).
 
 ### 5-1. ER
 
@@ -343,11 +343,11 @@ erDiagram
 |---|---|---|
 | id | uuid PK | |
 | company_id | uuid FK | |
-| name | text | 현재 판의 거울 (승인 시 갱신) |
+| name | text | 현재 판의 거울 (확정 시 갱신) |
 | ptw_required | bool | 현재 판의 거울 |
 | status | text(`DRAFT`,`APPROVED`,`ARCHIVED`) | 생성 즉시 `APPROVED`. `DRAFT` 는 예약값 |
-| current_revision_id | uuid FK standard_revisions NULL | 승인된 현재 판 |
-| archived_at, archived_by | | 폐기. 작성 중인 초안이 있으면 거부 (먼저 버리거나 승인) |
+| current_revision_id | uuid FK standard_revisions NULL | 확정된 현재 판 |
+| archived_at, archived_by | | 폐기. 작성 중인 초안이 있으면 거부 (먼저 버리거나 확정) |
 | created_by, created_at, updated_at | | |
 
 ### 5-3. `standard_revisions` (판)
@@ -359,16 +359,16 @@ erDiagram
 | revision_no | int ≥ 1 | 1, 2, … 표시는 "n판" |
 | status | text(`DRAFT`,`APPROVED`,`SUPERSEDED`) | 설계 14-2 |
 | name, ptw_required | | 그 판의 내용 |
-| change_note | text ≤ 1000 NULL | 개정 사유. 승인할 때 적는다 |
+| change_note | text ≤ 1000 NULL | 개정 사유. 확정할 때 적는다 |
 | created_by, created_at, updated_at | | |
 | approved_by, approved_at | | |
 | UNIQUE(standard_id, revision_no) | | |
 | UNIQUE(standard_id) WHERE status = 'DRAFT' | | 초안은 하나 |
 
 - **개정 시작**: 현재 판의 name·ptw_required·단계·체크리스트·단계 사진 참조를 복사한 `DRAFT` 를 만든다 (revision_no = max + 1).
-- **승인**: 초안 → `APPROVED`, 이전 `APPROVED` → `SUPERSEDED`, `standards.current_revision_id`·name·ptw_required 갱신. 그 뒤 그 판은 불변 (단계·체크리스트·사진 모두).
+- **확정**: 초안 → `APPROVED`, 이전 `APPROVED` → `SUPERSEDED`, `standards.current_revision_id`·name·ptw_required 갱신. 그 뒤 그 판은 불변 (단계·체크리스트·사진 모두).
 - **버리기**: 초안 행 삭제(단계·체크리스트 CASCADE). 초안 단계의 사진 행은 `DELETED` 표시하고, 다른 판이 쓰지 않는 파일만 S3 에서 지운다. **폐기**는 초안이 있으면 거부한다.
-- 승인 대기(`PENDING`)·반려(`REJECTED`)는 두지 않는다 (관리자 자기 승인).
+- 승인 대기(`PENDING`)·반려(`REJECTED`)는 두지 않는다 (관리자가 곧바로 확정).
 
 ### 5-4. `standard_steps` (작업방법 단계)
 
@@ -520,7 +520,7 @@ erDiagram
 | name | text | 작업명 |
 | group_label | text NULL | 조 추가 시 조 이름(주간/야간 등). 원 설계상 조별 지시서 분리 |
 | standard_id | uuid FK standards NULL | 표준서 기반이면 |
-| standard_revision_id | uuid FK standard_revisions NULL | 초안 저장 때부터 기록 (v5.6). 화면에서 표준서를 고를 때 복사한 판(`draft_data.standardRevisionId`)이 그 표준서의 승인된 판이면 그것, 아니면 그때의 현재 판. 발급 사본·지시서에서 요청한 평가도 이 판을 쓴다 |
+| standard_revision_id | uuid FK standard_revisions NULL | 초안 저장 때부터 기록 (v5.6). 화면에서 표준서를 고를 때 복사한 판(`draft_data.standardRevisionId`)이 그 표준서의 확정된 판이면 그것, 아니면 그때의 현재 판. 발급 사본·지시서에서 요청한 평가도 이 판을 쓴다 |
 | risk_assessment_id | uuid FK risk_assessments | 승인된 평가만 사용 |
 | work_period_start, work_period_end | date | |
 | work_start_time, work_end_time | time | 1일 작업시간 상한 16시간(앱 검증) |
