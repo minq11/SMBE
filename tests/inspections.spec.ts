@@ -139,7 +139,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     ).toBeVisible();
     await workerPage.goto(path + "?via=qr");
     await expect(
-      workerPage.getByText("TBM 0/1명 확인", { exact: false }),
+      workerPage.getByText("TBM 0/1명 · 작업 중 점검 0건", { exact: false }),
     ).toBeVisible();
     await workerPage
       .getByRole("link", { name: "작업 중 점검하기", exact: true })

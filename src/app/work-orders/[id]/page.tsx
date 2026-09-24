@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { ArrowLeft, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { workSession, orderDetail, orderMembers } from "@/server/work-orders";
@@ -15,7 +15,6 @@ import { OrderShell } from "@/features/work-orders/order-shell";
 import {
   OrderCommand,
   PrintButton,
-  PrintTimestamp,
   CopyLinkButton,
 } from "@/features/work-orders/order-controls";
 import { PageHeader } from "@/components/ui/page-header";
@@ -25,9 +24,7 @@ import { InspectionSummary } from "@/features/inspections/inspection-summary";
 import { sessionState } from "@/features/inspections/model";
 import { withTransaction } from "@/server/db";
 import { readPermit } from "@/server/ptw-service";
-import { CriteriaList } from "@/features/company/criteria-list";
 import type { RiskCriteria } from "@/features/company/risk-criteria";
-import { readRiskCriteria } from "@/server/company-settings";
 
 const ACTIONS: Record<string, string> = {
   CREATE: "초안 생성",
@@ -55,6 +52,16 @@ const DELIVERY: Record<string, string> = {
 };
 const dateTime = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+// 화면의 날짜는 "9. 24. 10:12" 까지. 초·연도는 문서 출력물에만 있으면 된다.
+const shortTime = (value: string) =>
+  new Date(value).toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 export default async function OrderDetailPage({
   params,
   searchParams,
@@ -144,10 +151,6 @@ export default async function OrderDetailPage({
         participants: Array<{ user_id: string; snapshot_display_name: string }>;
       }
     | undefined;
-  // 발급 전에는 사본이 없다. 발급하면 지금의 회사 기준이 그대로 사본이 된다.
-  const criteria =
-    riskSnapshot?.criteria_snapshot ??
-    (await withTransaction((c) => readRiskCriteria(c, actor.companyId)));
   const method = detail.snapshots.find((s) => s.snapshot_kind === "WORK_METHOD")
     ?.payload.method;
   const standardMeta = detail.snapshots.find(
@@ -194,6 +197,15 @@ export default async function OrderDetailPage({
       responsibleName: names.get(r.responsibleId) ?? "",
     }));
   const safety = riskSnapshot?.safety_info ?? d.safetyInfo;
+  // 사전조사는 적은 칸만 보인다. "미입력" 네 줄은 정보가 아니다.
+  const safetyRows = (
+    [
+      ["equipment", "기계·설비"],
+      ["materials", "유해물질·MSDS"],
+      ["environment", "주변 환경"],
+      ["history", "재해·아차사고 이력"],
+    ] as const
+  ).filter(([key]) => safety[key]);
   // 회차 목록이 있으면 회차 수로, 회차마다 시간이 같으면 "매일 …" 로.
   const sessionsDraft = d.sessions ?? [];
   const uniformTimes = sessionsDraft.every(
@@ -211,6 +223,11 @@ export default async function OrderDetailPage({
     ? (PERMIT_LABEL[permitStatus(permit?.status ?? "NONE", order.status, d)] ??
       "미신청")
     : "불필요";
+  const todaySession = detail.currentSession;
+  const todayDone = todaySession
+    ? todaySession.expected_assignees.length -
+      sessionState(todaySession, new Date(detail.inspectionNow)).missing.length
+    : 0;
   return (
     <OrderShell session={session} title={order.name}>
       {qr && canPrint && (
@@ -248,46 +265,40 @@ export default async function OrderDetailPage({
         </p>
       )}
       <div className="wo-print">
+        {/* 지시서 번호·발행 버전·출력 기준시각은 출력물(PrintSheet)에만. 화면에는
+            장소 옆에 언제 발급됐고 어느 표준서 몇 판에서 왔는지까지면 된다. */}
         <PageHeader
           title={order.name}
           description={
-            d.groupLabel
-              ? d.groupLabel + " · " + d.location
-              : d.location || "장소 미입력"
+            <>
+              {d.groupLabel
+                ? d.groupLabel + " · " + d.location
+                : d.location || "장소 미입력"}
+              {order.issued_at && " · 발급 " + shortTime(order.issued_at)}
+              {linkedStandardId && linkedHref && (
+                <span className="wo-meta-standard">
+                  {" · 표준서 "}
+                  <Link href={linkedHref}>{linkedStandardName ?? "열기"}</Link>
+                  {!linkedIsCurrent && linked?.current_revision_no
+                    ? ` (그 뒤 ${linked.current_revision_no}판으로 개정됨)`
+                    : ""}
+                </span>
+              )}
+            </>
           }
           actions={
-            <div className="wo-actions wo-no-print">
-              <Link className="btn-secondary" href="/work-orders">
-                <ArrowLeft size={14} /> 목록
-              </Link>
-              {isManager && (
+            isManager ? (
+              <div className="wo-actions wo-no-print">
                 <Link
                   className="btn-secondary"
                   href={"/work-orders/new?copy=" + id}
                 >
                   <Copy size={14} /> 복사
                 </Link>
-              )}
-            </div>
+              </div>
+            ) : undefined
           }
         />
-        <p className="wo-print-meta">
-          지시서 {id} ·{" "}
-          {issued ? "발행 버전 " + order.issue_version : "작성 중"}
-          {order.issued_at && " · 발급 " + dateTime(order.issued_at)} · 출력
-          기준시각 <PrintTimestamp initial={new Date().toISOString()} />{" "}
-          (한국시간)
-        </p>
-        {linkedStandardId && linkedHref && (
-          <p className="wo-standard-chip">
-            표준서 기반
-            {" · "}
-            <Link href={linkedHref}>{linkedStandardName ?? "표준서 열기"}</Link>
-            {!linkedIsCurrent && linked?.current_revision_no
-              ? ` · 표준서는 그 뒤 ${linked.current_revision_no}판으로 개정됨`
-              : ""}
-          </p>
-        )}
         <div className="wo-statuses">
           <div>
             <small>작업 일정</small>
@@ -298,13 +309,11 @@ export default async function OrderDetailPage({
             <strong>
               {d.ptwRequired ? (
                 <Link href={"/work-orders/" + id + "/permit"}>
-                  필요 ·{" "}
-                  {permit?.status === "APPROVED" ? "승인" : "허가 상태 확인"}
-                  {permit?.self_approval ? " · 자가 승인 건" : ""}
+                  {permit?.status === "APPROVED" ? "승인" : "승인 대기"}
                 </Link>
               ) : isManager && actor.userId === order.created_by ? (
                 <Link href={"/work-orders/" + id + "/permit"}>
-                  불필요 · 추가 허가 신청
+                  불필요 · 허가 추가
                 </Link>
               ) : (
                 "불필요"
@@ -316,9 +325,9 @@ export default async function OrderDetailPage({
             <strong>
               {order.status === "CANCELED"
                 ? "작업 취소"
-                : detail.currentSession
-                  ? `${detail.currentSession.expected_assignees.length - sessionState(detail.currentSession, new Date(detail.inspectionNow)).missing.length}/${detail.currentSession.expected_assignees.length}명 확인`
-                  : "해당 회차 없음"}
+                : todaySession
+                  ? `${todayDone}/${todaySession.expected_assignees.length}명 확인`
+                  : "회차 없음"}
             </strong>
           </div>
           <div>
@@ -328,15 +337,11 @@ export default async function OrderDetailPage({
         </div>
         {order.status === "CANCELED" && (
           <p role="status" className="wo-notice">
-            취소된 지시서입니다. 작업·점검에 사용하지 마세요.
-            <br />
-            취소 사유: {order.cancel_reason}
+            취소된 지시서입니다. 사유: {order.cancel_reason}
           </p>
         )}
         {order.status === "COMPLETED" && (
-          <p className="wo-notice">
-            작업기간이 종료되었습니다. 안전조치 완료를 의미하지 않습니다.
-          </p>
+          <p className="wo-notice">작업기간이 끝났습니다.</p>
         )}
         {issued && (
           <InspectionSummary
@@ -390,66 +395,15 @@ export default async function OrderDetailPage({
           </p>
         </section>
         <section {...panel("risk")}>
-          <h2>간이 위험성평가</h2>
-          <p>
+          <h2>위험성평가</h2>
+          <p className="wo-muted">
             {order.assessment_status === "APPROVED"
               ? "승인 완료"
               : order.assessment_status === "PENDING"
                 ? "승인 대기"
-                : "작성 중"}{" "}
-            · 실시일 {d.performedOn || "미입력"}
-            {order.approved_at && " · 승인 " + dateTime(order.approved_at)}
-          </p>
-          {order.assessment_status === "APPROVED" &&
-            order.approved_by === order.assessment_created_by && (
-              <p className="wo-muted">
-                관리자 본인 평가 승인 기록이 있습니다. PTW 자가 승인과는
-                별개입니다.
-              </p>
-            )}
-          <h3>적용한 판단 기준</h3>
-          <CriteriaList criteria={criteria} />
-          {risks.map((r, i) => (
-            <article className="wo-risk" key={i}>
-              <h3>
-                {i + 1}. {r.hazard || "위험요인 미입력"}
-              </h3>
-              <p>
-                수준: {LEVELS[r.level]} ·{" "}
-                {r.allowable === "yes"
-                  ? "허용 가능"
-                  : r.allowable === "no"
-                    ? "허용 불가 · 조치 필요"
-                    : "허용 여부 미선택"}
-              </p>
-              {r.currentControl && (
-                <p className="wo-detail-text">
-                  현재 안전조치: {r.currentControl}
-                </p>
-              )}
-              <p className="wo-detail-text">{r.measure || "감소대책 미입력"}</p>
-              {r.responsibleId && (
-                <p>조치 담당자: {r.responsibleName || "소속 변경된 구성원"}</p>
-              )}
-              {r.dueDate && <p>조치 예정일: {r.dueDate}</p>}
-            </article>
-          ))}
-          <h3>사전조사 정보</h3>
-          {(
-            [
-              ["equipment", "기계·설비"],
-              ["materials", "유해물질·MSDS"],
-              ["environment", "주변 환경"],
-              ["history", "재해·아차사고 이력"],
-            ] as const
-          ).map(([key, title]) => (
-            <div key={key}>
-              <strong>{title}</strong>
-              <p className="wo-detail-text">{safety[key] || "미입력"}</p>
-            </div>
-          ))}
-          <h3>평가 참여자</h3>
-          <p>
+                : "작성 중"}
+            {d.performedOn && " · 실시일 " + d.performedOn}
+            {" · 참여 "}
             {riskSnapshot
               ? riskSnapshot.participants
                   .map((p) => p.snapshot_display_name)
@@ -458,6 +412,41 @@ export default async function OrderDetailPage({
                   .map((id) => names.get(id) || "소속 변경된 구성원")
                   .join(", ") || "미선택"}
           </p>
+          {risks.map((r, i) => (
+            <article className="wo-risk" key={i}>
+              <h3>
+                {i + 1}. {r.hazard || "위험요인 미입력"}
+                <span className="wo-risk-level">
+                  {LEVELS[r.level]} ·{" "}
+                  {r.allowable === "yes" ? "허용 가능" : "조치 필요"}
+                </span>
+              </h3>
+              {r.currentControl && (
+                <p className="wo-detail-text">
+                  현재 안전조치: {r.currentControl}
+                </p>
+              )}
+              <p className="wo-detail-text">{r.measure || "감소대책 미입력"}</p>
+              {(r.responsibleId || r.dueDate) && (
+                <p className="wo-muted">
+                  {r.responsibleId &&
+                    "담당 " + (r.responsibleName || "소속 변경된 구성원")}
+                  {r.responsibleId && r.dueDate && " · "}
+                  {r.dueDate && "예정일 " + r.dueDate}
+                </p>
+              )}
+            </article>
+          ))}
+          {safetyRows.length > 0 && (
+            <>
+              <h3>사전조사 정보</h3>
+              {safetyRows.map(([key, title]) => (
+                <p className="wo-detail-text" key={key}>
+                  <strong>{title}</strong> {safety[key]}
+                </p>
+              ))}
+            </>
+          )}
         </section>
         <section {...panel("checklist")}>
           <h2>체크리스트</h2>
@@ -493,21 +482,12 @@ export default async function OrderDetailPage({
               unoptimized
               className="wo-qr"
             />
-            <p className="wo-detail-text">{url}</p>
-            <p className="wo-muted">
-              로그인 후 같은 회사의 관리자 또는 배정 인원만 열람할 수 있습니다.
-              출력 이후에는 링크에서 최신 상태를 확인하세요.
-            </p>
+            {/* 관리자는 아래 복사 칸에 같은 주소가 있다. */}
+            {!isManager && <p className="wo-detail-text">{url}</p>}
             {isManager && (
               <div className="wo-no-print">
                 {/* 인쇄물은 화면 문서 전체가 아니라 현장 게시용 A4 한 장이다. */}
                 <PrintButton allowed={canPrint} />
-                <p className="wo-muted">
-                  작업 정보·위험요인·체크리스트와 QR 이 A4 한 장으로 나옵니다.
-                  인쇄 창에서 대상을 &lsquo;PDF로 저장&rsquo; 으로 바꾸면 PDF
-                  파일이 됩니다. 작업 장소에 붙여 두면 작업자가 QR 로 바로
-                  들어옵니다.
-                </p>
                 <CopyLinkButton url={url} />
                 <h3>이메일 전달 상태</h3>
                 <ul className="wo-detail-list">
@@ -526,34 +506,17 @@ export default async function OrderDetailPage({
                     label="미전달 링크 다시 보내기"
                   />
                 )}
-                <p className="wo-muted">
-                  한 번에 최대 50명에게 전달합니다. 재시도는 1분 후 가능하며,
-                  발송 완료는 메일 서비스 접수 결과입니다. 수신함 도착을
-                  보장하지 않습니다.
-                </p>
               </div>
             )}
           </section>
         )}
-        {isManager && active && (
-          <section className="wo-section wo-no-print">
-            <h2>지시서 취소</h2>
-            <OrderCommand
-              id={id}
-              revision={order.revision}
-              command="cancel"
-              label="지시서 취소"
-              confirmText="이 작업지시를 취소하시겠습니까? 기존 기록은 보존됩니다."
-            />
-          </section>
-        )}
         {isManager && (
-          <section className="wo-section wo-no-print">
-            <h2>변경 이력</h2>
+          <details className="std-fold wo-fold wo-history-fold wo-no-print">
+            <summary>변경 이력</summary>
             <ul className="wo-history">
               {detail.history.map((h, i) => (
                 <li key={i}>
-                  <time>{dateTime(h.at)}</time>
+                  <time>{shortTime(h.at)}</time>
                   <span>
                     {ACTIONS[h.action] || h.action}
                     {h.is_self_approval ? " · 본인 승인" : ""}
@@ -561,7 +524,18 @@ export default async function OrderDetailPage({
                 </li>
               ))}
             </ul>
-          </section>
+          </details>
+        )}
+        {isManager && active && (
+          <div className="wo-no-print wo-cancel-row">
+            <OrderCommand
+              id={id}
+              revision={order.revision}
+              command="cancel"
+              label="지시서 취소"
+              confirmText="이 작업지시를 취소하시겠습니까? 기존 기록은 보존됩니다."
+            />
+          </div>
         )}
       </div>
     </OrderShell>

@@ -76,12 +76,6 @@ export function BackfillForm({
   return (
     <form action={send} className="inspection-form wo-backfill">
       <Feedback state={state} />
-      <p className="wo-muted">
-        현장에서 기록하지 못한 회차를 대신 입력합니다. 저장하면{" "}
-        <strong>누가 실제로 입력했는지와 사후 입력이라는 사실</strong>이 함께
-        남고, 저장 시각은 지금 시각으로 기록됩니다. 과거 현장 입력으로 보이게
-        만들 수 없습니다.
-      </p>
       <FloatSelect
         id="bf-inspector"
         label="누구의 점검인가"

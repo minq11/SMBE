@@ -30,9 +30,9 @@ import {
   entryPath,
   orderSessionsForDisplay,
 } from "@/features/inspections/model";
+import { dayLabel, shortTime, timeRange } from "@/features/inspections/format";
 
-const at = (value: string) =>
-  new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+const ENTRY: Record<string, string> = { WEB: "웹", QR: "QR", LINK: "링크" };
 export default async function InspectionPage({
   params,
   searchParams,
@@ -91,83 +91,65 @@ export default async function InspectionPage({
     data.order.status !== "CANCELED" &&
     (data.isManager || targetAssigned);
   const alreadyTBM = kind === "TBM" && target?.tbm_users.includes(actor.userId);
-  return (
-    <OrderShell
-      session={session}
-      title={
-        kind === "TBM"
-          ? "TBM 확인"
-          : kind === "DURING_WORK"
-            ? "작업 중 점검"
-            : "점검 기록"
-      }
-    >
-      <PageHeader
-        title={
-          kind === "TBM"
-            ? "TBM 확인"
-            : kind === "DURING_WORK"
-              ? "작업 중 점검"
-              : "점검 기록"
-        }
-        description={data.order.name}
-        actions={
-          <Link className="btn-secondary" href={"/work-orders/" + id}>
-            <FileText size={14} /> 작업지시 보기
-          </Link>
-        }
-      />
-      {query.saved === "1" && (
-        <p role="status" className="wo-notice">
-          점검 기록을 저장했습니다.
-        </p>
-      )}
-      {data.order.ptw_required && (
-        <p className="wo-notice">
-          <Link href={"/work-orders/" + id + "/permit"}>
-            PTW:{" "}
-            {permit?.status === "APPROVED" ? "승인" : "미승인 · 현재 상태 확인"}
-          </Link>
-        </p>
-      )}
-      <InspectionSummary
-        id={id}
-        current={data.current}
-        now={data.now}
-        canceled={data.order.status === "CANCELED"}
-        ownId={actor.userId}
-        via={query.via}
-      />
-      {kind && canInput && !alreadyTBM && (
-        <section className="wo-section">
-          {kind === "TBM" && (
-            <>
-              <h2>발급 당시 위험요인·감소대책</h2>
+  /**
+   * 입력 화면과 기록 화면은 다른 물건이다. TBM 확인하러 들어온 작업자에게 회차
+   * 목록·지난 기록·관리자 도구를 같이 보이면 체크리스트가 그 사이에 묻힌다.
+   * 입력할 수 있을 때는 체크리스트만, 아니면 기록만.
+   */
+  const inputMode = !!kind && canInput && !alreadyTBM;
+  const title =
+    kind === "TBM" ? "TBM 확인" : kind === "DURING_WORK" ? "작업 중 점검" : "점검 기록";
+  const ptwWarn =
+    data.order.ptw_required && permit?.status !== "APPROVED" ? (
+      <p className="wo-notice">
+        <Link href={"/work-orders/" + id + "/permit"}>
+          PTW 미승인 · 허가 상태 확인
+        </Link>
+      </p>
+    ) : null;
+  if (inputMode) {
+    return (
+      <OrderShell session={session} title={title}>
+        <PageHeader
+          title={title}
+          description={
+            data.order.name +
+            " · " +
+            dayLabel(target!.work_date) +
+            " " +
+            timeRange(target!.starts_at, target!.ends_at) +
+            (targetState?.state === "PAST" ? " · 지난 회차" : "")
+          }
+          actions={
+            <Link className="btn-secondary" href={"/work-orders/" + id}>
+              <FileText size={14} /> 작업지시 보기
+            </Link>
+          }
+        />
+        {ptwWarn}
+        {kind === "TBM" && data.risks.length > 0 && (
+          <section className="wo-section tbm-risks">
+            <h2>위험요인·감소대책</h2>
+            <ol className="tbm-risk-list">
               {data.risks.map((r, i) => (
-                <article className="wo-risk" key={i}>
-                  <h3>{r.hazard}</h3>
-                  <p className="wo-detail-text">{r.reduction_measure}</p>
-                </article>
+                <li key={i}>
+                  <strong>{r.hazard}</strong>
+                  <span>{r.reduction_measure}</span>
+                </li>
               ))}
-            </>
-          )}
-          {kind === "DURING_WORK" && (
-            <p className="wo-notice">
-              TBM 미확인이어도 점검할 수 있습니다. TBM 누락 여부는 별도로
-              기록됩니다.
-            </p>
-          )}
-          <h2>{kind === "TBM" ? "TBM 체크리스트" : "작업 중 체크리스트"}</h2>
-          <p>
-            작업일자 {target!.work_date} · {at(target!.starts_at)} ~{" "}
-            {at(target!.ends_at)} (한국시간)
-            {targetState?.state === "PAST" && " · 지난 회차 입력"}
-          </p>
+            </ol>
+          </section>
+        )}
+        {kind === "DURING_WORK" && (
+          <p className="wo-notice">TBM 미확인이어도 점검할 수 있습니다.</p>
+        )}
+        <section className="wo-section">
+          <h2>체크리스트</h2>
           <InspectionForm
             key={target!.id + kind}
             orderId={id}
             sessionId={target!.id}
-            category={kind}
+            category={kind!}
             path={path}
             checklist={data.checklist.filter((c) => c.category === kind)}
             canAttach={data.canAttach}
@@ -180,26 +162,50 @@ export default async function InspectionPage({
             }
           />
         </section>
+      </OrderShell>
+    );
+  }
+  return (
+    <OrderShell session={session} title="점검 기록">
+      <PageHeader
+        title="점검 기록"
+        description={data.order.name}
+        actions={
+          <Link className="btn-secondary" href={"/work-orders/" + id}>
+            <FileText size={14} /> 작업지시 보기
+          </Link>
+        }
+      />
+      {query.saved === "1" && (
+        <p role="status" className="wo-notice">
+          점검 기록을 저장했습니다.
+        </p>
       )}
+      {ptwWarn}
+      <InspectionSummary
+        id={id}
+        current={data.current}
+        now={data.now}
+        canceled={data.order.status === "CANCELED"}
+        ownId={actor.userId}
+        via={query.via}
+      />
       {kind && target && !canInput && targetState?.state === "FUTURE" && (
         <p className="wo-notice">
           아직 시작하지 않은 회차입니다. 작업일이 되면 입력할 수 있습니다.
         </p>
       )}
       {alreadyTBM && (
-        <p role="status">
-          이미 이 회차의 TBM을 확인했습니다. 아래 기록에서 확인하세요.
+        <p role="status" className="wo-notice">
+          이미 이 회차의 TBM을 확인했습니다.
         </p>
       )}
       <section className="wo-section">
-        <h2>회차별 이행 현황</h2>
-        <p className="wo-muted">
-          배정 인원 전원 TBM + 작업 중 점검 1건 이상이면 점검 완료입니다. 관리자
-          추가 참여는 배정자 확인을 대신하지 않으며, 점검 완료와 부적합
-          조치완료는 별개입니다.
-        </p>
+        <h2>회차</h2>
         {data.lockedSessions > 0 && (
-          <p>무료 이용의 과거 열람 제한 회차: {data.lockedSessions}건</p>
+          <p className="wo-muted">
+            무료 이용의 과거 열람 제한 회차 {data.lockedSessions}건
+          </p>
         )}
         <div className="inspection-sessions">
           {orderSessionsForDisplay(data.sessions, new Date(data.now)).map(
@@ -218,18 +224,18 @@ export default async function InspectionPage({
               return (
                 <details key={s.id} open={s.id === data.current?.id}>
                   <summary>
-                    {s.work_date} ·{" "}
-                    {data.order.status === "CANCELED" ? "작업 취소 · " : ""}
-                    {SESSION_LABEL[state.state]} · TBM{" "}
-                    {s.expected_assignees.length - state.missing.length}/
+                    <strong>{dayLabel(s.work_date)}</strong> ·{" "}
+                    {data.order.status === "CANCELED"
+                      ? "작업 취소"
+                      : SESSION_LABEL[state.state]}{" "}
+                    · TBM {s.expected_assignees.length - state.missing.length}/
                     {s.expected_assignees.length} · 작업 중 {s.during_count}건
                   </summary>
-                  <p>
-                    {at(s.starts_at)} ~ {at(s.ends_at)}
-                  </p>
-                  <p>
-                    TBM 미확인:{" "}
-                    {state.missing.map((a) => a.name).join(", ") || "없음"}
+                  <p className="wo-muted">
+                    {timeRange(s.starts_at, s.ends_at)}
+                    {state.missing.length > 0 &&
+                      " · TBM 미확인 " +
+                        state.missing.map((a) => a.name).join(", ")}
                   </p>
                   {showActions && (
                     <div className="wo-actions">
@@ -267,55 +273,54 @@ export default async function InspectionPage({
       </section>
       <section className="wo-section">
         <h2>점검 결과</h2>
-        <p className="wo-muted">
-          최근 100건 표시 · QR/링크/웹은 진입경로 표식이며 위치나 실제 스캔을
-          인증하지 않습니다.
-        </p>
-        {!data.records.length && <p>아직 점검 기록이 없습니다.</p>}
+        {!data.records.length && (
+          <p className="wo-muted">아직 점검 기록이 없습니다.</p>
+        )}
         {data.records.slice(0, 100).map((r) => (
           <details className="inspection-record" key={r.id}>
             <summary>
-              {r.category === "TBM" ? "TBM" : "작업 중"} · {r.inspector_name} (
-              {r.inspector_role === "WORKER" ? "작업자" : "관리자"}) ·{" "}
-              {at(r.submitted_at)}
+              <strong>{r.category === "TBM" ? "TBM" : "작업 중"}</strong> ·{" "}
+              {r.inspector_name} · {shortTime(r.submitted_at)}
               {/* 사후 입력은 펼치지 않아도 보여야 한다. 기록을 훑는 사람이
                   현장 입력과 구분하지 못하면 표시한 의미가 없다. */}
               {r.backfilled && (
                 <span className="wo-backfill-tag">사후 입력</span>
               )}
             </summary>
-            <p>
-              작업일자{" "}
-              {data.sessions.find((s) => s.id === r.session_id)?.work_date} ·
-              진입경로 {r.entry_path} ·{" "}
+            <p className="wo-muted">
+              {dayLabel(
+                data.sessions.find((s) => s.id === r.session_id)?.work_date ??
+                  "",
+              )}{" "}
+              회차 · {r.inspector_role === "WORKER" ? "작업자" : "관리자"} ·{" "}
+              {ENTRY[r.entry_path] ?? r.entry_path} ·{" "}
               {r.backfilled
                 ? `사후 입력 · 입력자 ${r.recorded_by_name}`
-                : "본인 직접 입력"}
+                : "본인 입력"}
             </p>
-            {r.results.map((result, i) => (
-              <div className="wo-risk" key={i}>
-                <strong>
-                  {result.item_text} · {RESULT_LABEL[result.result]}
-                </strong>
-                <p className="wo-detail-text">
-                  {result.comment || "코멘트 없음"}
-                </p>
-                {result.photos.length > 0 && (
-                  <AttachmentList
-                    items={result.photos}
-                    canDelete={false}
-                    compact
-                  />
-                )}
-              </div>
-            ))}
+            <ul className="inspection-results">
+              {r.results.map((result, i) => (
+                <li key={i} data-result={result.result}>
+                  <span>{result.item_text}</span>
+                  <strong>{RESULT_LABEL[result.result]}</strong>
+                  {result.comment && (
+                    <p className="wo-detail-text">{result.comment}</p>
+                  )}
+                  {result.photos.length > 0 && (
+                    <AttachmentList
+                      items={result.photos}
+                      canDelete={false}
+                      compact
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
             {data.isManager && (
               <details className="wo-revise">
                 <summary>결과 수정</summary>
                 <p className="wo-muted">
-                  원본을 덮어쓰지 않습니다. 수정 전·후와 사유가 이력으로
-                  남습니다. 이미 조치완료된 부적합은 되돌릴 수 없습니다 — 조치
-                  내용까지 사라지기 때문입니다.
+                  원본은 남고, 수정 전·후와 사유가 이력이 됩니다.
                 </p>
                 <ReviseForm
                   inspectionId={r.id}
@@ -331,9 +336,8 @@ export default async function InspectionPage({
         <section className="wo-section">
           <h2>관리자 사후 입력</h2>
           <p className="wo-muted">
-            {target.work_date} 회차 · 현장에서 기록하지 못한 점검을 대신
-            넣습니다. 기록이 비어 있는 것보다 누가 언제 대신 넣었는지 드러난
-            기록이 낫습니다.
+            {dayLabel(target.work_date)} 회차 · 현장에서 기록하지 못한 점검을
+            대신 넣습니다.
           </p>
           <BackfillForm
             key={target.id}
@@ -361,27 +365,23 @@ export default async function InspectionPage({
           />
         </section>
       )}
-      {data.isManager && (
-        <section className="wo-section">
-          <h2>점검 수정 이력</h2>
-          <RevisionLog items={revisions} />
-        </section>
-      )}
       <section className="wo-section">
         <h2>부적합 조치 · 미조치 {data.openCount}건</h2>
-        <p className="wo-muted">
-          작업 종료·취소로 자동 종결되지 않습니다. 지정된 활성 관리자가 조치
-          내용을 입력해야 종결됩니다. 표시 범위는 최근 100건입니다.
-        </p>
+        {!data.findings.length && (
+          <p className="wo-muted">부적합이 없습니다.</p>
+        )}
         {data.findings.slice(0, 100).map((f) => (
           <article className="wo-risk" key={f.id}>
             <h3>
-              {f.item_text} · {f.status === "OPEN" ? "조치대기" : "조치완료"}
+              {f.item_text}
+              <span className="wo-risk-level">
+                {f.status === "OPEN" ? "조치대기" : "조치완료"}
+              </span>
             </h3>
-            <p>
-              {f.work_date} · 담당 {f.assigned_manager_name}
+            <p className="wo-muted">
+              {dayLabel(f.work_date)} · 담당 {f.assigned_manager_name}
             </p>
-            <p className="wo-detail-text">{f.comment || "코멘트 없음"}</p>
+            {f.comment && <p className="wo-detail-text">{f.comment}</p>}
             {f.resolution && (
               <p className="wo-detail-text">조치 내용: {f.resolution}</p>
             )}
@@ -391,9 +391,17 @@ export default async function InspectionPage({
           </article>
         ))}
         {data.isManager && (
-          <Link href="/inspections">내 부적합 알림함 보기</Link>
+          <Link className="text-button" href="/inspections">
+            내 부적합 알림함 보기
+          </Link>
         )}
       </section>
+      {data.isManager && (
+        <details className="std-fold wo-fold wo-history-fold">
+          <summary>점검 수정 이력</summary>
+          <RevisionLog items={revisions} />
+        </details>
+      )}
     </OrderShell>
   );
 }

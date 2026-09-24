@@ -1,7 +1,14 @@
 "use client";
 import { useActionState, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, CheckCheck, CheckCircle2, Save, X } from "lucide-react";
+import {
+  Camera,
+  CheckCheck,
+  CheckCircle2,
+  MessageSquare,
+  Save,
+  X,
+} from "lucide-react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { FloatSelect, FloatTextarea } from "@/components/ui/float-field";
 import { uploadImage } from "@/features/attachments/upload";
@@ -39,6 +46,8 @@ export function InspectionForm({
   const router = useRouter();
   const [requestId] = useState(() => crypto.randomUUID());
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  // 코멘트 칸은 부적합·해당없음일 때만 편다. 적합 열 줄에 빈 칸 열 개는 소음이다.
+  const [noteOpen, setNoteOpen] = useState<Record<string, boolean>>({});
   const [reviewed, setReviewed] = useState(previousActions.length === 0);
   // 항목별로 고른 사진. 붙일 자리(결과 행)가 저장 후에 생기므로 그때까지 들고 있는다.
   const [photos, setPhotos] = useState<Record<string, File[]>>({});
@@ -195,9 +204,6 @@ export function InspectionForm({
             >
               <CheckCheck size={14} /> 전부 {RESULT_LABEL.PASS}으로 표시
             </button>
-            <span className="wo-muted">
-              표시한 뒤 부적합·해당없음인 항목만 바꾸면 됩니다.
-            </span>
           </p>
         )}
         {checklist.map((c, index) => (
@@ -223,13 +229,28 @@ export function InspectionForm({
                 </label>
               ))}
             </div>
-            <FloatTextarea
-              id={"inspection-comment-" + c.id}
-              label="코멘트"
-              name={"comment-" + c.id}
-              maxLength={2000}
-              disabled={pending}
-            />
+            {answers[c.id] === "FAIL" ||
+            answers[c.id] === "NA" ||
+            noteOpen[c.id] ? (
+              <FloatTextarea
+                id={"inspection-comment-" + c.id}
+                label="코멘트"
+                name={"comment-" + c.id}
+                maxLength={2000}
+                disabled={pending}
+              />
+            ) : (
+              <button
+                type="button"
+                className="text-button inspection-note-toggle"
+                disabled={pending}
+                onClick={() =>
+                  setNoteOpen((old) => ({ ...old, [c.id]: true }))
+                }
+              >
+                <MessageSquare size={14} /> 코멘트 쓰기
+              </button>
+            )}
             {canAttach && (
               <div className="inspection-photos">
                 <label className="attach-uploader-cta">
@@ -306,8 +327,7 @@ export function InspectionForm({
               required
               disabled={pending}
             />
-            위험요인·감소대책과 점검 내용을 확인했으며, 본인 계정으로 TBM 참여를
-            기록합니다.
+            위험요인·감소대책을 확인했고, 내 이름으로 TBM 참여를 기록합니다.
           </label>
         )}
         {uploadError && (
@@ -315,14 +335,6 @@ export function InspectionForm({
             {uploadError}
           </p>
         )}
-        <p className="wo-muted">
-          본인 이름·역할·실제 저장 시각·진입경로가 기록됩니다. 부적합은 선택한
-          관리자의 안전점검 알림함에 등록됩니다.{" "}
-          {canAttach
-            ? "사진은 저장할 때 항목별로 함께 올라갑니다."
-            : "사진 첨부는 유료 요금제에서 이용할 수 있습니다."}{" "}
-          저장 후 수정은 아직 지원하지 않습니다.
-        </p>
         {/* 좁은 화면에서 아래에 붙는다. 항목이 많아도 저장이 보인다. */}
         <div className="inspection-form-actions">
           <button

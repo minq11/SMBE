@@ -193,7 +193,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       page.getByRole("button", { name: /초안 .* 삭제/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "지시서 취소", exact: true }),
+      page.getByRole("button", { name: "지시서 취소", exact: true }),
     ).toHaveCount(0);
     // 저장 → 본인 평가 승인 → 발급 → 링크 전송을 한 번에 처리한다.
     // 확인은 브라우저 confirm 이 아니라 앱 안의 확인 창이다 (confirm-dialog.tsx).
@@ -224,9 +224,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(page.locator(".wo-sheet")).toHaveCount(0);
     // 다른 탭의 내용은 화면에서 접혀 있다.
     await expect(
-      page.getByText("관리자 본인 평가 승인 기록이 있습니다.", {
-        exact: false,
-      }),
+      page.getByRole("heading", { name: "위험성평가", exact: true }),
     ).toBeHidden();
     // 단계 띠의 번호는 aria-hidden 이라 이름에 들어가지 않는다.
     // 메뉴에도 같은 이름의 링크가 있어 본문으로 좁힌다.
@@ -236,9 +234,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .click();
     await expect(page).toHaveURL(new RegExp(id + "\\?tab=risk$"));
     await expect(
-      page.getByText("관리자 본인 평가 승인 기록이 있습니다.", {
-        exact: false,
-      }),
+      page.getByRole("heading", { name: "위험성평가", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "작업지시 QR", exact: true }),
@@ -255,6 +251,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    await expect(page.getByText("오늘 회차", { exact: false })).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath("work-order-issued.png"),
       fullPage: true,

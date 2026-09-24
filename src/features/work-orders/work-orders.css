@@ -836,9 +836,121 @@
   width: 180px;
   height: 180px;
 }
-.wo-print-meta {
+.wo-meta-standard a {
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.wo-cancel-row {
+  margin-top: 24px;
+}
+/* 위험요인 머리 오른쪽의 수준·허용 표식 */
+.wo-risk h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.wo-risk-level {
   font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+/* 오늘 회차 카드 (inspection-summary.tsx): 한 줄 요약 + 단추 둘 */
+.tbm-today {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px 18px;
+  margin: 20px 0 24px;
+}
+.tbm-today-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  font-size: 15px;
+}
+.tbm-today-head .wo-muted {
+  margin: 0;
+}
+.tbm-today-line {
+  margin: 6px 0 0;
+  font-size: 13px;
   color: var(--ink-2);
+}
+.tbm-today-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.tbm-today-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-weight: 600;
+  color: var(--brand-strong);
+}
+.tbm-today-log {
+  margin-top: 8px;
+}
+.tbm-today > .wo-muted {
+  margin: 0;
+}
+.tbm-risks {
+  padding-bottom: 8px;
+}
+/* TBM 입력 화면의 위험요인 목록: 카드가 아니라 번호 줄 */
+.tbm-risk-list {
+  margin: 0;
+  padding-left: 20px;
+}
+.tbm-risk-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  line-height: 1.6;
+}
+.tbm-risk-list li:last-child {
+  border-bottom: 0;
+}
+.tbm-risk-list strong {
+  display: block;
+}
+.tbm-risk-list span {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.inspection-note-toggle {
+  margin-top: 8px;
+  min-height: 44px;
+}
+/* 점검 결과 안의 항목 줄: 항목 · 결과, 코멘트가 있으면 아래 한 줄 */
+.inspection-results {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.inspection-results li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+.inspection-results li > span {
+  flex: 1 1 auto;
+}
+.inspection-results li[data-result="FAIL"] > strong {
+  color: var(--danger);
+}
+.inspection-results li > p {
+  flex-basis: 100%;
+  margin: 0;
 }
 .wo-history {
   list-style: none;
