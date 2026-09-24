@@ -123,6 +123,12 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .locator("#wo-schedule")
       .getByRole("button", { name: /^작업자 선택/ })
       .click();
+    // 구성원 초대는 이 창 안에 있다 (새 탭). 폼에는 따로 없다.
+    await expect(
+      page.getByRole("dialog").getByRole("link", { name: "구성원 초대" }),
+    ).toHaveAttribute("href", "/company/members");
+    await expect(page.getByText("새 구성원이 합류하면")).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath("assignee-dialog.png") });
     await page
       .getByRole("dialog")
       .getByRole("checkbox", { name: "검증 작업자", exact: true })

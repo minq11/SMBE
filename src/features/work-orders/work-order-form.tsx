@@ -121,7 +121,6 @@ const PARTS = [
   { id: "wo-risk", label: "위험성평가" },
   { id: "wo-schedule", label: "일정·인원" },
   { id: "wo-check", label: "체크리스트" },
-  { id: "wo-issue", label: "발급" },
 ];
 const PTW_OPTIONS = [
   { value: "no", label: "불필요" },
@@ -152,8 +151,8 @@ function openingDraft(
 }
 
 /**
- * 작성·편집 폼. 한 장이다: 작업 정보 → 위험성평가 → 일정·인원 → 체크리스트 →
- * 발급. 위의 구간 칩(JumpNav)이 좁은 화면에서 위에 붙고, 임시저장·발급은 아래에
+ * 작성·편집 폼. 한 장이다: 작업 정보 → 위험성평가 → 일정·인원 → 체크리스트.
+ * 위의 구간 칩(JumpNav)이 좁은 화면에서 위에 붙고, 임시저장·발급은 아래에
  * 붙는다 (work-orders.css .wo-actions). 단계 마법사였을 때는 뒤 단계가 숨어
  * "위험요인 몇 개였지" 를 보러 이전을 두 번 눌러야 했고, 표준서에서 뭐가
  * 채워졌는지도 못 봤다.
@@ -179,6 +178,7 @@ export function WorkOrderForm({
   notice,
   review,
   footer,
+  deleteButton,
   userId,
 }: {
   id: string;
@@ -199,8 +199,10 @@ export function WorkOrderForm({
   review?: ReactNode;
   /** 허가 승인자·작업책임자의 기본값(본인) */
   userId?: string;
-  /** 폼 전체 아래에 붙는 것 (초안 삭제, 변경 이력) */
+  /** 폼 전체 아래에 붙는 것 (변경 이력) */
   footer?: ReactNode;
+  /** 아래 띠의 임시저장 왼쪽에 붙는 초안 삭제 단추 */
+  deleteButton?: ReactNode;
 }) {
   const [data, setData] = useState<WorkDraft>(() =>
     openingDraft(initial, standards, initialStandardId),
@@ -914,18 +916,8 @@ export function WorkOrderForm({
                     members={members}
                     selected={data.assigneeIds}
                     onToggle={(id) => toggle("assigneeIds", id)}
+                    inviteHref="/company/members"
                   />
-                  <Link
-                    href="/company/members"
-                    target="_blank"
-                    rel="noopener"
-                    className="text-button"
-                  >
-                    구성원 초대 (새 탭)
-                  </Link>
-                  <p className="wo-muted">
-                    새 구성원이 합류하면 임시저장하고 이 화면을 다시 여세요.
-                  </p>
                 </section>
 
                 <section className="wo-part" id="wo-check">
@@ -942,17 +934,6 @@ export function WorkOrderForm({
                   ) : (
                     checkBody
                   )}
-                </section>
-
-                <section className="wo-part" id="wo-issue">
-                  <h2>발급</h2>
-                  <p className="wo-muted">
-                    <strong>지금 발급하기</strong>가 저장·위험성평가 승인(본인)
-                    {data.ptwRequired ? "·위험작업허가 신청" : ""}·발급·배정
-                    인원 링크 전송을 한 번에 합니다. 발급 뒤 내용은 고정되고,
-                    바꾸려면 취소 후 복사해 다시 발급합니다.
-                  </p>
-                  <FormErrorDialog message={issueError} nonce={issueError} />
                 </section>
               </>
             )}
@@ -981,6 +962,7 @@ export function WorkOrderForm({
               위 폼을 제출한다. */}
           {mode !== "idle" && (
             <div className="wo-actions">
+              {deleteButton}
               <button
                 type="submit"
                 form={formDomId}
@@ -1001,6 +983,9 @@ export function WorkOrderForm({
               </button>
             </div>
           )}
+          {/* 발급 오류는 창으로 뜬다 — 전에 있던 "발급" 구간은 이 설명과 이 창의
+              자리였을 뿐이라 뺐다. 무엇을 하는지는 발급 확인 창이 말한다. */}
+          <FormErrorDialog message={issueError} nonce={issueError} />
         </div>
         <aside className="wo-summary">
           <h2>작성 중인 작업</h2>

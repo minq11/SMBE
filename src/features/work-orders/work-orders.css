@@ -707,6 +707,18 @@
   opacity: 0.6;
   cursor: default;
 }
+/* 편집 화면 아래 띠에서는 임시저장과 같은 크기의 단추. 지우는 동작이라 빨간 글자. */
+.wo-actions .wo-delete {
+  flex: none;
+}
+.wo-actions .wo-delete-button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--danger);
+  font-size: 14px;
+}
 .wo-col-action {
   width: 1%;
   white-space: nowrap;
@@ -773,6 +785,17 @@
   }
   .wo-editor .wo-actions .btn-secondary {
     padding-inline: 14px;
+  }
+}
+/* 좁은 폰에서 단추 셋이 한 줄에 들도록 삭제는 휴지통만 (이름은 aria-label 이 말한다) */
+@media (max-width: 420px) {
+  .wo-actions .wo-delete-button {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .wo-actions .wo-delete-label {
+    display: none;
   }
 }
 @media (max-width: 900px) {

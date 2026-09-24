@@ -231,14 +231,13 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
             "위험성평가",
             "일정·인원",
             "체크리스트",
-            "발급",
           ]) {
             await page.locator(".jump-nav a", { hasText: label }).click();
             await fits();
           }
           // 내려간 구간의 칩이 켜져 있다 (jump-nav.tsx).
           await expect(page.locator(".jump-nav a[aria-current]")).toHaveText(
-            "발급",
+            "체크리스트",
           );
           // 펼쳐진 뒤에야 저장·발급 띠가 있다. 그 띠도 바닥에 붙어야 한다.
           await barFlush();

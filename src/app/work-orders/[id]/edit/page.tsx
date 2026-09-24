@@ -126,10 +126,7 @@ export default async function EditOrderPage({
             <div className="wo-issue-error-banner" role="alert">
               <strong>발급이 완료되지 않았습니다</strong>
               <p>{issueError}</p>
-              <p className="wo-muted">
-                초안은 저장되어 있으니 위 오류를 해결한 뒤 4단계에서 다시 발급을
-                시도하세요. 임시저장으로도 계속 이어서 작성할 수 있습니다.
-              </p>
+              <p className="wo-muted">초안은 저장되어 있습니다.</p>
             </div>
           )
         }
@@ -143,22 +140,17 @@ export default async function EditOrderPage({
             ptwRequired={order.draft_data.ptwRequired}
           />
         }
+        deleteButton={
+          // 삭제는 아래 띠, 임시저장 옆. 지우면 이 자리가 404 가 되니 목록으로 보낸다.
+          <DeleteDraftButton
+            id={id}
+            revision={order.revision}
+            name={order.name}
+            next="/work-orders?tab=draft"
+          />
+        }
         footer={
           <>
-            {/* 삭제는 버튼 하나면 되는 동작이라 절을 만들지 않는다. 목록 행에도
-                같은 버튼이 있다. 지우면 이 자리가 404 가 되니 목록으로 보낸다. */}
-            <section className="wo-section wo-editor-delete">
-              <p className="wo-muted">
-                잘못 만든 초안이면 지울 수 있습니다. 발급된 지시서는 삭제가
-                아니라 취소로 처리합니다.
-              </p>
-              <DeleteDraftButton
-                id={id}
-                revision={order.revision}
-                name={order.name}
-                next="/work-orders?tab=draft"
-              />
-            </section>
             <details className="std-fold wo-fold wo-history-fold">
               <summary>
                 변경 이력 ({detail.history.length}건)

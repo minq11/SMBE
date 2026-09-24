@@ -1,5 +1,7 @@
 "use client";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, Search, UserPlus, X } from "lucide-react";
 import { PickerDialog } from "./picker-dialog";
 
@@ -92,14 +94,40 @@ export function PeoplePickerDialog({
   selected,
   onToggle,
   buttonLabel = "인원 선택",
+  inviteHref,
 }: {
   legend: string;
   members: Person[];
   selected: string[];
   onToggle: (id: string) => void;
   buttonLabel?: string;
+  /** 있으면 창 안에 "구성원 초대" (새 탭) — 쓰던 폼을 두고 초대하러 간다 */
+  inviteHref?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+  // 초대하러 새 탭에 다녀오면 목록을 서버에서 다시 받는다. 그 사이 합류한 사람이
+  // 보이게 — 전에는 "임시저장하고 다시 여세요" 라고 적어 두었다. 폼 상태는 남는다.
+  const [invited, setInvited] = useState(false);
+  useEffect(() => {
+    if (!invited) return;
+    const back = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    document.addEventListener("visibilitychange", back);
+    return () => document.removeEventListener("visibilitychange", back);
+  }, [invited, router]);
+  const invite = inviteHref ? (
+    <Link
+      href={inviteHref}
+      target="_blank"
+      rel="noopener"
+      className="text-button"
+      onClick={() => setInvited(true)}
+    >
+      <UserPlus size={14} /> 구성원 초대
+    </Link>
+  ) : null;
   const [q, setQ] = useState("");
   const needle = q.trim().toLowerCase();
   const visible = needle
@@ -110,11 +138,16 @@ export function PeoplePickerDialog({
     <fieldset className="people-picker people-picker--dialog">
       <legend>{legend}</legend>
       {members.length === 0 ? (
-        <p className="wo-muted">구성원이 없습니다. 인원관리에서 초대하세요.</p>
+        <p className="wo-muted">
+          구성원이 없습니다. {invite ?? "인원관리에서 초대하세요."}
+        </p>
       ) : (
         <div className="people-picker-summary">
           {chosen.map((m) => (
-            <span key={m.user_id} className="people-chip is-on people-chip--picked">
+            <span
+              key={m.user_id}
+              className="people-chip is-on people-chip--picked"
+            >
               <span className="people-chip-mark" aria-hidden="true">
                 <Check size={14} />
               </span>
@@ -149,6 +182,7 @@ export function PeoplePickerDialog({
         query={q}
         onQuery={setQ}
         searchLabel={legend + " 이름 검색"}
+        extra={invite}
       >
         <div className="people-picker-chips">
           {visible.map((m) => {

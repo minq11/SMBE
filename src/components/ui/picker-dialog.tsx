@@ -20,6 +20,7 @@ export function PickerDialog({
   onQuery,
   searchLabel,
   searchPlaceholder = "이름 검색",
+  extra,
   children,
 }: {
   open: boolean;
@@ -29,6 +30,8 @@ export function PickerDialog({
   onQuery: (q: string) => void;
   searchLabel: string;
   searchPlaceholder?: string;
+  /** "완료" 왼쪽에 둘 보조 동작 (예: 구성원 초대) */
+  extra?: ReactNode;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -91,6 +94,7 @@ export function PickerDialog({
           </div>
           <div className="picker-dialog-scroll">{children}</div>
           <div className="confirm-dialog-actions">
+            {extra && <div className="picker-dialog-extra">{extra}</div>}
             <button type="button" className="btn-primary" onClick={onClose}>
               완료
             </button>

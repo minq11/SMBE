@@ -5833,6 +5833,11 @@ fieldset.form-field legend {
   justify-content: flex-end;
   gap: 8px;
 }
+.picker-dialog-extra {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+}
 @media (max-width: 640px) {
   .confirm-dialog {
     width: 100%;

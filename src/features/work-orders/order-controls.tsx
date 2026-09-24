@@ -244,7 +244,7 @@ export function DeleteDraftButton({
         aria-label={`초안 ${name} 삭제`}
       >
         <Trash2 size={14} />
-        {pending ? "삭제 중…" : "삭제"}
+        <span className="wo-delete-label">{pending ? "삭제 중…" : "삭제"}</span>
       </button>
       <FormErrorDialog message={state?.error} nonce={state} />
     </form>
