@@ -67,7 +67,7 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
       </p>
       <dl className="asmt-review-stats">
         <div>
-          <dt>이 반기 평가</dt>
+          <dt>이 반기 위험성평가</dt>
           <dd>{s.assessments}건</dd>
         </div>
         <div>
@@ -79,7 +79,7 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
           <dd>{s.actions_open}건</dd>
         </div>
         <div className={s.standards_expired > 0 ? "is-alert" : ""}>
-          <dt>평가 필요 표준서</dt>
+          <dt>위험성평가 필요 표준서</dt>
           <dd>{s.standards_expired}건</dd>
         </div>
         <div className={s.pending > 0 ? "is-alert" : ""}>
@@ -141,7 +141,7 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
                   {r.period_year}년 {halfLabel(r.period_half)}
                 </strong>{" "}
                 · {koDate(r.reviewed_at.slice(0, 10))} · {r.reviewed_by_name} ·
-                평가 {r.stats.assessments}건 · 남은 조치 {r.stats.actions_open}
+                위험성평가 {r.stats.assessments}건 · 남은 조치 {r.stats.actions_open}
                 건{r.note ? ` · ${r.note}` : ""}
               </li>
             ))}

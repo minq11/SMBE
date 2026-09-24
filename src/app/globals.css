@@ -3829,7 +3829,13 @@ html[data-banner-hidden] .preview-banner {
   margin-top: 4px;
 }
 .std-detail-actions {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.std-detail-actions-row {
+  display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }

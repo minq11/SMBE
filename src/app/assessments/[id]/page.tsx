@@ -94,7 +94,7 @@ export default async function AssessmentPage({
               href={`/standards/${detail.standard_id}/assessments/new`}
               className="btn-primary"
             >
-              새 회차 평가
+              새 회차 위험성평가
             </Link>
           )}
         </div>

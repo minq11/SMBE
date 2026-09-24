@@ -32,7 +32,7 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
 
   return (
     <div className="stack">
-      <div className="tabs" role="tablist" aria-label="평가 상태">
+      <div className="tabs" role="tablist" aria-label="위험성평가 상태">
         <TabBtn
           label="전체"
           count={items.length}
@@ -67,7 +67,7 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
               <ShieldCheck size={22} />
             </span>
             <strong>
-              {tab === "all" ? "아직 평가가 없어요" : "해당하는 평가가 없어요"}
+              {tab === "all" ? "아직 위험성평가가 없어요" : "해당하는 위험성평가가 없어요"}
             </strong>
             <p>
               {tab === "all"
@@ -91,8 +91,8 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
                 <span className="row-main">
                   <strong>{a.name}</strong>
                   <small>
-                    {KIND_SHORT[a.kind]}평가 · {shortDate(a.performed_on)} ·{" "}
-                    {a.is_simple ? "지시서 간이평가" : "표준서"} · 위험요인{" "}
+                    {KIND_SHORT[a.kind]} 위험성평가 · {shortDate(a.performed_on)} ·{" "}
+                    {a.is_simple ? "지시서 간이 위험성평가" : "표준서"} · 위험요인{" "}
                     {a.item_count}
                   </small>
                 </span>

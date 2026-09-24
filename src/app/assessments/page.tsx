@@ -44,10 +44,10 @@ export default async function AssessmentsPage() {
     >
       <PageHeader
         title="위험성평가"
-        description="표준서 평가와 지시서 간이평가를 한 곳에서. 조치 이행까지 여기서 적습니다."
+        description="표준서 위험성평가와 지시서 간이 위험성평가를 한 곳에서. 조치 이행까지 여기서 적습니다."
         actions={
           <Link href="/assessments/new" className="btn-primary">
-            <Plus size={15} /> 평가 작성
+            <Plus size={15} /> 위험성평가 작성
           </Link>
         }
       />
@@ -55,7 +55,7 @@ export default async function AssessmentsPage() {
       <div className="asmt-tiles" aria-label="현황">
         <div className="asmt-tile">
           <strong>{overview.this_year_count}건</strong>
-          <small>{year}년 정기·최초 평가</small>
+          <small>{year}년 정기·최초 위험성평가</small>
         </div>
         <div
           className={`asmt-tile${overview.open_action_count > 0 ? " is-alert" : ""}`}
@@ -67,7 +67,7 @@ export default async function AssessmentsPage() {
           className={`asmt-tile${overview.needs_assessment.length > 0 ? " is-alert" : ""}`}
         >
           <strong>{overview.needs_assessment.length}건</strong>
-          <small>평가 필요 표준서</small>
+          <small>위험성평가 필요 표준서</small>
         </div>
       </div>
 
@@ -75,9 +75,9 @@ export default async function AssessmentsPage() {
 
       {(overview.needs_assessment.length > 0 ||
         overview.expiring_soon.length > 0) && (
-        <section className="asmt-section" aria-label="평가가 필요한 표준서">
+        <section className="asmt-section" aria-label="위험성평가가 필요한 표준서">
           <h2>
-            <CircleAlert size={15} style={{ verticalAlign: "-2px" }} /> 평가가
+            <CircleAlert size={15} style={{ verticalAlign: "-2px" }} /> 위험성평가가
             필요한 표준서
           </h2>
           <ul className="asmt-needs">
@@ -87,8 +87,8 @@ export default async function AssessmentsPage() {
                   <strong>{s.name}</strong>
                   <small>
                     {s.valid_until
-                      ? `평가 만료 ${shortDate(s.valid_until)}`
-                      : "승인된 평가 없음"}{" "}
+                      ? `위험성평가 만료 ${shortDate(s.valid_until)}`
+                      : "승인된 위험성평가 없음"}{" "}
                     · 지시서에 쓸 수 없음
                   </small>
                 </span>
@@ -96,7 +96,7 @@ export default async function AssessmentsPage() {
                   href={`/standards/${s.standard_id}/assessments/new`}
                   className="btn-primary"
                 >
-                  평가하기
+                  위험성평가하기
                 </Link>
               </li>
             ))}
@@ -110,7 +110,7 @@ export default async function AssessmentsPage() {
                   href={`/standards/${s.standard_id}/assessments/new`}
                   className="btn-secondary"
                 >
-                  미리 평가
+                  미리 위험성평가
                 </Link>
               </li>
             ))}

@@ -92,7 +92,7 @@ export function StandardsListView({ items }: { items: StandardListRow[] }) {
                     <strong>{item.name}</strong>
                     <small>
                       {item.status === "APPROVED"
-                        ? `${item.usable ? "사용 가능" : "평가 만료 · 정기평가 필요"}${item.ptw_required ? " · PTW 필요" : ""} · 평가 회차 ${item.approved_assessment_count}건`
+                        ? `${item.usable ? "사용 가능" : "위험성평가 만료 · 정기 위험성평가 필요"}${item.ptw_required ? " · PTW 필요" : ""} · 평가 회차 ${item.approved_assessment_count}건`
                         : item.status === "DRAFT"
                           ? "작성 중"
                           : "폐기됨"}
@@ -101,7 +101,7 @@ export function StandardsListView({ items }: { items: StandardListRow[] }) {
                   <span className="row-meta">
                     <span className="row-fact">
                       {item.latest_approved_performed_on
-                        ? `최근 평가 ${new Date(item.latest_approved_performed_on).toLocaleDateString("ko-KR")}`
+                        ? `최근 위험성평가 ${new Date(item.latest_approved_performed_on).toLocaleDateString("ko-KR")}`
                         : `수정 ${new Date(item.updated_at).toLocaleDateString("ko-KR")}`}
                     </span>
                   </span>

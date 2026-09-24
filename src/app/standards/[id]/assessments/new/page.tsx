@@ -12,7 +12,7 @@ import { readRiskCriteria } from "@/server/company-settings";
 import { AssessmentForm } from "@/features/standards/assessment-form";
 import { riskSeedFromItem } from "@/features/standards/constants";
 
-export const metadata = { title: "평가 회차 추가 · 심플안전" };
+export const metadata = { title: "위험성평가 회차 추가 · 심플안전" };
 
 export default async function NewAssessmentPage({
   params,
@@ -53,7 +53,7 @@ export default async function NewAssessmentPage({
       breadcrumb={[
         { label: "작업표준서", href: "/standards" },
         { label: detail.name, href: `/standards/${id}` },
-        { label: "평가 회차 추가" },
+        { label: "위험성평가 회차 추가" },
       ]}
       companyName={session.membership.company_name}
       tier={tierOf(session.membership)}

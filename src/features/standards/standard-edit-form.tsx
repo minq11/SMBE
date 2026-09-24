@@ -124,7 +124,7 @@ export function StandardEditForm({
   const saveAndApprove = async () => {
     if (
       !(await confirm(
-        `${revisionNo}판으로 승인합니다. 승인된 판은 고칠 수 없고, 이후 지시서와 평가는 이 판을 가리킵니다.`,
+        `${revisionNo}판으로 확정합니다. 확정된 판은 고칠 수 없고, 이후 지시서와 위험성평가는 이 판을 가리킵니다.`,
         { title: "개정 확정", confirmLabel: "확정" },
       ))
     )
@@ -145,8 +145,8 @@ export function StandardEditForm({
         <h1>{revisionNo}판 개정</h1>
         <p>
           확정된 판은 고치지 않습니다. 지금 보는 것은 현재 판을 그대로 복사한
-          초안입니다. 고친 뒤 승인하면 새 판이 되고, 그 뒤 지시서와 평가는 새
-          판을 가리킵니다. 작업이 크게 바뀌었으면 승인 뒤 수시평가를 추가하세요.
+          초안입니다. 고친 뒤 확정하면 새 판이 되고, 그 뒤 지시서와 위험성평가는
+          새 판을 가리킵니다. 작업이 크게 바뀌었으면 확정 뒤 수시 위험성평가를 추가하세요.
         </p>
       </header>
 

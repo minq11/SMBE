@@ -29,7 +29,6 @@ import {
 } from "./actions";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { useState } from "react";
-import { CriteriaList } from "@/features/company/criteria-list";
 
 export type AttachmentMap = Record<string, AttachmentItem[]>;
 
@@ -65,11 +64,20 @@ export function StandardDetailView({
       const result = await action(form);
       if (result?.error) setError(result.error);
     });
-  const onStartRevision = () => run(startRevisionAction);
+  const onStartRevision = async () => {
+    if (
+      !(await confirm(
+        `${detail.name} 표준서의 개정본을 만드시겠습니까? 개정본은 기존 표준서를 복사하여 만들어지며, 수정하여 확정하면 됩니다.`,
+        { title: "표준서 개정", confirmLabel: "확인" },
+      ))
+    )
+      return;
+    run(startRevisionAction);
+  };
   const onApprove = async () => {
     if (
       !(await confirm(
-        `${detail.draft?.revision_no}판으로 확정합니다. 확정된 판은 고칠 수 없고, 이후 지시서와 평가는 이 판을 가리킵니다.`,
+        `${detail.draft?.revision_no}판으로 확정합니다. 확정된 판은 고칠 수 없고, 이후 지시서와 위험성평가는 이 판을 가리킵니다.`,
         { title: "개정 확정", confirmLabel: "확정" },
       ))
     )
@@ -139,6 +147,7 @@ export function StandardDetailView({
               : `생성 ${new Date(detail.created_at).toLocaleDateString("ko-KR")}`}
           </p>
         </div>
+        {/* 첫 줄은 이 표준서로 할 일(지시서), 둘째 줄은 표준서 자체를 다루는 것 셋. */}
         <div className="std-detail-actions">
           {active && !noValid && (
             <Link
@@ -149,33 +158,33 @@ export function StandardDetailView({
               <ArrowRight size={13} />
             </Link>
           )}
-          {!archived && !detail.draft && (
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={onStartRevision}
-              disabled={pending}
-            >
-              <Pencil size={13} /> 개정 시작
-            </button>
-          )}
           {!archived && (
-            <Link
-              href={`/standards/${detail.standard_id}/assessments/new`}
-              className="ghost-button"
-            >
-              <Plus size={13} /> 평가 회차 추가
-            </Link>
-          )}
-          {!archived && (
-            <button
-              type="button"
-              className="ghost-button ghost-button--danger"
-              onClick={onArchive}
-              disabled={pending}
-            >
-              <Archive size={13} /> 폐기
-            </button>
+            <div className="std-detail-actions-row">
+              {!detail.draft && (
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={onStartRevision}
+                  disabled={pending}
+                >
+                  <Pencil size={13} /> 표준서 개정
+                </button>
+              )}
+              <Link
+                href={`/standards/${detail.standard_id}/assessments/new`}
+                className="ghost-button"
+              >
+                <Plus size={13} /> 위험성평가 회차 추가
+              </Link>
+              <button
+                type="button"
+                className="ghost-button ghost-button--danger"
+                onClick={onArchive}
+                disabled={pending}
+              >
+                <Archive size={13} /> 폐기
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -229,9 +238,9 @@ export function StandardDetailView({
             <p>
               지시서 발급에 사용하려면{" "}
               <Link href={`/standards/${detail.standard_id}/assessments/new`}>
-                정기평가 회차를 새로 등록
+                정기 위험성평가 회차를 새로 등록
               </Link>{" "}
-              하세요. 산안법상 정기평가는 매년, 최초평가는 3년마다 실시가
+              하세요. 산안법상 정기 위험성평가는 매년, 최초 위험성평가는 3년마다 실시가
               권장됩니다.
             </p>
           </div>
@@ -243,7 +252,7 @@ export function StandardDetailView({
           <ShieldCheck size={16} />
           <div>
             <strong>
-              현재 사용 중 평가: {ASSESSMENT_KIND_LABEL[current.kind]} (
+              현재 사용 중 위험성평가: {ASSESSMENT_KIND_LABEL[current.kind]} (
               {new Date(current.performed_on).toLocaleDateString("ko-KR")})
             </strong>
             <p>
@@ -317,12 +326,7 @@ export function StandardDetailView({
       {current && (
         <section className="std-detail-section">
           <h2>현재 사용 중 위험성평가</h2>
-          {current.criteria.length > 0 && (
-            <div className="std-detail-note">
-              <span className="std-detail-sublabel">위험성 판단 기준</span>
-              <CriteriaList criteria={current.criteria} />
-            </div>
-          )}
+          {/* 판단 기준 표는 여기서 보이지 않는다 (사장님 결정). 회사정보 > 판단 기준과 평가 상세에서 본다. */}
           <dl className="std-detail-info">
             <div>
               <dt>설비</dt>
@@ -394,7 +398,7 @@ export function StandardDetailView({
           </div>
           {current.participant_names.length > 0 && (
             <p className="std-detail-participants">
-              <span className="std-detail-sublabel">평가 참여자</span>
+              <span className="std-detail-sublabel">위험성평가 참여자</span>
               <span>{current.participant_names.join(", ")}</span>
             </p>
           )}
@@ -451,7 +455,7 @@ export function StandardDetailView({
       <section className="std-detail-section">
         <h2>위험성평가 회차 이력 ({detail.assessments.length}건)</h2>
         {detail.assessments.length === 0 ? (
-          <p className="std-form-note">등록된 평가가 없습니다.</p>
+          <p className="std-form-note">등록된 위험성평가가 없습니다.</p>
         ) : (
           <ul className="std-assessment-history" role="list">
             {detail.assessments.map((a) => (

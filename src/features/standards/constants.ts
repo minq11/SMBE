@@ -7,10 +7,10 @@ export type AssessmentStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
 export type StandardStatus = "DRAFT" | "APPROVED" | "ARCHIVED";
 
 export const ASSESSMENT_KIND_LABEL: Record<AssessmentKind, string> = {
-  FIRST: "최초평가",
-  PERIODIC: "정기평가",
-  AD_HOC: "수시평가",
-  CONTINUOUS: "상시평가",
+  FIRST: "최초 위험성평가",
+  PERIODIC: "정기 위험성평가",
+  AD_HOC: "수시 위험성평가",
+  CONTINUOUS: "상시 위험성평가",
 };
 
 // 산안법 시행규칙: 최초 3년, 정기 1년, 수시는 이후 정기 사이클 유지. 상시는 만료 개념 없음.

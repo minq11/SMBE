@@ -178,14 +178,27 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.locator("#main")).toContainText(
       "현재 조치: 작업자 주의, 장갑 착용",
     );
-    // 상세의 판단 기준은 평가에 복사된 사본이다.
+    // 표준서 상세에는 판단 기준 표가 없다 (사장님 결정). 평가에 복사된 사본은
+    // 위험성평가 상세에서 본다.
+    await expect(page.locator("#main .criteria-list")).toHaveCount(0);
+    const firstAssessment = await pool.query(
+      `SELECT id FROM risk_assessments WHERE standard_id = $1 ORDER BY created_at LIMIT 1`,
+      [id],
+    );
+    await page.goto(`/assessments/${firstAssessment.rows[0].id}`);
     await expect(page.locator("#main .criteria-list")).toContainText(
       "병원 치료가 필요한 부상",
     );
+    await page.goto(`/standards/${id}`);
 
-    // 2) 확정된 판은 못 고친다. 개정 시작 → 복사된 초안을 고쳐 → 확정 → 2판.
+    // 2) 확정된 판은 못 고친다. 표준서 개정(확인 창) → 복사된 초안을 고쳐 → 확정 → 2판.
     await expect(page.locator("#main")).toContainText("1판");
-    await page.getByRole("button", { name: "개정 시작", exact: true }).click();
+    await page.getByRole("button", { name: "표준서 개정", exact: true }).click();
+    await expect(page.getByRole("dialog")).toContainText("개정본을 만드시겠습니까");
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "확인", exact: true })
+      .click();
     await expect(page).toHaveURL(new RegExp(id + "/edit$"));
     await expect(page.getByRole("heading", { name: "2판 개정" })).toBeVisible();
     // 초안은 현재 판의 복사본이다.
@@ -231,7 +244,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
 
     // 3) 평가 회차 추가 — 지난 회차 값이 채워져 있고, 저장하면 회차가 둘
     await page
-      .getByRole("link", { name: "평가 회차 추가", exact: true })
+      .getByRole("link", { name: "위험성평가 회차 추가", exact: true })
       .click();
     await expect(page).toHaveURL(new RegExp(id + "/assessments/new$"));
     await expect(page.getByLabel("유해·위험요인", { exact: true })).toHaveValue(
@@ -247,7 +260,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.getByLabel("현재 안전조치", { exact: true })).toHaveValue(
       "작업자 주의, 장갑 착용",
     );
-    await page.getByRole("button", { name: "평가 저장", exact: true }).click();
+    await page.getByRole("button", { name: "위험성평가 저장", exact: true }).click();
     await expect(page).toHaveURL(new RegExp("/standards/" + id + "$"));
     await expect(page.locator("#main")).toContainText("회차 이력 (2건)");
 
@@ -291,7 +304,11 @@ test("standard: create, edit, add a seeded assessment round", async ({
     // 7) 개정 초안이 있는 채로는 폐기되지 않는다 — 먼저 버리거나 확정하라고 안내.
     //    초안을 버린 뒤에야 폐기된다.
     await page.goto(`/standards/${id}`);
-    await page.getByRole("button", { name: "개정 시작", exact: true }).click();
+    await page.getByRole("button", { name: "표준서 개정", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "확인", exact: true })
+      .click();
     await expect(page.getByRole("heading", { name: "3판 개정" })).toBeVisible();
     await page.goto(`/standards/${id}`);
     await expect(page.locator("#main")).toContainText("3판 개정 작성 중");
@@ -320,6 +337,8 @@ test("standard: create, edit, add a seeded assessment round", async ({
       .getByRole("dialog")
       .getByRole("button", { name: "폐기", exact: true })
       .click();
+    // 서버 반영을 기다린다 — 상태 표시가 "폐기" 로 바뀐 뒤에 DB 를 읽는다.
+    await expect(page.locator(".std-detail-tag")).toContainText("폐기");
     await expect(page.locator("#main")).toContainText("개정 이력 (2판)");
     const after = await pool.query(
       `SELECT s.status,

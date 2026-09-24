@@ -32,10 +32,10 @@ export type AssessmentSeed = {
 };
 
 const KIND_OPTIONS: Array<{ key: Kind; label: string; note: string }> = [
-  { key: "PERIODIC", label: "정기평가", note: "매년 1회" },
-  { key: "AD_HOC", label: "수시평가", note: "설비·물질·인력 변경, 사고 뒤" },
-  { key: "CONTINUOUS", label: "상시평가", note: "정기평가를 상시 활동으로" },
-  { key: "FIRST", label: "최초평가", note: "처음부터 다시" },
+  { key: "PERIODIC", label: "정기 위험성평가", note: "매년 1회" },
+  { key: "AD_HOC", label: "수시 위험성평가", note: "설비·물질·인력 변경, 사고 뒤" },
+  { key: "CONTINUOUS", label: "상시 위험성평가", note: "정기 위험성평가를 상시 활동으로" },
+  { key: "FIRST", label: "최초 위험성평가", note: "처음부터 다시" },
 ];
 
 const todayKst = () =>
@@ -118,11 +118,11 @@ export function AssessmentForm({
   return (
     <form action={formAction} onSubmit={handleSubmit} className="std-form">
       <header className="std-form-hero">
-        <h1>{standardName} · 평가 회차 추가</h1>
+        <h1>{standardName} · 위험성평가 회차 추가</h1>
         <p>
           {seeded
             ? "지난 회차의 위험요인과 대책이 채워져 있습니다. 조치가 끝난 항목은 조치 후 판정입니다. 바뀐 것만 고치고 저장하세요."
-            : "이 표준서의 새 평가 회차를 등록합니다. 저장하면 지시서 발급의 기준이 됩니다."}
+            : "이 표준서의 새 위험성평가 회차를 등록합니다. 저장하면 지시서 발급의 기준이 됩니다."}
         </p>
       </header>
 
@@ -139,7 +139,7 @@ export function AssessmentForm({
       <section className="std-form-section" id="asmt-info">
         <h2>실시 정보</h2>
         <div className="form-field">
-          <label>평가 유형</label>
+          <label>위험성평가 유형</label>
           <div className="std-kind-choices">
             {KIND_OPTIONS.map((opt) => (
               <button
@@ -156,7 +156,7 @@ export function AssessmentForm({
           </div>
         </div>
         <div className="form-field">
-          <label htmlFor="asmt-performed-on">평가 실시일</label>
+          <label htmlFor="asmt-performed-on">위험성평가 실시일</label>
           <input
             id="asmt-performed-on"
             type="date"
@@ -261,7 +261,7 @@ export function AssessmentForm({
           </p>
         ) : (
           <PeoplePicker
-            legend="평가에 실제 참여한 근로자"
+            legend="위험성평가에 실제 참여한 근로자"
             members={members}
             selected={participants}
             onToggle={(id) =>
@@ -279,7 +279,7 @@ export function AssessmentForm({
         </Link>
         <button type="submit" className="primary-button" disabled={pending}>
           <Save size={14} />
-          {pending ? "저장 중…" : "평가 저장"}
+          {pending ? "저장 중…" : "위험성평가 저장"}
         </button>
       </div>
     </form>

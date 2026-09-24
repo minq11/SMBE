@@ -224,7 +224,7 @@ export function StandardForm({
         <p>
           작업방법 · 체크리스트 · 위험성평가를 한 번에 등록합니다. 저장하면 바로
           지시서에 쓸 수 있습니다. 나중에 바뀌면 상세 화면의 수정으로 고치고,
-          작업이 크게 바뀌면 수시평가 회차를 추가하세요.
+          작업이 크게 바뀌면 수시 위험성평가 회차를 추가하세요.
         </p>
       </header>
 
@@ -379,11 +379,11 @@ export function StandardForm({
         </div>
         <p className="std-form-note">
           이 표준서를 사용하는 지시서에 대한 최초 위험성 평가입니다. 이후
-          정기·수시평가는 표준서 상세 화면에서 회차별로 추가합니다.
+          정기·수시 위험성평가는 표준서 상세 화면에서 회차별로 추가합니다.
         </p>
 
         <div className="form-field">
-          <label htmlFor="std-performed-on">평가 실시일</label>
+          <label htmlFor="std-performed-on">위험성평가 실시일</label>
           <input
             id="std-performed-on"
             type="date"
@@ -482,10 +482,10 @@ export function StandardForm({
 
         <div className="form-field">
           <p className="std-form-note">
-            실제 평가에 참여한 근로자를 선택합니다.
+            실제 위험성평가에 참여한 근로자를 선택합니다.
           </p>
           <PeoplePicker
-            legend="평가 참여자"
+            legend="위험성평가 참여자"
             members={members}
             selected={draft.participant_user_ids}
             onToggle={toggleParticipant}

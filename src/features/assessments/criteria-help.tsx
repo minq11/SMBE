@@ -17,14 +17,14 @@ export function CriteriaHelp({
       <CriteriaList criteria={criteria} />
       {snapshot ? (
         <p>
-          이 평가를 만들 때의 기준입니다. 회사 기준을 나중에 바꿔도 이 평가는
+          이 위험성평가를 만들 때의 기준입니다. 회사 기준을 나중에 바꿔도 이 위험성평가는
           그대로입니다.
         </p>
       ) : (
         <p>
           바꾸려면{" "}
           <Link href="/company/criteria">회사정보 &gt; 위험성 판단 기준</Link>
-          에서 고치세요. 이미 승인된 평가는 그대로입니다.
+          에서 고치세요. 이미 승인된 위험성평가는 그대로입니다.
         </p>
       )}
     </>

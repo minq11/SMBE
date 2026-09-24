@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { shortDate } from "@/features/assessments/model";
 import "@/features/assessments/assessments.css";
 
-export const metadata = { title: "평가 작성 · 심플안전" };
+export const metadata = { title: "위험성평가 작성 · 심플안전" };
 
 /**
  * 평가는 표준서에 붙는다. 그래서 "평가 작성" 은 표준서를 고르는 일이다.
@@ -27,7 +27,7 @@ export default async function NewAssessmentPickPage() {
       active="assessment"
       breadcrumb={[
         { label: "위험성평가", href: "/assessments" },
-        { label: "평가 작성" },
+        { label: "위험성평가 작성" },
       ]}
       companyName={session.membership?.company_name}
       tier={tierOf(session.membership)}
@@ -36,8 +36,8 @@ export default async function NewAssessmentPickPage() {
       isOperator={isOperator}
     >
       <PageHeader
-        title="평가 작성"
-        description="어느 작업(표준서)의 평가인지 고르세요."
+        title="위험성평가 작성"
+        description="어느 작업(표준서)의 위험성평가인지 고르세요."
       />
       {standards.length === 0 ? (
         <div className="panel">
@@ -60,15 +60,15 @@ export default async function NewAssessmentPickPage() {
                 <strong>{s.name}</strong>
                 <small>
                   {s.last_performed_on
-                    ? `최근 평가 ${shortDate(s.last_performed_on)}${s.expired ? " · 만료" : s.valid_until ? ` · 유효 ~${shortDate(s.valid_until)}` : ""}`
-                    : "승인된 평가 없음"}
+                    ? `최근 위험성평가 ${shortDate(s.last_performed_on)}${s.expired ? " · 만료" : s.valid_until ? ` · 유효 ~${shortDate(s.valid_until)}` : ""}`
+                    : "승인된 위험성평가 없음"}
                 </small>
               </span>
               <Link
                 href={`/standards/${s.standard_id}/assessments/new`}
                 className={s.expired ? "btn-primary" : "btn-secondary"}
               >
-                평가 <ArrowRight size={13} />
+                위험성평가 <ArrowRight size={13} />
               </Link>
             </li>
           ))}
@@ -84,10 +84,10 @@ export default async function NewAssessmentPickPage() {
           <span className="asmt-need-main">
             <strong>
               <ClipboardList size={15} style={{ verticalAlign: "-2px" }} />{" "}
-              지시서에서 간이평가로 작성
+              지시서에서 간이 위험성평가로 작성
             </strong>
             <small>
-              작업 정보를 넣고 2단계에서 위험요인·대책을 적으면 평가가 함께
+              작업 정보를 넣고 2단계에서 위험요인·대책을 적으면 위험성평가가 함께
               기록됩니다.
             </small>
           </span>
