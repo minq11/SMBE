@@ -252,9 +252,10 @@ export function StandardDetailView({
           <ShieldCheck size={16} />
           <div>
             <strong>
-              현재 사용 중 위험성평가: {ASSESSMENT_KIND_LABEL[current.kind]} (
+              이 표준서의 위험성평가: {ASSESSMENT_KIND_LABEL[current.kind]} (
               {new Date(current.performed_on).toLocaleDateString("ko-KR")})
             </strong>
+            <br/>
             <p>
               유효기간{" "}
               {current.valid_until
@@ -325,7 +326,7 @@ export function StandardDetailView({
 
       {current && (
         <section className="std-detail-section">
-          <h2>현재 사용 중 위험성평가</h2>
+          <h2>이 표준서의 위험성평가</h2>
           {/* 판단 기준 표는 여기서 보이지 않는다 (사장님 결정). 회사정보 > 판단 기준과 평가 상세에서 본다. */}
           <dl className="std-detail-info">
             <div>
