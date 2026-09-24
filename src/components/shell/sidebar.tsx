@@ -106,18 +106,18 @@ const NAV: ReadonlyArray<NavEntry> = [
       { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
     ],
   },
-  {
-    key: "orders",
-    title: "작업지시",
-    icon: Speech,
-    href: "/work-orders",
-  },
   { key: "standards", title: "작업표준서", icon: BookOpen, href: "/standards" },
   {
     key: "assessment",
     title: "위험성평가",
     icon: ListChecks,
     href: "/assessments",
+  },
+  {
+    key: "orders",
+    title: "작업지시",
+    icon: Speech,
+    href: "/work-orders",
   },
   {
     key: "permits",
