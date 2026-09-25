@@ -237,13 +237,17 @@ export function CopyLinkButton({ url }: { url: string }) {
       return "복사하지 못했습니다. 아래 주소를 직접 복사하세요.";
     }
   }, "");
+  // 복사는 주소 왼쪽의 아이콘 하나. 단추 글자는 주소 칸의 이름이 대신한다.
   return (
-    <form action={action}>
-      <button className="btn-secondary" disabled={pending}>
-        <Link2 size={14} />
-        작업 링크 복사
+    <form action={action} className="wo-link-row">
+      <button
+        className="icon-button wo-link-copy"
+        disabled={pending}
+        aria-label="작업 링크 복사"
+        title="작업 링크 복사"
+      >
+        <Link2 size={18} />
       </button>
-      {state && <p role="status">{state}</p>}
       <FloatField
         id="wo-link-url"
         className="wo-link-field"
@@ -251,6 +255,11 @@ export function CopyLinkButton({ url }: { url: string }) {
         readOnly
         value={url}
       />
+      {state && (
+        <p role="status" className="wo-link-status">
+          {state}
+        </p>
+      )}
     </form>
   );
 }

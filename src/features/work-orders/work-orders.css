@@ -730,8 +730,37 @@
 .wo-detail-list li {
   margin-bottom: 8px;
 }
-.wo-link-field.float-field {
+/* 작업 링크: [복사 아이콘] [주소 칸], 결과 한 줄은 아래로 */
+.wo-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin: 12px 0;
+}
+.wo-link-copy {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--brand);
+  flex-shrink: 0;
+}
+.wo-link-copy:hover {
+  border-color: var(--brand);
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+}
+.wo-link-field.float-field {
+  flex: 1 1 200px;
+  min-width: 0;
+  margin: 0;
+}
+.wo-link-status {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
 }
 .wo-qr {
   width: 180px;

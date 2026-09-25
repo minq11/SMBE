@@ -211,7 +211,9 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     ).toBeVisible();
     await expect(page.getByAltText("이 작업지시를 여는 QR 코드")).toBeVisible();
     // 복사하는 주소에는 들어온 길(via=link)이 붙는다. 그 길로 열면 "보는" 화면이다.
-    await expect(page.getByLabel("작업 링크")).toHaveValue(/\?via=link$/);
+    await expect(page.getByLabel("작업 링크", { exact: true })).toHaveValue(
+      /\?via=link$/,
+    );
     // 무료 회사: 출력 버튼은 보이지만 눌러도 안내만 뜨고 출력물이 만들어지지 않는다.
     // 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전 클릭은 삼켜진다.
     const notice = page.getByRole("alert").filter({
