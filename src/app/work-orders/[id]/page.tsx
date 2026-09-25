@@ -123,6 +123,21 @@ export default async function OrderDetailPage({
   // 출력물은 유료 기능이다. 무료 회사는 버튼을 눌렀을 때 안내로 막는다.
   const canPrint = (session.membership?.pro_state ?? "FREE") !== "FREE";
   const panel = (key: string) => ({ id: key, className: "wo-section" });
+  /**
+   * 읽을 일이 드문 구간은 접어 둔다. 머리에 "위험요인 3건" 처럼 안에 뭐가 있는지
+   * 한 줄이 있어 펼치지 않아도 감이 온다. 작업 정보와 QR·전달은 열어 둔다 —
+   * 그 둘이 이 화면에 온 이유다. 구간 칩(JumpNav)을 누르면 접힌 구간이 열린다.
+   */
+  const fold = (key: string) => ({
+    id: key,
+    className: "wo-section wo-section-fold",
+  });
+  const tbmCount = issued
+    ? detail.checklist.filter((c) => c.category === "TBM").length
+    : d.tbm.length;
+  const duringCount = issued
+    ? detail.checklist.filter((c) => c.category === "DURING_WORK").length
+    : d.during.length;
   const names = new Map([
     ...members.map((m) => [m.user_id, m.display_name] as const),
     ...detail.assignments.map(
@@ -415,16 +430,21 @@ export default async function OrderDetailPage({
             )}
           </dl>
         </section>
-        <section {...panel("risk")}>
-          <h2>위험성평가</h2>
+        <details {...fold("risk")}>
+          <summary>
+            <h2>위험성평가</h2>
+            <small>
+              위험요인 {risks.length}건 ·{" "}
+              {order.assessment_status === "APPROVED"
+                ? "승인 완료"
+                : order.assessment_status === "PENDING"
+                  ? "승인 대기"
+                  : "작성 중"}
+            </small>
+          </summary>
           <p className="wo-muted">
-            {order.assessment_status === "APPROVED"
-              ? "승인 완료"
-              : order.assessment_status === "PENDING"
-                ? "승인 대기"
-                : "작성 중"}
-            {d.performedOn && " · 실시일 " + d.performedOn}
-            {" · 참여 "}
+            {d.performedOn && "실시일 " + d.performedOn + " · "}
+            {"참여 "}
             {riskSnapshot
               ? riskSnapshot.participants
                   .map((p) => p.snapshot_display_name)
@@ -468,9 +488,15 @@ export default async function OrderDetailPage({
               ))}
             </>
           )}
-        </section>
-        <section {...panel("schedule")}>
-          <h2>일정·인원</h2>
+        </details>
+        <details {...fold("schedule")}>
+          <summary>
+            <h2>일정·인원</h2>
+            <small>
+              {sessionsDraft.length > 0 ? `${sessionsDraft.length}회차 · ` : ""}
+              배정 {issued ? detail.assignments.length : d.assigneeIds.length}명
+            </small>
+          </summary>
           {/* 회차 목록이 곧 기간이다. 목록이 없는 옛 지시서만 한 줄로. */}
           {sessionsDraft.length === 0 && <p>{printPeriod}</p>}
           {sessionsDraft.length > 0 && (
@@ -490,9 +516,14 @@ export default async function OrderDetailPage({
           )}
           <h3>배정 인원</h3>
           <p>{assigneeNames}</p>
-        </section>
-        <section {...panel("checklist")}>
-          <h2>체크리스트</h2>
+        </details>
+        <details {...fold("checklist")}>
+          <summary>
+            <h2>체크리스트</h2>
+            <small>
+              TBM {tbmCount} · 작업 중 {duringCount}
+            </small>
+          </summary>
           {(
             [
               ["TBM", "tbm", "TBM · 작업 전"],
@@ -513,7 +544,7 @@ export default async function OrderDetailPage({
               </ol>
             </div>
           ))}
-        </section>
+        </details>
         {qr && (
           <section {...panel("qr")}>
             <h2>작업지시 QR</h2>

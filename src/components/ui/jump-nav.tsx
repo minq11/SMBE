@@ -86,6 +86,11 @@ export function JumpNav({
           key={item.id}
           href={"#" + item.id}
           aria-current={active === item.id ? "location" : undefined}
+          onClick={() => {
+            // 접힌 구간(details)으로 가면 먼저 펼친다. 닫힌 채로는 머리만 보인다.
+            const target = document.getElementById(item.id);
+            if (target instanceof HTMLDetailsElement) target.open = true;
+          }}
         >
           {item.label}
         </a>

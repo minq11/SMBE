@@ -233,6 +233,10 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
         page.getByRole("heading", { name, exact: true }),
       ).toBeVisible();
     await expect(page.locator("dl.wo-facts")).toContainText("작업방법");
+    // 위험성평가·일정·인원·체크리스트는 접혀 있다. 머리의 요약이 안을 말한다.
+    await expect(page.locator("#schedule > summary")).toContainText("1회차");
+    await expect(page.locator(".wo-session-list li").first()).toBeHidden();
+    await page.locator("#schedule > summary").click();
     await expect(page.locator(".wo-session-list li").first()).toBeVisible();
     // 발급된 지시서는 고칠 수 없고(편집 화면은 조회로 되돌려 보낸다), 지울 수도
     // 없다. 수단은 취소뿐이다.

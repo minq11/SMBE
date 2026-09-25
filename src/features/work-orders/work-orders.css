@@ -783,6 +783,41 @@
     scroll-margin-top: 68px;
   }
 }
+/* 접히는 구간: 머리는 구간 제목 그대로, 오른쪽에 요약 한 줄과 화살표 */
+.wo-section-fold > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  cursor: pointer;
+  list-style: none;
+  min-height: 44px;
+}
+.wo-section-fold > summary::-webkit-details-marker {
+  display: none;
+}
+.wo-section-fold > summary h2 {
+  margin: 0;
+}
+.wo-section-fold > summary small {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.wo-section-fold > summary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--ink-4);
+  font-size: 13px;
+}
+.wo-section-fold[open] > summary::after {
+  content: "▴";
+}
+.wo-section-fold[open] > summary {
+  margin-bottom: 16px;
+}
+.wo-section-fold:not([open]) {
+  padding-bottom: 12px;
+}
 /* 작업 정보의 사실 줄: 이름 · 값 */
 .wo-facts {
   display: grid;
