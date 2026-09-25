@@ -54,16 +54,96 @@
     justify-content: center;
   }
 }
-.inspection-record,
-.inspection-sessions details {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--line);
+/* 회차 카드 (점검 기록). 머리: 날짜 · 배지 · TBM n/m · 작업 중 n건. 안: 시간, 단추, 기록. */
+.insp-session {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 4px 16px;
+  margin-bottom: 12px;
   overflow-wrap: anywhere;
 }
-.inspection-record summary,
-.inspection-sessions summary {
+.insp-session > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-height: 48px;
   cursor: pointer;
-  line-height: 1.8;
+  list-style: none;
+  font-size: 15px;
+}
+.insp-session > summary::-webkit-details-marker {
+  display: none;
+}
+.insp-session > summary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--ink-4);
+  font-size: 13px;
+}
+.insp-session[open] > summary::after {
+  content: "▴";
+}
+.insp-session-stats {
+  display: inline-flex;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.insp-session-stats [data-tone="ok"],
+.insp-counts [data-tone="ok"] {
+  color: var(--ok);
+}
+.insp-session-stats [data-tone="warn"] {
+  color: var(--accent-ink);
+}
+.insp-counts [data-tone="danger"] {
+  color: var(--danger);
+  font-weight: 700;
+}
+.insp-session-time {
+  margin: 0 0 8px;
+}
+.insp-session-actions {
+  margin: 4px 0 12px;
+}
+.insp-session > .wo-muted:last-child {
+  margin-bottom: 12px;
+}
+/* 회차 안의 기록 한 줄: [TBM] 이름 · 시각 · 적합 3 부적합 1 · (사후 입력) */
+.inspection-record {
+  border-top: 1px solid var(--line);
+  padding: 8px 0;
+}
+.inspection-record > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+}
+.inspection-record > summary::-webkit-details-marker {
+  display: none;
+}
+.inspection-record .wo-risk-level {
+  margin-left: 0;
+}
+.insp-counts {
+  display: inline-flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.insp-record-meta {
+  margin: 8px 0 4px;
+  font-size: 12px;
+}
+.inspection-record .wo-backfill-tag {
+  margin-left: 0;
 }
 .inspection-dialog {
   border: 1px solid var(--line);

@@ -35,3 +35,12 @@ export function shortTime(value: string) {
     hour12: false,
   });
 }
+/** 시각만 "10:12". 같은 회차 안의 기록에는 날짜가 필요 없다. */
+export function clock(value: string) {
+  return new Date(value).toLocaleTimeString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}

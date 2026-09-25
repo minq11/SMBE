@@ -19,6 +19,7 @@ export function InspectionSummary({
   canceled,
   ownId,
   via = "web",
+  logLink = true,
 }: {
   id: string;
   current: SessionRow | null;
@@ -26,6 +27,8 @@ export function InspectionSummary({
   canceled: boolean;
   ownId: string;
   via?: string;
+  /** 점검 기록 화면 자신에서는 "점검 기록 보기" 가 제자리 링크라 뺀다. */
+  logLink?: boolean;
 }) {
   const root = "/work-orders/" + id + "/inspections";
   const path = via === "qr" ? "qr" : via === "link" ? "link" : "web";
@@ -83,9 +86,11 @@ export function InspectionSummary({
             : "오늘 회차가 없습니다."}
         </p>
       )}
-      <Link className="text-button tbm-today-log" href={root}>
-        점검 기록 보기
-      </Link>
+      {logLink && (
+        <Link className="text-button tbm-today-log" href={root}>
+          점검 기록 보기
+        </Link>
+      )}
     </section>
   );
 }

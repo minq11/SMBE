@@ -31,7 +31,7 @@ import {
   entryPath,
   orderSessionsForDisplay,
 } from "@/features/inspections/model";
-import { dayLabel, shortTime, timeRange } from "@/features/inspections/format";
+import { clock, dayLabel, timeRange } from "@/features/inspections/format";
 
 const ENTRY: Record<string, string> = { WEB: "웹", QR: "QR", LINK: "링크" };
 export default async function InspectionPage({
@@ -196,6 +196,7 @@ export default async function InspectionPage({
         canceled={data.order.status === "CANCELED"}
         ownId={actor.userId}
         via={query.via}
+        logLink={false}
       />
       {kind && target && !canInput && targetState?.state === "FUTURE" && (
         <p className="wo-notice" data-tone="info">
@@ -207,147 +208,219 @@ export default async function InspectionPage({
           이미 이 회차의 TBM을 확인했습니다.
         </p>
       )}
+      {/*
+        작업자가 보는 화면이다. 회차 하나가 카드 하나이고, 그 회차의 기록이 카드 안에
+        있다. "언제 · 누가 · 무엇을" 이 한 줄이면 되고, 관리자 도구는 맨 아래에 둔다.
+      */}
       <section className="wo-section">
-        <h2>회차</h2>
+        <h2>회차별 기록</h2>
         {data.lockedSessions > 0 && (
           <p className="wo-muted">
             무료 이용의 과거 열람 제한 회차 {data.lockedSessions}건
           </p>
         )}
-        <div className="inspection-sessions">
-          {orderSessionsForDisplay(data.sessions, new Date(data.now)).map(
-            (s) => {
-              const state = sessionState(s, new Date(data.now));
-              const mineTBM = s.tbm_users.includes(actor.userId);
-              const rowAssigned = s.expected_assignees.some(
-                (a) => a.userId === actor.userId,
-              );
-              const showActions =
-                state.canInput &&
-                data.order.status !== "CANCELED" &&
-                (data.isManager || rowAssigned);
-              const sessionQ =
-                "&session=" + s.id + "&via=" + path.toLowerCase();
-              return (
-                <details key={s.id} open={s.id === data.current?.id}>
-                  <summary>
-                    <strong>{dayLabel(s.work_date)}</strong>{" "}
+        {orderSessionsForDisplay(data.sessions, new Date(data.now)).map((s) => {
+          const state = sessionState(s, new Date(data.now));
+          const mineTBM = s.tbm_users.includes(actor.userId);
+          const rowAssigned = s.expected_assignees.some(
+            (a) => a.userId === actor.userId,
+          );
+          const showActions =
+            state.canInput &&
+            data.order.status !== "CANCELED" &&
+            (data.isManager || rowAssigned);
+          const sessionQ = "&session=" + s.id + "&via=" + path.toLowerCase();
+          const records = data.records.filter((r) => r.session_id === s.id);
+          const tbmDone = s.expected_assignees.length - state.missing.length;
+          const canceled = data.order.status === "CANCELED";
+          return (
+            <details
+              className="insp-session"
+              key={s.id}
+              open={s.id === (target?.id ?? data.current?.id)}
+            >
+              <summary>
+                <strong>{dayLabel(s.work_date)}</strong>
+                <span
+                  className="wo-risk-level"
+                  data-tone={canceled ? "danger" : SESSION_TONE[state.state]}
+                >
+                  {canceled ? "작업 취소" : SESSION_LABEL[state.state]}
+                </span>
+                {state.state !== "FUTURE" && (
+                  <span className="insp-session-stats">
                     <span
-                      className="wo-risk-level"
                       data-tone={
-                        data.order.status === "CANCELED"
-                          ? "danger"
-                          : SESSION_TONE[state.state]
+                        tbmDone >= s.expected_assignees.length ? "ok" : "warn"
                       }
                     >
-                      {data.order.status === "CANCELED"
-                        ? "작업 취소"
-                        : SESSION_LABEL[state.state]}
-                    </span>{" "}
-                    · TBM {s.expected_assignees.length - state.missing.length}/
-                    {s.expected_assignees.length} · 작업 중 {s.during_count}건
-                  </summary>
-                  <p className="wo-muted">
-                    {timeRange(s.starts_at, s.ends_at)}
-                    {state.missing.length > 0 &&
-                      " · TBM 미확인 " +
-                        state.missing.map((a) => a.name).join(", ")}
-                  </p>
-                  {showActions && (
-                    <div className="wo-actions">
-                      {!mineTBM && (
-                        <Link
-                          className="btn-primary"
-                          href={
-                            "/work-orders/" +
-                            id +
-                            "/inspections?type=TBM" +
-                            sessionQ
-                          }
-                        >
-                          TBM 확인
-                        </Link>
-                      )}
-                      <Link
-                        className="btn-secondary"
-                        href={
-                          "/work-orders/" +
-                          id +
-                          "/inspections?type=DURING_WORK" +
-                          sessionQ
-                        }
-                      >
-                        작업 중 점검
-                      </Link>
-                    </div>
+                      TBM {tbmDone}/{s.expected_assignees.length}
+                    </span>
+                    <span data-tone={s.during_count > 0 ? "ok" : "plain"}>
+                      작업 중 {s.during_count}건
+                    </span>
+                  </span>
+                )}
+              </summary>
+              <p className="wo-muted insp-session-time">
+                {timeRange(s.starts_at, s.ends_at)}
+                {state.missing.length > 0 &&
+                  " · TBM 미확인 " +
+                    state.missing.map((a) => a.name).join(", ")}
+              </p>
+              {showActions && (
+                <div className="wo-actions insp-session-actions">
+                  {!mineTBM && (
+                    <Link
+                      className="btn-primary"
+                      href={
+                        "/work-orders/" +
+                        id +
+                        "/inspections?type=TBM" +
+                        sessionQ
+                      }
+                    >
+                      TBM 확인
+                    </Link>
                   )}
-                </details>
-              );
-            },
-          )}
-        </div>
-      </section>
-      <section className="wo-section">
-        <h2>점검 결과</h2>
-        {!data.records.length && (
-          <p className="wo-muted">아직 점검 기록이 없습니다.</p>
-        )}
-        {data.records.slice(0, 100).map((r) => (
-          <details className="inspection-record" key={r.id}>
-            <summary>
-              <strong>{r.category === "TBM" ? "TBM" : "작업 중"}</strong> ·{" "}
-              {r.inspector_name} · {shortTime(r.submitted_at)}
-              {/* 사후 입력은 펼치지 않아도 보여야 한다. 기록을 훑는 사람이
-                  현장 입력과 구분하지 못하면 표시한 의미가 없다. */}
-              {r.backfilled && (
-                <span className="wo-backfill-tag">사후 입력</span>
+                  <Link
+                    className="btn-secondary"
+                    href={
+                      "/work-orders/" +
+                      id +
+                      "/inspections?type=DURING_WORK" +
+                      sessionQ
+                    }
+                  >
+                    작업 중 점검
+                  </Link>
+                </div>
               )}
-            </summary>
-            <p className="wo-muted">
-              {dayLabel(
-                data.sessions.find((s) => s.id === r.session_id)?.work_date ??
-                  "",
-              )}{" "}
-              회차 · {r.inspector_role === "WORKER" ? "작업자" : "관리자"} ·{" "}
-              {ENTRY[r.entry_path] ?? r.entry_path} ·{" "}
-              {r.backfilled
-                ? `사후 입력 · 입력자 ${r.recorded_by_name}`
-                : "본인 입력"}
-            </p>
-            <ul className="inspection-results">
-              {r.results.map((result, i) => (
-                <li key={i} data-result={result.result}>
-                  <span>{result.item_text}</span>
-                  <strong>{RESULT_LABEL[result.result]}</strong>
-                  {result.comment && (
-                    <p className="wo-detail-text">{result.comment}</p>
-                  )}
-                  {result.photos.length > 0 && (
-                    <AttachmentList
-                      items={result.photos}
-                      canDelete={false}
-                      compact
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-            {data.isManager && (
-              <details className="wo-revise">
-                <summary>결과 수정</summary>
-                <p className="wo-muted">
-                  원본은 남고, 수정 전·후와 사유가 이력이 됩니다.
-                </p>
-                <ReviseForm
-                  inspectionId={r.id}
-                  results={r.results}
-                  managers={data.managers}
-                />
-              </details>
-            )}
-          </details>
-        ))}
+              {records.length === 0 && state.state !== "FUTURE" && (
+                <p className="wo-muted">아직 점검 기록이 없습니다.</p>
+              )}
+              {records.map((r) => {
+                const counts = { PASS: 0, FAIL: 0, NA: 0 } as Record<
+                  string,
+                  number
+                >;
+                for (const result of r.results)
+                  counts[result.result] = (counts[result.result] ?? 0) + 1;
+                return (
+                  <details className="inspection-record" key={r.id}>
+                    <summary>
+                      <span
+                        className="wo-risk-level"
+                        data-tone={r.category === "TBM" ? "info" : "plain"}
+                      >
+                        {r.category === "TBM" ? "TBM" : "작업 중"}
+                      </span>
+                      <strong>{r.inspector_name}</strong>
+                      <span className="wo-muted">{clock(r.submitted_at)}</span>
+                      <span className="insp-counts">
+                        {counts.FAIL > 0 && (
+                          <span data-tone="danger">
+                            {RESULT_LABEL.FAIL} {counts.FAIL}
+                          </span>
+                        )}
+                        {counts.PASS > 0 && (
+                          <span data-tone="ok">
+                            {RESULT_LABEL.PASS} {counts.PASS}
+                          </span>
+                        )}
+                        {counts.NA > 0 && (
+                          <span>
+                            {RESULT_LABEL.NA} {counts.NA}
+                          </span>
+                        )}
+                      </span>
+                      {/* 사후 입력은 펼치지 않아도 보여야 한다. 기록을 훑는 사람이
+                            현장 입력과 구분하지 못하면 표시한 의미가 없다. */}
+                      {r.backfilled && (
+                        <span className="wo-backfill-tag">사후 입력</span>
+                      )}
+                    </summary>
+                    <ul className="inspection-results">
+                      {r.results.map((result, i) => (
+                        <li key={i} data-result={result.result}>
+                          <span>{result.item_text}</span>
+                          <strong>{RESULT_LABEL[result.result]}</strong>
+                          {result.comment && (
+                            <p className="wo-detail-text">{result.comment}</p>
+                          )}
+                          {result.photos.length > 0 && (
+                            <AttachmentList
+                              items={result.photos}
+                              canDelete={false}
+                              compact
+                            />
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="wo-muted insp-record-meta">
+                      {r.inspector_role === "WORKER" ? "작업자" : "관리자"} ·{" "}
+                      {ENTRY[r.entry_path] ?? r.entry_path} ·{" "}
+                      {r.backfilled
+                        ? `사후 입력 · 입력자 ${r.recorded_by_name}`
+                        : "본인 입력"}
+                    </p>
+                    {data.isManager && (
+                      <details className="wo-revise">
+                        <summary>결과 수정</summary>
+                        <p className="wo-muted">
+                          원본은 남고, 수정 전·후와 사유가 이력이 됩니다.
+                        </p>
+                        <ReviseForm
+                          inspectionId={r.id}
+                          results={r.results}
+                          managers={data.managers}
+                        />
+                      </details>
+                    )}
+                  </details>
+                );
+              })}
+            </details>
+          );
+        })}
       </section>
+      {(data.findings.length > 0 || data.isManager) && (
+        <section className="wo-section">
+          <h2>부적합 조치 · 미조치 {data.openCount}건</h2>
+          {!data.findings.length && (
+            <p className="wo-muted">부적합이 없습니다.</p>
+          )}
+          {data.findings.slice(0, 100).map((f) => (
+            <article className="wo-risk" key={f.id}>
+              <h3>
+                {f.item_text}
+                <span
+                  className="wo-risk-level"
+                  data-tone={f.status === "OPEN" ? "warn" : "ok"}
+                >
+                  {f.status === "OPEN" ? "조치대기" : "조치완료"}
+                </span>
+              </h3>
+              <p className="wo-muted">
+                {dayLabel(f.work_date)} · 담당 {f.assigned_manager_name}
+              </p>
+              {f.comment && <p className="wo-detail-text">{f.comment}</p>}
+              {f.resolution && (
+                <p className="wo-detail-text">조치 내용: {f.resolution}</p>
+              )}
+              {f.status === "OPEN" &&
+                f.assigned_manager_id === actor.userId &&
+                data.isManager && <FindingResolution id={f.id} />}
+            </article>
+          ))}
+          {data.isManager && (
+            <Link className="text-button" href="/inspections">
+              내 부적합 알림함 보기
+            </Link>
+          )}
+        </section>
+      )}
       {data.isManager && target && (
         <section className="wo-section">
           <h2>관리자 사후 입력</h2>
@@ -381,40 +454,6 @@ export default async function InspectionPage({
           />
         </section>
       )}
-      <section className="wo-section">
-        <h2>부적합 조치 · 미조치 {data.openCount}건</h2>
-        {!data.findings.length && (
-          <p className="wo-muted">부적합이 없습니다.</p>
-        )}
-        {data.findings.slice(0, 100).map((f) => (
-          <article className="wo-risk" key={f.id}>
-            <h3>
-              {f.item_text}
-              <span
-                className="wo-risk-level"
-                data-tone={f.status === "OPEN" ? "warn" : "ok"}
-              >
-                {f.status === "OPEN" ? "조치대기" : "조치완료"}
-              </span>
-            </h3>
-            <p className="wo-muted">
-              {dayLabel(f.work_date)} · 담당 {f.assigned_manager_name}
-            </p>
-            {f.comment && <p className="wo-detail-text">{f.comment}</p>}
-            {f.resolution && (
-              <p className="wo-detail-text">조치 내용: {f.resolution}</p>
-            )}
-            {f.status === "OPEN" &&
-              f.assigned_manager_id === actor.userId &&
-              data.isManager && <FindingResolution id={f.id} />}
-          </article>
-        ))}
-        {data.isManager && (
-          <Link className="text-button" href="/inspections">
-            내 부적합 알림함 보기
-          </Link>
-        )}
-      </section>
       {data.isManager && (
         <details className="std-fold wo-fold wo-history-fold">
           <summary>점검 수정 이력</summary>
