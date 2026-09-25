@@ -21,6 +21,7 @@ import {
 } from "@/features/work-orders/order-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { JumpNav } from "@/components/ui/jump-nav";
+import { Facts } from "@/components/ui/facts";
 import { dayLabel } from "@/features/inspections/format";
 import { PrintSheet } from "@/features/work-orders/print-sheet";
 import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
@@ -291,7 +292,6 @@ export default async function OrderDetailPage({
               {d.groupLabel
                 ? d.groupLabel + " · " + d.location
                 : d.location || "장소 미입력"}
-              {order.issued_at && " · 발급 " + shortTime(order.issued_at)}
             </>
           }
           actions={
@@ -393,42 +393,52 @@ export default async function OrderDetailPage({
         </div>
         <section {...panel("info")}>
           <h2>작업 정보</h2>
-          <dl className="wo-facts">
-            <dt>작업방법</dt>
-            <dd className="wo-detail-text">
-              {typeof method === "string"
-                ? method
-                : d.method || "작업방법 미입력"}
-            </dd>
-            <dt>장소</dt>
-            <dd>
-              {d.location || "미입력"}
-              {d.groupLabel ? ` · ${d.groupLabel}` : ""}
-            </dd>
-            <dt>작업기간</dt>
-            <dd>{printPeriod}</dd>
-            <dt>PTW</dt>
-            <dd>
-              {d.ptwRequired ? (
-                <Link href={"/work-orders/" + id + "/permit"}>
-                  필요 · {printPtw}
-                </Link>
-              ) : (
-                "불필요"
-              )}
-            </dd>
-            {linkedStandardId && linkedHref && (
-              <>
-                <dt>표준서</dt>
-                <dd>
-                  <Link href={linkedHref}>{linkedStandardName ?? "열기"}</Link>
-                  {!linkedIsCurrent && linked?.current_revision_no
-                    ? ` · 그 뒤 ${linked.current_revision_no}판으로 개정됨`
-                    : ""}
-                </dd>
-              </>
-            )}
-          </dl>
+          <Facts
+            rows={[
+              [
+                "작업방법",
+                <span className="wo-detail-text" key="m">
+                  {typeof method === "string"
+                    ? method
+                    : d.method || "작업방법 미입력"}
+                </span>,
+              ],
+              ["장소", d.location || "미입력"],
+              d.groupLabel ? ["조", d.groupLabel] : null,
+              [
+                "작업기간",
+                `${d.startDate || "미입력"} ~ ${d.endDate || "미입력"}`,
+              ],
+              sessionsDraft.length > 0
+                ? ["회차", `${sessionsDraft.length}회차`]
+                : null,
+              ["시간", periodTimes],
+              [
+                "PTW",
+                d.ptwRequired ? (
+                  <Link href={"/work-orders/" + id + "/permit"}>
+                    필요 · {printPtw}
+                  </Link>
+                ) : (
+                  "불필요"
+                ),
+              ],
+              linkedStandardId && linkedHref
+                ? [
+                    "표준서",
+                    <span key="s">
+                      <Link href={linkedHref}>
+                        {linkedStandardName ?? "열기"}
+                      </Link>
+                      {!linkedIsCurrent && linked?.current_revision_no
+                        ? ` (그 뒤 ${linked.current_revision_no}판으로 개정됨)`
+                        : ""}
+                    </span>,
+                  ]
+                : null,
+              order.issued_at ? ["발급", shortTime(order.issued_at)] : null,
+            ]}
+          />
         </section>
         <details {...fold("risk")}>
           <summary>
@@ -442,17 +452,22 @@ export default async function OrderDetailPage({
                   : "작성 중"}
             </small>
           </summary>
-          <p className="wo-muted">
-            {d.performedOn && "실시일 " + d.performedOn + " · "}
-            {"참여 "}
-            {riskSnapshot
-              ? riskSnapshot.participants
-                  .map((p) => p.snapshot_display_name)
-                  .join(", ")
-              : d.participantIds
-                  .map((id) => names.get(id) || "소속 변경된 구성원")
-                  .join(", ") || "미선택"}
-          </p>
+          <Facts
+            className="wo-facts--tight"
+            rows={[
+              ["실시일", d.performedOn || null],
+              [
+                "참여",
+                riskSnapshot
+                  ? riskSnapshot.participants
+                      .map((p) => p.snapshot_display_name)
+                      .join(", ")
+                  : d.participantIds
+                      .map((id) => names.get(id) || "소속 변경된 구성원")
+                      .join(", ") || "미선택",
+              ],
+            ]}
+          />
           {risks.map((r, i) => (
             <article className="wo-risk" key={i}>
               <h3>
@@ -468,14 +483,15 @@ export default async function OrderDetailPage({
                 </p>
               )}
               <p className="wo-detail-text">{r.measure || "감소대책 미입력"}</p>
-              {(r.responsibleId || r.dueDate) && (
-                <p className="wo-muted">
-                  {r.responsibleId &&
-                    "담당 " + (r.responsibleName || "소속 변경된 구성원")}
-                  {r.responsibleId && r.dueDate && " · "}
-                  {r.dueDate && "예정일 " + r.dueDate}
-                </p>
-              )}
+              <Facts
+                className="wo-facts--tight"
+                rows={[
+                  r.responsibleId
+                    ? ["담당", r.responsibleName || "소속 변경된 구성원"]
+                    : null,
+                  r.dueDate ? ["예정일", r.dueDate] : null,
+                ]}
+              />
             </article>
           ))}
           {safetyRows.length > 0 && (

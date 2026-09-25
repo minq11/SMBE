@@ -139,7 +139,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     ).toBeVisible();
     await workerPage.goto(path + "?via=qr");
     await expect(
-      workerPage.getByText("TBM 0/1명 · 작업 중 점검 0건", { exact: false }),
+      workerPage.locator(".tbm-today").getByText("0/1명", { exact: true }),
     ).toBeVisible();
     await workerPage
       .getByRole("link", { name: "작업 중 점검하기", exact: true })
@@ -313,9 +313,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       .first();
     await expect(record.locator(".wo-backfill-tag")).toBeVisible();
     await record.locator("summary").first().click();
-    await expect(
-      record.getByText("사후 입력 · 입력자", { exact: false }),
-    ).toBeVisible();
+    await expect(record.locator("dl.wo-facts")).toContainText("입력자");
     await page.screenshot({
       path: testInfo.outputPath("inspection-backfill.png"),
       fullPage: true,

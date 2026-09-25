@@ -7,6 +7,7 @@ import {
   type SessionRow,
 } from "./model";
 import { dayLabel, timeRange } from "./format";
+import { StatStrip } from "@/components/ui/facts";
 
 /**
  * 발급된 지시서의 "오늘 할 일" 카드. 오늘 회차 한 줄(날짜·시간·TBM·작업 중 점검)과
@@ -51,13 +52,25 @@ export function InspectionSummary({
               {timeRange(current.starts_at, current.ends_at)}
             </span>
           </div>
-          <p className="tbm-today-line">
-            TBM {current.expected_assignees.length - state!.missing.length}/
-            {current.expected_assignees.length}명 · 작업 중 점검{" "}
-            {current.during_count}건
-            {state!.missing.length > 0 &&
-              ` · 미확인 ${state!.missing.map((a) => a.name).join(", ")}`}
-          </p>
+          <StatStrip
+            items={[
+              {
+                label: "TBM",
+                value: `${current.expected_assignees.length - state!.missing.length}/${current.expected_assignees.length}명`,
+                tone: state!.missing.length === 0 ? "ok" : "warn",
+              },
+              {
+                label: "작업 중 점검",
+                value: `${current.during_count}건`,
+                tone: current.during_count > 0 ? "ok" : "plain",
+              },
+              state!.missing.length > 0 && {
+                label: "TBM 미확인",
+                value: state!.missing.map((a) => a.name).join(", "),
+                tone: "warn",
+              },
+            ]}
+          />
           <div className="tbm-today-actions">
             {current.tbm_users.includes(ownId) ? (
               <span className="tbm-today-done">

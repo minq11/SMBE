@@ -32,6 +32,7 @@ import {
   orderSessionsForDisplay,
 } from "@/features/inspections/model";
 import { clock, dayLabel, timeRange } from "@/features/inspections/format";
+import { Facts, StatStrip, type Tone } from "@/components/ui/facts";
 
 const ENTRY: Record<string, string> = { WEB: "웹", QR: "QR", LINK: "링크" };
 export default async function InspectionPage({
@@ -117,19 +118,26 @@ export default async function InspectionPage({
       <OrderShell session={session} title={title}>
         <PageHeader
           title={title}
-          description={
-            data.order.name +
-            " · " +
-            dayLabel(target!.work_date) +
-            " " +
-            timeRange(target!.starts_at, target!.ends_at) +
-            (targetState?.state === "PAST" ? " · 지난 회차" : "")
-          }
+          description={data.order.name}
           actions={
             <Link className="btn-secondary" href={"/work-orders/" + id}>
               <FileText size={14} /> 작업지시 보기
             </Link>
           }
+        />
+        <StatStrip
+          items={[
+            { label: "회차", value: dayLabel(target!.work_date) },
+            {
+              label: "시간",
+              value: timeRange(target!.starts_at, target!.ends_at),
+            },
+            targetState?.state === "PAST" && {
+              label: "구분",
+              value: "지난 회차",
+              tone: "warn",
+            },
+          ]}
         />
         {ptwWarn}
         {kind === "TBM" && data.risks.length > 0 && (
@@ -202,11 +210,7 @@ export default async function InspectionPage({
       >
         <PageHeader
           title={dayLabel(focused.work_date) + " 회차"}
-          description={
-            data.order.name +
-            " · " +
-            timeRange(focused.starts_at, focused.ends_at)
-          }
+          description={data.order.name}
           actions={
             <Link
               className="btn-secondary"
@@ -227,33 +231,35 @@ export default async function InspectionPage({
             이미 이 회차의 TBM을 확인했습니다.
           </p>
         )}
-        <p className="insp-session-line">
-          <span
-            className="wo-risk-level"
-            data-tone={canceled ? "danger" : SESSION_TONE[state.state]}
-          >
-            {canceled ? "작업 취소" : SESSION_LABEL[state.state]}
-          </span>
-          {state.state !== "FUTURE" && (
-            <span className="insp-session-stats">
-              <span
-                data-tone={
-                  tbmDone >= focused.expected_assignees.length ? "ok" : "warn"
-                }
-              >
-                TBM {tbmDone}/{focused.expected_assignees.length}
-              </span>
-              <span data-tone={focused.during_count > 0 ? "ok" : "plain"}>
-                작업 중 {focused.during_count}건
-              </span>
-            </span>
-          )}
-          {state.missing.length > 0 && (
-            <span className="wo-muted">
-              TBM 미확인 {state.missing.map((a) => a.name).join(", ")}
-            </span>
-          )}
-        </p>
+        <StatStrip
+          items={[
+            {
+              label: "구분",
+              value: canceled ? "작업 취소" : SESSION_LABEL[state.state],
+              tone: canceled ? "danger" : (SESSION_TONE[state.state] as Tone),
+            },
+            {
+              label: "시간",
+              value: timeRange(focused.starts_at, focused.ends_at),
+            },
+            state.state !== "FUTURE" && {
+              label: "TBM",
+              value: `${tbmDone}/${focused.expected_assignees.length}명`,
+              tone:
+                tbmDone >= focused.expected_assignees.length ? "ok" : "warn",
+            },
+            state.state !== "FUTURE" && {
+              label: "작업 중 점검",
+              value: `${focused.during_count}건`,
+              tone: focused.during_count > 0 ? "ok" : "plain",
+            },
+            state.missing.length > 0 && {
+              label: "TBM 미확인",
+              value: state.missing.map((a) => a.name).join(", "),
+              tone: "warn",
+            },
+          ]}
+        />
         {showActions && (
           <div className="wo-actions insp-session-actions">
             {!mineTBM && (
@@ -293,8 +299,15 @@ export default async function InspectionPage({
                   >
                     {r.category === "TBM" ? "TBM" : "작업 중"}
                   </span>
-                  <strong>{r.inspector_name}</strong>
-                  <span className="wo-muted">{clock(r.submitted_at)}</span>
+                  <span className="insp-rec-who">
+                    <strong>{r.inspector_name}</strong>
+                    <span className="wo-muted">{clock(r.submitted_at)}</span>
+                    {/* 사후 입력은 펼치지 않아도 보여야 한다. 기록을 훑는 사람이
+                        현장 입력과 구분하지 못하면 표시한 의미가 없다. */}
+                    {r.backfilled && (
+                      <span className="wo-backfill-tag">사후 입력</span>
+                    )}
+                  </span>
                   <span className="insp-counts">
                     {counts.FAIL > 0 && (
                       <span data-tone="danger">
@@ -312,11 +325,6 @@ export default async function InspectionPage({
                       </span>
                     )}
                   </span>
-                  {/* 사후 입력은 펼치지 않아도 보여야 한다. 기록을 훑는 사람이
-                      현장 입력과 구분하지 못하면 표시한 의미가 없다. */}
-                  {r.backfilled && (
-                    <span className="wo-backfill-tag">사후 입력</span>
-                  )}
                 </summary>
                 <ul className="inspection-results">
                   {r.results.map((result, i) => (
@@ -336,13 +344,18 @@ export default async function InspectionPage({
                     </li>
                   ))}
                 </ul>
-                <p className="wo-muted insp-record-meta">
-                  {r.inspector_role === "WORKER" ? "작업자" : "관리자"} ·{" "}
-                  {ENTRY[r.entry_path] ?? r.entry_path} ·{" "}
-                  {r.backfilled
-                    ? `사후 입력 · 입력자 ${r.recorded_by_name}`
-                    : "본인 입력"}
-                </p>
+                <Facts
+                  className="wo-facts--tight"
+                  rows={[
+                    [
+                      "점검자",
+                      r.inspector_role === "WORKER" ? "작업자" : "관리자",
+                    ],
+                    ["경로", ENTRY[r.entry_path] ?? r.entry_path],
+                    ["입력", r.backfilled ? "사후 입력" : "본인 입력"],
+                    r.backfilled ? ["입력자", r.recorded_by_name] : null,
+                  ]}
+                />
                 {data.isManager && (
                   <details className="wo-revise">
                     <summary>결과 수정</summary>
@@ -451,20 +464,26 @@ export default async function InspectionPage({
                 >
                   {canceled ? "작업 취소" : SESSION_LABEL[state.state]}
                 </span>
-                {state.state !== "FUTURE" && (
-                  <span className="insp-session-stats">
-                    <span
-                      data-tone={
-                        tbmDone >= s.expected_assignees.length ? "ok" : "warn"
-                      }
-                    >
-                      TBM {tbmDone}/{s.expected_assignees.length}
-                    </span>
-                    <span data-tone={s.during_count > 0 ? "ok" : "plain"}>
-                      작업 중 {s.during_count}건
-                    </span>
-                  </span>
-                )}
+                <StatStrip
+                  compact
+                  items={[
+                    state.state !== "FUTURE" && {
+                      label: "TBM",
+                      value: `${tbmDone}/${s.expected_assignees.length}명`,
+                      tone:
+                        tbmDone >= s.expected_assignees.length ? "ok" : "warn",
+                    },
+                    state.state !== "FUTURE" && {
+                      label: "작업 중 점검",
+                      value: `${s.during_count}건`,
+                      tone: s.during_count > 0 ? "ok" : "plain",
+                    },
+                    state.state === "FUTURE" && {
+                      label: "시간",
+                      value: timeRange(s.starts_at, s.ends_at),
+                    },
+                  ]}
+                />
                 <ChevronRight size={16} className="insp-row-go" />
               </Link>
             );
@@ -488,13 +507,29 @@ export default async function InspectionPage({
                   {f.status === "OPEN" ? "조치대기" : "조치완료"}
                 </span>
               </h3>
-              <p className="wo-muted">
-                {dayLabel(f.work_date)} · 담당 {f.assigned_manager_name}
-              </p>
-              {f.comment && <p className="wo-detail-text">{f.comment}</p>}
-              {f.resolution && (
-                <p className="wo-detail-text">조치 내용: {f.resolution}</p>
-              )}
+              <Facts
+                className="wo-facts--tight"
+                rows={[
+                  ["회차", dayLabel(f.work_date)],
+                  ["담당", f.assigned_manager_name],
+                  f.comment
+                    ? [
+                        "코멘트",
+                        <span className="wo-detail-text" key="c">
+                          {f.comment}
+                        </span>,
+                      ]
+                    : null,
+                  f.resolution
+                    ? [
+                        "조치 내용",
+                        <span className="wo-detail-text" key="r">
+                          {f.resolution}
+                        </span>,
+                      ]
+                    : null,
+                ]}
+              />
               {f.status === "OPEN" &&
                 f.assigned_manager_id === actor.userId &&
                 data.isManager && <FindingResolution id={f.id} />}

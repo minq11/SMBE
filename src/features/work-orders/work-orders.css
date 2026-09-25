@@ -81,41 +81,28 @@
 .insp-row[aria-current] {
   border-color: var(--brand);
 }
-.insp-row-go {
+.insp-row .stat-strip {
   margin-left: auto;
+}
+.insp-row-go {
   color: var(--ink-4);
   flex-shrink: 0;
 }
-/* 2층 머리 밑 한 줄: 배지 · TBM n/m · 작업 중 n건 · 미확인 */
-.insp-session-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 12px;
-  margin: 0 0 4px;
-}
-.insp-session-line .wo-risk-level {
-  margin-left: 0;
-}
-.insp-session-line .wo-muted {
-  margin: 0;
-}
-.insp-session-stats {
-  display: inline-flex;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--ink-2);
-}
-.insp-session-stats [data-tone="ok"],
-.insp-counts [data-tone="ok"] {
-  color: var(--ok);
-}
-.insp-session-stats [data-tone="warn"] {
-  color: var(--accent-ink);
-}
-.insp-counts [data-tone="danger"] {
-  color: var(--danger);
-  font-weight: 700;
+@media (max-width: 520px) {
+  .insp-row .stat-strip {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+  .insp-row-go {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .insp-row {
+    position: relative;
+    padding-right: 36px;
+  }
 }
 .insp-session-actions {
   margin: 12px 0 24px;
@@ -126,14 +113,25 @@
   padding: 8px 0;
 }
 .inspection-record > summary {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 4px 8px;
+  gap: 4px 10px;
   min-height: 44px;
   cursor: pointer;
   list-style: none;
   font-size: 14px;
+}
+.inspection-record > summary .insp-rec-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+}
+.inspection-record > summary .insp-rec-who .wo-muted {
+  margin: 0;
+  font-size: 12px;
 }
 .inspection-record > summary::-webkit-details-marker {
   display: none;
@@ -143,13 +141,26 @@
 }
 .insp-counts {
   display: inline-flex;
-  gap: 8px;
-  font-size: 13px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 12px;
   color: var(--ink-2);
 }
-.insp-record-meta {
-  margin: 8px 0 4px;
-  font-size: 12px;
+.insp-counts span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  white-space: nowrap;
+}
+.insp-counts [data-tone="ok"] {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.insp-counts [data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 700;
 }
 .inspection-record .wo-backfill-tag {
   margin-left: 0;
@@ -907,13 +918,16 @@
 .wo-section-fold:not([open]) {
   padding-bottom: 12px;
 }
-/* 작업 정보의 사실 줄: 이름 · 값 */
+/* 이름표 있는 줄 (components/ui/facts.tsx Facts): 이름 · 값. 값은 왼쪽 정렬로 맞춘다. */
 .wo-facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 16px;
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   font-size: 14px;
+}
+.wo-facts > div {
+  display: contents;
 }
 .wo-facts dt {
   color: var(--ink-3);
@@ -921,6 +935,51 @@
 .wo-facts dd {
   margin: 0;
   overflow-wrap: anywhere;
+}
+.wo-facts--tight {
+  margin: 8px 0 0;
+  font-size: 13px;
+  gap: 4px 12px;
+}
+/* 이름표 있는 값 띠 (components/ui/facts.tsx StatStrip): 상태 4칸과 같은 문법의 작은 판 */
+.stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin: 8px 0 0;
+}
+.stat-strip small {
+  display: block;
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+.stat-strip strong {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.stat-strip--compact {
+  gap: 4px 16px;
+  margin: 0;
+}
+.stat-strip--compact small {
+  font-size: 11px;
+  margin-bottom: 0;
+}
+.stat-strip--compact strong {
+  font-size: 14px;
+}
+.stat-strip strong[data-tone="ok"] {
+  color: var(--ok);
+}
+.stat-strip strong[data-tone="warn"] {
+  color: var(--accent-ink);
+}
+.stat-strip strong[data-tone="danger"] {
+  color: var(--danger);
+}
+.stat-strip strong[data-tone="info"] {
+  color: var(--info);
 }
 /* 회차 목록: 오늘 회차가 굵다 */
 .wo-session-list {
@@ -1028,10 +1087,8 @@
 .tbm-today-head .wo-muted {
   margin: 0;
 }
-.tbm-today-line {
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: var(--ink-2);
+.tbm-today .stat-strip {
+  margin-top: 10px;
 }
 .tbm-today-actions {
   display: flex;

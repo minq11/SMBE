@@ -232,7 +232,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       await expect(
         page.getByRole("heading", { name, exact: true }),
       ).toBeVisible();
-    await expect(page.locator("dl.wo-facts")).toContainText("작업방법");
+    await expect(page.locator("#info dl.wo-facts")).toContainText("작업방법");
     // 위험성평가·일정·인원·체크리스트는 접혀 있다. 머리의 요약이 안을 말한다.
     await expect(page.locator("#schedule > summary")).toContainText("1회차");
     await expect(page.locator(".wo-session-list li").first()).toBeHidden();
