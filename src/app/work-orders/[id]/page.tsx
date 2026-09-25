@@ -94,6 +94,9 @@ export default async function OrderDetailPage({
   const issued = Boolean(order.issued_at);
   const active = ["ISSUED", "IN_PROGRESS"].includes(order.status);
   const url = workOrderOrigin() + "/work-orders/" + id;
+  // 나눠 주는 주소에는 들어온 길을 붙인다. QR 은 qr, 복사·출력물의 글자 주소는 link.
+  // 그 길로 들어오면 지시서만 보이고 복사·취소·QR 은 없다 (manages).
+  const shareUrl = url + "?via=link";
   /**
    * QR·링크로 들어온 사람은 지시서를 "보는" 것이다. 관리자라도 그 자리에서
    * 복사·취소·QR 뽑기·전달 상태를 볼 일이 없다 — 그건 사무실(메뉴)에서 한다.
@@ -251,7 +254,7 @@ export default async function OrderDetailPage({
             .filter((c) => c.category === "DURING_WORK")
             .map((c) => c.text)}
           qr={qr}
-          url={url}
+          url={shareUrl}
           issueVersion={order.issue_version}
           issuedAt={order.issued_at ? dateTime(order.issued_at) : null}
           printedAt={dateTime(new Date().toISOString())}
@@ -526,7 +529,7 @@ export default async function OrderDetailPage({
             <div className="wo-no-print">
               {/* 인쇄물은 화면 문서 전체가 아니라 현장 게시용 A4 한 장이다. */}
               <PrintButton allowed={canPrint} />
-              <CopyLinkButton url={url} />
+              <CopyLinkButton url={shareUrl} />
               <h3>이메일 전달 상태</h3>
               <ul className="wo-detail-list">
                 {detail.outputs.map((o) => (
