@@ -94,8 +94,13 @@ export default async function OrderDetailPage({
   const issued = Boolean(order.issued_at);
   const active = ["ISSUED", "IN_PROGRESS"].includes(order.status);
   const url = workOrderOrigin() + "/work-orders/" + id;
+  /**
+   * QR·링크로 들어온 사람은 지시서를 "보는" 것이다. 관리자라도 그 자리에서
+   * 복사·취소·QR 뽑기·전달 상태를 볼 일이 없다 — 그건 사무실(메뉴)에서 한다.
+   */
+  const manages = isManager && via === "web";
   const qr =
-    issued && order.status !== "CANCELED"
+    manages && issued && order.status !== "CANCELED"
       ? await QRCode.toDataURL(url + "?via=qr", { width: 240, margin: 2 })
       : null;
   const members = !issued && isManager ? await orderMembers(actor) : [];
@@ -272,7 +277,7 @@ export default async function OrderDetailPage({
             </>
           }
           actions={
-            isManager ? (
+            manages ? (
               <div className="wo-actions wo-no-print">
                 <Link
                   className="btn-secondary"
@@ -517,32 +522,29 @@ export default async function OrderDetailPage({
               unoptimized
               className="wo-qr"
             />
-            {/* 관리자는 아래 복사 칸에 같은 주소가 있다. */}
-            {!isManager && <p className="wo-detail-text">{url}</p>}
-            {isManager && (
-              <div className="wo-no-print">
-                {/* 인쇄물은 화면 문서 전체가 아니라 현장 게시용 A4 한 장이다. */}
-                <PrintButton allowed={canPrint} />
-                <CopyLinkButton url={url} />
-                <h3>이메일 전달 상태</h3>
-                <ul className="wo-detail-list">
-                  {detail.outputs.map((o) => (
-                    <li key={o.user_id}>
-                      {names.get(o.user_id) || "배정 인원"}:{" "}
-                      {DELIVERY[o.status] || o.status}
-                    </li>
-                  ))}
-                </ul>
-                {active && (
-                  <OrderCommand
-                    id={id}
-                    revision={order.revision}
-                    command="send"
-                    label="미전달 링크 다시 보내기"
-                  />
-                )}
-              </div>
-            )}
+            {/* 주소는 아래 복사 칸에 있다. */}
+            <div className="wo-no-print">
+              {/* 인쇄물은 화면 문서 전체가 아니라 현장 게시용 A4 한 장이다. */}
+              <PrintButton allowed={canPrint} />
+              <CopyLinkButton url={url} />
+              <h3>이메일 전달 상태</h3>
+              <ul className="wo-detail-list">
+                {detail.outputs.map((o) => (
+                  <li key={o.user_id}>
+                    {names.get(o.user_id) || "배정 인원"}:{" "}
+                    {DELIVERY[o.status] || o.status}
+                  </li>
+                ))}
+              </ul>
+              {active && (
+                <OrderCommand
+                  id={id}
+                  revision={order.revision}
+                  command="send"
+                  label="미전달 링크 다시 보내기"
+                />
+              )}
+            </div>
           </section>
         )}
         {isManager && (

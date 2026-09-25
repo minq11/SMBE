@@ -243,6 +243,21 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       ),
     ).toBe(true);
     await expect(page.getByText("오늘 회차", { exact: false })).toBeVisible();
+    // QR·링크로 들어오면 관리자라도 지시서를 "보는" 것이다. 복사·취소·QR·전달 상태는 없다.
+    await page.goto(path + "?via=qr");
+    await expect(page.getByText("오늘 회차", { exact: false })).toBeVisible();
+    await expect(page.getByRole("button", { name: "복사" })).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "지시서 취소", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "작업지시 QR", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "작업 정보", exact: true }),
+    ).toBeVisible();
+    await page.goto(path);
+    await expect(page.getByText("오늘 회차", { exact: false })).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath("work-order-issued.png"),
       fullPage: true,
