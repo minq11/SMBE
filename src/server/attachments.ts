@@ -181,7 +181,7 @@ async function verifyTargetOwnership(
 
 /**
  * 같은 회사라는 것만으로는 링크 방문자에게 충분하지 않다. 토큰이 가리키는
- * 작업지시(와 그 지시서에서 나온 부적합)에만 붙일 수 있어야 한다.
+ * 작업지시(와 그 지시서에서 나온 불량)에만 붙일 수 있어야 한다.
  */
 /**
  * 승인된 판은 고치지 않는다 (0023). 단계 사진을 붙이거나 지우는 것도 개정 초안에서만.
@@ -480,7 +480,8 @@ export async function deleteAttachment(
   const { role } = await verifyActor(actor, row.target_type, false);
   assertOwnAttachment(actor, role, row.uploaded_by);
   await verifyTargetOwnership(actor, row.target_type, row.target_id);
-  if (row.target_type === "standard_step") await assertStepInDraft(row.target_id);
+  if (row.target_type === "standard_step")
+    await assertStepInDraft(row.target_id);
   await query(
     `UPDATE attachments SET status = 'DELETED', deleted_at = now() WHERE id = $1`,
     [attachmentId],

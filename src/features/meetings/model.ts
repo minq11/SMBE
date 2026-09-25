@@ -2,7 +2,7 @@
  * 주간 안전점검 회의의 주 단위 계산.
  *
  * 주는 한국시간 기준 **월요일 시작**이다. 회차(작업일자)와 같은 시간대를 쓰지
- * 않으면 금요일 야간작업의 부적합이 다음 주 회의로 밀린다.
+ * 않으면 금요일 야간작업의 불량이 다음 주 회의로 밀린다.
  */
 const DAY = 86400_000;
 const KST = 9 * 3600_000;
@@ -40,7 +40,7 @@ export function recentWeeks(n: number, from: Date = new Date()): string[] {
 }
 
 export const SOURCE_LABEL: Record<string, string> = {
-  INSPECTION_FINDING: "점검 부적합",
+  INSPECTION_FINDING: "점검 불량",
   RISK_MEASURE: "평가 감소대책 미조치",
   INCIDENT: "안전사고",
 };

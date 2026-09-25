@@ -40,7 +40,7 @@ const ACTIONS: Record<string, string> = {
   CANCEL: "지시서 취소",
   SEND_LINKS: "링크 전달 시도",
   SUBMIT_INSPECTION: "현장 점검 저장",
-  RESOLVE_FINDING: "부적합 조치완료",
+  RESOLVE_FINDING: "불량 조치완료",
 };
 const LEVELS: Record<string, string> = {
   HIGH: "상",
@@ -362,7 +362,7 @@ export default async function OrderDetailPage({
             </strong>
           </div>
           <div>
-            <small>미조치 부적합</small>
+            <small>미조치 불량</small>
             <strong data-tone={detail.openFindings > 0 ? "danger" : "plain"}>
               {detail.openFindings}건
             </strong>

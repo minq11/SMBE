@@ -44,7 +44,7 @@ docker compose --profile tools run --rm migrate
 
 - `0002_company_required_fields.sql` — 사업개시일·예상 연매출액 필수값.
 - `0003_work_orders.sql` — 간이평가, 작업지시·배정·발급 스냅샷·체크리스트·전달 기록·감사 로그.
-- `0004_inspections.sql` — 작업회차, TBM·작업 중 점검, 점검 결과, 부적합 및 조치완료.
+- `0004_inspections.sql` — 작업회차, TBM·작업 중 점검, 점검 결과, 불량 및 조치완료.
   - 작업지시·현장점검 범위 및 검증 방법: [work-orders.md](../docs/work-orders.md).
 
 - `0005_standards.sql` — 작업표준서 마스터·버전·작업단계·체크리스트.
@@ -70,8 +70,8 @@ docker compose --profile tools run --rm migrate
   `submitted_at` 은 언제나 실제 저장 시각입니다.
 
 - `0015_inspection_result_attachments.sql` — 점검 **항목별** 사진 첨부
-  (`attachments.target_type` 에 `inspection_result` 추가). 부적합 증거뿐 아니라
-  적합 판정의 근거도 사진이 가장 빠른데 붙일 자리가 없었습니다.
+  (`attachments.target_type` 에 `inspection_result` 추가). 불량 증거뿐 아니라
+  양호 판정의 근거도 사진이 가장 빠른데 붙일 자리가 없었습니다.
 
 - `0016_safety_meeting_reminders.sql` — 미실시 주 회의 메일 알림의 발송 장부.
   회의가 없는 주에는 `safety_meetings` 행이 없어 "알렸다"를 적을 자리가 없으므로

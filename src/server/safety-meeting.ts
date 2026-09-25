@@ -1,19 +1,19 @@
 import type { PoolClient } from "@neondatabase/serverless";
 import { z } from "zod";
 import { lockCompany } from "./membership-mutations";
-import { memberAccess, membersForOrder, type Actor } from "./work-order-service";
-import { WorkOrderError, seoulToday } from "../features/work-orders/model";
 import {
-  recentWeeks,
-  weekEnd,
-  weekStartKst,
-} from "../features/meetings/model";
+  memberAccess,
+  membersForOrder,
+  type Actor,
+} from "./work-order-service";
+import { WorkOrderError, seoulToday } from "../features/work-orders/model";
+import { recentWeeks, weekEnd, weekStartKst } from "../features/meetings/model";
 
 /**
  * 주간 안전점검 회의 (I-03).
  *
  * 상시평가의 "매주 논의·공유·이행점검" 요건을 담는다. 이 회의의 역할은 처리가
- * 아니라 **확인**이다 — 회의에서 체크해도 원본 부적합이나 평가 대책은 종결되지
+ * 아니라 **확인**이다 — 회의에서 체크해도 원본 불량이나 평가 대책은 종결되지
  * 않는다. 종결은 각 처리 화면의 몫이고, 여기서는 그 주에 무엇을 논의했는지가
  * 남는다. 그래서 수집 항목은 원본에 FK 를 걸지 않고 수집 시점 사본(summary)을
  * 들고 있다 (0014).
@@ -82,7 +82,7 @@ export async function listMeetings(
 /**
  * 그 주의 회의를 열고 수집 항목을 채운다.
  *
- * DRAFT 인 동안에는 열 때마다 새로 생긴 항목을 덧붙인다 — 주 중간에 부적합이
+ * DRAFT 인 동안에는 열 때마다 새로 생긴 항목을 덧붙인다 — 주 중간에 불량이
  * 나와도 같은 회의에서 다룬다. 확인·비고는 UNIQUE 로 보존된다. 완료된 회의에는
  * 더 붙이지 않는다. 회의가 끝난 뒤 생긴 건은 다음 주 회의의 몫이다.
  */
@@ -113,7 +113,7 @@ export async function openMeeting(
     return id;
   }
 
-  // 그 주에 발생한 점검 부적합 (조치대기·조치완료 모두 — 논의 대상은 발생 사실이다)
+  // 그 주에 발생한 점검 불량 (조치대기·조치완료 모두 — 논의 대상은 발생 사실이다)
   const findings = await client.query<{ id: string; summary: string }>(
     `SELECT f.id, w.name || ' · ' || r.item_text AS summary
        FROM inspection_findings f

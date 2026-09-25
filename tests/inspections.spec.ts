@@ -150,9 +150,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
         exact: false,
       }),
     ).toBeVisible();
-    await workerPage
-      .getByRole("radio", { name: "부적합", exact: true })
-      .check();
+    await workerPage.getByRole("radio", { name: "불량", exact: true }).check();
     await workerPage
       .getByLabel("코멘트", { exact: true })
       .fill("가드 잠금장치 이탈");
@@ -177,7 +175,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       "점검 기록을 저장했습니다.",
     );
     await expect(
-      workerPage.getByRole("heading", { name: "부적합 조치 · 미조치 1건" }),
+      workerPage.getByRole("heading", { name: "불량 조치 · 미조치 1건" }),
     ).toBeVisible();
     await expect(
       workerPage.getByRole("button", { name: "조치완료", exact: true }),
@@ -193,15 +191,15 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     ]);
     await context.addCookies([await cookie(manager)]);
     await page.goto("/");
-    await page.getByRole("link", { name: /부적합 조치 확인/ }).click();
+    await page.getByRole("link", { name: /불량 조치 확인/ }).click();
     await expect(
-      page.getByRole("heading", { name: "내 부적합 알림함 · 1건" }),
+      page.getByRole("heading", { name: "내 불량 알림함 · 1건" }),
     ).toBeVisible();
     await page
       .getByLabel("조치 내용", { exact: true })
       .fill("가드 잠금장치 교체 후 동작 확인");
     await page.getByRole("button", { name: "조치완료", exact: true }).click();
-    await expect(page.getByText("처리할 부적합이 없습니다.")).toBeVisible();
+    await expect(page.getByText("처리할 불량이 없습니다.")).toBeVisible();
     // Advance the fixture to the next daily session without changing application clocks.
     await pool.query(
       "UPDATE work_sessions SET work_date=work_date-1,starts_at=starts_at-interval '1 day',ends_at=ends_at-interval '1 day' WHERE work_order_id=$1",
@@ -226,7 +224,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await expect(
       workerPage.getByText("동력 차단 및 방호장치 확인", { exact: true }),
     ).toBeVisible();
-    await workerPage.getByRole("radio", { name: "적합", exact: true }).check();
+    await workerPage.getByRole("radio", { name: "양호", exact: true }).check();
     await workerPage
       .getByRole("checkbox", { name: /위험요인·감소대책/ })
       .check();
@@ -296,7 +294,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     // 이 회차의 작업자 TBM 은 이미 있으므로, 순회점검으로 참여한 관리자 기록을 넣는다.
     const backfill = page.locator("form.wo-backfill");
     await backfill.getByLabel("누구의 점검인가").selectOption(manager);
-    await backfill.getByRole("radio", { name: "적합", exact: true }).check();
+    await backfill.getByRole("radio", { name: "양호", exact: true }).check();
     await expect(async () => {
       await backfill
         .getByRole("button", { name: "사후 입력으로 저장", exact: true })

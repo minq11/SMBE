@@ -46,7 +46,7 @@ export function InspectionForm({
   const router = useRouter();
   const [requestId] = useState(() => crypto.randomUUID());
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  // 코멘트 칸은 부적합·해당없음일 때만 편다. 적합 열 줄에 빈 칸 열 개는 소음이다.
+  // 코멘트 칸은 불량·해당없음일 때만 편다. 양호 열 줄에 빈 칸 열 개는 소음이다.
   const [noteOpen, setNoteOpen] = useState<Record<string, boolean>>({});
   const [reviewed, setReviewed] = useState(previousActions.length === 0);
   // 항목별로 고른 사진. 붙일 자리(결과 행)가 저장 후에 생기므로 그때까지 들고 있는다.
@@ -73,9 +73,7 @@ export function InspectionForm({
       counts[answers[c.id] ?? ""] = (counts[answers[c.id] ?? ""] ?? 0) + 1;
     const summary =
       `${RESULT_LABEL.PASS} ${counts.PASS}건 · ${RESULT_LABEL.FAIL} ${counts.FAIL}건 · ${RESULT_LABEL.NA} ${counts.NA}건` +
-      (counts.FAIL > 0
-        ? "\n부적합은 선택한 관리자의 알림함에 등록됩니다."
-        : "") +
+      (counts.FAIL > 0 ? "\n불량은 선택한 관리자의 알림함에 등록됩니다." : "") +
       "\n저장 후에는 수정할 수 없습니다.";
     void confirm(summary, {
       title:
@@ -89,7 +87,7 @@ export function InspectionForm({
       formRef.current?.requestSubmit();
     });
   };
-  // 현장에서는 대부분 전부 적합이다. 항목마다 누르게 하면 그만큼 빠뜨린다.
+  // 현장에서는 대부분 전부 양호이다. 항목마다 누르게 하면 그만큼 빠뜨린다.
   const markAllPass = () =>
     setAnswers(Object.fromEntries(checklist.map((c) => [c.id, "PASS"])));
 
@@ -163,7 +161,7 @@ export function InspectionForm({
           onCancel={(event) => event.preventDefault()}
           aria-labelledby="previous-actions-title"
         >
-          <h2 id="previous-actions-title">이전 회차 부적합 조치 내용</h2>
+          <h2 id="previous-actions-title">이전 회차 불량 조치 내용</h2>
           {previousActions.map((a) => (
             <div key={a.id}>
               <h3>{a.item_text}</h3>
@@ -244,9 +242,7 @@ export function InspectionForm({
                 type="button"
                 className="text-button inspection-note-toggle"
                 disabled={pending}
-                onClick={() =>
-                  setNoteOpen((old) => ({ ...old, [c.id]: true }))
-                }
+                onClick={() => setNoteOpen((old) => ({ ...old, [c.id]: true }))}
               >
                 <MessageSquare size={14} /> 코멘트 쓰기
               </button>

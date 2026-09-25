@@ -91,7 +91,7 @@ export async function leaveOwnCompany(
   );
   if (pending.rows.length)
     throw new ProfileError(
-      "담당 중인 미조치 부적합이 있습니다. 안전점검에서 조치를 완료한 뒤 퇴사하세요.",
+      "담당 중인 미조치 불량이 있습니다. 안전점검에서 조치를 완료한 뒤 퇴사하세요.",
     );
   const { rows: time } = await client.query(
     "SELECT clock_timestamp()::text AS at",

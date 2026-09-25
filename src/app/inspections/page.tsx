@@ -26,7 +26,7 @@ const STATE_OPTIONS = [
   ["", "전체"],
   ["MISSING", "누락 회차만"],
   ["DONE", "완료 회차만"],
-  ["FAIL", "미조치 부적합 있음"],
+  ["FAIL", "미조치 불량 있음"],
   ["BACKFILLED", "사후 입력 포함"],
 ] as const;
 
@@ -119,7 +119,7 @@ export default async function InspectionsPage({
     <OrderShell session={session} title="안전점검" active="inspection">
       <PageHeader
         title="안전점검"
-        description="회사 전체의 회차별 점검 이행 현황과 나에게 배정된 부적합 조치"
+        description="회사 전체의 회차별 점검 이행 현황과 나에게 배정된 불량 조치"
       />
       <p className="wo-actions">
         <Link className="btn-primary" href="/work-orders">
@@ -235,7 +235,7 @@ export default async function InspectionsPage({
                 {done(r) ? "이행 완료" : "미이행"}
               </p>
               <p>
-                부적합 {r.total_findings}건
+                불량 {r.total_findings}건
                 {r.open_findings > 0 && ` · 미조치 ${r.open_findings}건`}
                 {r.backfilled > 0 && ` · 사후 입력 ${r.backfilled}건`}
               </p>
@@ -258,15 +258,15 @@ export default async function InspectionsPage({
       {isManager && (
         <section className="wo-section">
           <h2>
-            내 부적합 알림함 ·{" "}
-            {findings.length > 100 ? "100+" : findings.length}건
+            내 불량 알림함 · {findings.length > 100 ? "100+" : findings.length}
+            건
           </h2>
           <p className="wo-muted">
             나에게 지정된 미조치 항목을 오래된 순으로 최대 100건 표시합니다.
             과거 점검 원문 열람 제한과 별개로 미조치 항목은 계속 처리할 수
             있습니다. 이메일·푸시 알림은 아직 제공하지 않습니다.
           </p>
-          {!findings.length && <p>처리할 부적합이 없습니다.</p>}
+          {!findings.length && <p>처리할 불량이 없습니다.</p>}
           {findings.slice(0, 100).map((f) => (
             <article className="wo-risk" key={f.id}>
               <h3>{f.item_text}</h3>

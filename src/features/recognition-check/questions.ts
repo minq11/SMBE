@@ -17,10 +17,7 @@
 import type { SizeBand } from "@/features/guide/data";
 
 export type SectionKey =
-  | "SECTION_I"
-  | "SECTION_II"
-  | "SECTION_III"
-  | "SECTION_IV";
+  "SECTION_I" | "SECTION_II" | "SECTION_III" | "SECTION_IV";
 
 export type SubGroup = "III_OWNER" | "III_MANAGER" | "III_WORKER";
 
@@ -89,7 +86,8 @@ export const QUESTIONS: Question[] = [
       { key: "MI", label: "미이수", score: 1 },
       { key: "OK", label: "이수", score: 15 },
     ],
-    offlineTip: "안전보건공단 홈페이지에서 사업주 위험성평가 교육을 신청해 이수하세요.",
+    offlineTip:
+      "안전보건공단 홈페이지에서 사업주 위험성평가 교육을 신청해 이수하세요.",
   },
   {
     id: "I-2-2",
@@ -114,7 +112,8 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 포함", score: 10 },
       { key: "OK", label: "우수", detail: "전반적으로 포함", score: 20 },
     ],
-    offlineTip: "정기 안전보건교육 자료에 위험성평가 내용을 넣어 함께 교육하세요.",
+    offlineTip:
+      "정기 안전보건교육 자료에 위험성평가 내용을 넣어 함께 교육하세요.",
   },
   {
     id: "I-3-1",
@@ -127,7 +126,8 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "관리적 대책 중심", score: 5 },
       { key: "OK", label: "우수", detail: "평가결과 반영해 집행", score: 10 },
     ],
-    offlineTip: "안전보건 예산을 별도로 편성하고, 평가 결과에 따라 실제로 집행하세요.",
+    offlineTip:
+      "안전보건 예산을 별도로 편성하고, 평가 결과에 따라 실제로 집행하세요.",
   },
   {
     id: "I-4-1",
@@ -292,7 +292,12 @@ export const QUESTIONS: Question[] = [
     choices: [
       { key: "MI", label: "미흡", detail: "미실행", score: 1 },
       { key: "PA", label: "보통", detail: "제안제도 운영", score: 5 },
-      { key: "OK", label: "우수", detail: "포상 등 다양한 인센티브", score: 10 },
+      {
+        key: "OK",
+        label: "우수",
+        detail: "포상 등 다양한 인센티브",
+        score: 10,
+      },
     ],
     offlineTip: "참여를 독려할 포상·인센티브 제도를 마련해 운영하세요.",
   },
@@ -382,7 +387,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 알음", score: 7 },
       { key: "OK", label: "우수", detail: "정확히 알고 제보 중", score: 15 },
     ],
-    smbeHint: { href: "/inspections", label: "TBM · 부적합 기록" },
+    smbeHint: { href: "/inspections", label: "TBM · 불량 기록" },
   },
 
   // ----------------------------------------------------------------- SECTION IV
@@ -401,7 +406,8 @@ export const QUESTIONS: Question[] = [
       { key: "V1", label: "60% 이상 ~ 100% 미만", score: 92 },
       { key: "V0", label: "60% 미만 또는 무재해", score: 100 },
     ],
-    offlineTip: "무재해를 유지하거나, 재해가 났다면 원인을 분석해 재발을 막으세요.",
+    offlineTip:
+      "무재해를 유지하거나, 재해가 났다면 원인을 분석해 재발을 막으세요.",
   },
 ];
 
@@ -414,7 +420,7 @@ export const SECTION_META = {
     key: "SECTION_I" as SectionKey,
     number: "Ⅰ",
     title: "사업주의 관심도",
-    weight: 0.10,
+    weight: 0.1,
     maxScore: 100,
     description:
       "사업주가 안전보건에 얼마나 관심을 두고 실질적으로 활동을 주도하는지 평가합니다.",
@@ -423,7 +429,7 @@ export const SECTION_META = {
     key: "SECTION_II" as SectionKey,
     number: "Ⅱ",
     title: "위험성평가 실행수준",
-    weight: 0.60,
+    weight: 0.6,
     maxScore: 100,
     description:
       "실시규정·유해요인 파악·감소대책·이행·공유 등 실제 실행 수준을 평가합니다. 배점 비중이 가장 큽니다.",
@@ -464,12 +470,7 @@ export const INDUSTRY_CHOICES: Array<{
 ];
 
 export type Targeting = {
-  industry:
-    | "manufacturing"
-    | "construction"
-    | "service"
-    | "other"
-    | null;
+  industry: "manufacturing" | "construction" | "service" | "other" | null;
   sizeBand: SizeBand | null;
 };
 

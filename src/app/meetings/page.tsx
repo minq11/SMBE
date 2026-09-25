@@ -32,7 +32,7 @@ export default async function MeetingsPage() {
           {tally.month} · 발굴 {tally.found}건 · 조치 완료 {tally.resolved}건
         </p>
         <p className="wo-muted">
-          상시평가의 월간 요건 근거로 쓰입니다. 부적합 발생일(작업일자) 기준으로
+          상시평가의 월간 요건 근거로 쓰입니다. 불량 발생일(작업일자) 기준으로
           셉니다.
         </p>
       </section>
@@ -40,7 +40,7 @@ export default async function MeetingsPage() {
       <section className="wo-section">
         <h2>최근 12주</h2>
         <p className="wo-muted">
-          회의에서 항목을 확인해도 원본 부적합·평가 대책은 종결되지 않습니다.
+          회의에서 항목을 확인해도 원본 불량·평가 대책은 종결되지 않습니다.
           종결은 각 처리 화면에서 합니다. 주가 끝났는데 회의 기록이 없으면
           관리감독자·안전관리자에게 메일로 한 번 알립니다.
         </p>

@@ -166,7 +166,7 @@ export function BackfillForm({
 
 /**
  * 저장된 결과 수정. 사유가 필수이고 수정 전·후가 통째로 남는다.
- * 이미 조치완료된 부적합을 되돌리는 것은 서버가 거부한다.
+ * 이미 조치완료된 불량을 되돌리는 것은 서버가 거부한다.
  */
 export function ReviseForm({
   inspectionId,
@@ -267,7 +267,7 @@ export function ReviseForm({
         required
         maxLength={500}
         disabled={pending}
-        hint="예) 현장에서 항목을 잘못 눌러 적합으로 저장됨"
+        hint="예) 현장에서 항목을 잘못 눌러 양호으로 저장됨"
       />
       <button className="btn-primary" disabled={pending}>
         <Save size={14} />

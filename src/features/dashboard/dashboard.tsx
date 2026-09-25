@@ -499,7 +499,7 @@ function DashboardBody({
                 className={`today-tile${openFindingCount > 0 ? " is-alert" : ""}`}
               >
                 <strong>{openFindingCount}건</strong>
-                <small>미조치 부적합</small>
+                <small>미조치 불량</small>
               </Link>
             )}
             {isManager && (
@@ -579,14 +579,14 @@ function DashboardBody({
         </section>
       )}
       {isAuthenticated && isManager && openFindingCount > 0 && (
-        <section className="stack" aria-label="내 부적합 알림">
+        <section className="stack" aria-label="내 불량 알림">
           <SectionHeading
             title="내가 처리할 안전조치"
             count={openFindingCount}
           />
           <Link href="/inspections" className="row">
             <span className="row-main">
-              <strong>부적합 조치 확인</strong>
+              <strong>불량 조치 확인</strong>
               <small>나에게 배정된 미조치 항목을 확인하세요.</small>
             </span>
             <span className="row-meta">

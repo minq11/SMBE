@@ -303,7 +303,7 @@ test("profile: assigned unresolved finding prevents departure", async () => {
   await transaction((c) => submitInspection(c, f.workerActor, input));
   await assert.rejects(
     transaction((c) => leaveOwnCompany(c, f.actor.userId, f.actor.memberId)),
-    /미조치 부적합/,
+    /미조치 불량/,
   );
 });
 
@@ -797,7 +797,7 @@ test("revise: results change with a reason and a full before/after trail", async
   assert.equal(log[0].before_json[0].result, "PASS");
   assert.equal(log[0].after_json[0].result, "FAIL");
 
-  // 부적합을 되돌리면 조치 건도 사라진다 — 단 아직 조치되지 않았을 때만.
+  // 불량을 되돌리면 조치 건도 사라진다 — 단 아직 조치되지 않았을 때만.
   await transaction((c) => reviseInspection(c, f.actor, revise("PASS")));
   assert.equal(
     (
@@ -1169,7 +1169,7 @@ test("monitoring: paid only, shows who is missing today, and keeps open findings
   assert.equal(view.summary.tbmMissing, 1);
   assert.equal(view.summary.duringMissing, 1);
 
-  // 부적합을 하나 만들고 나면 요약의 미조치가 잡힌다.
+  // 불량을 하나 만들고 나면 요약의 미조치가 잡힌다.
   const input = f.input("DURING_WORK");
   input.results[0].result = "FAIL";
   input.results[0].managerId = f.actor.userId;
@@ -1200,7 +1200,7 @@ test("monitoring: paid only, shows who is missing today, and keeps open findings
     ).rows.length,
     0,
   );
-  // 미조치 부적합은 날짜와 무관하게 남는다 — 지난 날짜를 봐도 사라지지 않는다.
+  // 미조치 불량은 날짜와 무관하게 남는다 — 지난 날짜를 봐도 사라지지 않는다.
   assert.ok(
     (
       await transaction((c) =>
@@ -1217,7 +1217,7 @@ test("monitoring: paid only, shows who is missing today, and keeps open findings
 
 test("safety meeting: collects the week, keeps notes on recollect, and locks on completion", async () => {
   const f = await inspectionFixture();
-  // 부적합 하나를 만들어 수집 대상을 세운다.
+  // 불량 하나를 만들어 수집 대상을 세운다.
   const input = f.input("DURING_WORK");
   input.results[0].result = "FAIL";
   input.results[0].managerId = f.actor.userId;
@@ -1257,7 +1257,7 @@ test("safety meeting: collects the week, keeps notes on recollect, and locks on 
   let read = await transaction((c) => readMeeting(c, f.actor, week));
   assert.equal(read.meeting?.status, "DRAFT");
   const item = read.items.find((i) => i.source_type === "INSPECTION_FINDING")!;
-  assert.ok(item, "그 주의 부적합이 수집된다");
+  assert.ok(item, "그 주의 불량이 수집된다");
   // 기한이 이번 주까지인 감소대책도 함께 모인다.
   assert.ok(read.items.some((i) => i.source_type === "RISK_MEASURE"));
   const collected = read.items.length;
@@ -1327,7 +1327,7 @@ test("safety meeting: collects the week, keeps notes on recollect, and locks on 
     ),
     /이미 완료/,
   );
-  // 회의에서 확인해도 원본 부적합은 종결되지 않는다.
+  // 회의에서 확인해도 원본 불량은 종결되지 않는다.
   assert.equal(
     (
       await pool.query(

@@ -83,7 +83,7 @@ function body(companyName: string, weeks: string[]) {
     ...list.map((label) => `  · ${label}`),
     "",
     "상시 위험성평가는 매주 논의·공유·이행점검 기록을 요구합니다.",
-    "지난 주의 점검 부적합과 기한이 지난 감소대책은 회의를 열면 자동으로 모입니다.",
+    "지난 주의 점검 불량과 기한이 지난 감소대책은 회의를 열면 자동으로 모입니다.",
     "",
     `회의 열기: ${url}`,
   ].join("\n");
@@ -91,7 +91,7 @@ function body(companyName: string, weeks: string[]) {
     `<p><strong>${companyName}</strong> · 주간 안전점검 회의 미실시 안내</p>` +
     `<p>아래 주의 회의 기록이 없습니다.</p><ul>` +
     list.map((label) => `<li>${label}</li>`).join("") +
-    `</ul><p>상시 위험성평가는 매주 논의·공유·이행점검 기록을 요구합니다. 지난 주의 점검 부적합과 기한이 지난 감소대책은 회의를 열면 자동으로 모입니다.</p>` +
+    `</ul><p>상시 위험성평가는 매주 논의·공유·이행점검 기록을 요구합니다. 지난 주의 점검 불량과 기한이 지난 감소대책은 회의를 열면 자동으로 모입니다.</p>` +
     `<p><a href="${url}">회의 열기</a></p>`;
   return { subject, text, html };
 }

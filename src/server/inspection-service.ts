@@ -134,7 +134,7 @@ export async function submitInspection(
       !members.some((m) => m.user_id === r.managerId && m.role !== "WORKER")
     )
       throw new WorkOrderError(
-        "부적합마다 현재 회사의 활성 관리자를 선택하세요.",
+        "불량마다 현재 회사의 활성 관리자를 선택하세요.",
       );
   }
   // 현장 입력은 본인이 본인 것을 넣는다 — recorded_by 가 inspector 와 같고 backfilled 는 false.
@@ -463,7 +463,7 @@ function assertFailManagers(
       !members.some((m) => m.user_id === r.managerId && m.role !== "WORKER")
     )
       throw new WorkOrderError(
-        "부적합마다 현재 회사의 활성 관리자를 선택하세요.",
+        "불량마다 현재 회사의 활성 관리자를 선택하세요.",
       );
 }
 
@@ -593,7 +593,7 @@ type RevisionRow = {
  * 남기고 사유를 받는다 — 수정할 수 없는 기록은 틀린 채로 남고, 흔적 없이
  * 고칠 수 있는 기록은 증빙이 아니다.
  *
- * 부적합은 결과를 따라간다. 부적합이 아니게 되면 그 조치 건은 사라지는데,
+ * 불량은 결과를 따라간다. 불량이 아니게 되면 그 조치 건은 사라지는데,
  * **이미 조치완료된 건은 거부한다** — 조치 내용과 담당자 기록까지 지우는 일이라
  * 수정이 아니라 삭제다.
  */
@@ -654,7 +654,7 @@ export async function reviseInspection(
     if (prev.result === "FAIL" && next.result !== "FAIL") {
       if (prev.finding_status === "RESOLVED")
         throw new WorkOrderError(
-          "이미 조치완료된 부적합은 수정할 수 없습니다. 조치 기록이 함께 사라집니다.",
+          "이미 조치완료된 불량은 수정할 수 없습니다. 조치 기록이 함께 사라집니다.",
         );
       await client.query("DELETE FROM inspection_findings WHERE result_id=$1", [
         next.resultId,
@@ -954,7 +954,7 @@ export async function inspectionMonitor(
       .filter((a) => !r.tbm_users.includes(a.userId))
       .map((a) => a.name),
   }));
-  // 미조치 부적합은 그 날짜가 아니라 회사 전체의 열린 건이다. 조치는 작업일과
+  // 미조치 불량은 그 날짜가 아니라 회사 전체의 열린 건이다. 조치는 작업일과
   // 무관하게 남아 있으므로, 날짜로 걸러 버리면 밀린 것이 화면에서 사라진다.
   const { rows: open } = await client.query<{ n: number }>(
     `SELECT count(*)::int AS n FROM inspection_findings f

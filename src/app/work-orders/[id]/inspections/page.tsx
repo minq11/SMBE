@@ -492,9 +492,9 @@ export default async function InspectionPage({
       </section>
       {(data.findings.length > 0 || data.isManager) && (
         <section className="wo-section">
-          <h2>부적합 조치 · 미조치 {data.openCount}건</h2>
+          <h2>불량 조치 · 미조치 {data.openCount}건</h2>
           {!data.findings.length && (
-            <p className="wo-muted">부적합이 없습니다.</p>
+            <p className="wo-muted">불량이 없습니다.</p>
           )}
           {data.findings.slice(0, 100).map((f) => (
             <article className="wo-risk" key={f.id}>
@@ -537,7 +537,7 @@ export default async function InspectionPage({
           ))}
           {data.isManager && (
             <Link className="text-button" href="/inspections">
-              내 부적합 알림함 보기
+              내 불량 알림함 보기
             </Link>
           )}
         </section>

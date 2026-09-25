@@ -676,7 +676,7 @@ erDiagram
 
 ---
 
-## 9. 안전점검 (작업회차 · TBM · 작업 중 · 부적합)
+## 9. 안전점검 (작업회차 · TBM · 작업 중 · 불량)
 
 ### 9-1. ER
 
@@ -685,7 +685,7 @@ erDiagram
   work_orders ||--o{ work_sessions : "일자별 회차"
   work_sessions ||--o{ inspections : "TBM/작업 중 개별 점검"
   inspections ||--o{ inspection_items : "체크 결과"
-  inspection_items ||--o{ nonconformances : "부적합"
+  inspection_items ||--o{ nonconformances : "불량"
   inspections ||--o{ inspection_histories : "수정 이력"
 ```
 
@@ -767,7 +767,7 @@ erDiagram
 | actor_id | uuid FK users | |
 | at | timestamptz | |
 
-### 9-7. `nonconformances` (부적합)
+### 9-7. `nonconformances` (불량)
 
 | 컬럼 | 타입 | 비고 |
 |---|---|---|
@@ -776,7 +776,7 @@ erDiagram
 | work_order_id | uuid FK | |
 | inspection_item_id | uuid FK | |
 | work_session_id | uuid FK work_sessions | 다음 회차 TBM 팝업 대상 판정(v5.5) |
-| description_snapshot | text | 부적합 원문 |
+| description_snapshot | text | 불량 원문 |
 | assigned_manager_id | uuid FK users | 알림·조치 담당자 |
 | status | enum(`OPEN`,`RESOLVED`) | 지시서 COMPLETED와 무관하게 유지 |
 | occurred_at | timestamptz | |
@@ -848,12 +848,12 @@ erDiagram
 | id | uuid PK | |
 | meeting_id | uuid FK | |
 | item_kind | enum(`NONCONFORMANCE`,`SAFETY_INCIDENT`,`ASSESSMENT_MEASURE_MISSING`,`NEAR_MISS`) | 아차사고는 기능 도입 후 연결 |
-| source_id | uuid | 부적합/사고/평가아이템 ID |
+| source_id | uuid | 불량/사고/평가아이템 ID |
 | status_at_meeting | text | 당시 상태 스냅샷 |
 | review_note | text NULL | 비고 |
 | action_confirmed | bool DEFAULT false | 이행 확인 |
 
-- 회의 체크만으로 원본 부적합·평가 대책을 자동 종결하지 않음(레이아웃 I-03).
+- 회의 체크만으로 원본 불량·평가 대책을 자동 종결하지 않음(레이아웃 I-03).
 
 ---
 
@@ -1120,7 +1120,7 @@ erDiagram
 | 평가 승인 방식(관리자 직접 승인 등) | `risk_assessments.approver_id`, 상태 전이 규칙 | 앱 규칙 확정 |
 | 평가/회의/사고 상세 권한 | 도메인 서비스 계층 | RLS 도입 여부 결정 |
 | 무료 모바일 안전점수 노출 위치 | 저장은 동일, 노출은 화면 | 화면 규칙 |
-| 무료 과거 부적합 조회 범위 | `nonconformances` 조회 필터 | 리소스 정책 |
+| 무료 과거 불량 조회 범위 | `nonconformances` 조회 필터 | 리소스 정책 |
 | 감사 로그의 유료 제한 문서 노출 | `audit_logs.before/after_json` 필터 | 조회 API 규칙 |
 | 초대 전달(무료 전화번호) | `company_invitations.contact_phone`, 발송 채널 | 알림 채널 정책 |
 | 평가 회차 중첩 처리 | `assessment_rounds` + `risk_assessments.assessment_round_id` | 매칭 우선순위 규칙 |
@@ -1131,7 +1131,7 @@ erDiagram
 | 안전점수 산식·게이지 | `safety_score_snapshots.total_score`, `safety_score_signals.weight` | 산식 확정 후 반영 |
 | 회사 탈퇴 실행 권한/보관 | `companies.withdrawn_at`, `company_data_exports` | 정책 확정 |
 | 부가세·재시도·증빙 | `monthly_billings.vat`, `payments.retry_count`, tax invoice 처리 | 결제 정책 확정 |
-| 부적합 조치 기한/독촉 | `nonconformances`에 기한 컬럼 미도입 | 정책 결정 후 컬럼 추가 |
+| 불량 조치 기한/독촉 | `nonconformances`에 기한 컬럼 미도입 | 정책 결정 후 컬럼 추가 |
 | 동일 이메일 다중 provider 계정 병합 | `users.email`, `user_identities` | 병합 규칙 확정 |
 | 안전점수 관심도 근거 | 하드코딩(v5.5), 테이블 없음 | 추후 개선 |
 

@@ -117,7 +117,7 @@ export default async function MonitoringPage({
                 <AlertTriangle size={16} />
               </span>
               <strong>{data.summary.openFindings}건</strong>
-              <small>미조치 부적합 (전체 기간)</small>
+              <small>미조치 불량 (전체 기간)</small>
             </div>
           </section>
 
@@ -127,7 +127,7 @@ export default async function MonitoringPage({
             </h2>
             <p className="wo-muted">
               배정 인원 전원 TBM + 작업 중 점검 1건 이상이면 이행 완료입니다.
-              미조치 부적합은 작업일과 무관하게 남으므로 요약에서는 전체 기간을
+              미조치 불량은 작업일과 무관하게 남으므로 요약에서는 전체 기간을
               셉니다.
             </p>
             {!data.summary.sessions && <p>이 날짜에 도는 작업이 없습니다.</p>}

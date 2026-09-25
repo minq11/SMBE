@@ -57,7 +57,7 @@ export default async function Home() {
     actor && isManager ? await pendingJoinCount(actor.companyId) : 0;
   const orders = actor ? await listOrders(actor, "active") : null;
   // 로그인한 홈은 오늘 할 일부터다. 오늘 작업 수, (유료면) TBM 미확인 인원,
-  // 작성 중 초안 수를 위에 띄운다. 미조치 부적합은 위에서 이미 셌다.
+  // 작성 중 초안 수를 위에 띄운다. 미조치 불량은 위에서 이미 셌다.
   const today = seoulToday();
   const todayJobs =
     orders?.rows.filter(

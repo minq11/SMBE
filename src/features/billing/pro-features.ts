@@ -23,8 +23,7 @@ export const PRO_FEATURES: ProFeature[] = [
     key: "sms-notification",
     icon: MessageSquare,
     title: "문자(SMS) 알림",
-    description:
-      "작업 배정·부적합 조치 등 중요한 알림을 문자로 즉시 전달합니다.",
+    description: "작업 배정·불량 조치 등 중요한 알림을 문자로 즉시 전달합니다.",
     freeBehavior: "메일 알림만",
     proBehavior: "메일 + 문자",
   },
@@ -51,7 +50,7 @@ export const PRO_FEATURES: ProFeature[] = [
     icon: BellRing,
     title: "점검 모니터링 대시보드",
     description:
-      "전체 작업의 TBM 확인·점검 결과·미조치 부적합을 한 화면에서 확인합니다.",
+      "전체 작업의 TBM 확인·점검 결과·미조치 불량을 한 화면에서 확인합니다.",
     freeBehavior: "개별 지시서에서만 확인",
     proBehavior: "통합 대시보드",
   },

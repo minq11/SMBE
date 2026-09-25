@@ -63,7 +63,7 @@ export default async function MeetingPage({
       {!data.meeting && (
         <section className="wo-section">
           <p className="wo-muted">
-            회의를 열면 그 주의 점검 부적합과 기한이 지난 감소대책을 모아
+            회의를 열면 그 주의 점검 불량과 기한이 지난 감소대책을 모아
             보여줍니다.
           </p>
           <OpenMeetingButton week={week} label="이 주 회의 열기" />
@@ -75,7 +75,7 @@ export default async function MeetingPage({
           <section className="wo-section">
             <h2>수집 항목 {data.items.length}건</h2>
             <p className="wo-muted">
-              그 주에 발생한 점검 부적합과, 기한이 지났는데 완료되지 않은
+              그 주에 발생한 점검 불량과, 기한이 지났는데 완료되지 않은
               위험성평가 감소대책을 모았습니다. 안전사고는 등록 기능을 만든 뒤
               연결합니다. 여기서 확인해도 원본은 종결되지 않습니다.
             </p>

@@ -77,13 +77,9 @@ export function orderSessionsForDisplay<T extends SessionRow>(
     FUTURE: [],
   };
   for (const s of sessions) groups[sessionState(s, now).state].push(s);
-  return [
-    ...groups.TODAY,
-    ...groups.PAST,
-    ...groups.FUTURE.slice().reverse(),
-  ];
+  return [...groups.TODAY, ...groups.PAST, ...groups.FUTURE.slice().reverse()];
 }
-export const RESULT_LABEL = { PASS: "적합", FAIL: "부적합", NA: "해당없음" };
+export const RESULT_LABEL = { PASS: "양호", FAIL: "불량", NA: "해당없음" };
 export function entryPath(value?: string) {
   return value === "qr" ? "QR" : value === "link" ? "LINK" : "WEB";
 }
