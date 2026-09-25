@@ -213,7 +213,7 @@ export function InspectionForm({
             </legend>
             <div className="inspection-options">
               {Object.entries(RESULT_LABEL).map(([value, label]) => (
-                <label key={value}>
+                <label key={value} data-result={value}>
                   <input
                     type="radio"
                     name={"result-" + c.id}

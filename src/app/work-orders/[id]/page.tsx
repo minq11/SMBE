@@ -9,6 +9,7 @@ import { workOrderOrigin } from "@/server/work-order-delivery";
 import {
   WorkOrderError,
   STATUS_LABEL,
+  STATUS_TONE,
   type WorkDraft,
 } from "@/features/work-orders/model";
 import { OrderShell } from "@/features/work-orders/order-shell";
@@ -289,11 +290,21 @@ export default async function OrderDetailPage({
         <div className="wo-statuses">
           <div>
             <small>작업 일정</small>
-            <strong>{STATUS_LABEL[order.status]}</strong>
+            <strong data-tone={STATUS_TONE[order.status]}>
+              {STATUS_LABEL[order.status]}
+            </strong>
           </div>
           <div>
             <small>PTW</small>
-            <strong>
+            <strong
+              data-tone={
+                !d.ptwRequired
+                  ? "plain"
+                  : permit?.status === "APPROVED"
+                    ? "ok"
+                    : "warn"
+              }
+            >
               {d.ptwRequired ? (
                 <Link href={"/work-orders/" + id + "/permit"}>
                   {permit?.status === "APPROVED" ? "승인" : "승인 대기"}
@@ -309,7 +320,17 @@ export default async function OrderDetailPage({
           </div>
           <div>
             <small>오늘 TBM</small>
-            <strong>
+            <strong
+              data-tone={
+                order.status === "CANCELED"
+                  ? "danger"
+                  : !todaySession
+                    ? "plain"
+                    : todayDone >= todaySession.expected_assignees.length
+                      ? "ok"
+                      : "warn"
+              }
+            >
               {order.status === "CANCELED"
                 ? "작업 취소"
                 : todaySession
@@ -319,16 +340,20 @@ export default async function OrderDetailPage({
           </div>
           <div>
             <small>미조치 부적합</small>
-            <strong>{detail.openFindings}건</strong>
+            <strong data-tone={detail.openFindings > 0 ? "danger" : "plain"}>
+              {detail.openFindings}건
+            </strong>
           </div>
         </div>
         {order.status === "CANCELED" && (
-          <p role="status" className="wo-notice">
+          <p role="status" className="wo-notice" data-tone="danger">
             취소된 지시서입니다. 사유: {order.cancel_reason}
           </p>
         )}
         {order.status === "COMPLETED" && (
-          <p className="wo-notice">작업기간이 끝났습니다.</p>
+          <p className="wo-notice" data-tone="ok">
+            작업기간이 끝났습니다.
+          </p>
         )}
         {issued && (
           <InspectionSummary
@@ -404,7 +429,7 @@ export default async function OrderDetailPage({
             <article className="wo-risk" key={i}>
               <h3>
                 {i + 1}. {r.hazard || "위험요인 미입력"}
-                <span className="wo-risk-level">
+                <span className="wo-risk-level" data-level={r.level}>
                   {LEVELS[r.level]} ·{" "}
                   {r.allowable === "yes" ? "허용 가능" : "조치 필요"}
                 </span>

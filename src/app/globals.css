@@ -11,6 +11,9 @@
   --accent: #f2b705;
   --accent-soft: #fcf1cf;
   --accent-ink: #6b4e00;
+  /* 진행·오늘·안내. 주조 초록과 나란히 두어도 튀지 않는 차분한 파랑. */
+  --info: #2c5f8a;
+  --info-soft: #e8f0f7;
 
   /* Ink (text) — 초록에 어울리는 약간 따뜻한 검정 */
   --ink: #15201b;
@@ -6558,7 +6561,8 @@ fieldset.form-field legend {
   margin: 2px 0 0;
 }
 
-/* TBM 화면: 위험성 수준 배지와 접어 둔 판단 기준 안내 */
+/* 위험성 수준 배지 (지시서 상세·TBM·작업자 화면). 상·중·하가 색으로 갈린다 —
+   평가 화면의 .asmt-level 과 같은 빨강·노랑·초록. data-tone 은 그 밖의 상태 배지. */
 .wo-risk-level {
   display: inline-block;
   margin-left: 6px;
@@ -6569,6 +6573,26 @@ fieldset.form-field legend {
   font-size: 12px;
   font-weight: 600;
   vertical-align: middle;
+  white-space: nowrap;
+}
+.wo-risk-level[data-level="HIGH"],
+.wo-risk-level[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.wo-risk-level[data-level="MID"],
+.wo-risk-level[data-tone="warn"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.wo-risk-level[data-level="LOW"],
+.wo-risk-level[data-tone="ok"] {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.wo-risk-level[data-tone="info"] {
+  background: var(--info-soft);
+  color: var(--info);
 }
 .wo-criteria-help {
   margin-top: 12px;

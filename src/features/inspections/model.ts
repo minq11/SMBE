@@ -58,6 +58,12 @@ export const SESSION_LABEL: Record<"FUTURE" | "TODAY" | "PAST", string> = {
   TODAY: "오늘",
   PAST: "지난 회차",
 };
+/** 회차 배지 색: 오늘 파랑, 예정·지난은 회색. */
+export const SESSION_TONE: Record<"FUTURE" | "TODAY" | "PAST", string> = {
+  FUTURE: "plain",
+  TODAY: "info",
+  PAST: "plain",
+};
 
 // SQL 은 work_date DESC 로 돌려주지만 화면에서는 오늘을 상단 강조, 지난은 최근순,
 // 미래는 하단(가장 가까운 날짜부터) 순서가 더 자연스럽다. UI 두 곳에서 같은 규칙을 쓴다.

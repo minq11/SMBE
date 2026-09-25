@@ -26,6 +26,7 @@ import {
 import {
   sessionState,
   SESSION_LABEL,
+  SESSION_TONE,
   RESULT_LABEL,
   entryPath,
   orderSessionsForDisplay,
@@ -98,7 +99,11 @@ export default async function InspectionPage({
    */
   const inputMode = !!kind && canInput && !alreadyTBM;
   const title =
-    kind === "TBM" ? "TBM 확인" : kind === "DURING_WORK" ? "작업 중 점검" : "점검 기록";
+    kind === "TBM"
+      ? "TBM 확인"
+      : kind === "DURING_WORK"
+        ? "작업 중 점검"
+        : "점검 기록";
   const ptwWarn =
     data.order.ptw_required && permit?.status !== "APPROVED" ? (
       <p className="wo-notice">
@@ -141,7 +146,9 @@ export default async function InspectionPage({
           </section>
         )}
         {kind === "DURING_WORK" && (
-          <p className="wo-notice">TBM 미확인이어도 점검할 수 있습니다.</p>
+          <p className="wo-notice" data-tone="info">
+            TBM 미확인이어도 점검할 수 있습니다.
+          </p>
         )}
         <section className="wo-section">
           <h2>체크리스트</h2>
@@ -177,7 +184,7 @@ export default async function InspectionPage({
         }
       />
       {query.saved === "1" && (
-        <p role="status" className="wo-notice">
+        <p role="status" className="wo-notice" data-tone="ok">
           점검 기록을 저장했습니다.
         </p>
       )}
@@ -191,12 +198,12 @@ export default async function InspectionPage({
         via={query.via}
       />
       {kind && target && !canInput && targetState?.state === "FUTURE" && (
-        <p className="wo-notice">
+        <p className="wo-notice" data-tone="info">
           아직 시작하지 않은 회차입니다. 작업일이 되면 입력할 수 있습니다.
         </p>
       )}
       {alreadyTBM && (
-        <p role="status" className="wo-notice">
+        <p role="status" className="wo-notice" data-tone="ok">
           이미 이 회차의 TBM을 확인했습니다.
         </p>
       )}
@@ -224,10 +231,19 @@ export default async function InspectionPage({
               return (
                 <details key={s.id} open={s.id === data.current?.id}>
                   <summary>
-                    <strong>{dayLabel(s.work_date)}</strong> ·{" "}
-                    {data.order.status === "CANCELED"
-                      ? "작업 취소"
-                      : SESSION_LABEL[state.state]}{" "}
+                    <strong>{dayLabel(s.work_date)}</strong>{" "}
+                    <span
+                      className="wo-risk-level"
+                      data-tone={
+                        data.order.status === "CANCELED"
+                          ? "danger"
+                          : SESSION_TONE[state.state]
+                      }
+                    >
+                      {data.order.status === "CANCELED"
+                        ? "작업 취소"
+                        : SESSION_LABEL[state.state]}
+                    </span>{" "}
                     · TBM {s.expected_assignees.length - state.missing.length}/
                     {s.expected_assignees.length} · 작업 중 {s.during_count}건
                   </summary>
@@ -374,7 +390,10 @@ export default async function InspectionPage({
           <article className="wo-risk" key={f.id}>
             <h3>
               {f.item_text}
-              <span className="wo-risk-level">
+              <span
+                className="wo-risk-level"
+                data-tone={f.status === "OPEN" ? "warn" : "ok"}
+              >
                 {f.status === "OPEN" ? "조치대기" : "조치완료"}
               </span>
             </h3>

@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Plus, Search } from "lucide-react";
 import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
-import { STATUS_LABEL } from "@/features/work-orders/model";
+import { STATUS_LABEL, STATUS_TONE } from "@/features/work-orders/model";
 import { DeleteDraftButton } from "@/features/work-orders/order-controls";
 
 export default async function WorkOrdersPage({
@@ -127,7 +127,14 @@ export default async function WorkOrdersPage({
                   </td>
                   <td data-label="장소">{row.location || "미입력"}</td>
                   <td data-label="배정">{row.assignee_count}명</td>
-                  <td data-label="상태">{STATUS_LABEL[row.status]}</td>
+                  <td data-label="상태">
+                    <span
+                      className="wo-risk-level"
+                      data-tone={STATUS_TONE[row.status]}
+                    >
+                      {STATUS_LABEL[row.status]}
+                    </span>
+                  </td>
                   {result.isManager && (
                     <td className="wo-col-action">
                       {row.status === "DRAFT" && (

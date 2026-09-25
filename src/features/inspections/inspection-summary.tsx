@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { CheckCircle2, Search } from "lucide-react";
-import { sessionState, SESSION_LABEL, type SessionRow } from "./model";
+import {
+  sessionState,
+  SESSION_LABEL,
+  SESSION_TONE,
+  type SessionRow,
+} from "./model";
 import { dayLabel, timeRange } from "./format";
 
 /**
@@ -31,8 +36,13 @@ export function InspectionSummary({
         <>
           <div className="tbm-today-head">
             <strong>
-              오늘 회차: {dayLabel(current.work_date)} ·{" "}
-              {SESSION_LABEL[state!.state]}
+              오늘 회차: {dayLabel(current.work_date)}{" "}
+              <span
+                className="wo-risk-level"
+                data-tone={SESSION_TONE[state!.state]}
+              >
+                {SESSION_LABEL[state!.state]}
+              </span>
             </strong>
             <span className="wo-muted">
               {timeRange(current.starts_at, current.ends_at)}
@@ -68,7 +78,9 @@ export function InspectionSummary({
         </>
       ) : (
         <p className="wo-muted">
-          {canceled ? "취소된 작업은 점검을 입력할 수 없습니다." : "오늘 회차가 없습니다."}
+          {canceled
+            ? "취소된 작업은 점검을 입력할 수 없습니다."
+            : "오늘 회차가 없습니다."}
         </p>
       )}
       <Link className="text-button tbm-today-log" href={root}>

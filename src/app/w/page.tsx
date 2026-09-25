@@ -155,7 +155,10 @@ export default async function WorkerLinkPage({
             <article className="wo-risk" key={i}>
               <h3>
                 {r.hazard}{" "}
-                <span className="wo-risk-level">
+                <span
+                  className="wo-risk-level"
+                  data-level={r.initial_risk_level}
+                >
                   위험성 {RISK_LEVEL[r.initial_risk_level] ?? "-"} ·{" "}
                   {r.initial_allowable ? "허용 가능" : "허용 불가"}
                 </span>

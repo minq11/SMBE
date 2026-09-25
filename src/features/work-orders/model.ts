@@ -323,6 +323,16 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   COMPLETED: "작업기간 종료",
   CANCELED: "취소",
 };
+/** 상태색. 진행·오늘은 파랑, 끝난 것은 초록, 취소는 빨강, 기다리는 것은 노랑. */
+export type Tone = "ok" | "warn" | "danger" | "info" | "plain";
+export const STATUS_TONE: Record<OrderStatus, Tone> = {
+  DRAFT: "plain",
+  ISSUE_PENDING: "warn",
+  ISSUED: "plain",
+  IN_PROGRESS: "info",
+  COMPLETED: "ok",
+  CANCELED: "danger",
+};
 export function effectiveStatus(
   status: OrderStatus,
   d: Pick<WorkDraft, "startDate" | "endDate" | "startTime" | "endTime">,

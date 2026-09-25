@@ -791,18 +791,71 @@
     columns: 1;
   }
 }
-/* 위험요인 머리 오른쪽의 수준·허용 표식 */
+/* 위험요인 머리 오른쪽의 수준·허용 표식 (배지 색은 globals.css .wo-risk-level) */
 .wo-risk h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 10px;
 }
-.wo-risk-level {
-  font-size: 12px;
-  font-weight: 600;
+/* 상태 4칸의 값은 상태색 글자 하나로 말한다. 면은 칠하지 않는다. */
+.wo-statuses strong[data-tone="ok"],
+.wo-statuses strong[data-tone="ok"] a {
+  color: var(--ok);
+}
+.wo-statuses strong[data-tone="warn"],
+.wo-statuses strong[data-tone="warn"] a {
+  color: var(--accent-ink);
+}
+.wo-statuses strong[data-tone="danger"],
+.wo-statuses strong[data-tone="danger"] a {
+  color: var(--danger);
+}
+.wo-statuses strong[data-tone="info"],
+.wo-statuses strong[data-tone="info"] a {
+  color: var(--info);
+}
+/* 알림 띠: 기본은 노랑(봐라). 저장됨은 초록, 취소·오류는 빨강, 안내는 파랑. */
+.wo-notice[data-tone="ok"] {
+  border-left-color: var(--ok);
+  background: var(--ok-soft);
+}
+.wo-notice[data-tone="danger"] {
+  border-left-color: var(--danger);
+  background: var(--danger-soft);
+}
+.wo-notice[data-tone="info"] {
+  border-left-color: var(--info);
+  background: var(--info-soft);
+}
+/* 오늘 회차 카드: "오늘" 은 파랑 배지, 내 확인 완료는 초록 */
+.tbm-today-done {
+  color: var(--ok);
+}
+/* 점검 항목 고르기: 고른 것만 결과색 테두리. 적합 초록, 부적합 빨강, 해당없음 회색. */
+.inspection-options label[data-result="PASS"]:has(input:checked) {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.inspection-options label[data-result="FAIL"]:has(input:checked) {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.inspection-options label[data-result="NA"]:has(input:checked) {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.inspection-options label[data-result="FAIL"] input {
+  accent-color: var(--danger);
+}
+.inspection-results li[data-result="PASS"] > strong {
+  color: var(--ok);
+}
+.inspection-results li[data-result="NA"] > strong {
   color: var(--ink-3);
-  white-space: nowrap;
 }
 /* 오늘 회차 카드 (inspection-summary.tsx): 한 줄 요약 + 단추 둘 */
 .tbm-today {
@@ -839,7 +892,6 @@
   gap: 6px;
   min-height: 44px;
   font-weight: 600;
-  color: var(--brand-strong);
 }
 .tbm-today-log {
   margin-top: 8px;
