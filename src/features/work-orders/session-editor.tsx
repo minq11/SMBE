@@ -89,19 +89,29 @@ export function SessionEditor({
         <span className="wo-sessions-title">
           작업 회차 {value.length > 0 ? `(${value.length}회차)` : ""}
         </span>
-        <button
-          type="button"
-          className={value.length === 0 ? "primary-button" : "ghost-button"}
-          onClick={() => setOpen(true)}
-        >
-          <CalendarDays size={14} /> 작업 회차 만들기
-        </button>
+        {value.length > 0 && (
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setOpen(true)}
+          >
+            <CalendarDays size={14} /> 작업 회차 만들기
+          </button>
+        )}
       </div>
       {value.length === 0 ? (
-        <p className="wo-muted">
-          아직 회차가 없습니다. 시작일·마감일과 시간을 적어 회차를 만드세요. 만든
-          뒤에 쉬는 날을 빼거나 하루를 더할 수 있습니다.
-        </p>
+        /* 회차가 없으면 빈 자리가 "비었다" 고 말해야 한다. 회색 한 줄은 안내로만
+           읽혀 단추를 누를 생각을 못 했다 (사장님). 노란 빈 칸 전체가 단추다. */
+        <button
+          type="button"
+          className="wo-sessions-empty"
+          aria-label="작업 회차 만들기"
+          onClick={() => setOpen(true)}
+        >
+          <CalendarDays size={22} />
+          <strong>작업 회차가 아직 없습니다</strong>
+          <span>여기를 눌러 시작일·마감일과 시간을 적으세요</span>
+        </button>
       ) : (
         <ol className="wo-session-list">
           {value.map((s, i) => (
@@ -227,7 +237,9 @@ export function SessionEditor({
                 : `${preview.length}회차 · 하루 ${Math.floor(rangeMinutes / 60)}시간${
                     rangeMinutes % 60 ? ` ${rangeMinutes % 60}분` : ""
                   }${range.endTime <= range.startTime ? " · 다음 날 종료" : ""}${
-                    value.length > 0 ? " · 지금 회차 목록을 새로 만든 목록으로 바꿉니다" : ""
+                    value.length > 0
+                      ? " · 지금 회차 목록을 새로 만든 목록으로 바꿉니다"
+                      : ""
                   }`}
             </p>
             <div className="confirm-dialog-actions">

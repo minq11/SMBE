@@ -278,6 +278,33 @@
 .wo-sessions {
   margin: 8px 0 16px;
 }
+/* 회차가 없을 때의 빈 자리. 노란 점선 칸 전체가 단추 — 채워야 할 곳이 보인다. */
+.wo-sessions-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 96px;
+  padding: 18px 16px;
+  border: 1.5px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  text-align: center;
+  cursor: pointer;
+  font: inherit;
+}
+.wo-sessions-empty strong {
+  font-size: 15px;
+}
+.wo-sessions-empty span {
+  font-size: 13px;
+}
+.wo-sessions-empty:hover {
+  background: var(--accent-soft);
+  filter: brightness(0.98);
+}
 .wo-sessions-head {
   display: flex;
   align-items: center;
@@ -471,6 +498,10 @@
   gap: 14px 10px;
   margin: 24px 0;
   font-size: 13px;
+}
+.wo-summary dd[data-tone="warn"] {
+  color: var(--accent-ink);
+  font-weight: 700;
 }
 .wo-summary dt {
   color: var(--ink-2);

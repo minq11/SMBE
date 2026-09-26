@@ -1090,10 +1090,10 @@ export function WorkOrderForm({
             <dt>장소</dt>
             <dd>{data.location || "미입력"}</dd>
             <dt>기간</dt>
-            <dd>
+            <dd data-tone={data.sessions?.length ? undefined : "warn"}>
               {data.sessions?.length
                 ? `${data.startDate} ~ ${data.endDate} · ${data.sessions.length}회차`
-                : "회차 미정"}
+                : "회차 없음"}
             </dd>
             <dt>배정</dt>
             <dd>{data.assigneeIds.length}명</dd>
