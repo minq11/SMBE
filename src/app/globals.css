@@ -5861,6 +5861,58 @@ fieldset.form-field legend {
     flex-direction: column;
   }
 }
+/* 공개 화면 하단 사업자 표시 (features/auth/site-footer.tsx). 작게, 흐리게, 한 덩어리.
+   좁은 화면에서는 줄마다 내려온다. 문서 흐름의 맨 아래 — 붙박이가 아니다. */
+.site-footer {
+  margin-top: auto;
+  padding: 28px 24px calc(28px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.site-footer-name {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.site-footer-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+}
+.site-footer-lines li + li::before {
+  content: "·";
+  margin-right: 6px;
+  color: var(--ink-4);
+}
+.site-footer a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.site-footer-copy {
+  margin: 8px 0 0;
+  color: var(--ink-4);
+}
+/* 로그인 전 홈은 본문(.main-content) 안이라 옆 여백을 본문에 맞춘다. */
+.main-content > .site-footer {
+  padding-inline: 0;
+  margin-top: 24px;
+}
+@media (max-width: 600px) {
+  .site-footer-lines {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .site-footer-lines li + li::before {
+    content: none;
+  }
+}
+
 /* 쪽 넘기기 (components/ui/pager.tsx, pager-client.tsx). 목록 아래 한 줄:
    [‹ 이전]  2 / 5  [다음 ›]. 단추는 44px, 끝 쪽에서는 흐리게. */
 .pager {

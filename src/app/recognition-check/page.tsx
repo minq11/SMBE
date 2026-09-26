@@ -1,4 +1,5 @@
 import { PublicHeader } from "@/features/auth/public-header";
+import { SiteFooter } from "@/features/auth/site-footer";
 import { CheckView } from "@/features/recognition-check/check-view";
 
 export const metadata = {
@@ -16,6 +17,7 @@ export default function RecognitionCheckPage() {
           <CheckView />
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

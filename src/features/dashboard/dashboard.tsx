@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
+import { SiteFooter } from "@/features/auth/site-footer";
 import { SectionHeading } from "@/components/ui/section-heading";
 
 export type Job = {
@@ -321,6 +322,8 @@ export function Dashboard({
         worker={worker}
         pendingJoinCount={pendingJoinCount}
       />
+      {/* 사업자 표시는 로그인 전 첫 화면(초기 화면)에만. 로그인하면 마이페이지에. */}
+      {!isAuthenticated && <SiteFooter />}
     </AppShell>
   );
 }

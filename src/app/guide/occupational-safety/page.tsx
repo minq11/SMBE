@@ -1,4 +1,5 @@
 import { PublicHeader } from "@/features/auth/public-header";
+import { SiteFooter } from "@/features/auth/site-footer";
 import { GuideDetailView } from "@/features/guide/guide-detail-view";
 
 export const metadata = {
@@ -16,6 +17,7 @@ export default function OccupationalSafetyPage() {
           <GuideDetailView topic="occupational-safety" />
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

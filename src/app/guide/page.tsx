@@ -1,4 +1,5 @@
 import { PublicHeader } from "@/features/auth/public-header";
+import { SiteFooter } from "@/features/auth/site-footer";
 import { GuideIndexView } from "@/features/guide/guide-index-view";
 
 export const metadata = {
@@ -16,6 +17,7 @@ export default function GuidePage() {
           <GuideIndexView />
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

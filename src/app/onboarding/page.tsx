@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight, Building2, KeyRound } from "lucide-react";
 import { getCurrentSession } from "@/server/session";
 import { PublicHeader } from "@/features/auth/public-header";
+import { SiteFooter } from "@/features/auth/site-footer";
 import { SignOutButton } from "@/features/auth/signout-button";
 
 export const metadata = { title: "회사 연결 · 심플안전" };
@@ -33,6 +34,7 @@ export default async function OnboardingPage() {
               </p>
             </div>
           </main>
+          <SiteFooter />
         </div>
       );
     }
@@ -86,6 +88,7 @@ export default async function OnboardingPage() {
           </div>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

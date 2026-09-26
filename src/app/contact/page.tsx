@@ -1,4 +1,5 @@
 import { PublicHeader } from "@/features/auth/public-header";
+import { SiteFooter } from "@/features/auth/site-footer";
 import { ContactForm } from "@/features/contact/contact-form";
 
 export const metadata = {
@@ -14,6 +15,7 @@ export default function ContactPage() {
       <main className="auth-main">
         <ContactForm />
       </main>
+      <SiteFooter />
     </div>
   );
 }

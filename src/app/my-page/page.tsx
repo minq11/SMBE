@@ -6,6 +6,7 @@ import { ownProfile } from "@/server/profile";
 import { queryOne, query } from "@/server/db";
 import { AppShell } from "@/components/shell/app-shell";
 import { PageHeader } from "@/components/ui/page-header";
+import { BUSINESS } from "@/lib/business";
 import {
   ProfileForm,
   LeaveCompanyForm,
@@ -76,6 +77,30 @@ export default async function MyPage({
         </p>
       )}
       <div className="account-grid">
+        {/* 로그인 후에는 하단 대신 여기 — 사업자 표시(전자상거래법 제10조)와 연락처. */}
+        <section className="account-panel">
+          <h2>서비스 제공자</h2>
+          <dl>
+            <dt>상호</dt>
+            <dd>{BUSINESS.name}</dd>
+            <dt>대표</dt>
+            <dd>{BUSINESS.owner}</dd>
+            <dt>사업자등록번호</dt>
+            <dd>{BUSINESS.registration}</dd>
+            <dt>주소</dt>
+            <dd>{BUSINESS.address}</dd>
+            <dt>고객센터</dt>
+            <dd>
+              <a href={"tel:" + BUSINESS.phone.replaceAll("-", "")}>
+                {BUSINESS.phone}
+              </a>
+            </dd>
+            <dt>이메일</dt>
+            <dd>
+              <a href={"mailto:" + BUSINESS.email}>{BUSINESS.email}</a>
+            </dd>
+          </dl>
+        </section>
         <section className="account-panel">
           <h2>로그인 계정</h2>
           <dl>

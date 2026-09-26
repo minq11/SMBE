@@ -21,6 +21,26 @@ test("contact honeypot silently succeeds without email credentials", async ({
   ).toBeVisible();
 });
 
+test("public screens carry the business footer and it fits a narrow phone", async ({
+  page,
+}, testInfo) => {
+  // 사업자 표시(전자상거래법)는 로그인 전 화면 하단에만. 320px 에서도 옆으로 안 넘친다.
+  await page.setViewportSize({ width: 320, height: 720 });
+  for (const route of ["/", "/login", "/guide"]) {
+    await page.goto(route);
+    const footer = page.locator(".site-footer");
+    await expect(footer).toContainText("202-26-98342");
+    await expect(footer).toContainText("패밀리포차");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.locator(".site-footer").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("public-footer.png") });
+});
+
 test("anonymous membership and invite pages require login", async ({
   page,
 }) => {
@@ -53,12 +73,16 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await expect(
     page.getByRole("link", { name: /우리회사 안전수준 진단/ }),
   ).toHaveAttribute("href", "/recognition-check");
-  // 로그인 전 홈도 한 화면에 들어간다 — 본문이 스크롤될 만큼 길지 않다.
+  // 로그인 전 홈도 한 화면에 들어간다 — 접힌 아래에는 사업자 표시 하단(법정)만 있다.
+  // 본문이 넘치는 만큼은 그 하단의 높이 이하여야 한다.
   if (test.info().project.name === "mobile") {
     const main = page.locator("main");
+    const footer = await page
+      .locator(".site-footer")
+      .evaluate((el) => el.getBoundingClientRect().height);
     expect(
       await main.evaluate((el) => el.scrollHeight - el.clientHeight),
-    ).toBeLessThanOrEqual(0);
+    ).toBeLessThanOrEqual(footer + 1);
   }
   await expect(
     page.getByRole("heading", { name: /‘시작 요금’ 없는/ }),
@@ -86,12 +110,15 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await dialog.getByRole("button", { name: "확인" }).click();
   await expect(dialog).toBeHidden();
   await expect(firstDetail).toBeHidden();
-  // 여전히 한 화면 — 창이 카드 배치를 밀어내지 않는다.
+  // 여전히 한 화면 — 창이 카드 배치를 밀어내지 않는다 (접힌 아래는 사업자 표시뿐).
   if (test.info().project.name === "mobile") {
     const main = page.locator("main");
+    const footer = await page
+      .locator(".site-footer")
+      .evaluate((el) => el.getBoundingClientRect().height);
     expect(
       await main.evaluate((el) => el.scrollHeight - el.clientHeight),
-    ).toBeLessThanOrEqual(0);
+    ).toBeLessThanOrEqual(footer + 1);
   }
   for (const fake of [
     "오늘의 작업 (예시)",

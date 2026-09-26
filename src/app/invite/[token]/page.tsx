@@ -6,6 +6,7 @@ import { queryOne, withTransaction } from "@/server/db";
 import { acceptInvite } from "@/server/membership-mutations";
 import { revalidatePath } from "next/cache";
 import { PublicHeader } from "@/features/auth/public-header";
+import { SiteFooter } from "@/features/auth/site-footer";
 import { ContactFields } from "@/features/onboarding/contact-fields";
 import { notifyEmailOf } from "@/server/profile";
 import {
@@ -153,6 +154,7 @@ export default async function InvitePage({
           </form>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
@@ -178,6 +180,7 @@ function InviteErrorFrame({
           </p>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

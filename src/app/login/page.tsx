@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/server/session";
 import { PublicHeader } from "@/features/auth/public-header";
+import { SiteFooter } from "@/features/auth/site-footer";
 import { ProviderButtons } from "@/features/auth/provider-buttons";
 
 export const metadata = { title: "로그인 · 심플안전" };
@@ -47,6 +48,7 @@ export default async function LoginPage({
           </p>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
