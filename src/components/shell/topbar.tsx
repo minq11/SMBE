@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Bell, ChevronDown, Menu, Wrench } from "lucide-react";
+import { parentPath } from "./parent-path";
 import { logoutAction } from "@/features/auth/logout-action";
 import { BrandWordmark } from "@/components/brand/wordmark";
 import { usePreview } from "./preview-dialog";
@@ -35,11 +36,9 @@ export function Topbar({
   const pathname = usePathname();
   const router = useRouter();
   // 좁은 화면의 왼쪽 자리는 하나다. 구역의 첫 화면이면 ☰, 안쪽 화면이면 ←.
-  const { isRoot, parentHref } = navRoot(pathname);
-  const goBack = () => {
-    if (window.history.length > 1) router.back();
-    else router.push(parentHref);
-  };
+  const { isRoot } = navRoot(pathname);
+  // 히스토리가 아니라 구조로 돌아간다 (parent-path.ts). 발급 직후 ← 는 목록이다.
+  const goBack = () => router.push(parentPath(pathname));
 
   return (
     <header className={`topbar${scrolled ? " is-scrolled" : ""}`}>

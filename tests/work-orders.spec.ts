@@ -210,6 +210,16 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       page.getByRole("heading", { name: "작업지시 QR", exact: true }),
     ).toBeVisible();
     await expect(page.getByAltText("이 작업지시를 여는 QR 코드")).toBeVisible();
+    // 발급 직후 ← 는 방금 지나온 작성 폼이 아니라 목록이다 (parent-path.ts).
+    // 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전 클릭은 삼켜진다.
+    await expect(async () => {
+      await page.getByRole("button", { name: "뒤로 가기" }).first().click();
+      await expect(page).toHaveURL(/\/work-orders$/, { timeout: 3000 });
+    }).toPass({ timeout: 20000 });
+    await page.goto(path);
+    await expect(
+      page.getByRole("heading", { name: "작업지시 QR", exact: true }),
+    ).toBeVisible();
     // 복사하는 주소에는 들어온 길(via=link)이 붙는다. 그 길로 열면 "보는" 화면이다.
     await expect(page.getByLabel("작업 링크", { exact: true })).toHaveValue(
       /\?via=link$/,
