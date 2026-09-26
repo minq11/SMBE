@@ -13,7 +13,7 @@ import {
 } from "@/server/inspection-service";
 import { sessionState } from "@/features/inspections/model";
 import { pendingJoinCount } from "@/server/members";
-import { activePopupNotices } from "@/server/board";
+import { activePopupNotices, homePosts } from "@/server/board";
 import { NoticePopup } from "@/features/board/notice-popup";
 import { PushOptIn } from "@/features/push/push-opt-in";
 import { renderDoc } from "@/features/board/model";
@@ -121,11 +121,16 @@ export default async function Home() {
         )
       ).map((n) => ({
         id: n.id,
+        kind: n.kind,
         title: n.title,
         html: renderDoc(n.body),
         published_at: n.published_at,
       }))
     : [];
+  // 홈의 공지사항·오늘의 안전소식 — 최신 두 건씩, 전체는 통합자료실로.
+  const board = actor
+    ? await withTransaction((client) => homePosts(client, actor.companyId))
+    : undefined;
   const paid = tierOf(session?.membership) === "유료";
 
   return (
@@ -141,6 +146,7 @@ export default async function Home() {
         isManager={isManager}
         openFindingCount={openFindingCount}
         pendingJoinCount={joinRequestCount}
+        board={board}
         worker={worker}
         today={
           actor

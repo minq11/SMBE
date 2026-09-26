@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { getCurrentSession } from "@/server/session";
+import { isCurrentUserOperator } from "@/server/operator";
 import { withTransaction } from "@/server/db";
 import { LINK_COOKIE, resolveAccessToken } from "@/server/worker-access";
 import { AttachmentError, presignRead } from "@/server/attachments";
@@ -47,6 +48,7 @@ async function currentActor() {
     return {
       companyId: session.membership.company_id,
       userId: session.user.id,
+      operator: await isCurrentUserOperator(),
     };
   const token = (await cookies()).get(LINK_COOKIE)?.value;
   const grant = token

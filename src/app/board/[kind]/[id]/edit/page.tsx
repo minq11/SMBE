@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withTransaction } from "@/server/db";
-import { workSession } from "@/server/work-orders";
 import { boardStorageUsed, readPost } from "@/server/board";
 import { BoardShell } from "@/features/board/board-shell";
+import { boardSession } from "@/features/board/board-session";
 import { PostForm } from "@/features/board/post-form";
 import {
   BOARD_STORAGE_LIMIT,
@@ -23,10 +23,7 @@ export default async function BoardEditPage({
 }) {
   const { kind, id } = await params;
   if (!isKindSlug(kind) || !z.string().uuid().safeParse(id).success) notFound();
-  const { session, actor } = await workSession(
-    `/board/${kind}/${id}/edit`,
-    true,
-  );
+  const { session, actor } = await boardSession(`/board/${kind}/${id}/edit`);
   const data = await withTransaction((c) => readPost(c, actor, id)).catch(
     (error) => {
       if (error instanceof BoardError) return null;
@@ -34,7 +31,11 @@ export default async function BoardEditPage({
     },
   );
   if (!data || data.post.kind !== KIND_BY_SLUG[kind]) notFound();
-  const canAttach = session.membership!.pro_state !== "FREE";
+  // 쓸 수 없는 사람에게는 편집 화면이 없다 (안전소식은 운영자만).
+  if (!data.manager) notFound();
+  // 안전소식 첨부는 심플안전이 올리는 것이라 회사 요금제와 무관하다.
+  const canAttach =
+    data.post.kind === "NEWS" || session.membership!.pro_state !== "FREE";
   const usage = canAttach
     ? {
         used: await withTransaction((c) =>

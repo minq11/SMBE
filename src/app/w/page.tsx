@@ -57,6 +57,7 @@ export default async function WorkerLinkPage({
     )
   ).map((n) => ({
     id: n.id,
+    kind: n.kind,
     title: n.title,
     html: renderDoc(n.body),
     published_at: n.published_at,
@@ -105,7 +106,7 @@ export default async function WorkerLinkPage({
         <h1>{data.order.name}</h1>
       </header>
       <AddToHomeHint />
-      {popups.length > 0 && <NoticePopup notices={popups} linkBase={null} />}
+      {popups.length > 0 && <NoticePopup notices={popups} links={false} />}
 
       {query.saved === "1" && (
         <p role="status" className="wo-notice">

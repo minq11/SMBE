@@ -128,6 +128,7 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
       for (const route of [
         "/",
         "/board/notices",
+        "/board/news",
         "/board/resources",
         "/company/members",
         "/work-orders",

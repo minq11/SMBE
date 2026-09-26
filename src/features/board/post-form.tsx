@@ -9,6 +9,7 @@ import { deletePostAction, savePostAction } from "./actions";
 import {
   SLUG_BY_KIND,
   formatBytes,
+  popupAllowed,
   type BoardDoc,
   type PostDetail,
 } from "./model";
@@ -59,7 +60,7 @@ export function PostForm({
         id: post.id,
         title,
         body: doc.current,
-        popup: post.kind === "NOTICE" && popup,
+        popup: popupAllowed(post.kind) && popup,
         popupFrom: popup && from ? from : null,
         popupUntil: popup && until ? until : null,
         publish: publish || published,
@@ -112,7 +113,9 @@ export function PostForm({
         hint={
           post.kind === "NOTICE"
             ? "예: 10월 정기 안전점검 일정"
-            : "예: 지게차 일상점검표 (2026)"
+            : post.kind === "NEWS"
+              ? "예: 지게차 후진 사고, 이렇게 막습니다"
+              : "예: 지게차 일상점검표 (2026)"
         }
         onChange={(e) => {
           setTitle(e.target.value);
@@ -120,7 +123,7 @@ export function PostForm({
         }}
       />
 
-      {post.kind === "NOTICE" && (
+      {popupAllowed(post.kind) && (
         <fieldset className="board-popup-set">
           <legend>팝업 노출</legend>
           <label className="board-check">

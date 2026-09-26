@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Megaphone } from "lucide-react";
-import { postDate } from "./model";
+import { Megaphone, Newspaper } from "lucide-react";
+import { KIND_LABEL, SLUG_BY_KIND, postDate, type BoardKind } from "./model";
 
 export type PopupNoticeView = {
   id: string;
+  /** 공지사항(회사) 또는 오늘의 안전소식(심플안전). 머리말과 가는 곳이 다르다. */
+  kind: BoardKind;
   title: string;
   html: string;
   published_at: string | null;
@@ -31,17 +33,17 @@ function hide(id: string, days: number) {
 }
 
 /**
- * 공지 팝업. 홈(로그인)·작업자 링크 화면에 들어올 때 한 번 뜬다.
+ * 공지·안전소식 팝업. 홈(로그인)·작업자 링크 화면에 들어올 때 한 번 뜬다.
  * "오늘 하루 안 보기 / 7일간 안 보기" 는 이 기기의 localStorage 가 기억한다.
  * 여러 개면 최신 것부터 하나씩. 좁은 화면은 아래에서 올라오는 시트.
  */
 export function NoticePopup({
   notices,
-  linkBase = "/board/notices",
+  links = true,
 }: {
   notices: PopupNoticeView[];
-  /** 자세히 보기 링크의 바탕. 링크 화면(/w)에서는 글 화면이 없어 null. */
-  linkBase?: string | null;
+  /** 글 화면으로 가는 링크. 링크 화면(/w)에서는 글 화면이 없어 false. */
+  links?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [queue, setQueue] = useState<PopupNoticeView[] | null>(null);
@@ -81,7 +83,12 @@ export function NoticePopup({
     >
       <div className="notice-popup-body">
         <p className="notice-popup-eyebrow">
-          <Megaphone size={14} /> 공지사항
+          {current.kind === "NEWS" ? (
+            <Newspaper size={14} />
+          ) : (
+            <Megaphone size={14} />
+          )}{" "}
+          {KIND_LABEL[current.kind]}
           {current.published_at && (
             <span> · {postDate(current.published_at)}</span>
           )}
@@ -91,13 +98,15 @@ export function NoticePopup({
           className="board-content notice-popup-content"
           dangerouslySetInnerHTML={{ __html: current.html }}
         />
-        {linkBase && (
+        {links && (
           <Link
-            href={`${linkBase}/${current.id}`}
+            href={`/board/${SLUG_BY_KIND[current.kind]}/${current.id}`}
             className="notice-popup-link"
             onClick={() => next()}
           >
-            공지 화면에서 보기
+            {current.kind === "NEWS"
+              ? "소식 화면에서 보기"
+              : "공지 화면에서 보기"}
           </Link>
         )}
         <div className="notice-popup-actions">

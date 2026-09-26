@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/server/session";
+import { isCurrentUserOperator } from "@/server/operator";
 import { withTransaction } from "@/server/db";
 import {
   boardStorageUsed,
@@ -28,9 +29,13 @@ async function actor() {
   const s = await getCurrentSession();
   if (!s?.membership || s.membership.status !== "ACTIVE")
     throw new BoardError("로그인과 회사 소속을 확인하세요.");
-  if (s.membership.role === "WORKER")
-    throw new BoardError("글쓰기는 관리자만 할 수 있습니다.");
-  return { companyId: s.membership.company_id, userId: s.user.id };
+  // 역할 검사는 글 종류를 아는 서버 쪽(board.ts)이 한다 — 회사 글은 관리자,
+  // 안전소식은 운영자.
+  return {
+    companyId: s.membership.company_id,
+    userId: s.user.id,
+    operator: await isCurrentUserOperator(),
+  };
 }
 
 function message(error: unknown): string {

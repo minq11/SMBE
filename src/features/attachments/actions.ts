@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { getCurrentSession } from "@/server/session";
+import { isCurrentUserOperator } from "@/server/operator";
 import { withTransaction } from "@/server/db";
 import { LINK_COOKIE, resolveAccessToken } from "@/server/worker-access";
 import {
@@ -25,7 +26,11 @@ import {
 async function actor() {
   const s = await getCurrentSession();
   if (s?.membership && s.membership.status === "ACTIVE")
-    return { companyId: s.membership.company_id, userId: s.user.id };
+    return {
+      companyId: s.membership.company_id,
+      userId: s.user.id,
+      operator: await isCurrentUserOperator(),
+    };
 
   const token = (await cookies()).get(LINK_COOKIE)?.value;
   const grant = token

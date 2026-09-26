@@ -1235,6 +1235,27 @@ html[data-banner-hidden] .preview-banner {
   flex-direction: column;
   gap: 8px;
 }
+/* 홈의 공지사항·오늘의 안전소식. 넓은 화면은 나란히, 좁은 화면은 위아래. */
+.home-boards {
+  display: grid;
+  /* 1fr 만 주면 칸의 최소 폭이 한 줄 요약(nowrap)만큼 커져 화면 밖으로 밀린다. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px 32px;
+  align-items: start;
+}
+.home-boards > * {
+  min-width: 0;
+}
+.home-boards .row-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 960px) {
+  .home-boards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .section-heading {
   display: flex;
   align-items: baseline;

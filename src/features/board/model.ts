@@ -13,22 +13,35 @@ import { z } from "zod";
  * 서명 URL 로 보낸다. 외부 이미지 URL 은 받지 않는다.
  */
 
-export const BOARD_KINDS = ["notices", "resources"] as const;
+/**
+ * 공지사항·자료실은 회사 안의 글. 오늘의 안전소식(NEWS)은 심플안전(운영자)이
+ * 모든 회사에 같이 보내는 글이라 회사가 없다 (company_id NULL, db/0024).
+ */
+export const BOARD_KINDS = ["notices", "news", "resources"] as const;
 export type BoardKindSlug = (typeof BOARD_KINDS)[number];
-export type BoardKind = "NOTICE" | "RESOURCE";
+export type BoardKind = "NOTICE" | "NEWS" | "RESOURCE";
 
 export const KIND_BY_SLUG: Record<BoardKindSlug, BoardKind> = {
   notices: "NOTICE",
+  news: "NEWS",
   resources: "RESOURCE",
 };
 export const SLUG_BY_KIND: Record<BoardKind, BoardKindSlug> = {
   NOTICE: "notices",
+  NEWS: "news",
   RESOURCE: "resources",
 };
 export const KIND_LABEL: Record<BoardKind, string> = {
   NOTICE: "공지사항",
+  NEWS: "오늘의 안전소식",
   RESOURCE: "자료실",
 };
+
+/** 팝업으로 띄울 수 있는 글. 자료실은 두고 보는 자료라 창으로 뜨지 않는다. */
+export const popupAllowed = (kind: BoardKind) =>
+  kind === "NOTICE" || kind === "NEWS";
+/** 회사 밖에서 오는 글 — 운영자만 쓰고 모든 회사가 읽는다. */
+export const isGlobalKind = (kind: BoardKind) => kind === "NEWS";
 
 export function isKindSlug(value: string): value is BoardKindSlug {
   return (BOARD_KINDS as readonly string[]).includes(value);
@@ -318,6 +331,14 @@ export type PostDetail = {
   created_by: string;
   published_at: string | null;
   updated_at: string;
+};
+
+/** 홈에 보이는 최신 글 두어 건. */
+export type PostBrief = {
+  id: string;
+  title: string;
+  excerpt: string;
+  published_at: string | null;
 };
 
 export const postDate = (value: string | null) =>

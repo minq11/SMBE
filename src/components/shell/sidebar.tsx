@@ -17,6 +17,7 @@ import {
   ListChecks,
   LogOut,
   Megaphone,
+  Newspaper,
   Settings2,
   ShieldCheck,
   Speech,
@@ -67,6 +68,7 @@ export type NavKey =
   | "locations"
   | "criteria"
   | "notices"
+  | "news"
   | "resources"
   | "help";
 
@@ -162,6 +164,12 @@ const NAV: ReadonlyArray<NavEntry> = [
         title: "공지사항",
         icon: Megaphone,
         href: "/board/notices",
+      },
+      {
+        key: "news",
+        title: "오늘의 안전소식",
+        icon: Newspaper,
+        href: "/board/news",
       },
       {
         key: "resources",

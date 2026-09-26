@@ -1,13 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FolderOpen, Megaphone, Paperclip, PenLine } from "lucide-react";
+import {
+  FolderOpen,
+  Megaphone,
+  Newspaper,
+  Paperclip,
+  PenLine,
+} from "lucide-react";
 import { withTransaction } from "@/server/db";
-import { workSession } from "@/server/work-orders";
 import { listPosts } from "@/server/board";
 import { Pager } from "@/components/ui/pager";
 import { pageOf, parsePage } from "@/lib/paging";
 import { PageHeader } from "@/components/ui/page-header";
 import { BoardShell } from "@/features/board/board-shell";
+import { boardSession } from "@/features/board/board-session";
 import { createPostAction } from "@/features/board/actions";
 import {
   KIND_BY_SLUG,
@@ -31,8 +37,10 @@ export async function generateMetadata({
 
 const DESCRIPTION = {
   NOTICE: "회사 구성원 모두에게 알리는 글. 팝업으로 띄울 수 있습니다.",
+  NEWS: "심플안전이 전하는 사고 사례와 안전 소식. 모든 회사에 같이 보입니다.",
   RESOURCE: "표준서·점검표·교육자료처럼 두고 보는 자료.",
 };
+const ICON = { NOTICE: Megaphone, NEWS: Newspaper, RESOURCE: FolderOpen };
 
 export default async function BoardListPage({
   params,
@@ -44,12 +52,13 @@ export default async function BoardListPage({
   const { kind } = await params;
   const { page: pageParam } = await searchParams;
   if (!isKindSlug(kind)) notFound();
-  const { session, actor } = await workSession("/board/" + kind);
+  const { session, actor } = await boardSession("/board/" + kind);
   const boardKind = KIND_BY_SLUG[kind];
   const { published, drafts, manager } = await withTransaction((c) =>
     listPosts(c, actor, boardKind),
   );
   const paged = pageOf(published, parsePage(pageParam));
+  const EmptyIcon = ICON[boardKind];
 
   return (
     <BoardShell session={session} kind={kind}>
@@ -79,11 +88,7 @@ export default async function BoardListPage({
         {published.length === 0 ? (
           <div className="empty-state">
             <span className="empty-state-icon">
-              {boardKind === "NOTICE" ? (
-                <Megaphone size={20} />
-              ) : (
-                <FolderOpen size={20} />
-              )}
+              <EmptyIcon size={20} />
             </span>
             <p>
               {manager

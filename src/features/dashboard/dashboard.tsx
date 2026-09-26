@@ -20,6 +20,7 @@ import {
 import { AppShell } from "@/components/shell/app-shell";
 import { SiteFooter } from "@/features/auth/site-footer";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { postDate, type PostBrief } from "@/features/board/model";
 
 export type Job = {
   href?: string;
@@ -44,6 +45,9 @@ export type WorkerHome = {
   /** 다음 회차 작업일 (YYYY-MM-DD), 없으면 null */
   next: string | null;
 };
+/** 홈에 보이는 통합자료실 최신 글 — 우리 회사 공지와 심플안전의 안전소식. */
+export type HomeBoard = { notices: PostBrief[]; news: PostBrief[] };
+
 export type Today = {
   /** YYYY-MM-DD (한국시간) */
   date: string;
@@ -287,6 +291,7 @@ export function Dashboard({
   today,
   worker,
   pendingJoinCount = 0,
+  board,
   topSlot,
 }: {
   companyName?: string;
@@ -300,6 +305,7 @@ export function Dashboard({
   today?: Today;
   worker?: WorkerHome;
   pendingJoinCount?: number;
+  board?: HomeBoard;
   /** 본문 맨 위에 끼우는 것 (푸시 알림 켜기 안내 등). 서버가 고른다. */
   topSlot?: ReactNode;
 }) {
@@ -321,6 +327,7 @@ export function Dashboard({
         today={today}
         worker={worker}
         pendingJoinCount={pendingJoinCount}
+        board={board}
       />
       {/* 사업자 표시는 로그인 전 첫 화면(초기 화면)에만. 로그인하면 마이페이지에. */}
       {!isAuthenticated && <SiteFooter />}
@@ -336,6 +343,7 @@ function DashboardBody({
   today,
   worker,
   pendingJoinCount,
+  board,
 }: {
   jobs?: Job[];
   isAuthenticated: boolean;
@@ -344,6 +352,7 @@ function DashboardBody({
   today?: Today;
   worker?: WorkerHome;
   pendingJoinCount: number;
+  board?: HomeBoard;
 }) {
   const displayedJobs = jobs ?? [];
 
@@ -440,6 +449,7 @@ function DashboardBody({
             다른 작업 보기 <ChevronRight size={13} />
           </Link>
         </p>
+        {board && <HomeBoards board={board} />}
       </>
     );
   }
@@ -645,6 +655,77 @@ function DashboardBody({
           )}
         </section>
       )}
+      {isAuthenticated && board && <HomeBoards board={board} />}
     </>
+  );
+}
+
+/**
+ * 공지사항(우리 회사)과 오늘의 안전소식(심플안전) — 최신 두 건씩. 넓은 화면에서는
+ * 나란히, 좁은 화면에서는 위아래. 없어도 칸은 남긴다: 어디에 올라오는지 알게.
+ */
+function HomeBoards({ board }: { board: HomeBoard }) {
+  return (
+    <div className="home-boards">
+      <HomeBoard
+        title="공지사항"
+        href="/board/notices"
+        posts={board.notices}
+        empty="아직 올라온 공지가 없습니다."
+      />
+      <HomeBoard
+        title="오늘의 안전소식"
+        href="/board/news"
+        posts={board.news}
+        empty="오늘의 안전소식이 준비되면 여기에 보입니다."
+      />
+    </div>
+  );
+}
+
+function HomeBoard({
+  title,
+  href,
+  posts,
+  empty,
+}: {
+  title: string;
+  href: string;
+  posts: PostBrief[];
+  empty: string;
+}) {
+  return (
+    <section className="stack" aria-label={title}>
+      <SectionHeading
+        title={title}
+        action={
+          <Link href={href} className="text-button">
+            전체 보기 <ChevronRight size={13} />
+          </Link>
+        }
+      />
+      {posts.length ? (
+        <ul className="row-list" role="list">
+          {posts.map((post) => (
+            <li key={post.id}>
+              <Link href={`${href}/${post.id}`} className="row">
+                <span className="row-main">
+                  <strong>{post.title}</strong>
+                  {post.excerpt && <small>{post.excerpt}</small>}
+                </span>
+                <span className="row-meta">
+                  <span className="row-fact">
+                    {postDate(post.published_at)}
+                  </span>
+                </span>
+                <ChevronRight size={14} className="row-chev" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="hero-lead">{empty}</p>
+      )}
+    </section>
   );
 }

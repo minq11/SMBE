@@ -32,7 +32,8 @@ const env = {
   EMAIL_FROM: "",
   AUTH_SECRET: "smbe-isolated-browser-test-secret-only",
   AUTH_TRUST_HOST: "true",
-  SMBE_OPERATOR_EMAILS: "",
+  // 오늘의 안전소식 시험용 운영자. 토큰에 이 이메일을 넣은 사용자만 운영자다.
+  SMBE_OPERATOR_EMAILS: "operator@test.local",
   APP_URL: "http://127.0.0.1:3100",
   SMBE_ORDER_UI_TESTS: "1",
   SMBE_ORDER_UI_SCHEMA: schema,

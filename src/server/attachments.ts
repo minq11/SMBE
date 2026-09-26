@@ -19,7 +19,11 @@ export type Actor = { companyId: string; userId: string };
  * 소속 회사를 통해 요금제를 확인하는 경로는 로그인 사용자와 같다.
  * 설계 배경: docs/worker-access.md
  */
-export type ScopedActor = Actor & { linkWorkOrderId?: string };
+export type ScopedActor = Actor & {
+  linkWorkOrderId?: string;
+  /** 심플안전 운영자. 오늘의 안전소식(회사 없는 글)에 첨부를 붙일 수 있다. */
+  operator?: boolean;
+};
 
 export const TARGET_TYPES = [
   "standard_step",
@@ -79,6 +83,8 @@ async function verifyActor(
   actor: ScopedActor,
   target: AttachmentTarget,
   upload = true,
+  /** 대상이 오늘의 안전소식이면 요금제·역할 문은 운영자에게 열려 있다. */
+  globalPost = false,
 ): Promise<{ role: string; pro: boolean }> {
   const rows = await query<{ role: string; pro_state: string }>(
     `SELECT m.role, c.pro_state
@@ -93,7 +99,9 @@ async function verifyActor(
   const pro = row.pro_state !== "FREE";
   // 사진 첨부는 **요금제 하나만** 가른다. 역할에 따른 차이는 없다 —
   // 작업자도 표준서에 사진을 올릴 수 있다. 위험 앞에 서 있는 사람이 작업자다.
-  if (upload && !pro)
+  // 안전소식은 심플안전이 모든 회사에 보내는 글이라 운영자의 회사 요금제와 무관하다.
+  const operatorOnGlobal = globalPost && Boolean(actor.operator);
+  if (upload && !pro && !operatorOnGlobal)
     throw new AttachmentError(
       "사진·동영상 첨부는 유료 요금제에서 이용할 수 있습니다.",
     );
@@ -101,9 +109,30 @@ async function verifyActor(
   // 토큰은 배정 하나를 여는 열쇠이지 관리자 자격을 옮겨 오지 않는다.
   const role = actor.linkWorkOrderId ? "WORKER" : row.role;
   // 자료실 글은 관리자만 쓰므로 첨부도 관리자만 올린다. 읽기는 구성원 전원.
-  if (upload && target === "board_post" && role === "WORKER")
+  if (
+    upload &&
+    target === "board_post" &&
+    role === "WORKER" &&
+    !operatorOnGlobal
+  )
     throw new AttachmentError("자료실 첨부는 관리자만 올릴 수 있습니다.");
   return { role, pro };
+}
+
+/**
+ * 자료실 글이 오늘의 안전소식(회사 없는 글)인가. 그 글의 첨부는 회사를 가리지
+ * 않고 읽히고, 붙이는 것은 운영자만 한다.
+ */
+async function isGlobalBoardPost(
+  target: AttachmentTarget,
+  targetId: string,
+): Promise<boolean> {
+  if (target !== "board_post") return false;
+  const rows = await query<{ kind: string }>(
+    "SELECT kind FROM board_posts WHERE id = $1 AND deleted_at IS NULL",
+    [targetId],
+  );
+  return rows[0]?.kind === "NEWS";
 }
 
 /**
@@ -166,7 +195,8 @@ async function verifyTargetOwnership(
     },
     board_post: {
       table: "board_posts",
-      join: "id = $1 AND company_id = $2 AND deleted_at IS NULL",
+      // 회사 글은 그 회사, 안전소식은 누구나 읽고 운영자만 붙인다 (아래 write 검사).
+      join: "id = $1 AND (company_id = $2 OR kind = 'NEWS') AND deleted_at IS NULL",
     },
   };
   const spec = map[target];
@@ -274,7 +304,15 @@ export async function presignUpload(
   input: z.infer<typeof presignSchema>,
 ): Promise<{ attachmentId: string; uploadUrl: string; storageKey: string }> {
   const parsed = presignSchema.parse(input);
-  await verifyActor(actor, parsed.targetType);
+  const globalPost = await isGlobalBoardPost(
+    parsed.targetType,
+    parsed.targetId,
+  );
+  if (globalPost && !actor.operator)
+    throw new AttachmentError(
+      "오늘의 안전소식 첨부는 심플안전 운영자만 올립니다.",
+    );
+  await verifyActor(actor, parsed.targetType, true, globalPost);
   await verifyTargetOwnership(actor, parsed.targetType, parsed.targetId);
   if (parsed.targetType === "standard_step")
     await assertStepInDraft(parsed.targetId);
@@ -345,7 +383,10 @@ export async function confirmUpload(
   const row = rows[0];
   if (!row || row.company_id !== actor.companyId)
     throw new AttachmentError("첨부를 찾을 수 없습니다.");
-  const { role } = await verifyActor(actor, row.target_type);
+  const globalPost = await isGlobalBoardPost(row.target_type, row.target_id);
+  if (globalPost && !actor.operator)
+    throw new AttachmentError("첨부를 찾을 수 없습니다.");
+  const { role } = await verifyActor(actor, row.target_type, true, globalPost);
   assertOwnAttachment(actor, role, row.uploaded_by);
   await verifyTargetOwnership(actor, row.target_type, row.target_id);
   if (row.status === "READY") return; // idempotent
@@ -444,7 +485,10 @@ export async function presignRead(
     [attachmentId],
   );
   const row = rows[0];
-  if (!row || row.company_id !== actor.companyId)
+  if (!row) throw new AttachmentError("첨부를 찾을 수 없습니다.");
+  // 안전소식의 사진은 올린 운영자의 회사가 아니라 모든 회사가 본다.
+  const globalPost = await isGlobalBoardPost(row.target_type, row.target_id);
+  if (!globalPost && row.company_id !== actor.companyId)
     throw new AttachmentError("첨부를 찾을 수 없습니다.");
   await verifyActor(actor, row.target_type, false);
   await verifyTargetOwnership(actor, row.target_type, row.target_id);
@@ -476,6 +520,11 @@ export async function deleteAttachment(
   );
   const row = rows[0];
   if (!row || row.company_id !== actor.companyId)
+    throw new AttachmentError("첨부를 찾을 수 없습니다.");
+  if (
+    (await isGlobalBoardPost(row.target_type, row.target_id)) &&
+    !actor.operator
+  )
     throw new AttachmentError("첨부를 찾을 수 없습니다.");
   const { role } = await verifyActor(actor, row.target_type, false);
   assertOwnAttachment(actor, role, row.uploaded_by);

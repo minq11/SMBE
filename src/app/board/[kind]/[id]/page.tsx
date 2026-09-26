@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PenLine } from "lucide-react";
 import { withTransaction } from "@/server/db";
-import { workSession } from "@/server/work-orders";
 import { readPost } from "@/server/board";
 import { BoardShell } from "@/features/board/board-shell";
+import { boardSession } from "@/features/board/board-session";
 import {
   BoardError,
   KIND_BY_SLUG,
@@ -24,7 +24,7 @@ export default async function BoardPostPage({
 }) {
   const { kind, id } = await params;
   if (!isKindSlug(kind) || !z.string().uuid().safeParse(id).success) notFound();
-  const { session, actor } = await workSession(`/board/${kind}/${id}`);
+  const { session, actor } = await boardSession(`/board/${kind}/${id}`);
   const data = await withTransaction((c) => readPost(c, actor, id)).catch(
     (error) => {
       if (error instanceof BoardError) return null;
