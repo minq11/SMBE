@@ -13,6 +13,7 @@ import Link from "next/link";
 import {
   CheckCircle2,
   FileText,
+  History,
   Plus,
   Save,
   Send,
@@ -50,6 +51,16 @@ import {
   type MemberOption,
 } from "./model";
 
+/** 이전 지시서 불러오기 창의 한 줄 (server/work-orders.ts listOrdersForCopy) */
+export type PastOrderOption = {
+  id: string;
+  name: string;
+  status: string;
+  start_date: string | null;
+  end_date: string | null;
+  location: string;
+  standard_name: string | null;
+};
 export type StandardPickerOption = {
   id: string;
   name: string;
@@ -185,6 +196,7 @@ export function WorkOrderForm({
   standards = [],
   initialStandardId = null,
   locations = [],
+  pastOrders = [],
   criteria,
   title,
   description,
@@ -201,6 +213,8 @@ export function WorkOrderForm({
   standards?: StandardPickerOption[];
   initialStandardId?: string | null;
   locations?: LocationOption[];
+  /** 비어 있으면 "이전 지시서 불러오기" 단추를 그리지 않는다 (편집 화면, 복사할 것이 없는 회사). */
+  pastOrders?: PastOrderOption[];
   /** 회사의 위험성 판단 기준 (읽기만). 초안에 싣지 않는다 — 서버가 평가 때 회사 값을 사본으로 남긴다. */
   criteria: RiskCriteria;
   /** 작업명이 비어 있을 때 머리말에 보일 제목 */
@@ -403,6 +417,13 @@ export function WorkOrderForm({
   const visibleStandards = stdNeedle
     ? standards.filter((s) => s.name.toLowerCase().includes(stdNeedle))
     : standards;
+  // 이전 지시서 불러오기 창. 표준서 찾기와 같은 문법 — 전체가 보이고 검색하면 거른다.
+  const [pastOpen, setPastOpen] = useState(false);
+  const [pastQuery, setPastQuery] = useState("");
+  const pastNeedle = pastQuery.trim().toLowerCase();
+  const visiblePast = pastNeedle
+    ? pastOrders.filter((o) => o.name.toLowerCase().includes(pastNeedle))
+    : pastOrders;
   // 위험성평가·체크리스트 본문. 표준서 모드에서는 접힘 안에, 간이평가는 그대로.
   const riskBody = (
     <>
@@ -615,7 +636,68 @@ export function WorkOrderForm({
           </div>
         </div>
       )}
-      {description && <p className="wo-editor-lead">{description}</p>}
+      {(description || pastOrders.length > 0) && (
+        <div className="wo-editor-intro">
+          {description && <p className="wo-editor-lead">{description}</p>}
+          {pastOrders.length > 0 && (
+            <button
+              type="button"
+              className="btn-secondary wo-past-open"
+              onClick={() => setPastOpen(true)}
+            >
+              <History size={14} /> 이전 지시서 불러오기
+            </button>
+          )}
+        </div>
+      )}
+      {pastOrders.length > 0 && (
+        <PickerDialog
+          open={pastOpen}
+          onClose={() => setPastOpen(false)}
+          title="이전 지시서 불러오기"
+          query={pastQuery}
+          onQuery={setPastQuery}
+          searchLabel="작업명 검색"
+          searchPlaceholder="작업명 검색"
+          done={false}
+        >
+          <ul className="wo-std-list wo-std-list--dialog" role="list">
+            {visiblePast.map((o) => (
+              <li key={o.id}>
+                {/* 고르면 그 지시서를 채운 새 작성 화면으로 간다 (?copy=). 작업일·발급
+                    정보는 비운 채 온다 — 그래서 "복사 후 재발행" 이다. */}
+                <Link
+                  href={"/work-orders/new?copy=" + o.id}
+                  className="wo-std-option"
+                  prefetch={false}
+                >
+                  <span className="wo-std-option-icon">
+                    <History size={16} />
+                  </span>
+                  <span className="wo-std-option-copy">
+                    <strong>{o.name}</strong>
+                    <small>
+                      {o.start_date
+                        ? o.start_date +
+                          (o.end_date && o.end_date !== o.start_date
+                            ? " ~ " + o.end_date
+                            : "")
+                        : "일정 없음"}
+                      {o.location ? " · " + o.location : ""}
+                      {o.standard_name ? " · 표준서 " + o.standard_name : ""}
+                    </small>
+                  </span>
+                </Link>
+              </li>
+            ))}
+            {visiblePast.length === 0 && (
+              <li className="wo-muted">
+                &lsquo;{pastQuery}&rsquo; 에 맞는 지시서가 없습니다.
+              </li>
+            )}
+          </ul>
+        </PickerDialog>
+      )}
       <div className="wo-editor-grid">
         <div className="wo-section">
           <form id={formDomId} action={submitSave} className="wo-editor-form">

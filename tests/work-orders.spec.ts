@@ -254,7 +254,9 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     // QR·링크로 들어오면 관리자라도 지시서를 "보는" 것이다. 복사·취소·QR·전달 상태는 없다.
     await page.goto(path + "?via=qr");
     await expect(page.getByText("오늘 회차", { exact: false })).toBeVisible();
-    await expect(page.getByRole("button", { name: "복사" })).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "복사 후 재발행", exact: true }),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "지시서 취소", exact: true }),
     ).toHaveCount(0);
@@ -341,8 +343,22 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(
       page.getByRole("link", { name: /화면검증 작업/ }),
     ).toBeVisible();
+    // 새 작업지시 화면에서 이전 지시서를 골라도 같은 복사다 (?copy=).
+    await page.goto("/work-orders/new");
+    const pastDialog = page.getByRole("dialog");
+    await expect(async () => {
+      await page
+        .getByRole("button", { name: "이전 지시서 불러오기", exact: true })
+        .click();
+      await expect(pastDialog).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 15000 });
+    await page.screenshot({ path: testInfo.outputPath("past-orders.png") });
+    await pastDialog.getByRole("link", { name: /화면검증 작업/ }).click();
+    await expect(page).toHaveURL(new RegExp("/work-orders/new\\?copy=" + id));
     await page.goto(path);
-    await page.getByRole("link", { name: "복사", exact: true }).click();
+    await page
+      .getByRole("link", { name: "복사 후 재발행", exact: true })
+      .click();
     await page
       .locator(".jump-nav")
       .getByRole("link", { name: "일정·인원", exact: true })

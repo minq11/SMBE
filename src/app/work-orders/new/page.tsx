@@ -8,6 +8,7 @@ import {
   orderMembers,
   orderDetail,
   listLocationSuggestions,
+  listOrdersForCopy,
 } from "@/server/work-orders";
 import {
   getStandardForPrefill,
@@ -27,9 +28,10 @@ export default async function NewOrderPage({
 }) {
   const { session, actor } = await workSession("/work-orders/new", true);
   const { copy, standard: standardParam } = await searchParams;
-  const [members, locations] = await Promise.all([
+  const [members, locations, pastOrders] = await Promise.all([
     orderMembers(actor),
     listLocationSuggestions(actor.companyId),
+    listOrdersForCopy(actor),
   ]);
 
   // 판단 기준은 회사가 정한 값을 쓴다. 화면에서는 읽기 전용이고,
@@ -122,13 +124,13 @@ export default async function NewOrderPage({
   return (
     <OrderShell
       session={session}
-      title={copy ? "작업지시 복사" : "새 작업지시"}
+      title={copy ? "복사 후 재발행" : "새 작업지시"}
     >
       <WorkOrderForm
         criteria={companyCriteria}
         id={randomUUID()}
         revision={0}
-        title={copy ? "작업지시 복사" : "새 작업지시"}
+        title={copy ? "복사 후 재발행" : "새 작업지시"}
         description={
           copy
             ? "작업일과 승인·발급 정보는 초기화됩니다. 평가일·위험요인·참여자와 배정 인원을 다시 확인하세요."
@@ -139,6 +141,7 @@ export default async function NewOrderPage({
         standards={standards}
         initialStandardId={initialStandardId}
         locations={locations}
+        pastOrders={pastOrders}
         userId={session.user.id}
       />
     </OrderShell>

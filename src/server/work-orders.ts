@@ -21,7 +21,11 @@ export type LocationSuggestion = { id: string; label: string };
 export async function listLocationSuggestions(
   companyId: string,
 ): Promise<LocationSuggestion[]> {
-  const rows = await query<{ id: string; name: string; path_cache: string | null }>(
+  const rows = await query<{
+    id: string;
+    name: string;
+    path_cache: string | null;
+  }>(
     `SELECT id, name, path_cache
        FROM work_locations
       WHERE company_id = $1 AND disabled_at IS NULL
@@ -65,6 +69,37 @@ export type OrderSummary = {
   assessment_status: string | null;
   revision: number;
 };
+/**
+ * 복사할 이전 지시서 목록 (관리자). 작성 중 초안은 뺀다 — 복사할 게 아니라 이어 쓸
+ * 것이다. 최근 200건, 이름 검색은 화면(고르는 창)에서 한다.
+ */
+export type CopySourceOrder = {
+  id: string;
+  name: string;
+  status: OrderStatus;
+  start_date: string | null;
+  end_date: string | null;
+  location: string;
+  standard_name: string | null;
+};
+export async function listOrdersForCopy(actor: Actor) {
+  return withTransaction(async (client) => {
+    const access = await memberAccess(client, actor);
+    if (access.role === "WORKER") return [] as CopySourceOrder[];
+    const { rows } = await client.query<CopySourceOrder>(
+      `SELECT w.id, w.name, w.status,
+         w.work_period_start::text AS start_date, w.work_period_end::text AS end_date,
+         coalesce(w.location_free_text, w.draft_data->>'location', '') AS location,
+         (SELECT s.payload->>'standard_name' FROM work_order_snapshots s
+           WHERE s.work_order_id=w.id AND s.snapshot_kind='STANDARD_META' LIMIT 1) AS standard_name
+       FROM work_orders w
+       WHERE w.company_id=$1 AND w.deleted_at IS NULL AND w.status <> 'DRAFT'
+       ORDER BY w.created_at DESC LIMIT 200`,
+      [actor.companyId],
+    );
+    return rows;
+  });
+}
 export async function listOrders(
   actor: Actor,
   tab = "all",

@@ -301,7 +301,7 @@ export default async function OrderDetailPage({
                   className="btn-secondary"
                   href={"/work-orders/new?copy=" + id}
                 >
-                  <Copy size={14} /> 복사
+                  <Copy size={14} /> 복사 후 재발행
                 </Link>
                 {active && (
                   <CancelOrderButton id={id} revision={order.revision} />

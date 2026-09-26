@@ -218,12 +218,28 @@
 .wo-ptw .seg-row {
   max-width: 320px;
 }
+/* 작성 화면 머리말 줄: 왼쪽 안내 문구, 오른쪽 [이전 지시서 불러오기] */
+.wo-editor-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin: 0 0 24px;
+}
 .wo-editor-lead {
   color: var(--ink-3);
   font-size: 13px;
   line-height: 1.7;
   max-width: 62ch;
-  margin: 0 0 24px;
+  margin: 0;
+}
+.wo-past-open {
+  margin-left: auto;
+}
+.wo-std-option:is(a) {
+  color: inherit;
+  text-decoration: none;
 }
 /* 이 기기에 남아 있던 미저장 입력을 이어 쓸지 묻는 띠 */
 .wo-restore {
