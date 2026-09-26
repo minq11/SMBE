@@ -79,7 +79,8 @@
   border-color: var(--brand);
 }
 .insp-row[aria-current] {
-  border-color: var(--brand);
+  border-color: var(--line);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .insp-row .stat-strip {
   margin-left: auto;
@@ -278,7 +279,7 @@
 .wo-sessions {
   margin: 8px 0 16px;
 }
-/* 회차가 없을 때의 빈 자리. 노란 점선 칸 전체가 단추 — 채워야 할 곳이 보인다. */
+/* 회차가 없을 때의 빈 자리. 빨간 점선 칸 전체가 단추 — 빠진 것은 빨강이다. */
 .wo-sessions-empty {
   display: flex;
   flex-direction: column;
@@ -287,10 +288,10 @@
   width: 100%;
   min-height: 96px;
   padding: 18px 16px;
-  border: 1.5px dashed var(--accent);
+  border: 1.5px dashed var(--danger);
   border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+  background: var(--danger-soft);
+  color: var(--danger);
   text-align: center;
   cursor: pointer;
   font: inherit;
@@ -302,7 +303,6 @@
   font-size: 13px;
 }
 .wo-sessions-empty:hover {
-  background: var(--accent-soft);
   filter: brightness(0.98);
 }
 .wo-sessions-head {
@@ -499,8 +499,8 @@
   margin: 24px 0;
   font-size: 13px;
 }
-.wo-summary dd[data-tone="warn"] {
-  color: var(--accent-ink);
+.wo-summary dd[data-tone="danger"] {
+  color: var(--danger);
   font-weight: 700;
 }
 .wo-summary dt {
@@ -517,10 +517,12 @@
   align-items: center;
   margin: 24px 0 0;
 }
+/* 알림 띠. 기본은 회색 — 노랑은 경고색이 아니라 포인트(오늘)라 여기 쓰지 않는다.
+   저장됨 초록, 막힘·취소 빨강, 안내 파랑 (data-tone). */
 .wo-notice {
   padding: 16px;
-  border-left: 3px solid var(--accent);
-  background: var(--accent-soft);
+  border-left: 3px solid var(--ink-4);
+  background: var(--surface-2);
   font-size: 13px;
   line-height: 1.8;
   margin: 20px 0;
@@ -1028,7 +1030,7 @@
 .stat-strip strong[data-tone="ok"] {
   color: var(--ok);
 }
-.stat-strip strong[data-tone="warn"] {
+.stat-strip strong[data-tone="accent"] {
   color: var(--accent-ink);
 }
 .stat-strip strong[data-tone="danger"] {
@@ -1071,8 +1073,8 @@
 .wo-statuses strong[data-tone="ok"] a {
   color: var(--ok);
 }
-.wo-statuses strong[data-tone="warn"],
-.wo-statuses strong[data-tone="warn"] a {
+.wo-statuses strong[data-tone="accent"],
+.wo-statuses strong[data-tone="accent"] a {
   color: var(--accent-ink);
 }
 .wo-statuses strong[data-tone="danger"],
@@ -1083,7 +1085,7 @@
 .wo-statuses strong[data-tone="info"] a {
   color: var(--info);
 }
-/* 알림 띠: 기본은 노랑(봐라). 저장됨은 초록, 취소·오류는 빨강, 안내는 파랑. */
+/* 알림 띠의 상태색 */
 .wo-notice[data-tone="ok"] {
   border-left-color: var(--ok);
   background: var(--ok-soft);
@@ -1128,6 +1130,7 @@
 /* 오늘 회차 카드 (inspection-summary.tsx): 한 줄 요약 + 단추 둘 */
 .tbm-today {
   border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
   border-radius: var(--radius);
   background: var(--surface);
   padding: 16px 18px;

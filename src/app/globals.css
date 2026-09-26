@@ -6608,10 +6608,15 @@ fieldset.form-field legend {
   background: var(--danger-soft);
   color: var(--danger);
 }
-.wo-risk-level[data-level="MID"],
-.wo-risk-level[data-tone="warn"] {
+/* 위험성 "중" 만 노란 바탕 — 위험 매트릭스 관례(상 빨강 · 중 노랑 · 하 초록). */
+.wo-risk-level[data-level="MID"] {
   background: var(--accent-soft);
   color: var(--accent-ink);
+}
+/* 포인트 노랑: 로고의 점처럼 "지금·여기" (오늘 회차). 흐린 바탕이 아니라 진한 칩. */
+.wo-risk-level[data-tone="accent"] {
+  background: var(--accent);
+  color: var(--ink);
 }
 .wo-risk-level[data-level="LOW"],
 .wo-risk-level[data-tone="ok"] {

@@ -58,10 +58,10 @@ export const SESSION_LABEL: Record<"FUTURE" | "TODAY" | "PAST", string> = {
   TODAY: "오늘",
   PAST: "지난 회차",
 };
-/** 회차 배지 색: 오늘 파랑, 예정·지난은 회색. */
+/** 회차 배지 색: 오늘은 포인트 노랑(지금·여기), 예정·지난은 회색. */
 export const SESSION_TONE: Record<"FUTURE" | "TODAY" | "PAST", string> = {
   FUTURE: "plain",
-  TODAY: "info",
+  TODAY: "accent",
   PAST: "plain",
 };
 

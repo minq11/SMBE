@@ -325,7 +325,7 @@ export default async function OrderDetailPage({
                   ? "plain"
                   : permit?.status === "APPROVED"
                     ? "ok"
-                    : "warn"
+                    : "info"
               }
             >
               {d.ptwRequired ? (
@@ -351,7 +351,7 @@ export default async function OrderDetailPage({
                     ? "plain"
                     : todayDone >= todaySession.expected_assignees.length
                       ? "ok"
-                      : "warn"
+                      : "info"
               }
             >
               {order.status === "CANCELED"

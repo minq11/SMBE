@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
-export type Tone = "ok" | "warn" | "danger" | "info" | "plain";
+/** ok 끝났다 · danger 문제/빠짐 · info 진행/대기 · accent 지금·여기(포인트 노랑) */
+export type Tone = "ok" | "danger" | "info" | "accent" | "plain";
 
 /**
  * 성격이 다른 값들은 문장으로 잇지 않는다 ("관리자 · 웹 · 사후 입력" 식).

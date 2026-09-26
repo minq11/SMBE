@@ -107,7 +107,7 @@ export default async function InspectionPage({
         : "점검 기록";
   const ptwWarn =
     data.order.ptw_required && permit?.status !== "APPROVED" ? (
-      <p className="wo-notice">
+      <p className="wo-notice" data-tone="danger">
         <Link href={"/work-orders/" + id + "/permit"}>
           PTW 미승인 · 허가 상태 확인
         </Link>
@@ -135,7 +135,7 @@ export default async function InspectionPage({
             targetState?.state === "PAST" && {
               label: "구분",
               value: "지난 회차",
-              tone: "warn",
+              tone: "info",
             },
           ]}
         />
@@ -246,7 +246,7 @@ export default async function InspectionPage({
               label: "TBM",
               value: `${tbmDone}/${focused.expected_assignees.length}명`,
               tone:
-                tbmDone >= focused.expected_assignees.length ? "ok" : "warn",
+                tbmDone >= focused.expected_assignees.length ? "ok" : "info",
             },
             state.state !== "FUTURE" && {
               label: "작업 중 점검",
@@ -256,7 +256,7 @@ export default async function InspectionPage({
             state.missing.length > 0 && {
               label: "TBM 미확인",
               value: state.missing.map((a) => a.name).join(", "),
-              tone: "warn",
+              tone: "danger",
             },
           ]}
         />
@@ -471,7 +471,7 @@ export default async function InspectionPage({
                       label: "TBM",
                       value: `${tbmDone}/${s.expected_assignees.length}명`,
                       tone:
-                        tbmDone >= s.expected_assignees.length ? "ok" : "warn",
+                        tbmDone >= s.expected_assignees.length ? "ok" : "info",
                     },
                     state.state !== "FUTURE" && {
                       label: "작업 중 점검",
@@ -502,7 +502,7 @@ export default async function InspectionPage({
                 {f.item_text}
                 <span
                   className="wo-risk-level"
-                  data-tone={f.status === "OPEN" ? "warn" : "ok"}
+                  data-tone={f.status === "OPEN" ? "danger" : "ok"}
                 >
                   {f.status === "OPEN" ? "조치대기" : "조치완료"}
                 </span>

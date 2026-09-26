@@ -57,7 +57,7 @@ export function InspectionSummary({
               {
                 label: "TBM",
                 value: `${current.expected_assignees.length - state!.missing.length}/${current.expected_assignees.length}명`,
-                tone: state!.missing.length === 0 ? "ok" : "warn",
+                tone: state!.missing.length === 0 ? "ok" : "info",
               },
               {
                 label: "작업 중 점검",
@@ -67,7 +67,7 @@ export function InspectionSummary({
               state!.missing.length > 0 && {
                 label: "TBM 미확인",
                 value: state!.missing.map((a) => a.name).join(", "),
-                tone: "warn",
+                tone: "danger",
               },
             ]}
           />
