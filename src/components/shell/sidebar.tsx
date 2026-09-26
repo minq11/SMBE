@@ -67,7 +67,8 @@ export type NavKey =
   | "locations"
   | "criteria"
   | "notices"
-  | "resources";
+  | "resources"
+  | "help";
 
 type NavEntry = {
   key: NavKey;
@@ -348,17 +349,10 @@ export function Sidebar({
           <span aria-hidden="true">🇰🇷</span>
           한국어
         </button>
-        <button
-          type="button"
-          className="sidebar-support"
-          onClick={() => {
-            onClose();
-            preview("도움말");
-          }}
-        >
+        <Link href="/help" className="sidebar-support" onClick={onClose}>
           <HelpCircle size={15} />
           도움말
-        </button>
+        </Link>
         {isAuthenticated && (
           <form action={logoutAction} className="sidebar-logout">
             <button type="submit">

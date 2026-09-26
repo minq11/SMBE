@@ -281,12 +281,34 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
     await expect(page).toHaveURL(/billing/);
     await expect(page.locator("body")).not.toHaveClass(/sidebar-lock/);
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
+    // 도움말은 실제 화면이다. 세 단계·자주 묻는 것·서비스 제공자가 한 장에.
     await page
       .getByRole("dialog", { name: "주 메뉴" })
-      .getByRole("button", { name: "도움말" })
+      .getByRole("link", { name: "도움말" })
       .click();
+    await expect(page).toHaveURL(/\/help$/);
     await expect(page.getByRole("dialog", { name: "주 메뉴" })).toHaveCount(0);
-    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "시작은 세 단계" }),
+    ).toBeVisible();
+    await expect(page.getByText("202-26-98342")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "개인정보 처리방침" }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: test.info().outputPath("help.png"),
+      fullPage: true,
+    });
+    // 본문이 스크롤 영역이라 전체 캡처가 안 잡힌다 — 사업자 표시는 따로 본다.
+    await page.locator(".help-provider").scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: test.info().outputPath("help-provider.png"),
+    });
   } finally {
     await pool.end();
   }

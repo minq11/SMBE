@@ -5911,6 +5911,128 @@ fieldset.form-field legend {
   margin: 8px 0 0;
   color: var(--ink-4);
 }
+/* 도움말 (features/help). 세 단계 · 자주 묻는 것 · 더 보기 · 서비스 제공자. */
+.help {
+  max-width: 760px;
+}
+.help-section {
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+}
+.help-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.help-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 19px;
+  margin: 0 0 16px;
+}
+.help-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.help-steps li {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.help-step-no {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.help-steps h3 {
+  font-size: 15px;
+  margin: 3px 0 4px;
+}
+.help-steps p {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.help-faq {
+  margin-bottom: 8px;
+}
+.help-faq > summary {
+  color: var(--ink);
+  font-size: 14.5px;
+}
+.help-faq p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+.help-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.help-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+.help-link:hover {
+  border-color: var(--brand);
+}
+.help-link svg {
+  color: var(--brand);
+  flex-shrink: 0;
+}
+.help-link span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.help-link small {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.help-provider h2 {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.help-provider .wo-facts {
+  font-size: 13px;
+}
+.help-legal {
+  display: flex;
+  gap: 14px;
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+.help-legal a {
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* 약관·처리방침 (features/legal). 읽는 글이라 폭 좁게, 조문은 번호 목록. */
 .legal-doc {
   font-size: 14px;
