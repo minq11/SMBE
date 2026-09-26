@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { Copy } from "lucide-react";
+import { BookOpen, Copy } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { workSession, orderDetail, orderMembers } from "@/server/work-orders";
@@ -393,16 +393,24 @@ export default async function OrderDetailPage({
         </div>
         <section {...panel("info")}>
           <h2>작업 정보</h2>
+          {/* 표준서가 맨 위 — 이 지시서가 어디서 왔는지가 첫 사실이고, 작업자가
+              작업 순서·사진을 보러 갈 곳이다. 작업방법은 긴 글이라 줄 목록 밑에 따로. */}
           <Facts
             rows={[
-              [
-                "작업방법",
-                <span className="wo-detail-text" key="m">
-                  {typeof method === "string"
-                    ? method
-                    : d.method || "작업방법 미입력"}
-                </span>,
-              ],
+              linkedStandardId && linkedHref
+                ? [
+                    "표준서",
+                    <span key="s">
+                      <Link href={linkedHref} className="wo-standard-link">
+                        <BookOpen size={14} />
+                        {linkedStandardName ?? "표준서 열기"}
+                      </Link>
+                      {!linkedIsCurrent && linked?.current_revision_no
+                        ? ` (그 뒤 ${linked.current_revision_no}판으로 개정됨)`
+                        : ""}
+                    </span>,
+                  ]
+                : ["표준서", "없음 · 간이 위험성평가"],
               ["장소", d.location || "미입력"],
               d.groupLabel ? ["조", d.groupLabel] : null,
               [
@@ -423,22 +431,15 @@ export default async function OrderDetailPage({
                   "불필요"
                 ),
               ],
-              linkedStandardId && linkedHref
-                ? [
-                    "표준서",
-                    <span key="s">
-                      <Link href={linkedHref}>
-                        {linkedStandardName ?? "열기"}
-                      </Link>
-                      {!linkedIsCurrent && linked?.current_revision_no
-                        ? ` (그 뒤 ${linked.current_revision_no}판으로 개정됨)`
-                        : ""}
-                    </span>,
-                  ]
-                : null,
               order.issued_at ? ["발급", shortTime(order.issued_at)] : null,
             ]}
           />
+          <h3>작업방법</h3>
+          <p className="wo-detail-text">
+            {typeof method === "string"
+              ? method
+              : d.method || "작업방법 미입력"}
+          </p>
         </section>
         <details {...fold("risk")}>
           <summary>

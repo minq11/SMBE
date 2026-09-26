@@ -925,6 +925,13 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+/* 표준서 링크: 책 아이콘과 이름. 지시서에서 표준서로 건너가는 유일한 문이라 눈에 띄게. */
+.wo-standard-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
 /* 발급된 지시서는 한 장. 구간 칩(.jump-nav)이 위에, 구간은 앵커로 내려앉는다. */
 .wo-print .jump-nav {
   margin-bottom: 8px;
