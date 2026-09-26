@@ -26,7 +26,7 @@ test("public screens carry the business footer and it fits a narrow phone", asyn
 }, testInfo) => {
   // 사업자 표시(전자상거래법)는 로그인 전 화면 하단에만. 320px 에서도 옆으로 안 넘친다.
   await page.setViewportSize({ width: 320, height: 720 });
-  for (const route of ["/", "/login", "/guide"]) {
+  for (const route of ["/", "/login", "/guide", "/terms", "/privacy"]) {
     await page.goto(route);
     const footer = page.locator(".site-footer");
     await expect(footer).toContainText("202-26-98342");
@@ -39,6 +39,18 @@ test("public screens carry the business footer and it fits a narrow phone", asyn
   }
   await page.locator(".site-footer").scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath("public-footer.png") });
+  // 로그인 화면이 가리키는 약관·처리방침이 실제 화면이다.
+  await page.goto("/terms");
+  await expect(page.getByRole("heading", { name: "이용약관" })).toBeVisible();
+  await page.goto("/privacy");
+  await expect(
+    page.getByRole("heading", { name: "개인정보 처리방침" }),
+  ).toBeVisible();
+  await expect(page.getByText("개인정보 보호책임자")).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("privacy.png"),
+    fullPage: true,
+  });
 });
 
 test("anonymous membership and invite pages require login", async ({

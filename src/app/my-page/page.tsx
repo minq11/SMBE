@@ -99,7 +99,13 @@ export default async function MyPage({
             <dd>
               <a href={"mailto:" + BUSINESS.email}>{BUSINESS.email}</a>
             </dd>
+            <dt>호스팅</dt>
+            <dd>{BUSINESS.hosting}</dd>
           </dl>
+          <p className="account-muted">
+            <Link href="/terms">이용약관</Link> ·{" "}
+            <Link href="/privacy">개인정보 처리방침</Link>
+          </p>
         </section>
         <section className="account-panel">
           <h2>로그인 계정</h2>

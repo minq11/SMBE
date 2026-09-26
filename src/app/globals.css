@@ -5894,9 +5894,115 @@ fieldset.form-field legend {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 10px 0 0;
+}
+.site-footer-links a {
+  text-decoration: none;
+  color: var(--ink-2);
+}
+.site-footer-links strong {
+  font-weight: 700;
+}
 .site-footer-copy {
   margin: 8px 0 0;
   color: var(--ink-4);
+}
+/* 약관·처리방침 (features/legal). 읽는 글이라 폭 좁게, 조문은 번호 목록. */
+.legal-doc {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.legal-doc h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 4px;
+}
+.legal-meta {
+  color: var(--ink-3);
+  font-size: 13px;
+  margin: 0 0 24px;
+}
+.legal-doc h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 28px 0 8px;
+}
+.legal-doc p {
+  margin: 0 0 10px;
+}
+.legal-doc ol,
+.legal-doc ul {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+.legal-doc li {
+  margin: 4px 0;
+}
+.legal-doc li ul {
+  margin-top: 4px;
+}
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 8px 0 12px;
+}
+.legal-table th,
+.legal-table td {
+  border-top: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.legal-table th {
+  color: var(--ink-3);
+  font-weight: 600;
+  background: var(--surface-2);
+}
+.legal-table tr:last-child td {
+  border-bottom: 1px solid var(--line);
+}
+.legal-contact {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 16px;
+  margin: 0 0 10px;
+}
+.legal-contact dt {
+  color: var(--ink-3);
+}
+.legal-contact dd {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .legal-table thead {
+    display: none;
+  }
+  .legal-table tr,
+  .legal-table td {
+    display: block;
+    border: 0;
+  }
+  .legal-table tr {
+    border-top: 1px solid var(--line);
+    padding: 8px 0;
+  }
+  .legal-table td {
+    padding: 2px 0;
+  }
+  .legal-table td:first-child {
+    font-weight: 700;
+  }
+  .legal-table tr:last-child td {
+    border-bottom: 0;
+  }
 }
 /* 로그인 전 홈은 본문(.main-content) 안이라 옆 여백을 본문에 맞춘다. */
 .main-content > .site-footer {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BUSINESS } from "@/lib/business";
 
 /**
@@ -22,7 +23,14 @@ export function SiteFooter() {
         <li>
           <a href={"mailto:" + BUSINESS.email}>{BUSINESS.email}</a>
         </li>
+        <li>호스팅 {BUSINESS.hosting}</li>
       </ul>
+      <p className="site-footer-links">
+        <Link href="/terms">이용약관</Link>
+        <Link href="/privacy">
+          <strong>개인정보 처리방침</strong>
+        </Link>
+      </p>
       <p className="site-footer-copy">
         © {new Date().getFullYear()} {BUSINESS.name} · {BUSINESS.service}
       </p>
