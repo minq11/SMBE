@@ -875,6 +875,10 @@
 .wo-print .jump-nav {
   margin-bottom: 8px;
 }
+/* 칩 띠의 밑선과 첫 구간의 윗선이 겹쳐 두 줄로 보였다. 첫 구간은 선 없이. */
+.wo-print .wo-no-print:has(> .jump-nav) + .wo-section {
+  border-top: 0;
+}
 .wo-print .wo-section {
   scroll-margin-top: 16px;
 }
@@ -1179,6 +1183,66 @@
      밑에 온다. */
   .wo-part {
     scroll-margin-top: 68px;
+  }
+  /* 좁은 화면의 세로 간격은 한 자(16px)로 맞춘다. 블록 사이 16px, 구간 안 20px.
+     붙은 것은 붙고 떨어진 것은 떨어져 보여야 한다 (헌법 1장). */
+  .wo-statuses {
+    gap: 14px 16px;
+    padding: 16px 0;
+    margin: 16px 0;
+  }
+  .tbm-today {
+    padding: 14px 16px;
+    margin: 16px 0 20px;
+  }
+  .wo-notice {
+    margin: 16px 0;
+  }
+  .stat-strip {
+    gap: 10px 20px;
+    margin: 16px 0 0;
+  }
+  .stat-strip--compact {
+    margin: 0;
+  }
+  .wo-section {
+    padding: 20px 0;
+  }
+  .wo-print .wo-no-print:has(> .jump-nav) + .wo-section {
+    padding-top: 12px;
+  }
+  .wo-facts {
+    gap: 8px 14px;
+  }
+  .wo-facts--tight {
+    gap: 6px 12px;
+  }
+  .wo-actions {
+    margin-top: 16px;
+  }
+  .insp-session-actions {
+    margin: 16px 0 4px;
+  }
+  .insp-list {
+    gap: 10px;
+  }
+  .insp-row {
+    padding: 12px 14px;
+    gap: 8px 12px;
+  }
+  .inspection-record {
+    padding: 10px 0;
+  }
+  .wo-risk {
+    padding: 12px 14px 16px;
+    margin: 16px 0;
+  }
+  .wo-history-fold {
+    margin-top: 16px;
+  }
+  /* 지시서 상세는 .wo-print 한 덩어리 안이라 gap 이 없다. 머리말 밑은 상태 칸의 16px 로. */
+  .wo-print .page-header {
+    margin-bottom: 0;
   }
   /* 임시저장·발급은 화면 아래에 붙는다. 어디까지 내려갔든 엄지 자리는 같다. */
   .wo-editor .wo-actions {

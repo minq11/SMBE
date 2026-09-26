@@ -5077,6 +5077,34 @@ html[data-banner-hidden] .preview-banner {
   .page-header-lead {
     margin-top: 0;
   }
+  /* 좁은 화면의 머리말은 설명 → 단추 줄 순으로 쌓는다. 옆에 붙이면 설명이 단추
+     밑에 눌리고, 단추가 줄바꿈되면 사이가 들쭉날쭉했다. 간격은 12px 하나. */
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .page-header-side {
+    justify-content: flex-start;
+  }
+  .page-header .wo-actions {
+    margin: 0;
+  }
+  /* 본문(.main-content)이 flex gap(28px) 으로 블록 사이를 띄운다. 바로 밑에 놓인
+     블록의 제 여백까지 더해지면 두 배가 되므로, 직계 자식의 위아래 여백은 0. */
+  .main-content > .page-header,
+  .main-content > .wo-notice,
+  .main-content > .stat-strip,
+  .main-content > .tbm-today,
+  .main-content > .wo-actions,
+  .main-content > .wo-statuses {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .main-content > .page-header + .stat-strip {
+    margin-top: -12px;
+  }
   .loading-logo--fullscreen {
     min-height: 70vh;
   }
