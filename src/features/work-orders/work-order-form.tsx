@@ -132,7 +132,7 @@ export type LocationOption = { id: string; label: string };
 const PARTS = [
   { id: "wo-info", label: "작업 정보" },
   { id: "wo-risk", label: "위험성평가" },
-  { id: "wo-schedule", label: "일정·인원" },
+  { id: "wo-schedule", label: "일정·인원·장소" },
   { id: "wo-check", label: "체크리스트" },
 ];
 const NEW_STANDARD_HREF = `/standards/new?return=${encodeURIComponent("/work-orders/new")}`;
@@ -175,7 +175,7 @@ function openingDraft(
 }
 
 /**
- * 작성·편집 폼. 한 장이다: 작업 정보 → 위험성평가 → 일정·인원 → 체크리스트.
+ * 작성·편집 폼. 한 장이다: 작업 정보 → 위험성평가 → 일정·인원·장소 → 체크리스트.
  * 위의 구간 칩(JumpNav)이 좁은 화면에서 위에 붙고, 임시저장·발급은 아래에
  * 붙는다 (work-orders.css .wo-actions). 단계 마법사였을 때는 뒤 단계가 숨어
  * "위험요인 몇 개였지" 를 보러 이전을 두 번 눌러야 했고, 표준서에서 뭐가
@@ -960,7 +960,7 @@ export function WorkOrderForm({
                 </section>
 
                 <section className="wo-part" id="wo-schedule">
-                  <h2>일정·인원</h2>
+                  <h2>일정·인원·장소</h2>
                   <p className="wo-muted">
                     회차는 날짜마다 하나입니다. 주·야간조는 지시서를 따로
                     만드세요.
@@ -971,12 +971,15 @@ export function WorkOrderForm({
                       setData((d) => withSessionRange({ ...d, sessions }))
                     }
                   />
+                  {/* 작업 회차·작업자 배정과 같은 소제목. 장소 칸만 이름 없이 있으면
+                      회차 목록의 꼬리로 읽힌다. */}
+                  <div className="wo-sub-head">작업 장소</div>
                   {/* 등록 장소는 고르는 칸으로. datalist 는 아이폰에서 목록이 안 열리고
                       값이 있으면 목록을 걸러 버려, 고를 수 있는 칸으로 안 보였다. */}
                   {locations.length > 0 && (
                     <FloatSelect
                       id="wo-location-pick"
-                      label="작업 장소"
+                      label="장소 선택"
                       value={locationCustom ? CUSTOM_LOCATION : data.location}
                       onChange={(e) => {
                         const custom = e.target.value === CUSTOM_LOCATION;
@@ -996,11 +999,7 @@ export function WorkOrderForm({
                   {(locations.length === 0 || locationCustom) && (
                     <FloatField
                       id="wo-location"
-                      label={
-                        locations.length > 0
-                          ? "작업 장소 직접 입력"
-                          : "작업 장소"
-                      }
+                      label={locations.length > 0 ? "장소 직접 입력" : "장소"}
                       value={data.location}
                       maxLength={200}
                       onChange={(e) => set("location", e.target.value)}

@@ -231,7 +231,7 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
             page.getByRole("link", { name: "새 표준서 만들기" }),
           ).toBeVisible();
           await page.getByRole("button", { name: /표준서 없이 진행/ }).click();
-          for (const label of ["위험성평가", "일정·인원", "체크리스트"]) {
+          for (const label of ["위험성평가", "일정·인원·장소", "체크리스트"]) {
             await page.locator(".jump-nav a", { hasText: label }).click();
             await fits();
           }

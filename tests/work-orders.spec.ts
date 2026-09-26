@@ -139,7 +139,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(page.locator(".wo-session-hint").first()).toContainText(
       `${Number(mm)}/${Number(dd)} (`,
     );
-    await page.getByLabel("작업 장소", { exact: true }).fill("테스트 구역");
+    await page.getByLabel("장소", { exact: true }).fill("테스트 구역");
     // 작업자 배정은 팝업에서 고른다. 고른 사람은 칩으로 남는다.
     await page
       .locator("#wo-schedule")
@@ -361,7 +361,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       .click();
     await page
       .locator(".jump-nav")
-      .getByRole("link", { name: "일정·인원", exact: true })
+      .getByRole("link", { name: "일정·인원·장소", exact: true })
       .click();
     await expect(page.locator(".wo-session-row")).toHaveCount(0);
     await expect(

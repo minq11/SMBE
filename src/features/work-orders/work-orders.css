@@ -286,9 +286,14 @@
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
-.wo-sessions-title {
+.wo-sessions-title,
+.wo-sub-head {
   font-size: 14px;
   font-weight: 700;
+}
+/* 구간 안 소제목 (작업 장소). 작업 회차·작업자 배정과 같은 크기·무게. */
+.wo-sub-head {
+  margin: 20px 0 8px;
 }
 .wo-session-list {
   list-style: none;

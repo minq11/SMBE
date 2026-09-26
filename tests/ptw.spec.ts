@@ -231,7 +231,7 @@ test("PTW fields inside the work-order form: 지금 발급하기 requests, self-
     await expect(page.locator(".wo-session-row")).toHaveCount(1);
     // 등록 장소가 있으면 작업 장소는 고르는 칸이다.
     await page
-      .getByLabel("작업 장소", { exact: true })
+      .getByLabel("장소 선택", { exact: true })
       .selectOption({ label: "도장장" });
     await page
       .locator("#wo-schedule")
