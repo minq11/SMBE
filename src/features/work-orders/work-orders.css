@@ -1383,44 +1383,13 @@
     font-size: 15px;
     text-decoration: none;
   }
-  .wo-table td[data-label="기간·시간"],
-  .wo-table td[data-label="장소"],
-  .wo-table td[data-label="배정"] {
-    display: inline;
-    font-size: 13px;
-    color: var(--ink-2);
-  }
-  .wo-table td[data-label="기간·시간"]::before,
-  .wo-table td[data-label="장소"]::before,
-  .wo-table td[data-label="배정"]::before {
-    content: none;
-  }
-  .wo-table td[data-label="장소"]::before,
-  .wo-table td[data-label="배정"]::before {
-    content: " · ";
-    color: var(--ink-4);
-  }
-  .wo-table td[data-label="상태"] {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: inline-flex;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--surface-2);
-    color: var(--ink-2);
-    font-size: 12px;
-    font-weight: 700;
-  }
-  .wo-table td[data-label="상태"]::before {
-    content: none;
-  }
   /* 카드 전체가 눌리게 한다. 제목만 링크면 손가락으로 찾아 눌러야 한다. */
   .wo-table td[data-label="작업명"] a::after {
     content: "";
     position: absolute;
     inset: 0;
   }
+  /* 사실 줄: 이름표 왼쪽, 값 오른쪽 (헌법 1장 — 값을 점으로 잇지 않는다) */
   .wo-table td:not([data-label="작업명"]) {
     display: flex;
     align-items: baseline;
@@ -1433,6 +1402,21 @@
     flex-shrink: 0;
     color: var(--ink-3);
     font-size: 12px;
+  }
+  /* 상태는 오른쪽 위 배지 하나. 칩(.wo-risk-level)이 제 색을 갖고 있으니 칸은
+     자리만 잡는다 — 칸에 이름표·바탕을 또 주면 배지가 두 겹으로 보인다. */
+  .wo-table td[data-label="상태"] {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: block;
+    padding: 0;
+  }
+  .wo-table td[data-label="상태"]::before {
+    content: none;
+  }
+  .wo-table td[data-label="상태"] .wo-risk-level {
+    margin-left: 0;
   }
   .wo-table td small {
     display: inline;
