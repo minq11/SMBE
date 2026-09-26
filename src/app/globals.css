@@ -5861,6 +5861,48 @@ fieldset.form-field legend {
     flex-direction: column;
   }
 }
+/* 쪽 넘기기 (components/ui/pager.tsx, pager-client.tsx). 목록 아래 한 줄:
+   [‹ 이전]  2 / 5  [다음 ›]. 단추는 44px, 끝 쪽에서는 흐리게. */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0 0;
+}
+.pager-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.pager-btn:hover {
+  border-color: var(--brand);
+}
+.pager-btn[aria-disabled="true"],
+.pager-btn:disabled {
+  color: var(--ink-4);
+  cursor: default;
+  pointer-events: none;
+}
+.pager-pos {
+  min-width: 64px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
 /* 확인 창 (components/ui/confirm-dialog.tsx). 넓은 화면은 가운데 카드,
    좁은 화면은 아래에서 올라오는 시트 — 엄지가 닿는 자리에 버튼이 온다. */
 .confirm-dialog {

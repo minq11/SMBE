@@ -1,5 +1,7 @@
 "use client";
 
+import { ClientPager } from "@/components/ui/pager-client";
+import { pageOf } from "@/lib/paging";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -14,6 +16,12 @@ type Tab = "all" | "active" | "draft" | "archived";
 
 export function StandardsListView({ items }: { items: StandardListRow[] }) {
   const [tab, setTab] = useState<Tab>("all");
+  // 탭을 바꾸면 1쪽부터 — 탭마다 쪽을 따로 기억할 만큼 길지 않다.
+  const [page, setPage] = useState(1);
+  const pickTab = (t: Tab) => {
+    setTab(t);
+    setPage(1);
+  };
 
   const buckets = {
     active: items.filter((i) => i.status === "APPROVED"),
@@ -29,6 +37,7 @@ export function StandardsListView({ items }: { items: StandardListRow[] }) {
         : tab === "draft"
           ? buckets.draft
           : buckets.archived;
+  const paged = pageOf(filtered, page);
 
   return (
     <>
@@ -38,25 +47,25 @@ export function StandardsListView({ items }: { items: StandardListRow[] }) {
             label="전체"
             count={items.length}
             active={tab === "all"}
-            onClick={() => setTab("all")}
+            onClick={() => pickTab("all")}
           />
           <TabBtn
             label="확정됨"
             count={buckets.active.length}
             active={tab === "active"}
-            onClick={() => setTab("active")}
+            onClick={() => pickTab("active")}
           />
           <TabBtn
             label="작성 중"
             count={buckets.draft.length}
             active={tab === "draft"}
-            onClick={() => setTab("draft")}
+            onClick={() => pickTab("draft")}
           />
           <TabBtn
             label="폐기"
             count={buckets.archived.length}
             active={tab === "archived"}
-            onClick={() => setTab("archived")}
+            onClick={() => pickTab("archived")}
           />
         </div>
 
@@ -76,7 +85,7 @@ export function StandardsListView({ items }: { items: StandardListRow[] }) {
           </div>
         ) : (
           <ul className="row-list" role="list">
-            {filtered.map((item) => (
+            {paged.rows.map((item) => (
               <li key={item.standard_id}>
                 <Link href={`/standards/${item.standard_id}`} className="row">
                   <span className="std-row-icon">
@@ -111,6 +120,11 @@ export function StandardsListView({ items }: { items: StandardListRow[] }) {
             ))}
           </ul>
         )}
+        <ClientPager
+          page={paged.page}
+          pageCount={paged.pageCount}
+          onPage={setPage}
+        />
       </div>
     </>
   );

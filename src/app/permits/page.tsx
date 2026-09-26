@@ -3,6 +3,8 @@ import { workSession } from "@/server/work-orders";
 import { query } from "@/server/db";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PermitList } from "@/features/ptw/forms";
+import { Pager } from "@/components/ui/pager";
+import { pageOf, parsePage } from "@/lib/paging";
 import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
 import { seoulToday, type WorkDraft } from "@/features/work-orders/model";
 import "@/features/profile/profile.css";
@@ -19,6 +21,7 @@ export default async function PermitsPage({
     from?: string;
     to?: string;
     applicant?: string;
+    page?: string;
   }>;
 }) {
   const { session, actor } = await workSession("/permits", true);
@@ -53,6 +56,15 @@ export default async function PermitsPage({
         (!filters.applicant || p.applicant.includes(filters.applicant)),
     )
     .slice(0, 200);
+  const paged = pageOf(visible, parsePage(filters.page));
+  const hrefFor = (n: number) => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters))
+      if (v && k !== "page") q.set(k, v);
+    if (n > 1) q.set("page", String(n));
+    const qs = q.toString();
+    return "/permits" + (qs ? "?" + qs : "");
+  };
   return (
     <OrderShell session={session} title="위험작업허가">
       <PageHeader title="위험작업허가" />
@@ -112,10 +124,9 @@ export default async function PermitsPage({
         </label>
         <button className="secondary-button">조회</button>
       </form>
-      <p>작업 시작일 순으로 최대 200건 표시합니다.</p>
       {visible.length ? (
         <PermitList
-          rows={visible.map((p) => ({
+          rows={paged.rows.map((p) => ({
             orderId: p.work_order_id,
             revision: p.revision,
             name: p.name,
@@ -129,6 +140,7 @@ export default async function PermitsPage({
       ) : (
         <p>표시할 허가가 없습니다.</p>
       )}
+      <Pager page={paged.page} pageCount={paged.pageCount} hrefFor={hrefFor} />
     </OrderShell>
   );
 }

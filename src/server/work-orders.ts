@@ -9,6 +9,7 @@ import {
   type Actor,
 } from "./work-order-service";
 import type { OrderStatus } from "../features/work-orders/model";
+import { PAGE_SIZE } from "../lib/paging";
 import { inspectionSessions } from "./inspection-service";
 import { sessionState } from "../features/inspections/model";
 
@@ -147,17 +148,17 @@ export async function listOrders(
        FROM visible WHERE can_read
          AND ($5='all' OR ($5='draft' AND display_status='DRAFT')
            OR ($5='active' AND display_status IN ('ISSUED','IN_PROGRESS')))
-         AND name ILIKE $6 ORDER BY created_at DESC LIMIT 21 OFFSET $7`,
+         AND name ILIKE $6 ORDER BY created_at DESC LIMIT ${PAGE_SIZE + 1} OFFSET $7`,
       [
         ...params,
         tab,
         "%" + search.replace(/[\\%_]/g, "\\$&") + "%",
-        (page - 1) * 20,
+        (page - 1) * PAGE_SIZE,
       ],
     );
     return {
-      rows: rows.slice(0, 20),
-      hasMore: rows.length > 20,
+      rows: rows.slice(0, PAGE_SIZE),
+      hasMore: rows.length > PAGE_SIZE,
       locked: counts[0].locked,
       isManager: access.role !== "WORKER",
       pro: access.pro_state !== "FREE",

@@ -33,6 +33,8 @@ import {
 } from "@/features/inspections/model";
 import { clock, dayLabel, timeRange } from "@/features/inspections/format";
 import { Facts, StatStrip, type Tone } from "@/components/ui/facts";
+import { Pager } from "@/components/ui/pager";
+import { pageOf, parsePage } from "@/lib/paging";
 
 const ENTRY: Record<string, string> = { WEB: "웹", QR: "QR", LINK: "링크" };
 export default async function InspectionPage({
@@ -45,6 +47,7 @@ export default async function InspectionPage({
     via?: string;
     saved?: string;
     session?: string;
+    page?: string;
   }>;
 }) {
   const { id } = await params;
@@ -189,6 +192,10 @@ export default async function InspectionPage({
    * (시간·미확인·단추·그 회차의 기록·사후 입력). 한 화면에 다 펼치면 작업자가
    * 어디를 봐야 하는지 몰랐다 (사장님 결정). 2층은 `?session=` 로 연다.
    */
+  const sessionPage = pageOf(
+    orderSessionsForDisplay(data.sessions, now),
+    parsePage(query.page),
+  );
   const focused = query.session
     ? (data.sessions.find((s) => s.id === query.session) ?? null)
     : null;
@@ -447,7 +454,7 @@ export default async function InspectionPage({
           </p>
         )}
         <div className="insp-list">
-          {orderSessionsForDisplay(data.sessions, now).map((s) => {
+          {sessionPage.rows.map((s) => {
             const state = sessionState(s, now);
             const tbmDone = s.expected_assignees.length - state.missing.length;
             return (
@@ -489,6 +496,18 @@ export default async function InspectionPage({
             );
           })}
         </div>
+        <Pager
+          page={sessionPage.page}
+          pageCount={sessionPage.pageCount}
+          hrefFor={(n) =>
+            root +
+            (path === "WEB"
+              ? n > 1
+                ? "?page=" + n
+                : ""
+              : "?" + viaQ.slice(1) + (n > 1 ? "&page=" + n : ""))
+          }
+        />
       </section>
       {(data.findings.length > 0 || data.isManager) && (
         <section className="wo-section">

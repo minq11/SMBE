@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { Pager } from "@/components/ui/pager";
+import { parsePage } from "@/lib/paging";
 import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
@@ -17,10 +19,7 @@ export default async function WorkOrdersPage({
     ? params.tab!
     : "all";
   const q = (params.q ?? "").slice(0, 120);
-  const page = Math.max(
-    1,
-    Math.min(100000, Number.parseInt(params.page ?? "1") || 1),
-  );
+  const page = parsePage(params.page);
   const result = await listOrders(actor, tab, q, page);
   const href = (p: number) =>
     "/work-orders?" + new URLSearchParams({ tab, q, page: String(p) });
@@ -161,19 +160,7 @@ export default async function WorkOrdersPage({
           </p>
         </div>
       )}
-      <nav className="wo-actions" aria-label="페이지 이동">
-        {page > 1 && (
-          <Link className="btn-secondary" href={href(page - 1)}>
-            <ArrowLeft size={14} /> 이전
-          </Link>
-        )}
-        <span>{page}페이지</span>
-        {result.hasMore && (
-          <Link className="btn-secondary" href={href(page + 1)}>
-            다음 <ArrowRight size={14} />
-          </Link>
-        )}
-      </nav>
+      <Pager page={page} hasMore={result.hasMore} hrefFor={href} />
     </OrderShell>
   );
 }

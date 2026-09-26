@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { ClientPager } from "@/components/ui/pager-client";
+import { pageOf } from "@/lib/paging";
 import { useState, useTransition } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Check, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
@@ -58,6 +60,12 @@ export function MembersView({
   const [tab, setTab] = useState<Tab>(
     overview.pending_count > 0 ? "pending" : "active",
   );
+  // 탭을 바꾸면 1쪽부터 — 탭마다 쪽을 따로 기억할 만큼 길지 않다.
+  const [page, setPage] = useState(1);
+  const pickTab = (t: Tab) => {
+    setTab(t);
+    setPage(1);
+  };
 
   const grouped = {
     active: members.filter((m) => m.status === "ACTIVE" && !m.left_at),
@@ -66,6 +74,7 @@ export function MembersView({
   };
 
   const rows = grouped[tab];
+  const paged = pageOf(rows, page);
 
   return (
     <>
@@ -84,20 +93,20 @@ export function MembersView({
             label="재직"
             count={grouped.active.length}
             active={tab === "active"}
-            onClick={() => setTab("active")}
+            onClick={() => pickTab("active")}
           />
           <TabButton
             label="가입 승인 대기"
             count={grouped.pending.length}
             active={tab === "pending"}
-            onClick={() => setTab("pending")}
+            onClick={() => pickTab("pending")}
             highlight={grouped.pending.length > 0}
           />
           <TabButton
             label="퇴사자"
             count={grouped.resigned.length}
             active={tab === "resigned"}
-            onClick={() => setTab("resigned")}
+            onClick={() => pickTab("resigned")}
           />
         </div>
 
@@ -107,7 +116,7 @@ export function MembersView({
           </div>
         ) : (
           <ul className="row-list" role="list">
-            {rows.map((row) => (
+            {paged.rows.map((row) => (
               <li key={row.member_id}>
                 <MemberRowView
                   row={row}
@@ -119,6 +128,11 @@ export function MembersView({
             ))}
           </ul>
         )}
+        <ClientPager
+          page={paged.page}
+          pageCount={paged.pageCount}
+          onPage={setPage}
+        />
       </div>
     </>
   );

@@ -7,6 +7,8 @@ import { inspectionMonitor } from "@/server/inspection-service";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { FloatField, FloatSelect } from "@/components/ui/float-field";
 import { PageHeader } from "@/components/ui/page-header";
+import { Pager } from "@/components/ui/pager";
+import { pageOf, parsePage } from "@/lib/paging";
 import { PERMIT_LABEL } from "@/features/ptw/model";
 import "@/features/work-orders/work-orders.css";
 
@@ -23,7 +25,7 @@ const at = (value: string) =>
 export default async function MonitoringPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; location?: string }>;
+  searchParams: Promise<{ date?: string; location?: string; page?: string }>;
 }) {
   const filters = await searchParams;
   const { session, actor } = await workSession("/monitoring", true);
@@ -34,6 +36,7 @@ export default async function MonitoringPage({
       location: filters.location,
     }),
   );
+  const paged = pageOf(data.rows, parsePage(filters.page));
 
   return (
     <OrderShell session={session} title="점검 모니터링" active="monitoring">
@@ -132,7 +135,7 @@ export default async function MonitoringPage({
             </p>
             {!data.summary.sessions && <p>이 날짜에 도는 작업이 없습니다.</p>}
             <ul className="monitor-list" role="list">
-              {data.rows.map((row) => {
+              {paged.rows.map((row) => {
                 const done =
                   row.expected_assignees.length > 0 &&
                   !row.missing.length &&
@@ -189,6 +192,18 @@ export default async function MonitoringPage({
                 );
               })}
             </ul>
+            <Pager
+              page={paged.page}
+              pageCount={paged.pageCount}
+              hrefFor={(n) => {
+                const q = new URLSearchParams();
+                if (filters.date) q.set("date", filters.date);
+                if (filters.location) q.set("location", filters.location);
+                if (n > 1) q.set("page", String(n));
+                const qs = q.toString();
+                return "/monitoring" + (qs ? "?" + qs : "");
+              }}
+            />
           </section>
         </>
       )}

@@ -1,5 +1,7 @@
 "use client";
 
+import { ClientPager } from "@/components/ui/pager-client";
+import { pageOf } from "@/lib/paging";
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ClipboardList, FileText, ShieldCheck } from "lucide-react";
@@ -14,6 +16,12 @@ type Tab = "all" | "valid" | "action" | "expired";
  */
 export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
   const [tab, setTab] = useState<Tab>("all");
+  // 탭을 바꾸면 1쪽부터 — 탭마다 쪽을 따로 기억할 만큼 길지 않다.
+  const [page, setPage] = useState(1);
+  const pickTab = (t: Tab) => {
+    setTab(t);
+    setPage(1);
+  };
   const buckets = {
     valid: items.filter((i) => i.status === "APPROVED" && !i.expired),
     action: items.filter(
@@ -29,6 +37,7 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
         : tab === "action"
           ? buckets.action
           : buckets.expired;
+  const paged = pageOf(filtered, page);
 
   return (
     <div className="stack">
@@ -37,26 +46,26 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
           label="전체"
           count={items.length}
           active={tab === "all"}
-          onClick={() => setTab("all")}
+          onClick={() => pickTab("all")}
         />
         <TabBtn
           label="유효"
           count={buckets.valid.length}
           active={tab === "valid"}
-          onClick={() => setTab("valid")}
+          onClick={() => pickTab("valid")}
         />
         <TabBtn
           label="조치 필요"
           count={buckets.action.length}
           active={tab === "action"}
           highlight={buckets.action.length > 0}
-          onClick={() => setTab("action")}
+          onClick={() => pickTab("action")}
         />
         <TabBtn
           label="만료"
           count={buckets.expired.length}
           active={tab === "expired"}
-          onClick={() => setTab("expired")}
+          onClick={() => pickTab("expired")}
         />
       </div>
 
@@ -67,7 +76,9 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
               <ShieldCheck size={22} />
             </span>
             <strong>
-              {tab === "all" ? "아직 위험성평가가 없어요" : "해당하는 위험성평가가 없어요"}
+              {tab === "all"
+                ? "아직 위험성평가가 없어요"
+                : "해당하는 위험성평가가 없어요"}
             </strong>
             <p>
               {tab === "all"
@@ -78,7 +89,7 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
         </div>
       ) : (
         <ul className="row-list" role="list">
-          {filtered.map((a) => (
+          {paged.rows.map((a) => (
             <li key={a.id}>
               <Link href={`/assessments/${a.id}`} className="row">
                 <span className="std-row-icon">
@@ -91,9 +102,10 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
                 <span className="row-main">
                   <strong>{a.name}</strong>
                   <small>
-                    {KIND_SHORT[a.kind]} 위험성평가 · {shortDate(a.performed_on)} ·{" "}
-                    {a.is_simple ? "지시서 간이 위험성평가" : "표준서"} · 위험요인{" "}
-                    {a.item_count}
+                    {KIND_SHORT[a.kind]} 위험성평가 ·{" "}
+                    {shortDate(a.performed_on)} ·{" "}
+                    {a.is_simple ? "지시서 간이 위험성평가" : "표준서"} ·
+                    위험요인 {a.item_count}
                   </small>
                 </span>
                 <span className="row-meta">
@@ -119,6 +131,11 @@ export function AssessmentsListView({ items }: { items: AssessmentRow[] }) {
           ))}
         </ul>
       )}
+      <ClientPager
+        page={paged.page}
+        pageCount={paged.pageCount}
+        onPage={setPage}
+      />
     </div>
   );
 }

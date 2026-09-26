@@ -4,6 +4,8 @@ import { FolderOpen, Megaphone, Paperclip, PenLine } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { listPosts } from "@/server/board";
+import { Pager } from "@/components/ui/pager";
+import { pageOf, parsePage } from "@/lib/paging";
 import { PageHeader } from "@/components/ui/page-header";
 import { BoardShell } from "@/features/board/board-shell";
 import { createPostAction } from "@/features/board/actions";
@@ -34,16 +36,20 @@ const DESCRIPTION = {
 
 export default async function BoardListPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ kind: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { kind } = await params;
+  const { page: pageParam } = await searchParams;
   if (!isKindSlug(kind)) notFound();
   const { session, actor } = await workSession("/board/" + kind);
   const boardKind = KIND_BY_SLUG[kind];
   const { published, drafts, manager } = await withTransaction((c) =>
     listPosts(c, actor, boardKind),
   );
+  const paged = pageOf(published, parsePage(pageParam));
 
   return (
     <BoardShell session={session} kind={kind}>
@@ -86,7 +92,14 @@ export default async function BoardListPage({
             </p>
           </div>
         ) : (
-          <PostRows posts={published} kind={kind} />
+          <>
+            <PostRows posts={paged.rows} kind={kind} />
+            <Pager
+              page={paged.page}
+              pageCount={paged.pageCount}
+              hrefFor={(n) => `/board/${kind}` + (n > 1 ? `?page=${n}` : "")}
+            />
+          </>
         )}
       </section>
     </BoardShell>

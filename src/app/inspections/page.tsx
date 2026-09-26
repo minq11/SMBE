@@ -11,6 +11,8 @@ import {
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { FindingResolution } from "@/features/inspections/inspection-form";
 import { PageHeader } from "@/components/ui/page-header";
+import { Pager } from "@/components/ui/pager";
+import { pageOf, parsePage } from "@/lib/paging";
 import { FloatField, FloatSelect } from "@/components/ui/float-field";
 import "@/features/work-orders/work-orders.css";
 
@@ -43,9 +45,21 @@ export default async function InspectionsPage({
     to?: string;
     q?: string;
     state?: string;
+    page?: string;
+    fpage?: string;
   }>;
 }) {
   const filters = await searchParams;
+  // 쪽 넘김은 지금 조건을 그대로 들고 간다. 필터가 바뀌면 1쪽부터.
+  const hrefWith = (patch: Record<string, string | undefined>) => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries({ ...filters, ...patch }))
+      if (v && k !== "page" && k !== "fpage") q.set(k, v);
+    if (patch.page && patch.page !== "1") q.set("page", patch.page);
+    if (patch.fpage && patch.fpage !== "1") q.set("fpage", patch.fpage);
+    const qs = q.toString();
+    return "/inspections" + (qs ? "?" + qs : "");
+  };
   const { session, actor } = await workSession("/inspections");
   // 빠른 필터. 좁은 화면에서 날짜 두 개를 고르는 대신 한 번 누른다.
   const today = seoulToday();
@@ -114,6 +128,8 @@ export default async function InspectionsPage({
         )
       : Promise.resolve({ rows: [], locked: 0, limited: false }),
   ]);
+  const logPage = pageOf(log.rows, parsePage(filters.page));
+  const findingPage = pageOf(findings.slice(0, 100), parsePage(filters.fpage));
 
   return (
     <OrderShell session={session} title="안전점검" active="inspection">
@@ -213,7 +229,7 @@ export default async function InspectionsPage({
           </details>
 
           {!log.rows.length && <p>조건에 맞는 회차가 없습니다.</p>}
-          {log.rows.map((r) => (
+          {logPage.rows.map((r) => (
             <article className="wo-risk wo-log-row" key={r.session_id}>
               <h3>
                 <Link
@@ -241,6 +257,11 @@ export default async function InspectionsPage({
               </p>
             </article>
           ))}
+          <Pager
+            page={logPage.page}
+            pageCount={logPage.pageCount}
+            hrefFor={(n) => hrefWith({ page: String(n), fpage: filters.fpage })}
+          />
           {log.limited && (
             <p className="wo-muted">
               200건까지만 표시합니다. 기간을 좁혀 조회하세요.
@@ -267,7 +288,7 @@ export default async function InspectionsPage({
             있습니다. 이메일·푸시 알림은 아직 제공하지 않습니다.
           </p>
           {!findings.length && <p>처리할 불량이 없습니다.</p>}
-          {findings.slice(0, 100).map((f) => (
+          {findingPage.rows.map((f) => (
             <article className="wo-risk" key={f.id}>
               <h3>{f.item_text}</h3>
               <p>
@@ -282,6 +303,11 @@ export default async function InspectionsPage({
               <FindingResolution id={f.id} />
             </article>
           ))}
+          <Pager
+            page={findingPage.page}
+            pageCount={findingPage.pageCount}
+            hrefFor={(n) => hrefWith({ page: filters.page, fpage: String(n) })}
+          />
         </section>
       )}
     </OrderShell>
