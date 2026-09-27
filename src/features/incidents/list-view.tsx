@@ -90,7 +90,7 @@ export function IncidentsListView({ items }: { items: IncidentSummary[] }) {
                     {i.serious_under_scpa ? " · 중대산업재해" : ""}
                   </span>
                   {i.status === "CLOSED" ? (
-                    <span className="inc-tag inc-tag--ok">종결</span>
+                    <span className="inc-tag inc-tag--closed">종결</span>
                   ) : i.open_duty_count > 0 ? (
                     <span className="inc-tag inc-tag--open">
                       할 일 {i.open_duty_count}

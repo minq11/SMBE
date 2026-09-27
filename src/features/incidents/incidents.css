@@ -172,6 +172,14 @@
   background: var(--ok-soft);
   color: var(--ok);
 }
+/* 종결은 회색 — 끝난 성과가 아니라 닫힌 서류다 (사장님 결정 2026-09-27). */
+.inc-strip strong[data-tone="plain"] {
+  color: var(--ink-3);
+}
+.inc-tag--closed {
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
 .inc-tag--open {
   background: var(--danger-soft);
   color: var(--danger);

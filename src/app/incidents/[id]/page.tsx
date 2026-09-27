@@ -111,6 +111,7 @@ export default async function IncidentPage({
       />
 
       <StatStrip
+        className="inc-strip"
         items={[
           { label: "구분", value: KIND_LABEL[detail.kind] },
           {
@@ -123,7 +124,8 @@ export default async function IncidentPage({
           {
             label: "상태",
             value: STATUS_LABEL[detail.status],
-            tone: detail.status === "CLOSED" ? "ok" : "info",
+            // 종결은 회색 — 초록은 "끝냈다" 가 아니라 "여기를 누르면 앞으로 간다" 다.
+            tone: detail.status === "CLOSED" ? "plain" : "info",
           },
           {
             label: "남은 할 일",
