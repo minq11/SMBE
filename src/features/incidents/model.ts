@@ -166,6 +166,27 @@ export const incidentInputSchema = z.object({
   actions: z.array(actionSchema).max(30).default([]),
 });
 export type IncidentInput = z.infer<typeof incidentInputSchema>;
+
+/** 작업자 신고 — 세 칸(무슨 일·어디·사진). 나머지는 관리자가 채운다. */
+export const workerReportSchema = z.object({
+  kind: z.enum(["NEAR_MISS", "INJURY"]),
+  description: z
+    .string()
+    .trim()
+    .min(1, "무슨 일이 있었는지 적으세요.")
+    .max(2000),
+  location: z.string().trim().min(1, "어디서 일어났는지 적으세요.").max(200),
+});
+export type WorkerReportInput = z.infer<typeof workerReportSchema>;
+
+export type MyReport = {
+  id: string;
+  kind: IncidentKind;
+  status: IncidentStatus;
+  occurred_at: string;
+  location: string;
+  description: string;
+};
 export type VictimInput = z.infer<typeof victimSchema>;
 export type ActionInput = z.infer<typeof actionSchema>;
 

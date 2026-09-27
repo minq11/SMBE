@@ -45,6 +45,20 @@ export type WorkerHome = {
   /** 다음 회차 작업일 (YYYY-MM-DD), 없으면 null */
   next: string | null;
 };
+/**
+ * 처리할 일 한 줄. 가입 승인·불량 조치·PTW 승인·사고 할 일·위험요인 조치·평가 필요
+ * 표준서 — 어느 메뉴의 일이든 홈의 한 곳(허브)에 모인다. 서버(page.tsx)가 고른다.
+ */
+export type TodoItem = {
+  href: string;
+  title: string;
+  detail: string;
+  count: string;
+  state: string;
+  /** 기한이 지났거나 사람이 기다리는 일 — 빨간 숫자. */
+  alert?: boolean;
+};
+
 /** 홈에 보이는 통합자료실 최신 글 — 우리 회사 공지와 심플안전의 안전소식. */
 export type HomeBoard = { notices: PostBrief[]; news: PostBrief[] };
 
@@ -292,6 +306,7 @@ export function Dashboard({
   worker,
   pendingJoinCount = 0,
   board,
+  todos,
   topSlot,
 }: {
   companyName?: string;
@@ -306,6 +321,7 @@ export function Dashboard({
   worker?: WorkerHome;
   pendingJoinCount?: number;
   board?: HomeBoard;
+  todos?: TodoItem[];
   /** 본문 맨 위에 끼우는 것 (푸시 알림 켜기 안내 등). 서버가 고른다. */
   topSlot?: ReactNode;
 }) {
@@ -328,6 +344,7 @@ export function Dashboard({
         worker={worker}
         pendingJoinCount={pendingJoinCount}
         board={board}
+        todos={todos}
       />
       {/* 사업자 표시는 로그인 전 첫 화면(초기 화면)에만. 로그인하면 마이페이지에. */}
       {!isAuthenticated && <SiteFooter />}
@@ -342,8 +359,8 @@ function DashboardBody({
   openFindingCount,
   today,
   worker,
-  pendingJoinCount,
   board,
+  todos,
 }: {
   jobs?: Job[];
   isAuthenticated: boolean;
@@ -353,6 +370,7 @@ function DashboardBody({
   worker?: WorkerHome;
   pendingJoinCount: number;
   board?: HomeBoard;
+  todos?: TodoItem[];
 }) {
   const displayedJobs = jobs ?? [];
 
@@ -449,6 +467,15 @@ function DashboardBody({
             다른 작업 보기 <ChevronRight size={13} />
           </Link>
         </p>
+        {/* 다칠 뻔한 일을 올리는 길. 오늘 작업 카드 아래 한 줄 — 사고는 예고 없이
+            오고, 찾을 메뉴가 없으면 말하지 않는다. */}
+        <Link href="/incidents/report" className="worker-report">
+          <span>
+            <strong>아차사고·사고 신고</strong>
+            <small>세 칸만 적으면 관리자에게 바로 갑니다.</small>
+          </span>
+          <ChevronRight size={16} className="row-chev" />
+        </Link>
         {board && <HomeBoards board={board} />}
       </>
     );
@@ -573,41 +600,36 @@ function DashboardBody({
         </section>
       )}
 
-      {/* 회사코드로 들어온 가입 신청은 메일로도 알리지만 메일은 묻힌다.
-          승인 전에는 작업에 배정할 수 없어 사람이 놀게 되므로 홈에 한 줄 띄운다. */}
-      {isAuthenticated && isManager && pendingJoinCount > 0 && (
-        <section className="stack" aria-label="가입 승인 알림">
-          <SectionHeading title="가입 승인 대기" count={pendingJoinCount} />
-          <Link href="/company/members" className="row">
-            <span className="row-main">
-              <strong>참여를 기다리는 사람이 있습니다</strong>
-              <small>승인해야 작업에 배정할 수 있습니다.</small>
-            </span>
-            <span className="row-meta">
-              <span className="row-count">{pendingJoinCount}명</span>
-              <span className="row-state">승인 대기</span>
-            </span>
-            <ChevronRight size={14} className="row-chev" />
-          </Link>
-        </section>
-      )}
-      {isAuthenticated && isManager && openFindingCount > 0 && (
-        <section className="stack" aria-label="내 불량 알림">
-          <SectionHeading
-            title="내가 처리할 안전조치"
-            count={openFindingCount}
-          />
-          <Link href="/inspections" className="row">
-            <span className="row-main">
-              <strong>불량 조치 확인</strong>
-              <small>나에게 배정된 미조치 항목을 확인하세요.</small>
-            </span>
-            <span className="row-meta">
-              <span className="row-count">{openFindingCount}건</span>
-              <span className="row-state">조치 대기</span>
-            </span>
-            <ChevronRight size={14} className="row-chev" />
-          </Link>
+      {/* 처리할 일 — 가입 승인·불량 조치·PTW 승인·사고 할 일·위험요인 조치·평가
+          필요 표준서가 한 곳에. 메뉴를 돌며 찾지 않는다. 없으면 그렇다고 한 줄. */}
+      {isAuthenticated && isManager && todos && (
+        <section className="stack" aria-label="처리할 일">
+          <SectionHeading title="처리할 일" count={todos.length} />
+          {todos.length ? (
+            <ul className="row-list" role="list">
+              {todos.map((t) => (
+                <li key={t.href + t.title}>
+                  <Link href={t.href} className="row">
+                    <span className="row-main">
+                      <strong>{t.title}</strong>
+                      <small>{t.detail}</small>
+                    </span>
+                    <span className="row-meta">
+                      <span
+                        className={`row-count${t.alert ? " is-alert" : ""}`}
+                      >
+                        {t.count}
+                      </span>
+                      <span className="row-state">{t.state}</span>
+                    </span>
+                    <ChevronRight size={14} className="row-chev" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="hero-lead">지금 처리할 일이 없습니다.</p>
+          )}
         </section>
       )}
       {isAuthenticated && (

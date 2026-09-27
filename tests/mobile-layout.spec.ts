@@ -140,6 +140,8 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
         "/billing",
         "/incidents",
         "/incidents/new",
+        "/incidents/report",
+        "/company/incident-manual",
         "/inspections",
       ]) {
         await page.goto(route);

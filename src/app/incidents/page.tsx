@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CalendarClock, Plus } from "lucide-react";
+import { getCurrentSession } from "@/server/session";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { incidentOverview, listIncidents } from "@/server/incidents";
@@ -24,6 +26,9 @@ export const metadata = { title: "안전사고 · 심플안전" };
  * 다가온 할 일) → 목록. 감독이 "사고 뒤 뭘 했습니까" 를 물으면 이 화면이 답한다.
  */
 export default async function IncidentsPage() {
+  // 작업자에게 이 메뉴는 신고 화면이다.
+  const current = await getCurrentSession();
+  if (current?.membership?.role === "WORKER") redirect("/incidents/report");
   const { session, actor } = await workSession("/incidents", true);
   const [overview, items, isOperator] = await Promise.all([
     withTransaction((c) => incidentOverview(c, actor)),
@@ -45,9 +50,14 @@ export default async function IncidentsPage() {
         title="안전사고"
         description="아차사고부터 재해까지. 등록하면 법이 요구하는 할 일이 기한과 함께 생깁니다."
         actions={
-          <Link href="/incidents/new" className="btn-primary">
-            <Plus size={15} /> 사고 등록
-          </Link>
+          <div className="wo-actions">
+            <Link href="/company/incident-manual" className="btn-secondary">
+              대응 절차
+            </Link>
+            <Link href="/incidents/new" className="btn-primary">
+              <Plus size={15} /> 사고 등록
+            </Link>
+          </div>
         }
       />
 

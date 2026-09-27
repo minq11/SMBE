@@ -1,7 +1,13 @@
 import { connection } from "next/server";
 import { tierOf } from "@/components/shell/tier";
 import { redirect } from "next/navigation";
-import { Dashboard, type WorkerHome } from "@/features/dashboard/dashboard";
+import {
+  Dashboard,
+  type TodoItem,
+  type WorkerHome,
+} from "@/features/dashboard/dashboard";
+import { assessmentOverview } from "@/server/assessments";
+import { incidentOverview } from "@/server/incidents";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
 import { listOrders } from "@/server/work-orders";
@@ -127,6 +133,78 @@ export default async function Home() {
         published_at: n.published_at,
       }))
     : [];
+  // 처리할 일 허브. 메뉴마다 흩어진 "지금 봐야 할 것" 을 한 목록으로.
+  const todos: TodoItem[] | undefined =
+    actor && isManager
+      ? await withTransaction(async (client) => {
+          const list: TodoItem[] = [];
+          if (joinRequestCount > 0)
+            list.push({
+              href: "/company/members",
+              title: "가입 승인 대기",
+              detail: "승인해야 작업에 배정할 수 있습니다.",
+              count: `${joinRequestCount}명`,
+              state: "승인 대기",
+              alert: true,
+            });
+          if (openFindingCount > 0)
+            list.push({
+              href: "/inspections",
+              title: "내가 처리할 안전조치",
+              detail: "나에게 배정된 미조치 불량.",
+              count: `${openFindingCount}건`,
+              state: "조치 대기",
+              alert: true,
+            });
+          const { rows: permits } = await client.query<{ n: number }>(
+            `SELECT count(*)::int AS n FROM work_permits p JOIN work_orders w ON w.id=p.work_order_id
+              WHERE p.company_id=$1 AND p.approver_id=$2 AND p.status='PENDING' AND w.status<>'CANCELED'`,
+            [actor.companyId, actor.userId],
+          );
+          if (permits[0].n > 0)
+            list.push({
+              href: "/permits",
+              title: "내 PTW 승인 대기",
+              detail: "허가가 나야 위험작업을 시작합니다.",
+              count: `${permits[0].n}건`,
+              state: "승인 대기",
+              alert: true,
+            });
+          const inc = await incidentOverview(client, actor);
+          if (inc.open_duties > 0) {
+            const overdue = inc.due_soon.filter((d) => d.overdue).length;
+            list.push({
+              href: "/incidents",
+              title: "사고 뒤 할 일",
+              detail: overdue
+                ? `기한이 지난 일 ${overdue}개가 있습니다.`
+                : "등급에 따라 법이 요구하는 일.",
+              count: `${inc.open_duties}개`,
+              state: overdue ? "기한 지남" : "처리 중",
+              alert: overdue > 0,
+            });
+          }
+          const asmt = await assessmentOverview(client, actor);
+          if (asmt.open_action_count > 0)
+            list.push({
+              href: "/assessments",
+              title: "조치 남은 위험요인",
+              detail: "감소대책의 실제 조치를 적으세요.",
+              count: `${asmt.open_action_count}건`,
+              state: "조치 필요",
+            });
+          if (asmt.needs_assessment.length > 0)
+            list.push({
+              href: "/assessments",
+              title: "위험성평가 필요 표준서",
+              detail: "유효한 평가가 없어 지시서에 쓸 수 없습니다.",
+              count: `${asmt.needs_assessment.length}건`,
+              state: "평가 필요",
+              alert: true,
+            });
+          return list;
+        })
+      : undefined;
   // 홈의 공지사항·오늘의 안전소식 — 최신 두 건씩, 전체는 통합자료실로.
   const board = actor
     ? await withTransaction((client) => homePosts(client, actor.companyId))
@@ -147,6 +225,7 @@ export default async function Home() {
         openFindingCount={openFindingCount}
         pendingJoinCount={joinRequestCount}
         board={board}
+        todos={todos}
         worker={worker}
         today={
           actor

@@ -71,6 +71,40 @@ export async function updateAssessmentPolicy(
   );
 }
 
+/** 중대재해 대응 절차 (중처법 시행령 4조 8호). 기본 문안은 0026 이 넣는다. */
+export async function readIncidentManual(
+  client: PoolClient,
+  companyId: string,
+): Promise<string> {
+  const { rows } = await client.query<{ incident_response_manual: string }>(
+    "SELECT incident_response_manual FROM companies WHERE id = $1",
+    [companyId],
+  );
+  if (!rows[0]) throw new WorkOrderError("회사를 찾을 수 없습니다.");
+  return rows[0].incident_response_manual;
+}
+
+export async function updateIncidentManual(
+  client: PoolClient,
+  companyId: string,
+  raw: unknown,
+): Promise<void> {
+  const parsed = z
+    .string()
+    .trim()
+    .min(1, "대응 절차를 입력하세요.")
+    .max(4000, "대응 절차가 너무 깁니다.")
+    .safeParse(raw);
+  if (!parsed.success)
+    throw new WorkOrderError(
+      parsed.error.issues[0]?.message ?? "대응 절차를 확인하세요.",
+    );
+  await client.query(
+    "UPDATE companies SET incident_response_manual = $2 WHERE id = $1",
+    [companyId, parsed.data],
+  );
+}
+
 export async function updateRiskCriteria(
   client: PoolClient,
   companyId: string,

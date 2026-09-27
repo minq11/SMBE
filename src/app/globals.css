@@ -7388,3 +7388,30 @@ fieldset.form-field legend {
 .std-fold[open] {
   padding-bottom: 14px;
 }
+
+/* 작업자 홈의 사고 신고 한 줄. 놓친 회차 줄과 같은 모양, 색은 바탕(경고가 아니다). */
+.worker-report {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius);
+  color: var(--ink);
+  text-decoration: none;
+}
+.worker-report span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.worker-report small {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.row-count.is-alert {
+  color: var(--danger);
+}

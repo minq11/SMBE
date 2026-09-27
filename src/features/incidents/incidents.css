@@ -292,3 +292,157 @@
     padding-left: 14px;
   }
 }
+
+/* 작업자 신고 — 세 칸, 접수 카드. */
+.inc-report-form {
+  display: flex;
+  flex-direction: column;
+}
+.inc-report-form .seg {
+  margin-bottom: 18px;
+}
+.inc-report-form .wo-actions {
+  margin-top: 4px;
+}
+.inc-report-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: center;
+}
+.inc-report-done-icon {
+  display: inline-flex;
+  color: var(--ok);
+}
+.inc-report-done h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.inc-report-done p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.inc-report-photos {
+  width: 100%;
+  max-width: 420px;
+  padding-top: 8px;
+}
+
+/* 산업재해조사표 — 화면에서는 문서처럼, 인쇄하면 이 문서만. */
+.survey-sheet {
+  max-width: 800px;
+  margin: 8px auto 0;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.survey-head {
+  margin-bottom: 14px;
+}
+.survey-form-no {
+  margin: 0;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.survey-head h1 {
+  margin: 4px 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.3em;
+}
+.survey-note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.survey-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+  table-layout: fixed;
+}
+.survey-table th,
+.survey-table td {
+  border: 1px solid var(--ink-4);
+  padding: 6px 8px;
+  vertical-align: top;
+  text-align: left;
+  word-break: keep-all;
+}
+.survey-table th {
+  width: 22%;
+  background: var(--surface-2);
+  font-weight: 600;
+  font-size: 12px;
+}
+.survey-table th.survey-group {
+  width: 9%;
+  text-align: center;
+  vertical-align: middle;
+  font-weight: 800;
+}
+.survey-table td {
+  width: 28%;
+}
+.survey-long {
+  min-height: 64px;
+  white-space: pre-wrap;
+}
+.survey-sign {
+  margin-top: 16px;
+  font-size: 13px;
+}
+.survey-sign p {
+  margin: 0 0 10px;
+}
+.survey-sign-line {
+  line-height: 2.2;
+}
+.survey-blank {
+  display: inline-block;
+  min-width: 120px;
+  border-bottom: 1px solid var(--ink-4);
+  padding: 0 6px;
+  text-align: center;
+}
+.survey-to {
+  margin-top: 12px;
+  font-weight: 700;
+}
+@media print {
+  .survey-sheet {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    color: #000;
+    font-size: 10.5pt;
+  }
+  .survey-table th,
+  .survey-table td {
+    border-color: #000;
+  }
+  .survey-table th {
+    background: var(--surface-2);
+  }
+  .survey-table {
+    break-inside: avoid;
+  }
+  .page-header,
+  .wo-no-print {
+    display: none !important;
+  }
+}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { PenLine } from "lucide-react";
+import { FileText, PenLine } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { readIncident } from "@/server/incidents";
@@ -91,6 +91,11 @@ export default async function IncidentPage({
         }
         actions={
           <div className="wo-actions">
+            {detail.kind === "INJURY" && (
+              <Link href={`${path}/survey`} className="btn-secondary">
+                <FileText size={14} /> 산업재해조사표
+              </Link>
+            )}
             {!locked && (
               <Link href={`${path}/edit`} className="btn-secondary">
                 <PenLine size={14} /> 고치기

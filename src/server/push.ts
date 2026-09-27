@@ -90,7 +90,11 @@ export type PushPayload = {
 export async function pushToCompany(
   companyId: string,
   payload: PushPayload,
-  options: { exceptUserId?: string } = {},
+  options: {
+    exceptUserId?: string;
+    /** 이 역할의 구성원에게만 (예: 작업자 신고 → 관리자). 비우면 전원. */
+    roles?: string[];
+  } = {},
 ): Promise<{
   sent: number;
   failed: number;
@@ -111,8 +115,9 @@ export async function pushToCompany(
        JOIN users u ON u.id = s.user_id
       WHERE m.company_id = $1 AND m.status = 'ACTIVE' AND m.left_at IS NULL
         AND u.status = 'ACTIVE' AND ($2::uuid IS NULL OR s.user_id <> $2)
+        AND ($3::text[] IS NULL OR m.role::text = ANY($3))
       LIMIT 2000`,
-    [companyId, options.exceptUserId ?? null],
+    [companyId, options.exceptUserId ?? null, options.roles ?? null],
   );
   const body = JSON.stringify({
     title: payload.title,

@@ -17,7 +17,9 @@ import {
   type IncidentGrade,
   type IncidentInput,
   type IncidentSummary,
+  type MyReport,
   type Victim,
+  workerReportSchema,
 } from "../features/incidents/model";
 
 /**
@@ -262,6 +264,77 @@ export async function createIncident(
     grade: r.grade,
   });
   return id;
+}
+
+/**
+ * 작업자 신고. 구성원 누구나(링크로 들어온 작업자 포함) 세 칸으로 올린다. 발생 시각은
+ * 지금, 발생형태는 "기타", 다친 사람은 관리자가 채운다 — 재해라도 우선 경미로 두고
+ * 관리자가 고치면 등급과 할 일이 다시 정해진다. 은폐를 막는 게 먼저다.
+ */
+export async function createWorkerReport(
+  client: PoolClient,
+  actor: Actor,
+  raw: unknown,
+  workOrderId: string | null,
+): Promise<{ id: string; reporterName: string }> {
+  await memberAccess(client, actor);
+  const parsed = workerReportSchema.safeParse(raw);
+  if (!parsed.success)
+    throw new IncidentError(parsed.error.issues[0]?.message ?? "입력을 확인하세요.");
+  const input = parsed.data;
+  let workOrderName: string | null = null;
+  if (workOrderId) {
+    const { rows } = await client.query<{ name: string }>(
+      "SELECT name FROM work_orders WHERE id=$1 AND company_id=$2",
+      [workOrderId, actor.companyId],
+    );
+    workOrderName = rows[0]?.name ?? null;
+    if (!workOrderName) workOrderId = null;
+  }
+  const scpa = await scpaApplies(client, actor.companyId);
+  const grade = input.kind === "INJURY" ? "MINOR" : "NEAR_MISS";
+  const { rows } = await client.query<{ id: string; name: string }>(
+    `INSERT INTO incidents(company_id,kind,occurred_at,location,work_order_id,work_order_name,
+       occurrence_type,description,grade,serious_under_scpa,reported_by,reported_via,updated_by,
+       retention_until)
+     VALUES($1,$2,now(),$3,$4,$5,'OTHER',$6,$7,false,$8,'WORKER',$8,
+            (now() AT TIME ZONE 'Asia/Seoul')::date + interval '3 years')
+     RETURNING id, (SELECT display_name FROM users WHERE id=$8) AS name`,
+    [
+      actor.companyId,
+      input.kind,
+      input.location,
+      workOrderId,
+      workOrderName,
+      input.description,
+      grade,
+      actor.userId,
+    ],
+  );
+  const id = rows[0].id;
+  const today = seoulToday();
+  for (const [i, d] of dutiesFor(grade, today, scpa).entries())
+    await client.query(
+      `INSERT INTO incident_duties(incident_id,kind,due_on,sort_no) VALUES($1,$2,$3,$4)`,
+      [id, d.kind, d.dueOn, i],
+    );
+  await audit(client, actor, "INCIDENT_REPORT", id, { kind: input.kind });
+  return { id, reporterName: rows[0].name };
+}
+
+/** 내가 신고한 사고. 신고자에게 "접수됐고 어떻게 되고 있는지" 를 보여 준다. */
+export async function listMyReports(
+  client: PoolClient,
+  actor: Actor,
+): Promise<MyReport[]> {
+  await memberAccess(client, actor);
+  const { rows } = await client.query<MyReport>(
+    `SELECT id, kind, status, occurred_at::text, location, left(description, 80) AS description
+       FROM incidents WHERE company_id=$1 AND reported_by=$2
+      ORDER BY occurred_at DESC LIMIT 10`,
+    [actor.companyId, actor.userId],
+  );
+  return rows;
 }
 
 async function lockOpen(client: PoolClient, actor: Actor, id: string) {

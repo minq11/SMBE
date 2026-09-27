@@ -288,6 +288,16 @@ export default async function WorkerLinkPage({
         </section>
       )}
 
+      {/* 다칠 뻔한 일을 올리는 길. 회차 목록 아래 한 줄 — 링크로 들어온 작업자도
+          신고할 수 있어야 은폐가 막힌다. */}
+      {!showForm && (
+        <Link href="/w/report" className="worker-report">
+          <span>
+            <strong>아차사고·사고 신고</strong>
+            <small>세 칸만 적으면 관리자에게 바로 갑니다.</small>
+          </span>
+        </Link>
+      )}
       <p className="wo-muted link-work-foot">
         이 링크는 본인 전용입니다. 다른 사람에게 전달하지 마세요.
       </p>

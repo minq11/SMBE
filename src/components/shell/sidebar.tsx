@@ -67,6 +67,7 @@ export type NavKey =
   | "permits"
   | "locations"
   | "criteria"
+  | "manual"
   | "notices"
   | "news"
   | "resources"
@@ -105,6 +106,12 @@ const NAV: ReadonlyArray<NavEntry> = [
         title: "위험성 판단 기준",
         icon: ShieldCheck,
         href: "/company/criteria",
+      },
+      {
+        key: "manual",
+        title: "중대재해 대응 절차",
+        icon: TriangleAlert,
+        href: "/company/incident-manual",
       },
       { key: "billing", title: "이용·관리", icon: Settings2, href: "/billing" },
     ],

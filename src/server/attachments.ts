@@ -237,6 +237,16 @@ async function assertLinkScope(
   // 공지 팝업은 링크 화면에도 뜨므로 그 안의 사진은 링크 방문자도 본다.
   // 올리는 쪽은 verifyActor 가 관리자만 통과시킨다.
   if (target === "board_post") return;
+  // 링크로 들어온 작업자가 신고한 사고에는 사진을 붙일 수 있다 — 본인 신고만.
+  if (target === "incident") {
+    const rows = await query<{ ok: boolean }>(
+      "SELECT true AS ok FROM incidents WHERE id = $1 AND reported_by = $2 LIMIT 1",
+      [targetId, actor.userId],
+    );
+    if (!rows[0])
+      throw new AttachmentError("본인이 신고한 사고에만 사진을 붙일 수 있습니다.");
+    return;
+  }
   if (!LINK_TARGETS.has(target))
     throw new AttachmentError("이 링크로 열 수 있는 문서가 아닙니다.");
   if (target === "work_order" && targetId !== scope)
