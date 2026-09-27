@@ -153,7 +153,12 @@ const NAV: ReadonlyArray<NavEntry> = [
       },
     ],
   },
-  { key: "incident", title: "안전사고", icon: TriangleAlert },
+  {
+    key: "incident",
+    title: "안전사고",
+    icon: TriangleAlert,
+    href: "/incidents",
+  },
   {
     key: "notices",
     title: "통합자료실",

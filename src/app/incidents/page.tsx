@@ -1,0 +1,108 @@
+import Link from "next/link";
+import { CalendarClock, Plus } from "lucide-react";
+import { withTransaction } from "@/server/db";
+import { workSession } from "@/server/work-orders";
+import { incidentOverview, listIncidents } from "@/server/incidents";
+import { AppShell } from "@/components/shell/app-shell";
+import { tierOf } from "@/components/shell/tier";
+import { isCurrentUserOperator } from "@/server/operator";
+import { PageHeader } from "@/components/ui/page-header";
+import { IncidentsListView } from "@/features/incidents/list-view";
+import {
+  KIND_LABEL,
+  OCCURRENCE_LABEL,
+  shortDay,
+} from "@/features/incidents/model";
+import "@/features/assessments/assessments.css";
+import "@/features/work-orders/work-orders.css";
+import "@/features/incidents/incidents.css";
+
+export const metadata = { title: "안전사고 · 심플안전" };
+
+/**
+ * 안전사고 메뉴. 위험성평가 메뉴와 같은 틀: 숫자 셋 → 지금 봐야 할 것(기한이
+ * 다가온 할 일) → 목록. 감독이 "사고 뒤 뭘 했습니까" 를 물으면 이 화면이 답한다.
+ */
+export default async function IncidentsPage() {
+  const { session, actor } = await workSession("/incidents", true);
+  const [overview, items, isOperator] = await Promise.all([
+    withTransaction((c) => incidentOverview(c, actor)),
+    withTransaction((c) => listIncidents(c, actor)),
+    isCurrentUserOperator(),
+  ]);
+
+  return (
+    <AppShell
+      active="incident"
+      breadcrumb={[{ label: "안전사고" }]}
+      companyName={session.membership?.company_name}
+      tier={tierOf(session.membership)}
+      userName={session.user.displayName ?? undefined}
+      isAuthenticated
+      isOperator={isOperator}
+    >
+      <PageHeader
+        title="안전사고"
+        description="아차사고부터 재해까지. 등록하면 법이 요구하는 할 일이 기한과 함께 생깁니다."
+        actions={
+          <Link href="/incidents/new" className="btn-primary">
+            <Plus size={15} /> 사고 등록
+          </Link>
+        }
+      />
+
+      <div className="asmt-tiles" aria-label="현황">
+        <div
+          className={`asmt-tile${overview.year_injuries > 0 ? " is-alert" : ""}`}
+        >
+          <strong>{overview.year_injuries}건</strong>
+          <small>{overview.year}년 재해</small>
+        </div>
+        <div className="asmt-tile">
+          <strong>{overview.year_near_misses}건</strong>
+          <small>{overview.year}년 아차사고</small>
+        </div>
+        <div
+          className={`asmt-tile${overview.open_duties > 0 ? " is-alert" : ""}`}
+        >
+          <strong>{overview.open_duties}개</strong>
+          <small>처리 중 할 일</small>
+        </div>
+      </div>
+
+      {overview.due_soon.length > 0 && (
+        <section className="asmt-section" aria-label="기한이 다가온 할 일">
+          <h2>
+            <CalendarClock size={15} style={{ verticalAlign: "-2px" }} /> 기한이
+            다가온 할 일
+          </h2>
+          <ul className="asmt-needs">
+            {overview.due_soon.map((d) => (
+              <li key={d.incident_id + d.kind} className="asmt-need">
+                <span className="asmt-need-main">
+                  <strong>{d.title}</strong>
+                  <small>
+                    {OCCURRENCE_LABEL[d.occurrence_type]}{" "}
+                    {KIND_LABEL[d.incident_kind]} · {shortDay(d.occurred_at)}{" "}
+                    발생 ·{" "}
+                    <span className={d.overdue ? "inc-overdue" : undefined}>
+                      {d.overdue ? "기한 지남" : "기한"} {shortDay(d.due_on)}
+                    </span>
+                  </small>
+                </span>
+                <Link
+                  href={`/incidents/${d.incident_id}`}
+                  className={d.overdue ? "btn-primary" : "btn-secondary"}
+                >
+                  처리하기
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <IncidentsListView items={items} />
+    </AppShell>
+  );
+}

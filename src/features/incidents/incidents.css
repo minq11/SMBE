@@ -1,0 +1,294 @@
+/* 안전사고 — 지시서·위험성평가 화면의 부품(wo-part, wo-facts, asmt-tiles)을 그대로 쓰고
+   여기에는 사고 화면에만 있는 모양만 둔다. */
+
+/* 세로 간격은 입력칸의 아래 여백(18px) 하나로 맞춘다. 칸이 아닌 것(단추 묶음·
+   격자·카드 목록)은 같은 값을 아래에 단다. 구간 칩 밑의 겹선은 지운다. */
+.wo-editor > .jump-nav + .wo-section {
+  border-top: 0;
+  padding-top: 0;
+}
+.inc-form .seg,
+.inc-form .inc-types,
+.inc-form .inc-cards,
+.inc-form .inc-linked,
+.inc-form .inc-preview,
+.inc-form .wo-part > .btn-secondary {
+  margin-bottom: 18px;
+}
+.inc-form .wo-sub-head {
+  margin-top: 4px;
+}
+.inc-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+@media (max-width: 480px) {
+  .inc-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 발생형태 13종 — 격자 칩. 한 줄 세그먼트는 좁은 화면에서 못 들어간다. */
+.inc-types {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.inc-types legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: 0;
+  margin-bottom: 8px;
+}
+.inc-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+}
+.inc-types-grid .seg-btn {
+  flex: none;
+  font-size: 13.5px;
+}
+
+.inc-linked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--brand-soft);
+  border-radius: var(--radius-sm);
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+}
+.inc-linked strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.inc-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.inc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.inc-card.is-done {
+  border-color: var(--ok-soft);
+}
+.inc-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+}
+.inc-card-head strong {
+  font-size: 14px;
+}
+.inc-card .wo-facts {
+  margin: 0;
+}
+.inc-card .float-field {
+  margin-bottom: 12px;
+}
+.inc-card .float-field:last-child,
+.inc-card .inc-row:last-child .float-field {
+  margin-bottom: 0;
+}
+.inc-measure {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.inc-check {
+  padding: 4px 0;
+}
+.inc-check strong {
+  font-size: 14px;
+}
+
+/* 저장 전 등급 미리보기. 알림 띠와 같은 회색 — 등급 글자만 상태색. */
+.inc-preview {
+  margin: 4px 0 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--ink-4);
+  background: var(--surface-2);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.inc-preview strong[data-grade="REPORTABLE"],
+.inc-preview strong[data-grade="SERIOUS"] {
+  color: var(--danger);
+}
+.inc-preview strong[data-grade="NEAR_MISS"] {
+  color: var(--info);
+}
+
+/* 등급·상태 칩 (목록·상세). 같은 뜻은 같은 색 — 헌법 2장. */
+.inc-grade {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.inc-grade[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.inc-grade[data-tone="info"] {
+  background: var(--info-soft);
+  color: var(--info);
+}
+.inc-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.inc-tag--ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.inc-tag--open {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.inc-overdue {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* 할 일 목록 — 체크 · 제목/근거/기한 · 단추. 끝난 줄은 초록 체크와 흐린 글자. */
+.inc-duties {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.inc-duty + .inc-duty {
+  border-top: 1px solid var(--line-soft);
+}
+.inc-duty-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.inc-duty-mark {
+  display: inline-flex;
+  color: var(--ink-4);
+  flex-shrink: 0;
+}
+.inc-duty.is-done .inc-duty-mark {
+  color: var(--ok);
+}
+.inc-duty-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.inc-duty-main strong {
+  font-size: 14.5px;
+}
+.inc-duty.is-done .inc-duty-main strong {
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+.inc-duty-main small {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.inc-duty-due {
+  font-weight: 700;
+  color: var(--info);
+}
+.inc-duty.is-overdue .inc-duty-due {
+  color: var(--danger);
+}
+.inc-duty-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ok);
+  font-weight: 700;
+}
+.inc-duty-note {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+.inc-duty-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.inc-duty-actions .btn-primary,
+.inc-duty-actions .btn-secondary,
+.inc-card-head .btn-primary,
+.inc-card-head .btn-secondary {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.inc-duty .is-flipped,
+.inc-card .is-flipped {
+  transform: rotate(180deg);
+}
+.inc-duty-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 14px 14px 46px;
+}
+.inc-card .inc-duty-form {
+  padding: 0;
+}
+.inc-duty-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .inc-duty-row {
+    flex-wrap: wrap;
+  }
+  .inc-duty-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-left: 32px;
+  }
+  .inc-duty-form {
+    padding-left: 14px;
+  }
+}

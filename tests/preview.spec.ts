@@ -141,18 +141,17 @@ test("preview renders without secrets and only shows preparation dialogs", async
     await expect(page.getByText(fake, { exact: false })).toHaveCount(0);
   // 알림은 로그인 전에는 없다.
   await expect(page.getByRole("button", { name: "알림" })).toHaveCount(0);
-  // 준비 중 안내는 아직 없는 기능(사이드바의 안전사고 등)에만 뜬다.
+  // 사이드바의 메뉴는 모두 실제 화면이다 — "준비 중" 창이 남은 항목은 없다.
   // 좁은 화면은 서랍을 먼저 연다.
   if (test.info().project.name === "mobile") {
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
   }
-  await page.getByRole("button", { name: "안전사고", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page.getByRole("dialog")).toContainText(
-    "데이터는 저장·변경되지 않습니다",
-  );
-  await page.getByRole("button", { name: "확인했어요" }).click();
-  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "안전사고", exact: true }),
+  ).toHaveAttribute("href", "/incidents");
+  if (test.info().project.name === "mobile") {
+    await page.locator(".sidebar-close").click();
+  }
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

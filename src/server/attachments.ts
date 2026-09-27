@@ -157,8 +157,6 @@ async function verifyTargetOwnership(
   target: AttachmentTarget,
   targetId: string,
 ) {
-  if (target === "incident")
-    throw new AttachmentError("사고 첨부 기능은 아직 지원하지 않습니다.");
   const map: Record<AttachmentTarget, { table: string; join?: string }> = {
     standard_step: {
       table: "standard_steps ss JOIN standards s ON s.id = ss.standard_id",
@@ -189,9 +187,8 @@ async function verifyTargetOwnership(
       join: "f.id = $1 AND wo.company_id = $2",
     },
     incident: {
-      // 아직 사고 모듈 미구현. 스키마 대응만 해두고 실제 삽입은 UI 없음.
-      table: "companies",
-      join: "id = $2 AND $1::uuid = $1::uuid",
+      table: "incidents",
+      join: "id = $1 AND company_id = $2",
     },
     board_post: {
       table: "board_posts",

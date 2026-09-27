@@ -1,5 +1,26 @@
 # 심플안전 개발일지
 
+## 2026-09-27 안전사고 1단계 — 등록·상세·목록, 등급에서 나오는 할 일 목록
+
+사장님: "하려던 안전사고 다시 꺼내서, 타 업무의 디자인·UX 를 참고해 통일성 있게".
+`docs/incident-plan.md` 대로 만들되 부품은 있는 것을 썼다: 목록은 위험성평가 메뉴의 틀
+(`asmt-tiles` 숫자 셋 → `asmt-needs` 기한 임박 → 탭 목록 + `ClientPager`), 등록은 지시서
+작성의 틀(`wo-editor` + `JumpNav` 구간 칩 넷, `wo-part`, `FloatField`, 장소 선택/직접 입력,
+`PickerDialog` 로 지시서 연결, `Segmented` 구분, 아래 고정 `wo-actions`), 상세는 지시서
+상세의 틀(`PageHeader` + `StatStrip` + `wo-section` + `Facts`). 대책 완료 적기는 위험성평가
+조치 기록과 같은 펼침 폼.
+
+- `db/0025_incidents.sql`: `incidents` · `incident_victims`(구성원만) · `incident_actions`
+  (재발방지대책) · `incident_duties`(할 일). 삭제 없음, 감사 로그, 3년 보존 날짜.
+- 등급·할 일은 `features/incidents/model.ts` 의 순수 함수(`gradeOf`, `dutiesFor`,
+  `seriousUnderScpa`). 서버가 저장할 때 부르고, 폼이 같은 함수로 "이대로 저장하면 등급은
+  ○○, 할 일 n개" 를 미리 보인다. 재발방지대책이 다 끝나면 "재발방지대책 이행" 할 일이
+  저절로 끝난다(`syncPrevention`). 다 끝나야 종결, 종결 뒤 잠김(편집 주소는 상세로).
+- 첨부 대상 `incident` 를 열었다(사진, 유료). 사이드바 안전사고가 `/incidents` 로 간다 —
+  "준비 중" 창이 남은 메뉴는 없다(preview 시험 바꿈).
+- 다음 라운드: 작업자 신고(/w·작업자 홈), 홈 타일, 안전회의·반기 점검·수시평가 사전조사
+  연결, 회사정보의 대응 매뉴얼, 조사표 출력(유료).
+
 ## 2026-09-26 오늘의 안전소식 — 운영자가 모든 회사에 보내는 글, 홈에 공지·소식 칸
 
 사장님: "통합자료실 > 오늘의 안전소식. 시스템 관리자(=나)만 글쓰기 단추가 보이고, 글·사진
