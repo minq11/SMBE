@@ -30,6 +30,8 @@ export type MeetingItem = {
   summary: string;
   reviewed: boolean;
   note: string;
+  /** 원본 화면 — 점검 회차·평가·사고. 원본이 지워졌으면 null. */
+  href: string | null;
 };
 export type MeetingRow = {
   week_start: string;
@@ -138,9 +140,33 @@ export async function openMeeting(
     [actor.companyId, end],
   );
 
+  // 그 주에 난 사고·아차사고 전부와, 기한이 그 주까지인데 안 끝난 할 일이 남은 사고.
+  // 사고는 발생 사실 자체가 논의 대상이고, 밀린 할 일은 회의가 챙길 몫이다.
+  const incidents = await client.query<{ id: string; summary: string }>(
+    `SELECT i.id,
+            CASE i.occurrence_type
+              WHEN 'FALL' THEN '떨어짐' WHEN 'SLIP' THEN '넘어짐' WHEN 'CRUSH' THEN '깔림·뒤집힘'
+              WHEN 'STRIKE' THEN '부딪힘' WHEN 'HIT_BY' THEN '물체에 맞음' WHEN 'CAUGHT' THEN '끼임'
+              WHEN 'CUT' THEN '절단·베임·찔림' WHEN 'ELECTRIC' THEN '감전'
+              WHEN 'FIRE_EXPLOSION' THEN '화재·폭발' WHEN 'TEMPERATURE' THEN '이상온도 접촉'
+              WHEN 'CHEMICAL' THEN '유해물질 접촉' WHEN 'ASPHYXIA' THEN '질식·산소결핍' ELSE '기타' END
+            || ' ' || CASE i.kind WHEN 'INJURY' THEN '재해' ELSE '아차사고' END
+            || ' · ' || coalesce(nullif(i.location, ''), '장소 미입력') AS summary
+       FROM incidents i
+      WHERE i.company_id=$1
+        AND ((i.occurred_at AT TIME ZONE 'Asia/Seoul')::date BETWEEN $2::date AND $3::date
+             OR (i.status='OPEN' AND EXISTS (
+                   SELECT 1 FROM incident_duties d
+                    WHERE d.incident_id=i.id AND d.done_at IS NULL
+                      AND d.due_on IS NOT NULL AND d.due_on <= $3::date)))
+      ORDER BY i.occurred_at LIMIT 200`,
+    [actor.companyId, week, end],
+  );
+
   for (const [type, rows] of [
     ["INSPECTION_FINDING", findings.rows],
     ["RISK_MEASURE", measures.rows],
+    ["INCIDENT", incidents.rows],
   ] as const)
     for (const row of rows)
       await client.query(
@@ -178,8 +204,23 @@ export async function readMeeting(
   const items = meeting
     ? (
         await client.query<MeetingItem>(
-          `SELECT id,source_type,source_id,summary,reviewed,note
-             FROM safety_meeting_items WHERE meeting_id=$1 ORDER BY source_type, id`,
+          `SELECT i.id, i.source_type, i.source_id, i.summary, i.reviewed, i.note,
+                  CASE i.source_type
+                    WHEN 'INCIDENT' THEN
+                      (SELECT '/incidents/' || x.id FROM incidents x WHERE x.id = i.source_id)
+                    WHEN 'RISK_MEASURE' THEN
+                      (SELECT '/assessments/' || ri.assessment_id
+                         FROM risk_assessment_items ri WHERE ri.id = i.source_id)
+                    WHEN 'INSPECTION_FINDING' THEN
+                      (SELECT '/work-orders/' || s.work_order_id || '/inspections?session=' || s.id
+                         FROM inspection_findings f
+                         JOIN inspection_results r ON r.id = f.result_id
+                         JOIN inspections ins ON ins.id = r.inspection_id
+                         JOIN work_sessions s ON s.id = ins.session_id
+                        WHERE f.id = i.source_id)
+                  END AS href
+             FROM safety_meeting_items i WHERE i.meeting_id=$1
+            ORDER BY i.source_type, i.id`,
           [meeting.id],
         )
       ).rows

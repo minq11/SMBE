@@ -191,7 +191,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     ]);
     await context.addCookies([await cookie(manager)]);
     await page.goto("/");
-    await page.getByRole("link", { name: /불량 조치 확인/ }).click();
+    await page.getByRole("link", { name: /내가 처리할 안전조치/ }).click();
     await expect(
       page.getByRole("heading", { name: "내 불량 알림함 · 1건" }),
     ).toBeVisible();

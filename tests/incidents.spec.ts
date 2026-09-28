@@ -56,7 +56,9 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     await page.getByRole("link", { name: /아차사고·사고 신고/ }).click();
     await expect(page).toHaveURL(/\/incidents\/report$/);
     await page.getByRole("radio", { name: "다칠 뻔했다" }).check();
-    await page.getByLabel("무슨 일", { exact: true }).fill("지게차가 후진하다 나를 못 봤다");
+    await page
+      .getByLabel("무슨 일", { exact: true })
+      .fill("지게차가 후진하다 나를 못 봤다");
     await page.getByLabel("어디").fill("출하장 앞");
     await page.getByRole("button", { name: "신고 보내기" }).click();
     await expect(
@@ -92,7 +94,9 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     await expect(page).toHaveURL(/\/incidents$/);
     await expect(page.locator(".row-list")).toContainText("기타 아차사고");
     await page.getByRole("link", { name: /기타 아차사고/ }).click();
-    await expect(page.locator(".wo-facts").first()).toContainText("작업자 신고");
+    await expect(page.locator(".wo-facts").first()).toContainText(
+      "작업자 신고",
+    );
     await page.goto("/incidents");
     await page.getByRole("link", { name: "사고 등록" }).click();
     await expect(page).toHaveURL(/\/incidents\/new$/);
@@ -191,6 +195,24 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
       path: test.info().outputPath("survey.png"),
       fullPage: true,
     });
+
+    // 주간 안전점검 회의: 그 주(9/14~9/20)를 열면 사고가 안전사고 칩으로 모인다.
+    await page.goto("/meetings/2026-09-14");
+    await page.getByRole("button", { name: "이 주 회의 열기" }).click();
+    await expect(
+      page.getByRole("heading", { name: /수집 항목/ }),
+    ).toBeVisible();
+    const chip = page.locator('.meeting-source[data-source="INCIDENT"]');
+    await expect(chip).toContainText("안전사고");
+    await expect(chip).toHaveAttribute("href", new URL(url).pathname);
+    await expect(page.locator(".meeting-item")).toContainText(
+      "끼임 재해 · 2공장 프레스실",
+    );
+    // 최근 12주 목록: 이번 주가 노란 칩으로 표시된다.
+    await page.goto("/meetings");
+    const current = page.locator(".meeting-week.is-current");
+    await expect(current).toHaveCount(1);
+    await expect(current).toContainText("이번 주");
 
     // 대응 절차: 기본 문안이 들어 있고 고칠 수 있다.
     await page.goto("/company/incident-manual");

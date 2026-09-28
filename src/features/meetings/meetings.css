@@ -44,15 +44,54 @@
 .meeting-week.is-missing .meeting-week-state {
   color: var(--ink-3);
 }
-.meeting-source {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--line-soft);
-  color: var(--ink-3);
+/* 이번 주 — 오늘 회차 카드와 같은 노란 윗선 + 진한 노랑 칩. 한 화면에 한 곳. */
+.meeting-week.is-current {
+  border-top: 3px solid var(--accent);
+}
+.meeting-week-main strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.meeting-week-main strong .wo-risk-level {
   font-size: 11px;
+}
+/* 항목이 온 길 — 메뉴 이름 · 종류. 누르면 원본으로. */
+.meeting-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 10px 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 12px;
   font-weight: 700;
-  vertical-align: middle;
+  text-decoration: none;
+  margin-bottom: 8px;
+}
+.meeting-source[data-source="INCIDENT"] {
+  border-color: var(--danger-soft);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.meeting-source[data-source="INSPECTION_FINDING"] {
+  border-color: var(--brand-soft);
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+}
+.meeting-source[data-source="RISK_MEASURE"] {
+  border-color: var(--info-soft);
+  background: var(--info-soft);
+  color: var(--info);
+}
+a.meeting-source:hover {
+  filter: brightness(0.97);
+}
+.meeting-item h3 {
+  margin-top: 0;
 }
 .meeting-item-form,
 .meeting-open {

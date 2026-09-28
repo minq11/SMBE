@@ -6,7 +6,7 @@ import { listMeetings, monthlyTally } from "@/server/safety-meeting";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
 import { OpenMeetingButton } from "@/features/meetings/meeting-forms";
-import { weekLabel } from "@/features/meetings/model";
+import { weekLabel, weekStartKst } from "@/features/meetings/model";
 import "@/features/work-orders/work-orders.css";
 import "@/features/meetings/meetings.css";
 
@@ -15,6 +15,7 @@ export const metadata = { title: "주간 안전점검 회의 · 심플안전" };
 export default async function MeetingsPage() {
   const { session, actor } = await workSession("/meetings", true);
   if (session.membership?.role === "WORKER") notFound();
+  const thisWeek = weekStartKst();
   const [weeks, tally] = await Promise.all([
     withTransaction((c) => listMeetings(c, actor)),
     withTransaction((c) => monthlyTally(c, actor)),
@@ -54,11 +55,20 @@ export default async function MeetingsPage() {
                   ? " is-done"
                   : w.status === "DRAFT"
                     ? " is-draft"
-                    : " is-missing")
+                    : " is-missing") +
+                (w.week_start === thisWeek ? " is-current" : "")
               }
             >
               <div className="meeting-week-main">
-                <strong>{weekLabel(w.week_start)}</strong>
+                <strong>
+                  {weekLabel(w.week_start)}
+                  {w.week_start === thisWeek && (
+                    // "지금·여기" 는 포인트색(노랑) — 오늘 배지와 같은 칩 (헌법 2장).
+                    <span className="wo-risk-level" data-tone="accent">
+                      이번 주
+                    </span>
+                  )}
+                </strong>
                 <span className="meeting-week-state">
                   {w.status === "COMPLETED"
                     ? "실시 완료"

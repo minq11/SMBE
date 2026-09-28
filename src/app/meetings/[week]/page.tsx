@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  ChevronRight,
+  ListChecks,
+  SquareCheckBig,
+  TriangleAlert,
+} from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { readMeeting } from "@/server/safety-meeting";
@@ -11,7 +17,11 @@ import {
   CompleteMeetingForm,
   OpenMeetingButton,
 } from "@/features/meetings/meeting-forms";
-import { SOURCE_LABEL, weekLabel } from "@/features/meetings/model";
+import {
+  SOURCE_LABEL,
+  SOURCE_ROUTE,
+  weekLabel,
+} from "@/features/meetings/model";
 import "@/features/work-orders/work-orders.css";
 import "@/features/meetings/meetings.css";
 
@@ -19,6 +29,41 @@ export const metadata = { title: "주간 안전점검 회의 · 심플안전" };
 
 const at = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+
+/* 항목이 온 길을 칩으로 — 사이드바 메뉴와 같은 그림. 누르면 원본으로 간다. */
+const ROUTE_ICON = {
+  INSPECTION_FINDING: SquareCheckBig,
+  RISK_MEASURE: ListChecks,
+  INCIDENT: TriangleAlert,
+} as const;
+
+function RouteChip({
+  type,
+  href,
+}: {
+  type: keyof typeof ROUTE_ICON;
+  href: string | null;
+}) {
+  const Icon = ROUTE_ICON[type];
+  const body = (
+    <>
+      <Icon size={13} />
+      <span>
+        {SOURCE_ROUTE[type]} · {SOURCE_LABEL[type]}
+      </span>
+      {href && <ChevronRight size={12} />}
+    </>
+  );
+  return href ? (
+    <Link href={href} className="meeting-source" data-source={type}>
+      {body}
+    </Link>
+  ) : (
+    <span className="meeting-source" data-source={type}>
+      {body}
+    </span>
+  );
+}
 
 export default async function MeetingPage({
   params,
@@ -63,8 +108,8 @@ export default async function MeetingPage({
       {!data.meeting && (
         <section className="wo-section">
           <p className="wo-muted">
-            회의를 열면 그 주의 점검 불량과 기한이 지난 감소대책을 모아
-            보여줍니다.
+            회의를 열면 그 주의 점검 불량, 기한이 지난 감소대책, 사고·아차사고를
+            모아 보여줍니다.
           </p>
           <OpenMeetingButton week={week} label="이 주 회의 열기" />
         </section>
@@ -75,21 +120,18 @@ export default async function MeetingPage({
           <section className="wo-section">
             <h2>수집 항목 {data.items.length}건</h2>
             <p className="wo-muted">
-              그 주에 발생한 점검 불량과, 기한이 지났는데 완료되지 않은
-              위험성평가 감소대책을 모았습니다. 안전사고는 등록 기능을 만든 뒤
-              연결합니다. 여기서 확인해도 원본은 종결되지 않습니다.
+              그 주에 발생한 점검 불량, 기한이 지났는데 완료되지 않은 위험성평가
+              감소대책, 그 주의 사고·아차사고와 기한이 온 사고 할 일을
+              모았습니다. 칩을 누르면 원본으로 갑니다. 여기서 확인해도 원본은
+              종결되지 않습니다.
             </p>
             {!data.items.length && (
               <p>이 주에 모을 항목이 없습니다. 참석자만 기록하고 완료하세요.</p>
             )}
             {data.items.map((item) => (
-              <article className="wo-risk" key={item.id}>
-                <h3>
-                  <span className="meeting-source">
-                    {SOURCE_LABEL[item.source_type] ?? item.source_type}
-                  </span>{" "}
-                  {item.summary}
-                </h3>
+              <article className="wo-risk meeting-item" key={item.id}>
+                <RouteChip type={item.source_type} href={item.href} />
+                <h3>{item.summary}</h3>
                 <MeetingItemForm week={week} item={item} readOnly={done} />
               </article>
             ))}

@@ -44,3 +44,10 @@ export const SOURCE_LABEL: Record<string, string> = {
   RISK_MEASURE: "평가 감소대책 미조치",
   INCIDENT: "안전사고",
 };
+
+/** 항목이 어느 메뉴에서 왔는지 — 칩에 그 메뉴의 이름을 단다. */
+export const SOURCE_ROUTE: Record<string, string> = {
+  INSPECTION_FINDING: "안전점검",
+  RISK_MEASURE: "위험성평가",
+  INCIDENT: "안전사고",
+};
