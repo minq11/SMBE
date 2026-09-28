@@ -144,6 +144,10 @@ export function HelpView() {
             <dd>{BUSINESS.registration}</dd>
           </div>
           <div>
+            <dt>통신판매업 신고</dt>
+            <dd>{BUSINESS.mailOrder}</dd>
+          </div>
+          <div>
             <dt>주소</dt>
             <dd>{BUSINESS.address}</dd>
           </div>

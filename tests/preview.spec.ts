@@ -30,6 +30,7 @@ test("public screens carry the business footer and it fits a narrow phone", asyn
     await page.goto(route);
     const footer = page.locator(".site-footer");
     await expect(footer).toContainText("202-26-98342");
+    await expect(footer).toContainText("2026-경기시흥-1007");
     await expect(footer).toContainText("패밀리포차");
     expect(
       await page.evaluate(

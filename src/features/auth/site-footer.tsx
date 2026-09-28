@@ -13,6 +13,7 @@ export function SiteFooter() {
       <ul className="site-footer-lines">
         <li>대표 {BUSINESS.owner}</li>
         <li>사업자등록번호 {BUSINESS.registration}</li>
+        <li>통신판매업 신고 {BUSINESS.mailOrder}</li>
         <li>{BUSINESS.address}</li>
         <li>
           고객센터{" "}

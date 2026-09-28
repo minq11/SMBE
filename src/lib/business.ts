@@ -3,6 +3,8 @@ export const BUSINESS = {
   name: "패밀리포차",
   owner: "윤은희",
   registration: "202-26-98342",
+  /** 통신판매업 신고번호 (전자상거래법 제12조). */
+  mailOrder: "2026-경기시흥-1007",
   address: "경기도 시흥시 하상로 13, 1층",
   phone: "070-7938-5499",
   email: "gooddonutsyh@gmail.com",
