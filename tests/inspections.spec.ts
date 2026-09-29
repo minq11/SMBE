@@ -191,6 +191,14 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     ]);
     await context.addCookies([await cookie(manager)]);
     await page.goto("/");
+    // 다른 시험이 올린 안전소식 팝업(모든 회사에 뜬다)은 마운트 뒤에 뜬다 — 잠깐
+    // 기다렸다가 있으면 다 닫는다.
+    const popup = page.locator("dialog.notice-popup");
+    await popup.waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+    for (let i = 0; i < 6 && (await popup.isVisible()); i++) {
+      await popup.getByRole("button", { name: "닫기" }).click();
+      await popup.waitFor({ state: "visible", timeout: 700 }).catch(() => {});
+    }
     await page.getByRole("link", { name: /내가 처리할 안전조치/ }).click();
     await expect(
       page.getByRole("heading", { name: "내 불량 알림함 · 1건" }),

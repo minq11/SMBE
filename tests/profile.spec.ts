@@ -170,9 +170,19 @@ test("own profile saves, membership exit preserves history, last supervisor prot
     );
     await login(manager);
     await page.goto("/");
-    const pendingRow = page.getByRole("region", { name: "가입 승인 알림" });
+    // 다른 시험이 올린 안전소식 팝업(모든 회사에 뜬다)은 마운트 뒤에 뜬다 — 잠깐
+    // 기다렸다가 있으면 다 닫는다.
+    const popup = page.locator("dialog.notice-popup");
+    await popup.waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+    for (let i = 0; i < 6 && (await popup.isVisible()); i++) {
+      await popup.getByRole("button", { name: "닫기" }).click();
+      await popup.waitFor({ state: "visible", timeout: 700 }).catch(() => {});
+    }
+    // 가입 신청은 홈의 처리할 일 허브 한 줄이다.
+    const hub = page.getByRole("region", { name: "처리할 일" });
+    const pendingRow = hub.getByRole("link", { name: /가입 승인 대기/ });
     await expect(pendingRow).toContainText("1명");
-    await pendingRow.getByRole("link").click();
+    await pendingRow.click();
     await expect(page).toHaveURL(/\/company\/members$/);
     await expect(
       page.getByRole("tab", { name: /가입 승인 대기/ }),
