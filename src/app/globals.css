@@ -803,6 +803,13 @@ html[data-banner-hidden] .preview-banner {
 /* 로그인 전 — 써야 하는 이유 네 가지. 카드 하나가 단추라 어디를 눌러도 자세한
    설명이 창(.reason-dialog)으로 뜬다. 한 줄 설명과 혜택 칩은 카드에 늘 보인다.
    넓은 화면은 2×2, 좁은 화면은 카드 넷이 세로로 화면을 꽉 채운다. */
+/* 로그인 전 홈의 첫 화면 묶음(머리 + 이유 넷). 좁은 화면에서는 스크롤 영역 높이를
+   다 차지해 사업자 표시 하단을 첫 화면 밖으로 민다. */
+.public-fold {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
 .reasons-section {
   flex: 1;
   display: flex;
@@ -4833,6 +4840,9 @@ html[data-banner-hidden] .preview-banner {
     padding: 56px 28px 80px;
     gap: 48px;
   }
+  .public-fold {
+    gap: 48px;
+  }
   .hero h1 {
     font-size: 36px;
   }
@@ -5140,6 +5150,12 @@ html[data-banner-hidden] .preview-banner {
   /* 한 화면짜리 로그인 전 홈에는 스크롤 끝 여백이 필요 없다. */
   .main-content:has(.reasons-section) {
     padding-bottom: 16px;
+  }
+  /* 첫 화면 = 스크롤 영역의 높이. 하단(사업자 표시)은 그 밑에서 시작한다. */
+  .public-fold {
+    gap: 28px;
+    min-height: 100%;
+    flex-shrink: 0;
   }
   .main-content:has(.reasons-section)::after {
     display: none;

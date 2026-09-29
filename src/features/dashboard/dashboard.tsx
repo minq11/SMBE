@@ -485,25 +485,30 @@ function DashboardBody({
     <>
       {/* 로그인 전에만 구호를 크게 건다. 로그인한 사람에게 첫 화면의 절반을
           구호에 주면 정작 할 일이 밀린다 — 오늘 할 일이 먼저다. */}
+      {/* 머리와 이유 넷이 첫 화면을 다 쓴다(.public-fold). 사업자 표시 하단은 그
+          밑, 스크롤해야 나온다 — 첫 화면은 파는 글이지 사업자 등록증이 아니다. */}
       {!isAuthenticated && (
-        <section className="hero">
-          <div className="hero-copy">
-            <p className="hero-eyebrow">제조업은</p>
-            <h1>
-              <span>심플안전</span> 해야합니다.
-            </h1>
-            <p className="hero-lead">당장 오늘부터 심플하게 시작해요</p>
-            <div className="hero-actions">
-              <Link href="/login" className="btn-primary">
-                무료로 시작 <ArrowRight size={15} />
-              </Link>
-              <Link href="/recognition-check" className="btn-secondary">
-                <ShieldCheck size={15} /> 우리회사 안전수준 진단
-              </Link>
+        <div className="public-fold">
+          <section className="hero">
+            <div className="hero-copy">
+              <p className="hero-eyebrow">제조업은</p>
+              <h1>
+                <span>심플안전</span> 해야합니다.
+              </h1>
+              <p className="hero-lead">당장 오늘부터 심플하게 시작해요</p>
+              <div className="hero-actions">
+                <Link href="/login" className="btn-primary">
+                  무료로 시작 <ArrowRight size={15} />
+                </Link>
+                <Link href="/recognition-check" className="btn-secondary">
+                  <ShieldCheck size={15} /> 우리회사 안전수준 진단
+                </Link>
+              </div>
             </div>
-          </div>
-          <HeroPhone />
-        </section>
+            <HeroPhone />
+          </section>
+          <Reasons />
+        </div>
       )}
       {isAuthenticated && today && (
         <section className="today" aria-label="오늘 할 일">
@@ -551,8 +556,6 @@ function DashboardBody({
           </div>
         </section>
       )}
-
-      {!isAuthenticated && <Reasons />}
 
       {isAuthenticated && (
         <section className="action-grid" aria-label="빠른 시작">

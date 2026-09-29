@@ -69,6 +69,28 @@ test("anonymous membership and invite pages require login", async ({
   await expect(page).toHaveURL(/\/login/);
 });
 
+/** 하단(사업자 표시)의 윗선이 첫 화면 바닥 아래이고, 하단 밑에는 더 없다. */
+async function footerBelowFold(page: import("@playwright/test").Page) {
+  const box = await page.locator("main").evaluate((main) => {
+    const footer = main.querySelector(".site-footer") as HTMLElement;
+    const top =
+      footer.getBoundingClientRect().top -
+      main.getBoundingClientRect().top +
+      main.scrollTop;
+    return {
+      clientHeight: main.clientHeight,
+      scrollHeight: main.scrollHeight,
+      footerTop: top,
+      footerHeight: footer.getBoundingClientRect().height,
+    };
+  });
+  expect(box.footerTop).toBeGreaterThanOrEqual(box.clientHeight - 1);
+  // 하단 밑에 남는 것은 여백 한 자(16px)뿐.
+  expect(
+    box.scrollHeight - box.footerTop - box.footerHeight,
+  ).toBeLessThanOrEqual(24);
+}
+
 test("preview renders without secrets and only shows preparation dialogs", async ({
   page,
 }) => {
@@ -86,17 +108,9 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await expect(
     page.getByRole("link", { name: /우리회사 안전수준 진단/ }),
   ).toHaveAttribute("href", "/recognition-check");
-  // 로그인 전 홈도 한 화면에 들어간다 — 접힌 아래에는 사업자 표시 하단(법정)만 있다.
-  // 본문이 넘치는 만큼은 그 하단의 높이 이하여야 한다.
-  if (test.info().project.name === "mobile") {
-    const main = page.locator("main");
-    const footer = await page
-      .locator(".site-footer")
-      .evaluate((el) => el.getBoundingClientRect().height);
-    expect(
-      await main.evaluate((el) => el.scrollHeight - el.clientHeight),
-    ).toBeLessThanOrEqual(footer + 1);
-  }
+  // 로그인 전 홈도 한 화면에 들어간다 — 사업자 표시 하단(법정)은 첫 화면 밖에서
+  // 시작하고, 그 밑에는 아무것도 없다.
+  if (test.info().project.name === "mobile") await footerBelowFold(page);
   await expect(
     page.getByRole("heading", { name: /‘시작 요금’ 없는/ }),
   ).toBeVisible();
@@ -123,16 +137,8 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await dialog.getByRole("button", { name: "확인" }).click();
   await expect(dialog).toBeHidden();
   await expect(firstDetail).toBeHidden();
-  // 여전히 한 화면 — 창이 카드 배치를 밀어내지 않는다 (접힌 아래는 사업자 표시뿐).
-  if (test.info().project.name === "mobile") {
-    const main = page.locator("main");
-    const footer = await page
-      .locator(".site-footer")
-      .evaluate((el) => el.getBoundingClientRect().height);
-    expect(
-      await main.evaluate((el) => el.scrollHeight - el.clientHeight),
-    ).toBeLessThanOrEqual(footer + 1);
-  }
+  // 여전히 한 화면 — 창이 카드 배치를 밀어내지 않는다.
+  if (test.info().project.name === "mobile") await footerBelowFold(page);
   for (const fake of [
     "오늘의 작업 (예시)",
     "오늘 처리할 일",
