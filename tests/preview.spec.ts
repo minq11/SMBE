@@ -29,9 +29,14 @@ test("public screens carry the business footer and it fits a narrow phone", asyn
   for (const route of ["/", "/login", "/guide", "/terms", "/privacy"]) {
     await page.goto(route);
     const footer = page.locator(".site-footer");
-    await expect(footer).toContainText("202-26-98342");
+    // 상호·대표는 늘 보이고, 나머지는 "사업자 정보" 를 펼쳐야 보인다.
+    await expect(
+      footer.getByText("상호 패밀리포차 · 대표 윤은희"),
+    ).toBeVisible();
+    await expect(footer.getByText("202-26-98342")).toBeHidden();
+    await footer.getByText("사업자 정보", { exact: true }).click();
+    await expect(footer.getByText("202-26-98342")).toBeVisible();
     await expect(footer).toContainText("2026-경기시흥-1007");
-    await expect(footer).toContainText("패밀리포차");
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

@@ -5913,9 +5913,34 @@ fieldset.form-field legend {
   font-weight: 700;
   color: var(--ink-2);
 }
+/* 상호·대표 한 줄 + "사업자 정보" 접힘. 누르는 자리는 44px. */
+.site-footer-fold > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+}
+.site-footer-fold > summary::-webkit-details-marker {
+  display: none;
+}
+.site-footer-more {
+  color: var(--ink-2);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.site-footer-more::after {
+  content: " ▾";
+}
+.site-footer-fold[open] .site-footer-more::after {
+  content: " ▴";
+}
 .site-footer-lines {
   list-style: none;
-  margin: 0;
+  margin: 0 0 4px;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
