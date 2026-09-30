@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { encode } from "next-auth/jwt";
 import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
+import { seoulToday } from "../src/features/work-orders/model";
 
 /**
  * 표준서를 화면으로 만들고, 고치고, 평가 회차를 더한다. 세 폼이 서버 스키마와
@@ -376,6 +377,80 @@ test("standard: create, edit, add a seeded assessment round", async ({
       path: testInfo.outputPath("work-order-picker-revision.png"),
       fullPage: true,
     });
+
+    // 6-1) 표준서 지시서는 평가를 복사하지 않는다. 폼에서는 표준서 평가를 읽기만 하고,
+    //      발급하면 표준서의 승인된 평가를 가리킨다 — 위험성평가 목록에 행이 늘지 않는다.
+    const assessmentsBefore = Number(
+      (
+        await pool.query(
+          "SELECT count(*) FROM risk_assessments WHERE company_id=$1 AND NOT order_copy",
+          [company],
+        )
+      ).rows[0].count,
+    );
+    await page
+      .locator(".jump-nav")
+      .getByRole("link", { name: "위험성평가", exact: true })
+      .click();
+    const stdFold = page.locator("#wo-risk details");
+    await expect(stdFold).toContainText("표준서 위험성평가");
+    await expect(stdFold).toContainText("그대로 씁니다");
+    await stdFold.locator("summary").click();
+    await expect(stdFold.getByText("끼임")).toBeVisible();
+    await expect(
+      stdFold.getByLabel("유해·위험요인", { exact: true }),
+    ).toHaveCount(0);
+    const day = seoulToday(new Date(Date.now() + 86400_000));
+    await page.getByRole("button", { name: "작업 회차 만들기" }).click();
+    const range = page.getByRole("dialog");
+    await range.getByLabel("시작일").fill(day);
+    await range.getByLabel("마감일").fill(day);
+    await range.getByRole("button", { name: "회차 만들기" }).click();
+    await page.getByLabel("장소", { exact: true }).fill("프레스실");
+    await page
+      .locator("#wo-schedule")
+      .getByRole("button", { name: /^작업자 선택/ })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("checkbox", { name: "표준 작업자", exact: true })
+      .check();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "완료", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "지금 발급하기", exact: true })
+      .click();
+    const issueDialog = page.getByRole("dialog");
+    await expect(issueDialog).toContainText("표준서 위험성평가 연결");
+    await issueDialog
+      .getByRole("button", { name: "발급", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/work-orders\/[a-f0-9-]{36}(#qr)?$/);
+    // 지시서 상세: 위험요인은 표준서 평가 그대로, 원본으로 가는 줄이 있다.
+    await page.locator("#risk summary").click();
+    await expect(page.locator("#risk")).toContainText("끼임");
+    await expect(
+      page
+        .locator("#risk")
+        .getByRole("link", { name: "표준서 위험성평가 보기" }),
+    ).toBeVisible();
+    const assessmentsAfter = Number(
+      (
+        await pool.query(
+          "SELECT count(*) FROM risk_assessments WHERE company_id=$1 AND NOT order_copy",
+          [company],
+        )
+      ).rows[0].count,
+    );
+    expect(assessmentsAfter).toBe(assessmentsBefore);
+    const linked = await pool.query(
+      `SELECT a.standard_id, a.is_simple FROM work_orders w JOIN risk_assessments a ON a.id = w.risk_assessment_id
+        WHERE w.company_id=$1 AND w.status='ISSUED' ORDER BY w.issued_at DESC LIMIT 1`,
+      [company],
+    );
+    expect(linked.rows[0]).toEqual({ standard_id: id, is_simple: false });
 
     // 7) 개정 초안이 있는 채로는 폐기되지 않는다 — 먼저 버리거나 확정하라고 안내.
     //    초안을 버린 뒤에야 폐기된다.

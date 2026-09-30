@@ -149,6 +149,8 @@ export default async function OrderDetailPage({
     (s) => s.snapshot_kind === "RISK_ASSESSMENT",
   )?.payload as
     | {
+        id?: string;
+        is_simple?: boolean;
         criteria_snapshot: RiskCriteria;
         safety_info: WorkDraft["safetyInfo"];
         items: Array<{
@@ -456,6 +458,21 @@ export default async function OrderDetailPage({
           <Facts
             className="wo-facts--tight"
             rows={[
+              // 표준서 지시서는 표준서 평가를 그대로 쓴다 — 조치 이행은 그 평가 한 곳에서.
+              riskSnapshot &&
+              riskSnapshot.is_simple === false &&
+              riskSnapshot.id
+                ? [
+                    "원본",
+                    <Link
+                      key="src"
+                      href={`/assessments/${riskSnapshot.id}`}
+                      className="wo-standard-link"
+                    >
+                      표준서 위험성평가 보기
+                    </Link>,
+                  ]
+                : null,
               ["실시일", d.performedOn || null],
               [
                 "참여",

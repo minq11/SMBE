@@ -256,7 +256,8 @@ export function validateSchedule(d: WorkDraft) {
   if (!d.location.trim()) throw new WorkOrderError("작업 장소를 입력하세요.");
 }
 export function validateIssue(d: WorkDraft) {
-  validateAssessment(d);
+  // 표준서 지시서는 표준서의 승인된 평가를 그대로 쓴다 — 지시서 안의 평가 칸은 검사하지 않는다.
+  if (!d.standardId) validateAssessment(d);
   validateSchedule(d);
   if (d.ptwRequired)
     throw new WorkOrderError(

@@ -97,14 +97,16 @@ export async function listAssessments(
   >(
     `SELECT ra.id, ra.name, ra.assessment_kind AS kind, ra.performed_on::text,
             ra.status, ra.is_simple, ra.standard_id,
-            (SELECT wo.id FROM work_orders wo WHERE wo.risk_assessment_id = ra.id LIMIT 1) AS work_order_id,
+            CASE WHEN ra.is_simple THEN
+              (SELECT wo.id FROM work_orders wo WHERE wo.risk_assessment_id = ra.id LIMIT 1)
+            END AS work_order_id,
             u.display_name AS created_by_name,
             (SELECT count(*)::int FROM risk_assessment_items i WHERE i.assessment_id = ra.id) AS item_count,
             (SELECT count(*)::int FROM risk_assessment_items i
               WHERE i.assessment_id = ra.id AND NOT i.initial_allowable
                 AND (i.actual_completion_date IS NULL OR i.post_allowable = false)) AS open_action_count
        FROM risk_assessments ra JOIN users u ON u.id = ra.created_by
-      WHERE ra.company_id = $1
+      WHERE ra.company_id = $1 AND NOT ra.order_copy
       ORDER BY ra.performed_on DESC, ra.created_at DESC
       LIMIT 300`,
     [actor.companyId],
@@ -126,7 +128,7 @@ async function standardsStatus(client: PoolClient, companyId: string) {
        FROM standards s
        LEFT JOIN LATERAL (
          SELECT assessment_kind, performed_on FROM risk_assessments
-          WHERE standard_id = s.id AND status = 'APPROVED'
+          WHERE standard_id = s.id AND status = 'APPROVED' AND NOT order_copy
           ORDER BY performed_on DESC LIMIT 1
        ) ra ON true
       WHERE s.company_id = $1 AND s.status = 'APPROVED'
@@ -173,14 +175,14 @@ export async function assessmentOverview(
   }>(
     `SELECT
        (SELECT count(*)::int FROM risk_assessments ra
-         WHERE ra.company_id = $1 AND ra.status = 'APPROVED'
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT ra.order_copy
            AND ra.performed_on >= ($2 || '-01-01')::date
            AND ra.assessment_kind IN ('FIRST','PERIODIC','CONTINUOUS')) AS this_year_count,
        (SELECT count(*)::int FROM risk_assessments ra
-         WHERE ra.company_id = $1 AND ra.status = 'PENDING') AS pending_count,
+         WHERE ra.company_id = $1 AND ra.status = 'PENDING' AND NOT ra.order_copy) AS pending_count,
        (SELECT count(*)::int FROM risk_assessment_items i
           JOIN risk_assessments ra ON ra.id = i.assessment_id
-         WHERE ra.company_id = $1 AND ra.status = 'APPROVED'
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT ra.order_copy
            AND NOT i.initial_allowable
            AND (i.actual_completion_date IS NULL OR i.post_allowable = false)) AS open_action_count`,
     [actor.companyId, year],
@@ -259,7 +261,8 @@ export async function readAssessment(
        LEFT JOIN standards s ON s.id = ra.standard_id
        LEFT JOIN standard_revisions rv ON rv.id = ra.standard_revision_id
        LEFT JOIN LATERAL (
-         SELECT id, name FROM work_orders WHERE risk_assessment_id = ra.id LIMIT 1
+         SELECT id, name FROM work_orders
+          WHERE risk_assessment_id = ra.id AND ra.is_simple LIMIT 1
        ) wo ON true
       WHERE ra.id = $1 AND ra.company_id = $2`,
     [id, actor.companyId],
@@ -287,19 +290,18 @@ export async function readAssessment(
   };
 }
 
-const actionSchema = z
-  .object({
-    actualAction: z
-      .string()
-      .trim()
-      .min(1, "실제 조치 내용을 적으세요.")
-      .max(1000),
-    actualCompletionDate: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "완료일을 선택하세요."),
-    postRiskLevel: z.enum(["HIGH", "MID", "LOW"]),
-    followUpMeasure: z.string().trim().max(1000).optional().default(""),
-  });
+const actionSchema = z.object({
+  actualAction: z
+    .string()
+    .trim()
+    .min(1, "실제 조치 내용을 적으세요.")
+    .max(1000),
+  actualCompletionDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "완료일을 선택하세요."),
+  postRiskLevel: z.enum(["HIGH", "MID", "LOW"]),
+  followUpMeasure: z.string().trim().max(1000).optional().default(""),
+});
 export type RiskActionInput = z.input<typeof actionSchema>;
 
 /**
@@ -331,7 +333,10 @@ export async function recordRiskAction(
     throw new WorkOrderError("승인된 평가에만 조치를 적을 수 있습니다.");
   // 조치 후 허용 여부는 수준 + 이 평가의 기준 사본에서 나온다. 고시 제13조: 대책을
   // 실행했는데도 허용 수준이 아니면 추가 대책을 세운다.
-  const allowed = postAllowable(rows[0].criteria_snapshot, parsed.data.postRiskLevel);
+  const allowed = postAllowable(
+    rows[0].criteria_snapshot,
+    parsed.data.postRiskLevel,
+  );
   if (!allowed && parsed.data.followUpMeasure.length === 0)
     throw new WorkOrderError("조치 뒤에도 허용 불가면 추가 대책을 적으세요.");
   await client.query(
@@ -414,18 +419,18 @@ async function halfYearStats(
   const { rows } = await client.query<HalfYearStats>(
     `SELECT
        (SELECT count(*)::int FROM risk_assessments ra
-         WHERE ra.company_id = $1 AND ra.status = 'APPROVED'
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT ra.order_copy
            AND ra.performed_on BETWEEN $2::date AND $3::date) AS assessments,
        (SELECT count(*)::int FROM risk_assessment_items i
           JOIN risk_assessments ra ON ra.id = i.assessment_id
-         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT i.initial_allowable
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT ra.order_copy AND NOT i.initial_allowable
            AND i.actual_completion_date IS NOT NULL AND i.post_allowable = true) AS actions_done,
        (SELECT count(*)::int FROM risk_assessment_items i
           JOIN risk_assessments ra ON ra.id = i.assessment_id
-         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT i.initial_allowable
+         WHERE ra.company_id = $1 AND ra.status = 'APPROVED' AND NOT ra.order_copy AND NOT i.initial_allowable
            AND (i.actual_completion_date IS NULL OR i.post_allowable = false)) AS actions_open,
        (SELECT count(*)::int FROM risk_assessments ra
-         WHERE ra.company_id = $1 AND ra.status = 'PENDING') AS pending`,
+         WHERE ra.company_id = $1 AND ra.status = 'PENDING' AND NOT ra.order_copy) AS pending`,
     [companyId, from, to],
   );
   const { needs } = await standardsStatus(client, companyId);
@@ -511,7 +516,7 @@ export async function standardsForNewAssessment(companyId: string) {
        FROM standards s
        LEFT JOIN LATERAL (
          SELECT assessment_kind, performed_on FROM risk_assessments
-          WHERE standard_id = s.id AND status = 'APPROVED'
+          WHERE standard_id = s.id AND status = 'APPROVED' AND NOT order_copy
           ORDER BY performed_on DESC LIMIT 1
        ) ra ON true
       WHERE s.company_id = $1 AND s.status = 'APPROVED'

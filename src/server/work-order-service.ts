@@ -271,17 +271,42 @@ export async function requestAssessment(
   const d = row.draft_data;
   // 허용 여부는 회사 기준으로 정해지니 기준을 읽은 뒤에 검사한다 (아래).
   const members = await validatePeople(client, actor.companyId, d);
-  // 판단 기준은 회사가 정한 값이 원본이다. 클라이언트가 보낸 값을 믿지 않고
-  // 이 시점의 회사 기준을 그대로 스냅샷으로 남긴다.
-  const criteriaSnapshot = await readRiskCriteria(client, actor.companyId);
-  validateAssessment(d, criteriaSnapshot);
   const linked = await resolveStandardLink(
     client,
     actor.companyId,
     d.standardId ?? null,
     row.standard_revision_id ?? d.standardRevisionId ?? null,
   );
-  const linkedStandardId = linked?.id ?? null;
+  if (linked) {
+    // 표준서 지시서는 평가를 복사하지 않는다. 표준서의 승인된 평가(그 판의 것,
+    // 없으면 최신)를 가리킨다 — 목록이 부풀지 않고 조치는 한 곳에서 한 번 센다.
+    // 발급 때 그 시점의 위험요인·대책이 스냅샷으로 남는다 (db/0027).
+    const { rows: found } = await client.query<{ id: string }>(
+      `SELECT id FROM risk_assessments
+        WHERE company_id=$1 AND standard_id=$2 AND status='APPROVED' AND NOT order_copy
+        ORDER BY (standard_revision_id = $3::uuid) DESC NULLS LAST, performed_on DESC, created_at DESC
+        LIMIT 1`,
+      [actor.companyId, linked.id, linked.revisionId],
+    );
+    if (!found[0])
+      throw new WorkOrderError(
+        "이 표준서에 승인된 위험성평가가 없습니다. 표준서에서 먼저 위험성평가를 하세요.",
+      );
+    await client.query(
+      "UPDATE work_orders SET risk_assessment_id=$2,revision=revision+1 WHERE id=$1",
+      [id, found[0].id],
+    );
+    await auditOrder(client, actor, id, "LINK_ASSESSMENT", {
+      assessmentId: found[0].id,
+      standardId: linked.id,
+    });
+    return;
+  }
+  // 판단 기준은 회사가 정한 값이 원본이다. 클라이언트가 보낸 값을 믿지 않고
+  // 이 시점의 회사 기준을 그대로 스냅샷으로 남긴다.
+  const criteriaSnapshot = await readRiskCriteria(client, actor.companyId);
+  validateAssessment(d, criteriaSnapshot);
+  const linkedStandardId: string | null = null;
   const { rows } = await client.query<{ id: string }>(
     `INSERT INTO risk_assessments(company_id,name,assessment_kind,performed_on,criteria_snapshot,work_method_snapshot,
       safety_info,created_by,retention_until,is_simple,standard_id,worker_opinion,standard_revision_id)
@@ -295,10 +320,10 @@ export async function requestAssessment(
       d.method,
       JSON.stringify(d.safetyInfo),
       actor.userId,
-      linkedStandardId === null, // 표준서 없으면 간이평가
+      true, // 여기 오는 것은 표준서 없는 간이평가뿐
       linkedStandardId,
       d.workerOpinion?.trim() || null,
-      linked?.revisionId ?? null,
+      null,
     ],
   );
   const assessmentId = rows[0].id;
@@ -344,12 +369,17 @@ export async function approveAssessment(
   allowSelfApproval: boolean,
 ) {
   const row = await writable(client, actor, id, revision);
+  const { rows } = await client.query<{
+    created_by: string;
+    is_simple: boolean;
+    status: string;
+  }>("SELECT created_by, is_simple, status FROM risk_assessments WHERE id=$1", [
+    row.risk_assessment_id,
+  ]);
+  // 표준서 평가를 가리키는 지시서는 이미 승인된 평가를 쓴다 — 승인할 것이 없다.
+  if (rows[0] && !rows[0].is_simple && rows[0].status === "APPROVED") return;
   if (row.status !== "DRAFT" || row.assessment_status !== "PENDING")
     throw new WorkOrderError("승인 대기 중인 평가가 없습니다.");
-  const { rows } = await client.query(
-    "SELECT created_by FROM risk_assessments WHERE id=$1",
-    [row.risk_assessment_id],
-  );
   const self = rows[0].created_by === actor.userId;
   if (self && !allowSelfApproval)
     throw new WorkOrderError("현재는 다른 관리자의 평가 승인이 필요합니다.");

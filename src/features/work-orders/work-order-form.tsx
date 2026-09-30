@@ -39,6 +39,7 @@ import { PermitFields } from "./permit-fields";
 import { SessionEditor } from "./session-editor";
 import { PickerDialog } from "@/components/ui/picker-dialog";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
+import { LEVEL_LABEL } from "@/features/assessments/model";
 import { Segmented } from "@/features/assessments/risk-level-picker";
 import { PtwHelp } from "@/features/standards/ptw-help";
 import { saveOrderAction, saveAndIssueAction } from "./actions";
@@ -355,11 +356,14 @@ export function WorkOrderForm({
     const approverName = members.find(
       (m) => m.user_id === data.permit.approverId,
     )?.display_name;
+    // 표준서 지시서는 표준서의 승인된 평가를 가리킬 뿐, 지시서에서 승인할 평가가 없다.
+    const assessStep =
+      mode === "standard" ? "표준서 위험성평가 연결" : "위험성평가 승인(본인)";
     const message = !data.ptwRequired
-      ? "저장 → 위험성평가 승인(본인) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다."
+      ? `저장 → ${assessStep} → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다.`
       : selfApprove
-        ? "저장 → 위험성평가 승인(본인) → 위험작업허가 신청·승인(본인, 자가 승인 이력이 남습니다) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다."
-        : `저장 → 위험성평가 승인(본인) → 위험작업허가 신청까지 진행됩니다. 승인자(${approverName ?? "지정 관리자"})가 허가를 승인하면 발급되고 링크가 전송됩니다.`;
+        ? `저장 → ${assessStep} → 위험작업허가 신청·승인(본인, 자가 승인 이력이 남습니다) → 발급 → 배정 인원에게 링크 전송이 순차 진행되고, 발급 후 내용이 고정됩니다.`
+        : `저장 → ${assessStep} → 위험작업허가 신청까지 진행됩니다. 승인자(${approverName ?? "지정 관리자"})가 허가를 승인하면 발급되고 링크가 전송됩니다.`;
     if (
       !(await confirm(message, {
         title: data.ptwRequired
@@ -598,6 +602,37 @@ export function WorkOrderForm({
     </>
   );
   const riskCount = data.risks.filter((r) => r.hazard.trim()).length;
+  // 표준서 모드: 표준서의 승인된 평가를 그대로 쓴다. 지시서에서 고치지 않는다 —
+  // 고치면 표준서와 다른 평가가 검토 없이 생긴다. 바꾸려면 표준서에서 새 회차.
+  const standardRiskBody = (
+    <>
+      <p className="wo-muted">
+        표준서의 승인된 위험성평가를 그대로 씁니다. 발급하면 그 시점의 내용이
+        지시서에 남습니다. 위험요인이 달라졌으면{" "}
+        <Link href={`/standards/${standardId}/assessments/new`}>
+          표준서에서 새 회차 평가
+        </Link>
+        를 먼저 하세요.
+      </p>
+      {data.risks.map((r, i) => (
+        <article className="wo-risk" key={i}>
+          <h3>
+            {i + 1}. {r.hazard}
+            {r.level && (
+              <span className="wo-risk-level" data-level={r.level}>
+                {LEVEL_LABEL[r.level]} ·{" "}
+                {r.allowable === "yes" ? "허용 가능" : "조치 필요"}
+              </span>
+            )}
+          </h3>
+          {r.currentControl && (
+            <p className="wo-detail-text">현재 안전조치: {r.currentControl}</p>
+          )}
+          <p className="wo-detail-text">{r.measure}</p>
+        </article>
+      ))}
+    </>
+  );
   return (
     <div className="wo-editor">
       <PageHeader title={data.name || title} />
@@ -949,10 +984,10 @@ export function WorkOrderForm({
                   {mode === "standard" ? (
                     <details className="std-fold wo-fold" key={standardId}>
                       <summary>
-                        표준서 평가 {riskCount}건이 채워졌습니다
-                        <small>펼쳐서 확인·수정</small>
+                        표준서 위험성평가 {riskCount}건을 그대로 씁니다
+                        <small>펼쳐서 확인</small>
                       </summary>
-                      {riskBody}
+                      {standardRiskBody}
                     </details>
                   ) : (
                     riskBody

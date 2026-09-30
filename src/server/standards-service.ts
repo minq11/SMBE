@@ -172,16 +172,16 @@ export async function listStandards(
             s.updated_at,
             (
               SELECT MAX(ra.performed_on)::text FROM risk_assessments ra
-               WHERE ra.standard_id = s.id AND ra.status = 'APPROVED'
+               WHERE ra.standard_id = s.id AND ra.status = 'APPROVED' AND NOT ra.order_copy
             ) AS latest_approved_performed_on,
             (
               SELECT ra.assessment_kind FROM risk_assessments ra
-                WHERE ra.standard_id = s.id AND ra.status = 'APPROVED'
+                WHERE ra.standard_id = s.id AND ra.status = 'APPROVED' AND NOT ra.order_copy
                 ORDER BY ra.performed_on DESC LIMIT 1
             )::text AS latest_approved_kind,
             (
               SELECT COUNT(*)::int FROM risk_assessments ra
-               WHERE ra.standard_id = s.id AND ra.status = 'APPROVED'
+               WHERE ra.standard_id = s.id AND ra.status = 'APPROVED' AND NOT ra.order_copy
             ) AS approved_assessment_count
        FROM standards s
       WHERE s.company_id = $1
@@ -285,7 +285,7 @@ export async function getStandardDetail(
             u.display_name AS approved_by_name
        FROM risk_assessments ra
        LEFT JOIN users u ON u.id = ra.approved_by
-      WHERE ra.standard_id = $1
+      WHERE ra.standard_id = $1 AND NOT ra.order_copy
       ORDER BY ra.performed_on DESC, ra.approved_at DESC NULLS LAST`,
     [standardId],
   );

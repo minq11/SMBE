@@ -132,7 +132,7 @@ export async function openMeeting(
   const measures = await client.query<{ id: string; summary: string }>(
     `SELECT ri.id, a.name || ' · ' || ri.hazard AS summary
        FROM risk_assessment_items ri JOIN risk_assessments a ON a.id = ri.assessment_id
-      WHERE a.company_id=$1 AND a.status='APPROVED'
+      WHERE a.company_id=$1 AND a.status='APPROVED' AND NOT a.order_copy
         AND ri.actual_completion_date IS NULL
         AND ri.planned_completion_date IS NOT NULL
         AND ri.planned_completion_date <= $2::date
