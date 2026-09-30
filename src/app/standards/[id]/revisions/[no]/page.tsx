@@ -78,7 +78,6 @@ export default async function RevisionPage({
             {rev.status === "DRAFT" ? "작성" : "확정"}{" "}
             {new Date(when).toLocaleDateString("ko-KR")} ·{" "}
             {rev.approved_by_name ?? rev.created_by_name}
-            {rev.change_note ? ` · ${rev.change_note}` : ""}
           </p>
         </div>
       </header>

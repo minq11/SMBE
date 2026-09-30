@@ -422,9 +422,6 @@ export function StandardDetailView({
                 )}{" "}
                 · {r.approved_by_name ?? r.created_by_name}
               </span>
-              {r.change_note && (
-                <span className="std-assessment-valid">{r.change_note}</span>
-              )}
               <span
                 className={`std-assessment-status std-assessment-status--${
                   r.status === "APPROVED"
