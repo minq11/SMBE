@@ -50,9 +50,21 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
       secure: false,
     });
 
+    // 다른 시험이 올린 안전소식 팝업(모든 회사에 뜬다)은 마운트 뒤에 뜬다 — 잠깐
+    // 기다렸다가 있으면 다 닫는다.
+    const dismissPopups = async () => {
+      const popup = page.locator("dialog.notice-popup");
+      await popup.waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+      for (let i = 0; i < 6 && (await popup.isVisible()); i++) {
+        await popup.getByRole("button", { name: "닫기" }).click();
+        await popup.waitFor({ state: "visible", timeout: 700 }).catch(() => {});
+      }
+    };
+
     // 작업자가 먼저 신고한다 — 세 칸. 홈의 단추가 신고 화면으로 간다.
     await context.addCookies([await cookieFor(worker)]);
     await page.goto("/");
+    await dismissPopups();
     await page.getByRole("link", { name: /아차사고·사고 신고/ }).click();
     await expect(page).toHaveURL(/\/incidents\/report$/);
     await page.getByRole("radio", { name: "다칠 뻔했다" }).check();
@@ -88,6 +100,7 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
 
     // 관리자 홈의 처리할 일 허브에 작업자 신고가 올라와 있다.
     await page.goto("/");
+    await dismissPopups();
     const hub = page.getByRole("region", { name: "처리할 일" });
     await expect(hub).toContainText("사고 뒤 할 일");
     await hub.getByRole("link", { name: /사고 뒤 할 일/ }).click();
