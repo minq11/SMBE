@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { ArrowRight } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { readAssessment } from "@/server/assessments";
@@ -12,6 +11,8 @@ import { WorkOrderError } from "@/features/work-orders/model";
 import { ASSESSMENT_KIND_LABEL } from "@/features/standards/constants";
 import { AssessmentItems } from "@/features/assessments/detail-view";
 import { STATUS_LABEL, koDate } from "@/features/assessments/model";
+import { Facts } from "@/components/ui/facts";
+import "@/features/work-orders/work-orders.css";
 import "@/features/assessments/assessments.css";
 import { CriteriaList } from "@/features/company/criteria-list";
 
@@ -68,27 +69,41 @@ export default async function AssessmentPage({
             <span>승인 {detail.approved_by_name}</span>
           )}
         </p>
+        {/* 이 평가가 어디서 왔는지 — 이름표 있는 줄(헌법 5장). 지시서를 발급하면
+            그 지시서만의 평가가 생기는데, 표준서 지시서면 표준서 평가의 사본이라
+            표준서와 지시서 둘 다 붙는다. 간이평가는 지시서만. */}
+        {(detail.standard_id || detail.work_order_id) && (
+          <Facts
+            className="wo-facts--tight asmt-origin"
+            rows={[
+              Boolean(detail.standard_id) && [
+                "표준서",
+                <span key="s" className="asmt-origin-cell">
+                  <Link href={`/standards/${detail.standard_id}`}>
+                    {detail.standard_name}
+                  </Link>
+                  {detail.standard_revision_no ? (
+                    <small>{detail.standard_revision_no}회차 개정본</small>
+                  ) : null}
+                </span>,
+              ],
+              Boolean(detail.work_order_id) && [
+                "지시서",
+                <span key="w" className="asmt-origin-cell">
+                  <Link href={`/work-orders/${detail.work_order_id}`}>
+                    {detail.work_order_name}
+                  </Link>
+                  <small>
+                    {detail.is_simple
+                      ? "이 지시서를 발급할 때 만든 간이평가"
+                      : "이 지시서를 발급할 때 표준서 평가를 복사한 것"}
+                  </small>
+                </span>,
+              ],
+            ]}
+          />
+        )}
         <div className="asmt-head-links">
-          {detail.standard_id && (
-            <Link
-              href={`/standards/${detail.standard_id}`}
-              className="btn-secondary"
-            >
-              표준서 {detail.standard_name}
-              {detail.standard_revision_no
-                ? ` ${detail.standard_revision_no}판`
-                : ""}{" "}
-              <ArrowRight size={13} />
-            </Link>
-          )}
-          {detail.work_order_id && (
-            <Link
-              href={`/work-orders/${detail.work_order_id}`}
-              className="btn-secondary"
-            >
-              지시서 {detail.work_order_name} <ArrowRight size={13} />
-            </Link>
-          )}
           {detail.standard_id && detail.status === "APPROVED" && (
             <Link
               href={`/standards/${detail.standard_id}/assessments/new`}

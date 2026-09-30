@@ -148,6 +148,19 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+/* 평가의 출처 — 표준서(몇 회차 개정본인지 흐리게 아래), 지시서(왜 붙었는지 아래). */
+.asmt-origin {
+  margin: 2px 0 0;
+}
+.asmt-origin-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.asmt-origin-cell small {
+  font-size: 12px;
+  color: var(--ink-3);
+}
 .asmt-section {
   width: 100%;
   max-width: 760px;

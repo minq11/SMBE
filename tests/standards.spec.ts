@@ -203,6 +203,14 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.locator("#main .criteria-list")).toContainText(
       "병원 치료가 필요한 부상",
     );
+    // 출처는 이름표 줄이다: 표준서 이름과 몇 회차 개정본인지.
+    const origin = page.locator(".asmt-origin");
+    await expect(origin).toContainText("표준서");
+    await expect(origin).toContainText("1회차 개정본");
+    await page.screenshot({
+      path: test.info().outputPath("assessment-detail.png"),
+      fullPage: true,
+    });
     await page.goto(`/standards/${id}`);
 
     // 2) 확정된 판은 못 고친다. 표준서 개정(확인 창) → 복사된 초안을 고쳐 → 확정 → 2판.
