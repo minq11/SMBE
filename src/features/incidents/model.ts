@@ -323,6 +323,28 @@ export type Duty = {
   note: string;
 };
 
+/** 사고 기록 한 줄: 언제 · 누가 · 무엇 (audit_logs). */
+export type IncidentHistoryRow = {
+  action: string;
+  at: string;
+  actor_name: string | null;
+  done: boolean | null;
+  duty_kind: DutyKind | null;
+  /** 대책 글의 앞부분 — 어느 대책인지 알아볼 만큼만. */
+  action_measure: string | null;
+};
+export const INCIDENT_HISTORY_LABEL: Record<string, string> = {
+  INCIDENT_CREATE: "사고 등록",
+  INCIDENT_REPORT: "작업자 신고",
+  INCIDENT_UPDATE: "내용 고침",
+  INCIDENT_DUTY_DONE: "할 일 끝냄",
+  INCIDENT_DUTY_REOPEN: "할 일 되돌림",
+  INCIDENT_ACTION_DONE: "재발방지대책 완료 적음",
+  INCIDENT_ACTION_UNDONE: "재발방지대책 완료 취소",
+  INCIDENT_CLOSE: "종결",
+  INCIDENT_REOPEN: "다시 열기",
+};
+
 export type IncidentDetail = {
   id: string;
   kind: IncidentKind;
@@ -352,6 +374,7 @@ export type IncidentDetail = {
   victims: Victim[];
   actions: IncidentAction[];
   duties: Duty[];
+  history: IncidentHistoryRow[];
 };
 
 /** 목록·제목에 쓰는 한 줄 이름: "끼임 재해", "넘어짐 아차사고". */

@@ -7666,3 +7666,113 @@ fieldset.form-field legend {
 .row-count.is-alert {
   color: var(--danger);
 }
+
+/* 헌법 4장 세 구역 — 카드 없이 선으로 나누는 상세(지시서·사고·평가)에 들어온 별도 문서·
+   기록 카드. 접히는 카드(.wo-section-fold)는 머리(summary)가 카드 머리다. */
+.wo-doc h2 {
+  font-size: 17px;
+}
+.wo-doc h3 {
+  font-size: 15px;
+  margin: 8px 0 0;
+}
+.wo-doc.wo-section-fold > summary {
+  min-height: 0;
+}
+.wo-doc.wo-section-fold[open] > summary {
+  margin-bottom: 0;
+}
+.wo-doc.wo-section-fold:not([open]) {
+  padding-bottom: 20px;
+}
+.wo-doc > summary .std-assessment-eyebrow {
+  flex-basis: 100%;
+}
+.wo-doc .wo-facts,
+.wo-doc .wo-muted {
+  margin: 0;
+}
+.wo-doc .wo-risk {
+  margin: 0;
+  background: var(--surface);
+}
+.wo-doc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+/* 띠 + 카드 한 묶음. 본문(.main-content)의 큰 flex gap 이 띠와 카드 사이를 벌리지 않게
+   묶어서 넣는다 — 띠는 카드에 붙은 것이다. */
+.zone {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.zone > .std-form-divider {
+  margin: 0;
+}
+.asmt-zone {
+  max-width: 760px;
+}
+.std-assessment-badge--here {
+  background: var(--ink);
+  color: var(--surface);
+}
+/* 기록 줄: 언제 · 누가 · 무엇. 최근 몇 줄만, 나머지는 접힌다. */
+.history-log {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.history-log li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  padding: 8px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  border-bottom: 1px dashed var(--line);
+}
+.history-log li:last-child {
+  border-bottom: 0;
+}
+.history-log time {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.history-who {
+  color: var(--ink-2);
+}
+.history-what {
+  font-weight: 600;
+  color: var(--ink);
+}
+.history-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.history-more > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+  list-style: none;
+}
+.history-more > summary::-webkit-details-marker {
+  display: none;
+}
+.history-more > summary::before {
+  content: "▸";
+  margin-right: 8px;
+  font-size: 11px;
+  color: var(--ink-4);
+}
+.history-more[open] > summary::before {
+  content: "▾";
+}

@@ -11,6 +11,7 @@ import { tierOf } from "@/components/shell/tier";
 import { isCurrentUserOperator } from "@/server/operator";
 import { PageHeader } from "@/components/ui/page-header";
 import { Facts, StatStrip } from "@/components/ui/facts";
+import { HistoryLog } from "@/components/ui/history-log";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
 import { AttachmentList } from "@/features/attachments/attachment-list";
 import {
@@ -19,8 +20,10 @@ import {
   DutyList,
 } from "@/features/incidents/detail-parts";
 import {
+  DUTY_LABEL,
   GRADE_LABEL,
   GRADE_TONE,
+  INCIDENT_HISTORY_LABEL,
   IncidentError,
   KIND_LABEL,
   OCCURRENCE_LABEL,
@@ -39,6 +42,7 @@ export const metadata = { title: "안전사고 · 심플안전" };
 /**
  * 사고 상세. 맨 위가 "해야 할 일" — 이 화면의 일은 기록을 보여 주는 것이 아니라
  * 남은 일을 끝내게 하는 것이다. 그 아래 내용·다친 사람·조치·원인과 대책·사진.
+ * 그 뒤에 딸린 문서(산업재해조사표)와 기록(처리 기록) — 헌법 4장 세 구역.
  */
 export default async function IncidentPage({
   params,
@@ -68,6 +72,16 @@ export default async function IncidentPage({
   const openActions = detail.actions.filter((a) => !a.done_at).length;
   const title = incidentTitle(detail);
   const path = `/incidents/${id}`;
+  const surveyDuty = detail.duties.find((d) => d.kind === "SURVEY_FORM");
+  const clock = (iso: string) =>
+    new Date(iso).toLocaleString("ko-KR", {
+      timeZone: "Asia/Seoul",
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
 
   return (
     <AppShell
@@ -91,11 +105,6 @@ export default async function IncidentPage({
         }
         actions={
           <div className="wo-actions">
-            {detail.kind === "INJURY" && (
-              <Link href={`${path}/survey`} className="btn-secondary">
-                <FileText size={14} /> 산업재해조사표
-              </Link>
-            )}
             {!locked && (
               <Link href={`${path}/edit`} className="btn-secondary">
                 <PenLine size={14} /> 고치기
@@ -294,6 +303,74 @@ export default async function IncidentPage({
           </p>
         )}
       </section>
+
+      {detail.kind === "INJURY" && (
+        <div className="zone">
+          <div className="std-form-divider" aria-hidden="true">
+            <span>별도 문서 · 산업재해조사표</span>
+          </div>
+          <section
+            className="std-detail-section std-detail-section--assessment wo-doc"
+            aria-labelledby="inc-survey-h"
+          >
+            <p className="std-assessment-eyebrow">
+              이 사고 기록으로 채우는 별도 서식 · 별지 30호
+            </p>
+            <h2 id="inc-survey-h">산업재해조사표</h2>
+            <Facts
+              className="wo-facts--tight"
+              rows={[
+                ["근거", DUTY_LABEL.SURVEY_FORM.basis],
+                surveyDuty
+                  ? [
+                      "제출",
+                      surveyDuty.done_at
+                        ? `${koDate(surveyDuty.done_at)} 끝냄`
+                        : `기한 ${koDate(surveyDuty.due_on)}`,
+                    ]
+                  : null,
+              ]}
+            />
+            <div className="wo-doc-links">
+              <Link href={`${path}/survey`} className="btn-secondary">
+                <FileText size={14} /> 산업재해조사표 열기
+              </Link>
+            </div>
+          </section>
+        </div>
+      )}
+
+      <div className="zone">
+        <div
+          className="std-form-divider std-form-divider--log"
+          aria-hidden="true"
+        >
+          <span>기록</span>
+        </div>
+        <section
+          className="std-detail-section std-detail-section--log"
+          aria-labelledby="inc-log-h"
+        >
+          <h2 id="inc-log-h">처리 기록 ({detail.history.length}건)</h2>
+          <HistoryLog
+            rows={detail.history.map((h) => {
+              const label =
+                h.action === "INCIDENT_ACTION_DONE" && h.done === false
+                  ? INCIDENT_HISTORY_LABEL.INCIDENT_ACTION_UNDONE
+                  : (INCIDENT_HISTORY_LABEL[h.action] ?? h.action);
+              // 어느 할 일·대책인지까지 한 줄에. 메모는 펼치지 않는다.
+              const target = h.duty_kind
+                ? DUTY_LABEL[h.duty_kind].title
+                : h.action_measure;
+              return {
+                at: clock(h.at),
+                who: h.actor_name,
+                what: target ? `${label} · ${target}` : label,
+              };
+            })}
+          />
+        </section>
+      </div>
     </AppShell>
   );
 }

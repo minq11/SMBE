@@ -14,6 +14,7 @@ import {
   type DutyKind,
   type IncidentAction,
   type IncidentDetail,
+  type IncidentHistoryRow,
   type IncidentGrade,
   type IncidentInput,
   type IncidentSummary,
@@ -280,7 +281,9 @@ export async function createWorkerReport(
   await memberAccess(client, actor);
   const parsed = workerReportSchema.safeParse(raw);
   if (!parsed.success)
-    throw new IncidentError(parsed.error.issues[0]?.message ?? "입력을 확인하세요.");
+    throw new IncidentError(
+      parsed.error.issues[0]?.message ?? "입력을 확인하세요.",
+    );
   const input = parsed.data;
   let workOrderName: string | null = null;
   if (workOrderId) {
@@ -398,7 +401,7 @@ export async function readIncident(
 ): Promise<IncidentDetail> {
   await manager(client, actor);
   const { rows } = await client.query<
-    Omit<IncidentDetail, "victims" | "actions" | "duties">
+    Omit<IncidentDetail, "victims" | "actions" | "duties" | "history">
   >(
     `SELECT i.id, i.kind, i.grade, i.serious_under_scpa, i.status, i.occurred_at::text,
             i.location_id, i.location, i.location_detail, i.work_order_id, i.work_order_name,
@@ -415,33 +418,46 @@ export async function readIncident(
   );
   const head = rows[0];
   if (!head) throw new IncidentError("사고 기록을 찾을 수 없습니다.");
-  const [victims, actions, duties] = await Promise.all([
-    client.query<Victim>(
-      `SELECT id, user_id, name, body_part, injury, expected_leave_days, fatal, treatment_months, hospital
-         FROM incident_victims WHERE incident_id=$1 ORDER BY sort_no`,
-      [id],
-    ),
-    client.query<IncidentAction>(
-      `SELECT a.id, a.measure, a.responsible_user_id, ru.display_name AS responsible_name,
-              a.due_on::text, a.done_at::text, du.display_name AS done_by_name, a.note
-         FROM incident_actions a
-         LEFT JOIN users ru ON ru.id = a.responsible_user_id
-         LEFT JOIN users du ON du.id = a.done_by
-        WHERE a.incident_id=$1 ORDER BY a.sort_no`,
-      [id],
-    ),
-    client.query<Duty>(
-      `SELECT d.id, d.kind, d.due_on::text, d.done_at::text, u.display_name AS done_by_name, d.note
-         FROM incident_duties d LEFT JOIN users u ON u.id = d.done_by
-        WHERE d.incident_id=$1 ORDER BY d.sort_no`,
-      [id],
-    ),
-  ]);
+  // 한 커넥션에 질의를 겹쳐 보내지 않는다(pg 9 에서 없어지는 방식).
+  const victims = await client.query<Victim>(
+    `SELECT id, user_id, name, body_part, injury, expected_leave_days, fatal, treatment_months, hospital
+       FROM incident_victims WHERE incident_id=$1 ORDER BY sort_no`,
+    [id],
+  );
+  const actions = await client.query<IncidentAction>(
+    `SELECT a.id, a.measure, a.responsible_user_id, ru.display_name AS responsible_name,
+            a.due_on::text, a.done_at::text, du.display_name AS done_by_name, a.note
+       FROM incident_actions a
+       LEFT JOIN users ru ON ru.id = a.responsible_user_id
+       LEFT JOIN users du ON du.id = a.done_by
+      WHERE a.incident_id=$1 ORDER BY a.sort_no`,
+    [id],
+  );
+  const duties = await client.query<Duty>(
+    `SELECT d.id, d.kind, d.due_on::text, d.done_at::text, u.display_name AS done_by_name, d.note
+       FROM incident_duties d LEFT JOIN users u ON u.id = d.done_by
+      WHERE d.incident_id=$1 ORDER BY d.sort_no`,
+    [id],
+  );
+  // 기록(헌법 4장): 언제·누가·무엇 한 줄. 사유·메모는 펼치지 않는다.
+  const history = await client.query<IncidentHistoryRow>(
+    `SELECT a.action, a.at::text, u.display_name AS actor_name,
+            (a.after_json->>'done')::boolean AS done,
+            d.kind AS duty_kind, left(ia.measure, 40) AS action_measure
+       FROM audit_logs a
+       LEFT JOIN users u ON u.id = a.actor_id
+       LEFT JOIN incident_duties d ON d.id::text = a.after_json->>'dutyId'
+       LEFT JOIN incident_actions ia ON ia.id::text = a.after_json->>'actionId'
+      WHERE a.company_id=$2 AND a.target_type='incidents' AND a.target_id=$1
+      ORDER BY a.at DESC LIMIT 50`,
+    [id, actor.companyId],
+  );
   return {
     ...head,
     victims: victims.rows,
     actions: actions.rows,
     duties: duties.rows,
+    history: history.rows,
   };
 }
 

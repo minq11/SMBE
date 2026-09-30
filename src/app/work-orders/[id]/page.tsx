@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PpeList } from "@/features/standards/ppe-list";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { BookOpen, Copy } from "lucide-react";
+import { BookOpen, Copy, FileCheck } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { workSession, orderDetail, orderMembers } from "@/server/work-orders";
@@ -22,6 +22,7 @@ import {
 } from "@/features/work-orders/order-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { JumpNav } from "@/components/ui/jump-nav";
+import { HistoryLog } from "@/components/ui/history-log";
 import { Facts } from "@/components/ui/facts";
 import { dayLabel } from "@/features/inspections/format";
 import { PrintSheet } from "@/features/work-orders/print-sheet";
@@ -37,6 +38,7 @@ const ACTIONS: Record<string, string> = {
   UPDATE: "초안 변경",
   SUBMIT_ASSESSMENT: "평가 승인 요청",
   APPROVE_ASSESSMENT: "평가 승인",
+  LINK_ASSESSMENT: "표준서 위험성평가 연결",
   ISSUE: "지시서 발급",
   CANCEL: "지시서 취소",
   SEND_LINKS: "링크 전달 시도",
@@ -115,12 +117,15 @@ export default async function OrderDetailPage({
    * 한다. 탭이었을 때는 "작업 정보" 한 구간만 보여서 나머지가 없는 줄 알았다.
    * 발급 직후에는 할 일이 있는 QR 구간(#qr)으로 바로 내려간다.
    */
+  // 내용(작업 정보 · 일정·인원 · 체크리스트 · QR) 뒤에 딸린 문서(위험성평가 · 허가서)가
+  // 온다 — 헌법 4장 세 구역. 기록(변경 이력)은 맨 아래, 칩에는 넣지 않는다.
   const PARTS = [
     { id: "info", label: "작업 정보" },
-    { id: "risk", label: "위험성평가" },
     { id: "schedule", label: "일정·인원" },
     { id: "checklist", label: "체크리스트" },
     ...(qr ? [{ id: "qr", label: "QR·전달" }] : []),
+    { id: "risk", label: "위험성평가" },
+    ...(d.ptwRequired ? [{ id: "permit", label: "허가서" }] : []),
   ];
   // 출력물은 유료 기능이다. 무료 회사는 버튼을 눌렀을 때 안내로 막는다.
   const canPrint = (session.membership?.pro_state ?? "FREE") !== "FREE";
@@ -133,6 +138,13 @@ export default async function OrderDetailPage({
   const fold = (key: string) => ({
     id: key,
     className: "wo-section wo-section-fold",
+  });
+  /** 딸린 문서 카드(주조색 연한 바탕, 왼쪽 선). 접히는 카드는 머리가 카드 머리다. */
+  const doc = (key: string, folds = false) => ({
+    id: key,
+    className:
+      "std-detail-section std-detail-section--assessment wo-doc" +
+      (folds ? " wo-section-fold" : ""),
   });
   const tbmCount = issued
     ? detail.checklist.filter((c) => c.category === "TBM").length
@@ -458,86 +470,6 @@ export default async function OrderDetailPage({
               : d.method || "작업방법 미입력"}
           </p>
         </section>
-        <details {...fold("risk")}>
-          <summary>
-            <h2>위험성평가</h2>
-            <small>
-              위험요인 {risks.length}건 ·{" "}
-              {order.assessment_status === "APPROVED"
-                ? "승인 완료"
-                : order.assessment_status === "PENDING"
-                  ? "승인 대기"
-                  : "작성 중"}
-            </small>
-          </summary>
-          <Facts
-            className="wo-facts--tight"
-            rows={[
-              // 표준서 지시서는 표준서 평가를 그대로 쓴다 — 조치 이행은 그 평가 한 곳에서.
-              riskSnapshot &&
-              riskSnapshot.is_simple === false &&
-              riskSnapshot.id
-                ? [
-                    "원본",
-                    <Link
-                      key="src"
-                      href={`/assessments/${riskSnapshot.id}`}
-                      className="wo-standard-link"
-                    >
-                      표준서 위험성평가 보기
-                    </Link>,
-                  ]
-                : null,
-              ["실시일", d.performedOn || null],
-              [
-                "참여",
-                riskSnapshot
-                  ? riskSnapshot.participants
-                      .map((p) => p.snapshot_display_name)
-                      .join(", ")
-                  : d.participantIds
-                      .map((id) => names.get(id) || "소속 변경된 구성원")
-                      .join(", ") || "미선택",
-              ],
-            ]}
-          />
-          {risks.map((r, i) => (
-            <article className="wo-risk" key={i}>
-              <h3>
-                {i + 1}. {r.hazard || "위험요인 미입력"}
-                <span className="wo-risk-level" data-level={r.level}>
-                  {LEVELS[r.level]} ·{" "}
-                  {r.allowable === "yes" ? "허용 가능" : "조치 필요"}
-                </span>
-              </h3>
-              {r.currentControl && (
-                <p className="wo-detail-text">
-                  현재 안전조치: {r.currentControl}
-                </p>
-              )}
-              <p className="wo-detail-text">{r.measure || "감소대책 미입력"}</p>
-              <Facts
-                className="wo-facts--tight"
-                rows={[
-                  r.responsibleId
-                    ? ["담당", r.responsibleName || "소속 변경된 구성원"]
-                    : null,
-                  r.dueDate ? ["예정일", r.dueDate] : null,
-                ]}
-              />
-            </article>
-          ))}
-          {safetyRows.length > 0 && (
-            <>
-              <h3>사전조사 정보</h3>
-              {safetyRows.map(([key, title]) => (
-                <p className="wo-detail-text" key={key}>
-                  <strong>{title}</strong> {safety[key]}
-                </p>
-              ))}
-            </>
-          )}
-        </details>
         <details {...fold("schedule")}>
           <summary>
             <h2>일정·인원</h2>
@@ -630,21 +562,146 @@ export default async function OrderDetailPage({
             </div>
           </section>
         )}
-        {isManager && (
-          <details className="std-fold wo-fold wo-history-fold wo-no-print">
-            <summary>변경 이력</summary>
-            <ul className="wo-history">
-              {detail.history.map((h, i) => (
-                <li key={i}>
-                  <time>{shortTime(h.at)}</time>
-                  <span>
-                    {ACTIONS[h.action] || h.action}
-                    {h.is_self_approval ? " · 본인 승인" : ""}
-                  </span>
-                </li>
+        <div className="std-form-divider" aria-hidden="true">
+          <span>별도 문서 · 위험성평가{d.ptwRequired ? " · 작업허가서" : ""}</span>
+        </div>
+        <details {...doc("risk", true)}>
+          <summary>
+            <p className="std-assessment-eyebrow">
+              {riskSnapshot && riskSnapshot.is_simple === false
+                ? "표준서의 위험성평가를 그대로 쓴다 · 별도 문서"
+                : "지시서와 함께 등록되는 별도 문서 · 위험성평가 목록에도 남는다"}
+            </p>
+            <h2>위험성평가</h2>
+            <small>
+              위험요인 {risks.length}건 ·{" "}
+              {order.assessment_status === "APPROVED"
+                ? "승인 완료"
+                : order.assessment_status === "PENDING"
+                  ? "승인 대기"
+                  : "작성 중"}
+            </small>
+          </summary>
+          <Facts
+            className="wo-facts--tight"
+            rows={[
+              // 표준서 지시서는 표준서 평가를 그대로 쓴다 — 조치 이행은 그 평가 한 곳에서.
+              riskSnapshot &&
+              riskSnapshot.is_simple === false &&
+              riskSnapshot.id
+                ? [
+                    "원본",
+                    <Link
+                      key="src"
+                      href={`/assessments/${riskSnapshot.id}`}
+                      className="wo-standard-link"
+                    >
+                      표준서 위험성평가 보기
+                    </Link>,
+                  ]
+                : null,
+              ["실시일", d.performedOn || null],
+              [
+                "참여",
+                riskSnapshot
+                  ? riskSnapshot.participants
+                      .map((p) => p.snapshot_display_name)
+                      .join(", ")
+                  : d.participantIds
+                      .map((id) => names.get(id) || "소속 변경된 구성원")
+                      .join(", ") || "미선택",
+              ],
+            ]}
+          />
+          {risks.map((r, i) => (
+            <article className="wo-risk" key={i}>
+              <h3>
+                {i + 1}. {r.hazard || "위험요인 미입력"}
+                <span className="wo-risk-level" data-level={r.level}>
+                  {LEVELS[r.level]} ·{" "}
+                  {r.allowable === "yes" ? "허용 가능" : "조치 필요"}
+                </span>
+              </h3>
+              {r.currentControl && (
+                <p className="wo-detail-text">
+                  현재 안전조치: {r.currentControl}
+                </p>
+              )}
+              <p className="wo-detail-text">{r.measure || "감소대책 미입력"}</p>
+              <Facts
+                className="wo-facts--tight"
+                rows={[
+                  r.responsibleId
+                    ? ["담당", r.responsibleName || "소속 변경된 구성원"]
+                    : null,
+                  r.dueDate ? ["예정일", r.dueDate] : null,
+                ]}
+              />
+            </article>
+          ))}
+          {safetyRows.length > 0 && (
+            <>
+              <h3>사전조사 정보</h3>
+              {safetyRows.map(([key, title]) => (
+                <p className="wo-detail-text" key={key}>
+                  <strong>{title}</strong> {safety[key]}
+                </p>
               ))}
-            </ul>
-          </details>
+            </>
+          )}
+        </details>
+        {d.ptwRequired && (
+          <section {...doc("permit")}>
+            <p className="std-assessment-eyebrow">
+              지시서와 함께 승인받는 별도 문서
+            </p>
+            <h2>작업허가서</h2>
+            <Facts
+              className="wo-facts--tight"
+              rows={[
+                ["상태", printPtw],
+                permit?.approved_at
+                  ? ["승인", shortTime(permit.approved_at)]
+                  : null,
+                permit?.rejection_reason
+                  ? ["반려 사유", permit.rejection_reason]
+                  : null,
+              ]}
+            />
+            <div className="wo-doc-links wo-no-print">
+              <Link
+                href={"/work-orders/" + id + "/permit"}
+                className="btn-secondary"
+              >
+                <FileCheck size={14} /> 허가서 열기
+              </Link>
+            </div>
+          </section>
+        )}
+        {isManager && (
+          <>
+            <div
+              className="std-form-divider std-form-divider--log wo-no-print"
+              aria-hidden="true"
+            >
+              <span>기록</span>
+            </div>
+            <section
+              id="history"
+              className="std-detail-section std-detail-section--log wo-no-print"
+            >
+              <h2>변경 이력 ({detail.history.length}건)</h2>
+              <HistoryLog
+                rows={detail.history.map((h) => ({
+                  at: shortTime(h.at),
+                  who: h.actor_name,
+                  what:
+                    (ACTIONS[h.action] || h.action) +
+                    (h.is_self_approval ? " · 본인 승인" : ""),
+                }))}
+              />
+            </section>
+          </>
         )}
       </div>
     </OrderShell>

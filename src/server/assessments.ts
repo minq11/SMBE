@@ -232,6 +232,19 @@ export type AssessmentDetail = AssessmentRow & {
   work_order_name: string | null;
   participants: string[];
   items: AssessmentItemDetail[];
+  /** 같은 표준서의 회차 이력(기록 구역). 간이평가는 빈 배열. */
+  rounds: AssessmentRound[];
+};
+export type AssessmentRound = {
+  id: string;
+  kind: AssessmentKind;
+  performed_on: string;
+  status: AssessmentStatus;
+  approved_at: string | null;
+  approved_by_name: string | null;
+  valid_until: string | null;
+  expired: boolean;
+  is_current: boolean;
 };
 
 export async function readAssessment(
@@ -283,10 +296,37 @@ export async function readAssessment(
     "SELECT snapshot_display_name FROM risk_assessment_participants WHERE assessment_id = $1",
     [id],
   );
+  const today = seoulToday();
+  // 표준서 평가는 회차마다 새로 남는다 — 이 문서가 몇 번째인지는 기록 구역에서 본다.
+  const rounds = rows[0].standard_id
+    ? (
+        await client.query<{
+          id: string;
+          kind: AssessmentKind;
+          performed_on: string;
+          status: AssessmentStatus;
+          approved_at: string | null;
+          approved_by_name: string | null;
+        }>(
+          `SELECT ra.id, ra.assessment_kind AS kind, ra.performed_on::text, ra.status,
+                  ra.approved_at::text, u.display_name AS approved_by_name
+             FROM risk_assessments ra
+             LEFT JOIN users u ON u.id = ra.approved_by
+            WHERE ra.standard_id = $1 AND ra.company_id = $2 AND NOT ra.order_copy
+            ORDER BY ra.performed_on DESC, ra.approved_at DESC NULLS LAST`,
+          [rows[0].standard_id, actor.companyId],
+        )
+      ).rows
+    : [];
+  const currentId = rounds.find((r) => r.status === "APPROVED")?.id;
   return {
-    ...withValidity(rows[0], seoulToday()),
+    ...withValidity(rows[0], today),
     participants: parts.rows.map((p) => p.snapshot_display_name),
     items: items.rows,
+    rounds: rounds.map((r) => ({
+      ...withValidity(r, today),
+      is_current: r.id === currentId,
+    })),
   };
 }
 

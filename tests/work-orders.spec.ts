@@ -220,6 +220,26 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(
       page.getByRole("heading", { name: "작업지시 QR", exact: true }),
     ).toBeVisible();
+    // 세 구역(헌법 4장): 내용(작업 정보 … QR) 뒤에 별도 문서(위험성평가), 맨 아래 기록.
+    const riskDoc = page.locator("#risk.std-detail-section--assessment");
+    await expect(riskDoc).toHaveCount(1);
+    await expect(riskDoc).toContainText("별도 문서");
+    const qrBox = await page.locator("#qr").boundingBox();
+    const riskBox = await riskDoc.boundingBox();
+    expect(riskBox!.y).toBeGreaterThan(qrBox!.y);
+    const log = page.locator("#history.std-detail-section--log");
+    await expect(log).toContainText("변경 이력");
+    await expect(log).toContainText("지시서 발급");
+    await page.locator("#risk summary").click();
+    await page.screenshot({
+      path: test.info().outputPath("order-detail-zones.png"),
+      fullPage: true,
+    });
+    // 좁은 화면은 본문이 안에서 스크롤되어 fullPage 가 뷰포트만 찍는다 — 내려서 찍는다.
+    await log.scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: test.info().outputPath("order-detail-log.png"),
+    });
     // 복사하는 주소에는 들어온 길(via=link)이 붙는다. 그 길로 열면 "보는" 화면이다.
     await expect(page.getByLabel("작업 링크", { exact: true })).toHaveValue(
       /\?via=link$/,

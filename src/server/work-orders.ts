@@ -184,12 +184,16 @@ export async function orderDetail(actor: Actor, id: string) {
       "SELECT user_id,status FROM work_order_outputs WHERE work_order_id=$1 ORDER BY id",
       [id],
     );
+    // 기록은 언제·누가·무엇 한 줄이다(헌법 4장) — 이름까지 같이 읽는다.
     const { rows: history } = await client.query<{
       action: string;
       at: string;
       is_self_approval: boolean;
+      actor_name: string | null;
     }>(
-      "SELECT action,at::text,is_self_approval FROM audit_logs WHERE company_id=$1 AND target_id=$2 ORDER BY at DESC LIMIT 50",
+      `SELECT a.action, a.at::text, a.is_self_approval, u.display_name AS actor_name
+         FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_id
+        WHERE a.company_id=$1 AND a.target_id=$2 ORDER BY a.at DESC LIMIT 50`,
       [actor.companyId, id],
     );
     const { rows: snapshots } = await client.query<{

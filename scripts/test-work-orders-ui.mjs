@@ -121,6 +121,7 @@ try {
           "tests/ptw.spec.ts",
           "tests/standards.spec.ts",
           "tests/board.spec.ts",
+          "tests/incidents.spec.ts",
         ]),
     "--workers=1",
   ]);

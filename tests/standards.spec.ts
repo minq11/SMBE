@@ -229,9 +229,18 @@ test("standard: create, edit, add a seeded assessment round", async ({
     const origin = page.locator(".asmt-origin");
     await expect(origin).toContainText("표준서");
     await expect(origin).toContainText("1회차 개정본");
+    // 기록 구역: 같은 표준서의 회차 이력 — 지금 보는 것이 표시된다 (헌법 4장).
+    const rounds = page.locator(".std-detail-section--log");
+    await expect(rounds).toHaveCount(1);
+    await expect(rounds).toContainText("회차 이력 (1건)");
+    await expect(rounds).toContainText("지금 보는 것");
     await page.screenshot({
       path: test.info().outputPath("assessment-detail.png"),
       fullPage: true,
+    });
+    await rounds.scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: test.info().outputPath("assessment-rounds.png"),
     });
     await page.goto(`/standards/${id}`);
 

@@ -69,9 +69,8 @@ export default async function AssessmentPage({
             <span>승인 {detail.approved_by_name}</span>
           )}
         </p>
-        {/* 이 평가가 어디서 왔는지 — 이름표 있는 줄(헌법 5장). 지시서를 발급하면
-            그 지시서만의 평가가 생기는데, 표준서 지시서면 표준서 평가의 사본이라
-            표준서와 지시서 둘 다 붙는다. 간이평가는 지시서만. */}
+        {/* 이 평가가 어디서 왔는지 — 이름표 있는 줄(헌법 5장). 표준서 평가는 표준서만,
+            간이평가는 지시서만. 둘 다 붙는 것은 옛 방식(표준서 평가를 복사한 지시서)뿐. */}
         {(detail.standard_id || detail.work_order_id) && (
           <Facts
             className="wo-facts--tight asmt-origin"
@@ -162,6 +161,77 @@ export default async function AssessmentPage({
           {detail.participants.length ? detail.participants.join(", ") : "—"}
         </p>
       </section>
+
+      {/* 기록(헌법 4장): 같은 표준서의 회차 이력. 이 문서가 몇 번째이고 지금 쓰는
+          것이 무엇인지 — 내용이 아니라 지나간 목록이라 종이색 점선 카드다. */}
+      {detail.rounds.length > 0 && (
+        <div className="zone asmt-zone">
+          <div
+            className="std-form-divider std-form-divider--log"
+            aria-hidden="true"
+          >
+            <span>기록</span>
+          </div>
+          <section
+            className="std-detail-section std-detail-section--log"
+            aria-label="회차 이력"
+          >
+            <h2>이 표준서의 위험성평가 회차 이력 ({detail.rounds.length}건)</h2>
+            <ul className="std-assessment-history" role="list">
+              {detail.rounds.map((r) => {
+                const here = r.id === detail.id;
+                return (
+                  <li
+                    key={r.id}
+                    className={`std-assessment-row${r.is_current ? " is-current" : ""}${
+                      r.expired ? " is-expired" : ""
+                    }`}
+                    aria-current={here ? "page" : undefined}
+                  >
+                    <span className="std-assessment-kind">
+                      {here ? (
+                        ASSESSMENT_KIND_LABEL[r.kind]
+                      ) : (
+                        <Link href={`/assessments/${r.id}`}>
+                          {ASSESSMENT_KIND_LABEL[r.kind]}
+                        </Link>
+                      )}
+                    </span>
+                    <span className="std-assessment-date">
+                      실시일 {koDate(r.performed_on)}
+                    </span>
+                    {r.valid_until && (
+                      <span className="std-assessment-valid">
+                        유효 ~ {koDate(r.valid_until)}
+                      </span>
+                    )}
+                    <span
+                      className={`std-assessment-status std-assessment-status--${r.status.toLowerCase()}`}
+                    >
+                      {STATUS_LABEL[r.status]}
+                    </span>
+                    {r.is_current && (
+                      <span className="std-assessment-badge std-assessment-badge--current">
+                        현재 사용 중
+                      </span>
+                    )}
+                    {r.expired && (
+                      <span className="std-assessment-badge std-assessment-badge--expired">
+                        만료
+                      </span>
+                    )}
+                    {here && (
+                      <span className="std-assessment-badge std-assessment-badge--here">
+                        지금 보는 것
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </div>
+      )}
     </AppShell>
   );
 }

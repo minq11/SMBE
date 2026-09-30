@@ -97,6 +97,10 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     await expect(page.locator(".wo-facts").first()).toContainText(
       "작업자 신고",
     );
+    // 기록 구역(헌법 4장): 언제·누가·무엇 한 줄.
+    await expect(page.locator(".std-detail-section--log")).toContainText(
+      "작업자 신고",
+    );
     await page.goto("/incidents");
     await page.getByRole("link", { name: "사고 등록" }).click();
     await expect(page).toHaveURL(/\/incidents\/new$/);
@@ -148,6 +152,17 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     await expect(duties).toContainText("산업재해조사표 제출");
     await expect(duties).toContainText("기한 10. 20."); // 발생일 + 30일
     await expect(duties).toContainText("경영책임자 확인");
+    // 세 구역: 내용 뒤에 별도 문서(산업재해조사표), 맨 아래 처리 기록.
+    const surveyDoc = page.locator(".std-detail-section--assessment");
+    await expect(surveyDoc).toContainText("산업재해조사표");
+    await expect(surveyDoc).toContainText("기한 2026년 10월 20일");
+    const log = page.locator(".std-detail-section--log");
+    await expect(log).toContainText("처리 기록");
+    await expect(log).toContainText("사고 등록");
+    await surveyDoc.scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: test.info().outputPath("incident-zones.png"),
+    });
     await expect(duties).not.toContainText("노동부 즉시 보고");
     await expect(page.locator(".inc-duty")).toHaveCount(6);
     // 남은 일이 있으면 종결 단추는 눌리지 않는다.
