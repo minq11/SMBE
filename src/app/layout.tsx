@@ -6,7 +6,7 @@ import { PreviewBanner } from "@/components/preview-banner";
 import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
 import { ViewportHeight } from "@/components/shell/viewport-height";
 export const metadata: Metadata = {
-  title: "심플안전 · 안전관리, 쉽고 간편하게",
+  title: "심플안전 · 심플하게 시작하는 포털형 안전관리",
   description:
     "제조업 중소기업을 위한 안전관리. 위험성평가부터 작업지시·허가서·안전점검까지 인원 제한 없이 무료로 시작합니다.",
   robots: { index: false, follow: false },
