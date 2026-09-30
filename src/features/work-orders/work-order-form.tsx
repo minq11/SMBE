@@ -39,7 +39,7 @@ import { PermitFields } from "./permit-fields";
 import { SessionEditor } from "./session-editor";
 import { PickerDialog } from "@/components/ui/picker-dialog";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
-import { LEVEL_LABEL } from "@/features/assessments/model";
+import { LEVEL_LABEL, SAFETY_INFO_HINTS } from "@/features/assessments/model";
 import { Segmented } from "@/features/assessments/risk-level-picker";
 import { PtwHelp } from "@/features/standards/ptw-help";
 import { saveOrderAction, saveAndIssueAction } from "./actions";
@@ -524,7 +524,7 @@ export function WorkOrderForm({
           onChange={(e) =>
             set("safetyInfo", { ...data.safetyInfo, [key]: e.target.value })
           }
-          hint="확인한 내용을 적으세요. 해당 없음도 그렇게 적습니다."
+          hint={SAFETY_INFO_HINTS[key]}
         />
       ))}
       <FloatTextarea

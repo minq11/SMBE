@@ -1,5 +1,7 @@
 "use client";
 
+import { SAFETY_INFO_HINTS } from "@/features/assessments/model";
+
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { useActionState, useState } from "react";
 import Link from "next/link";
@@ -206,6 +208,7 @@ export function AssessmentForm({
                 onChange={(e) =>
                   setSafety({ ...safety, [key]: e.target.value })
                 }
+                hint={SAFETY_INFO_HINTS[key]}
               />
             ))}
           </div>

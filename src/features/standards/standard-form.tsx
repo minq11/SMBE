@@ -4,12 +4,13 @@ import { PeoplePickerDialog } from "@/components/ui/people-picker";
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, X, ListChecks } from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
+import { SAFETY_INFO_HINTS } from "@/features/assessments/model";
 import { PtwHelp } from "./ptw-help";
 import { BasicHelp, ChecklistHelp, MethodHelp, RiskHelp } from "./section-help";
 
@@ -370,16 +371,36 @@ export function StandardForm({
         />
       </section>
 
-      <section className="std-form-section" id="std-risk">
-        <div className="std-section-head">
-          <h2>위험성평가 (최초평가)</h2>
-          <HelpDialog title="위험성평가" variant="icon">
-            <RiskHelp />
-          </HelpDialog>
+      {/* 여기부터는 표준서가 아니라 함께 등록되는 별도 문서(위험성평가 1회차)다.
+          같은 흰 카드로 이어지면 표준서의 한 구간으로 읽혀서, 띠와 색으로 가른다. */}
+      <div className="std-form-divider" aria-hidden="true">
+        <span>여기부터 위험성평가</span>
+      </div>
+      <section
+        className="std-form-section std-form-section--assessment"
+        id="std-risk"
+        aria-label="최초 위험성평가"
+      >
+        <div className="std-assessment-head">
+          <span className="std-assessment-icon">
+            <ListChecks size={18} />
+          </span>
+          <div className="std-assessment-title">
+            <p className="std-assessment-eyebrow">
+              별도 문서 · 표준서와 함께 등록
+            </p>
+            <div className="std-section-head">
+              <h2>최초 위험성평가</h2>
+              <HelpDialog title="위험성평가" variant="icon">
+                <RiskHelp />
+              </HelpDialog>
+            </div>
+          </div>
         </div>
         <p className="std-form-note">
-          이 표준서를 사용하는 지시서에 대한 최초 위험성 평가입니다. 이후
-          정기·수시 위험성평가는 표준서 상세 화면에서 회차별로 추가합니다.
+          표준서를 확정하면 이 평가가 위험성평가 1회차로 같이 등록되고,
+          위험성평가 메뉴에 회차로 보입니다. 이후 정기·수시 평가는 표준서
+          상세에서 회차를 추가합니다.
         </p>
 
         <FloatField
@@ -394,6 +415,7 @@ export function StandardForm({
 
         {/* 판단 기준은 회사가 한 번 정하는 값이다. 여기서 다시 쓰지 않고, 위험
             요인 카드의 수준 옆 물음표가 보여 준다. */}
+        <h3 className="std-sub-head">사전조사 안전보건정보</h3>
         <div className="std-safety-grid">
           {(
             [
@@ -417,7 +439,7 @@ export function StandardForm({
                   [key]: e.target.value,
                 })
               }
-              hint="해당사항이 없으면 '해당없음'으로 적어주세요."
+              hint={SAFETY_INFO_HINTS[key]}
             />
           ))}
         </div>
@@ -434,7 +456,7 @@ export function StandardForm({
         />
 
         <div className="form-field">
-          <label>위험요인 · 감소대책</label>
+          <h3 className="std-sub-head">위험요인 · 감소대책</h3>
           <ol className="risk-card-list">
             {draft.risks.map((r, i) => (
               <li key={i}>
@@ -479,6 +501,7 @@ export function StandardForm({
         </div>
 
         <div className="form-field">
+          <h3 className="std-sub-head">참여자</h3>
           <p className="std-form-note">
             실제 위험성평가에 참여한 근로자를 선택합니다.
           </p>
