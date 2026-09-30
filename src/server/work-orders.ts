@@ -214,8 +214,10 @@ export async function orderDetail(actor: Actor, id: string) {
           revision_no: number | null;
           is_current: boolean;
           current_revision_no: number | null;
+          ppe: string[] | null;
+          caution: string | null;
         }>(
-          `SELECT s.id AS standard_id, s.name, r.revision_no,
+          `SELECT s.id AS standard_id, s.name, r.revision_no, r.ppe, r.caution,
                   (r.id IS NOT DISTINCT FROM s.current_revision_id) AS is_current,
                   c.revision_no AS current_revision_no
              FROM standards s

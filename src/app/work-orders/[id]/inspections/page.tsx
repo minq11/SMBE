@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CautionBand, PpeList } from "@/features/standards/ppe-list";
 import { ArrowLeft, ChevronRight, FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
@@ -143,6 +144,12 @@ export default async function InspectionPage({
           ]}
         />
         {ptwWarn}
+        {kind === "TBM" && (data.ppe.length > 0 || data.caution) && (
+          <section className="wo-section tbm-ppe">
+            <PpeList ppe={data.ppe} />
+            <CautionBand caution={data.caution} />
+          </section>
+        )}
         {kind === "TBM" && data.risks.length > 0 && (
           <section className="wo-section tbm-risks">
             <h2>위험요인·감소대책</h2>

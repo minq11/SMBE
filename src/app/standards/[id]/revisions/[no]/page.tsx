@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CautionBand, PpeList } from "@/features/standards/ppe-list";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { tierOf } from "@/components/shell/tier";
@@ -45,8 +46,10 @@ export default async function RevisionPage({
     companyId: session.membership.company_id,
     userId: session.user.id,
   };
-  const photos: Record<string, Awaited<ReturnType<typeof listAttachments>>> =
-    {};
+  const photos: Record<
+    string,
+    Awaited<ReturnType<typeof listAttachments>>
+  > = {};
   for (const s of rev.steps)
     photos[s.id] = await listAttachments(actor, "standard_step", s.id);
 
@@ -79,8 +82,10 @@ export default async function RevisionPage({
             {new Date(when).toLocaleDateString("ko-KR")} ·{" "}
             {rev.approved_by_name ?? rev.created_by_name}
           </p>
+          <PpeList ppe={rev.ppe} />
         </div>
       </header>
+      <CautionBand caution={rev.caution} />
       <section className="std-detail-section">
         <h2>작업 단계</h2>
         <ol className="std-detail-list std-detail-list--with-attach">

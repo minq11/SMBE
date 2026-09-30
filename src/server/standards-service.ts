@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { PPE_KEYS } from "../features/standards/ppe";
 import { query, queryOne, withTransaction } from "@/server/db";
 import { readRiskCriteria } from "@/server/company-settings";
 import { deleteObjects, retireAttachments } from "@/server/attachments";
@@ -70,6 +71,8 @@ const safetyInfoSchema = z.object({
 export const standardEditSchema = z.object({
   name: z.string().trim().min(1, "표준서명을 입력하세요.").max(120),
   ptw_required: z.boolean(),
+  ppe: z.array(z.enum(PPE_KEYS)).max(20).optional().default([]),
+  caution: z.string().trim().max(2000).optional().default(""),
   // 편집 시 기존 스텝은 id 를 보존해 첨부 사진 target_id 가 유지된다.
   // 신규 스텝은 id 없이 { text } 만 보내면 서버가 새 uuid 부여.
   steps: z
@@ -359,6 +362,8 @@ export async function getStandardDetail(
     name: std.name,
     status: std.status,
     ptw_required: std.ptw_required,
+    ppe: revision?.ppe ?? [],
+    caution: revision?.caution ?? "",
     created_at: std.created_at,
     updated_at: std.updated_at,
     archived_at: std.archived_at,
@@ -377,7 +382,7 @@ async function listRevisions(
   standardId: string,
 ): Promise<StandardRevisionSummary[]> {
   return query<StandardRevisionSummary>(
-    `SELECT r.id, r.revision_no, r.status, r.change_note,
+    `SELECT r.id, r.revision_no, r.status, r.change_note, r.ppe, r.caution,
             r.created_at::text AS created_at, c.display_name AS created_by_name,
             r.approved_at::text AS approved_at, a.display_name AS approved_by_name
        FROM standard_revisions r
@@ -417,6 +422,7 @@ export async function getRevisionContent(
     StandardRevisionSummary & { name: string; ptw_required: boolean }
   >(
     `SELECT r.id, r.revision_no, r.status, r.change_note, r.name, r.ptw_required,
+            r.ppe, r.caution,
             r.created_at::text AS created_at, c.display_name AS created_by_name,
             r.approved_at::text AS approved_at, a.display_name AS approved_by_name
        FROM standard_revisions r
@@ -450,6 +456,8 @@ export async function getStandardForPrefill(
   standard_id: string;
   name: string;
   ptw_required: boolean;
+  ppe: string[];
+  caution: string;
   work_method: string;
   checklist_tbm: string[];
   checklist_during: string[];
@@ -476,6 +484,8 @@ export async function getStandardForPrefill(
     standard_id: detail.standard_id,
     name: detail.name,
     ptw_required: detail.ptw_required,
+    ppe: detail.ppe,
+    caution: detail.caution,
     work_method: ca.work_method,
     checklist_tbm: detail.checklist_tbm,
     checklist_during: detail.checklist_during,
@@ -615,9 +625,16 @@ export async function createStandardWithFirstAssessment(input: {
     const rev = await client.query<{ id: string }>(
       `INSERT INTO standard_revisions
          (standard_id, revision_no, status, name, ptw_required, created_by,
-          approved_by, approved_at)
-       VALUES ($1, 1, 'APPROVED', $2, $3, $4, $4, now()) RETURNING id`,
-      [standardId, payload.name, payload.ptw_required, actorId],
+          approved_by, approved_at, ppe, caution)
+       VALUES ($1, 1, 'APPROVED', $2, $3, $4, $4, now(), $5::text[], $6) RETURNING id`,
+      [
+        standardId,
+        payload.name,
+        payload.ptw_required,
+        actorId,
+        payload.ppe,
+        payload.caution,
+      ],
     );
     const revisionId = rev.rows[0].id;
     await client.query(
@@ -816,12 +833,19 @@ export async function startRevision(input: {
     if (!cur.rows[0]) throw new Error("확정된 판이 없습니다.");
     const next = await client.query<{ id: string; revision_no: number }>(
       `INSERT INTO standard_revisions
-         (standard_id, revision_no, status, name, ptw_required, created_by)
-       VALUES ($1,
-               (SELECT max(revision_no) + 1 FROM standard_revisions WHERE standard_id = $1),
-               'DRAFT', $2, $3, $4)
+         (standard_id, revision_no, status, name, ptw_required, created_by, ppe, caution)
+       SELECT $1,
+              (SELECT max(revision_no) + 1 FROM standard_revisions WHERE standard_id = $1),
+              'DRAFT', $2, $3, $4, ppe, caution
+         FROM standard_revisions WHERE id = $5
        RETURNING id, revision_no`,
-      [standardId, cur.rows[0].name, cur.rows[0].ptw_required, actorId],
+      [
+        standardId,
+        cur.rows[0].name,
+        cur.rows[0].ptw_required,
+        actorId,
+        cur.rows[0].id,
+      ],
     );
     const draftId = next.rows[0].id;
     // 단계 복사 + 사진 참조 복사. 옛 단계 id → 새 단계 id.
@@ -901,13 +925,16 @@ export async function updateRevisionDraft(input: {
       );
     const revisionId = draft.rows[0].id;
     await client.query(
-      `UPDATE standard_revisions SET name = $2, ptw_required = $3, change_note = $4
+      `UPDATE standard_revisions
+          SET name = $2, ptw_required = $3, change_note = $4, ppe = $5::text[], caution = $6
         WHERE id = $1`,
       [
         revisionId,
         payload.name,
         payload.ptw_required,
         payload.change_note || null,
+        payload.ppe,
+        payload.caution,
       ],
     );
     const orphanKeys = await writeRevisionBody(

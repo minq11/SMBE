@@ -127,6 +127,10 @@ export type StandardRevisionSummary = {
   revision_no: number;
   status: RevisionStatus;
   change_note: string | null;
+  /** 필요 보호구 (features/standards/ppe.ts 의 키) */
+  ppe: string[];
+  /** 주의사항 — 절대 하지 말 것·특이 조건·사고 시 연락. 비울 수 있다. */
+  caution: string;
   created_at: string;
   created_by_name: string;
   approved_at: string | null;
@@ -148,6 +152,8 @@ export type StandardDetail = {
   name: string;
   status: StandardStatus;
   ptw_required: boolean;
+  ppe: string[];
+  caution: string;
   created_at: string;
   updated_at: string;
   archived_at: string | null;

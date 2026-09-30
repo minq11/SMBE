@@ -3748,6 +3748,146 @@ html[data-banner-hidden] .preview-banner {
   font-weight: 800;
   color: var(--ink);
 }
+/* 표준서 폼의 구간 번호 — 순서대로 채운다는 뜻. 위험성평가 카드에는 없다. */
+.std-step-no {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  vertical-align: -3px;
+}
+/* 보호구 고르기 — 체크박스 칩. 고른 칩은 주조색 연한 바탕. */
+.ppe-picker {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.ppe-picker legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: 0;
+  margin-bottom: 8px;
+}
+.ppe-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ppe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.ppe-chip input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--brand);
+}
+.ppe-chip.is-on {
+  border-color: var(--brand);
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+/* 보호구 읽기 칩과 주의사항 띠 — 표준서 상세·지시서·TBM·출력물이 같이 쓴다. */
+.ppe-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ppe-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+/* 표준서 상세: 별도 문서(위험성평가)는 폼과 같은 주조색 카드, 기록(개정·회차 이력)은
+   종이색 점선 카드. 흰 카드는 표준서 내용뿐이다. */
+.std-form-divider--log {
+  color: var(--ink-3);
+}
+.std-form-divider--log::before,
+.std-form-divider--log::after {
+  background: var(--line);
+}
+.std-detail-section.std-detail-section--assessment {
+  background: var(--brand-softer);
+  border-color: var(--brand-soft);
+  border-left: 4px solid var(--brand);
+}
+.std-detail-section--assessment .std-assessment-eyebrow {
+  margin-bottom: -6px;
+}
+.std-detail-section.std-detail-section--log {
+  background: var(--surface-2);
+  border-style: dashed;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+.std-detail-section.std-detail-section--log h2 {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.std-caution-band {
+  padding: 12px 16px;
+  border-left: 3px solid var(--ink-4);
+  background: var(--surface-2);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.std-caution-band strong {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 2px;
+}
+.std-caution-band p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.wo-caution {
+  white-space: pre-wrap;
+}
+.wo-facts .ppe-list {
+  margin: 0;
+}
+.tbm-ppe {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tbm-ppe .ppe-list {
+  margin: 0;
+}
+@media print {
+  .wo-sheet .wo-sheet-row p {
+    white-space: pre-wrap;
+  }
+}
 .std-checkbox {
   display: inline-flex;
   align-items: center;

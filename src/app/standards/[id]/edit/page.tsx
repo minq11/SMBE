@@ -78,6 +78,8 @@ export default async function EditStandardPage({
         initial={{
           name: draft.name,
           ptw_required: draft.ptw_required,
+          ppe: draft.ppe ?? [],
+          caution: draft.caution ?? "",
           steps:
             draft.steps.length > 0
               ? draft.steps.map((s) => ({ id: s.id, text: s.step_text }))

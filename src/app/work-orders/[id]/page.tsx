@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PpeList } from "@/features/standards/ppe-list";
 import Image from "next/image";
 import QRCode from "qrcode";
 import { BookOpen, Copy } from "lucide-react";
@@ -177,8 +178,13 @@ export default async function OrderDetailPage({
         ptw_required: boolean;
         standard_updated_at: string;
         standard_revision_no?: number | null;
+        ppe?: string[];
+        caution?: string;
       }
     | undefined;
+  // 보호구·주의사항은 발급 뒤엔 사본, 발급 전엔 연결된 표준서의 현재 판.
+  const ppe = standardMeta?.ppe ?? detail.standard?.ppe ?? [];
+  const caution = standardMeta?.caution ?? detail.standard?.caution ?? "";
   // 발급 전에는 연결 정보로, 발급 뒤에는 사본으로. 어느 쪽이든 "이름 (n판)".
   const linked = detail.standard;
   const linkedStandardId =
@@ -257,6 +263,8 @@ export default async function OrderDetailPage({
           location={d.location}
           groupLabel={d.groupLabel}
           ptw={printPtw}
+          ppe={ppe}
+          caution={caution}
           assignees={detail.assignments
             .map((m) => m.snapshot_display_name)
             .join(", ")}
@@ -413,6 +421,13 @@ export default async function OrderDetailPage({
                     </span>,
                   ]
                 : ["표준서", "없음 · 간이 위험성평가"],
+              ppe.length > 0 && ["보호구", <PpeList key="ppe" ppe={ppe} />],
+              Boolean(caution.trim()) && [
+                "주의사항",
+                <span key="c" className="wo-caution">
+                  {caution}
+                </span>,
+              ],
               ["장소", d.location || "미입력"],
               d.groupLabel ? ["조", d.groupLabel] : null,
               [

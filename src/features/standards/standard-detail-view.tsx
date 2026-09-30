@@ -1,5 +1,7 @@
 "use client";
 
+import { CautionBand, PpeList } from "./ppe-list";
+
 import { useTransition } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
@@ -146,6 +148,7 @@ export function StandardDetailView({
                 }`
               : `생성 ${new Date(detail.created_at).toLocaleDateString("ko-KR")}`}
           </p>
+          <PpeList ppe={detail.ppe} />
         </div>
         {/* 첫 줄은 이 표준서로 할 일(지시서), 둘째 줄은 표준서 자체를 다루는 것 셋. */}
         <div className="std-detail-actions">
@@ -240,8 +243,8 @@ export function StandardDetailView({
               <Link href={`/standards/${detail.standard_id}/assessments/new`}>
                 정기 위험성평가 회차를 새로 등록
               </Link>{" "}
-              하세요. 산안법상 정기 위험성평가는 매년, 최초 위험성평가는 3년마다 실시가
-              권장됩니다.
+              하세요. 산안법상 정기 위험성평가는 매년, 최초 위험성평가는 3년마다
+              실시가 권장됩니다.
             </p>
           </div>
         </div>
@@ -255,7 +258,7 @@ export function StandardDetailView({
               이 표준서의 위험성평가: {ASSESSMENT_KIND_LABEL[current.kind]} (
               {new Date(current.performed_on).toLocaleDateString("ko-KR")})
             </strong>
-            <br/>
+            <br />
             <p>
               유효기간{" "}
               {current.valid_until
@@ -265,6 +268,7 @@ export function StandardDetailView({
           </div>
         </div>
       )}
+      <CautionBand caution={detail.caution} />
 
       <section className="std-detail-section">
         <h2>작업 단계</h2>
@@ -324,8 +328,18 @@ export function StandardDetailView({
         </div>
       </section>
 
+      {/* 여기부터는 표준서 내용이 아니다. 위험성평가는 함께 등록되는 별도 문서,
+          그 아래 둘은 기록(이력). 띠와 카드 색으로 가른다 — 폼과 같은 문법. */}
       {current && (
-        <section className="std-detail-section">
+        <div className="std-form-divider" aria-hidden="true">
+          <span>별도 문서 · 위험성평가</span>
+        </div>
+      )}
+      {current && (
+        <section className="std-detail-section std-detail-section--assessment">
+          <p className="std-assessment-eyebrow">
+            표준서와 함께 등록된 별도 문서 · 회차마다 새로 남는다
+          </p>
           <h2>이 표준서의 위험성평가</h2>
           {/* 판단 기준 표는 여기서 보이지 않는다 (사장님 결정). 회사정보 > 판단 기준과 평가 상세에서 본다. */}
           <dl className="std-detail-info">
@@ -406,7 +420,13 @@ export function StandardDetailView({
         </section>
       )}
 
-      <section className="std-detail-section">
+      <div
+        className="std-form-divider std-form-divider--log"
+        aria-hidden="true"
+      >
+        <span>기록</span>
+      </div>
+      <section className="std-detail-section std-detail-section--log">
         <h2>개정 이력 ({detail.revisions.length}판)</h2>
         <ul className="std-assessment-history" role="list">
           {detail.revisions.map((r) => (
@@ -450,7 +470,7 @@ export function StandardDetailView({
         </ul>
       </section>
 
-      <section className="std-detail-section">
+      <section className="std-detail-section std-detail-section--log">
         <h2>위험성평가 회차 이력 ({detail.assessments.length}건)</h2>
         {detail.assessments.length === 0 ? (
           <p className="std-form-note">등록된 위험성평가가 없습니다.</p>

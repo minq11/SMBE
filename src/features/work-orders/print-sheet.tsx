@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ppeLabel } from "@/features/standards/ppe";
 
 /**
  * 현장 게시용 A4 한 장 출력물.
@@ -23,6 +24,8 @@ export function PrintSheet({
   issueVersion,
   issuedAt,
   printedAt,
+  ppe = [],
+  caution = "",
 }: {
   name: string;
   period: string;
@@ -38,6 +41,8 @@ export function PrintSheet({
   issueVersion: number | null;
   issuedAt: string | null;
   printedAt: string;
+  ppe?: string[];
+  caution?: string;
 }) {
   return (
     <article className="wo-sheet" aria-hidden="true">
@@ -68,6 +73,18 @@ export function PrintSheet({
         <h2>배정 인원</h2>
         <p>{assignees || "배정 없음"}</p>
       </section>
+      {ppe.length > 0 && (
+        <section className="wo-sheet-row">
+          <h2>필요 보호구</h2>
+          <p>{ppe.map(ppeLabel).join(" · ")}</p>
+        </section>
+      )}
+      {caution.trim() && (
+        <section className="wo-sheet-row">
+          <h2>주의사항</h2>
+          <p>{caution}</p>
+        </section>
+      )}
 
       <section className="wo-sheet-risks">
         <h2>위험요인 · 감소대책</h2>

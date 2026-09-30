@@ -99,6 +99,12 @@ test("standard: create, edit, add a seeded assessment round", async ({
       .locator("dialog.help-dialog[open]")
       .getByRole("button", { name: "확인" })
       .click();
+    // 보호구는 칩으로 고르고, 주의사항은 선택 한 칸. 둘 다 판에 묶여 지시서까지 간다.
+    await page.getByRole("checkbox", { name: "안전모", exact: true }).check();
+    await page.getByRole("checkbox", { name: "보호장갑", exact: true }).check();
+    await page
+      .getByLabel("주의사항 (선택)")
+      .fill("안전블록 없이 금형 밑에 손 넣지 않기");
     await page.getByLabel("작업방법 요약").fill("전원 차단 후 금형 분리");
     // 빈칸의 예시가 곧 안내다. 단계·체크리스트는 두 칸씩 미리 있다.
     await page
@@ -193,6 +199,21 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.locator("#main")).toContainText(
       "현재 조치: 작업자 주의, 장갑 착용",
     );
+    // 보호구 칩과 주의사항 띠는 표준서 내용 안(머리·작업 단계 위)에 있다.
+    await expect(page.locator(".ppe-list")).toContainText("안전모");
+    await expect(page.locator(".ppe-list")).toContainText("보호장갑");
+    await expect(page.locator(".std-caution-band")).toContainText(
+      "안전블록 없이",
+    );
+    // 별도 문서(위험성평가)와 기록(이력)은 표준서 내용과 다른 카드다.
+    await expect(page.locator(".std-detail-section--assessment")).toHaveCount(
+      1,
+    );
+    await expect(page.locator(".std-detail-section--log")).toHaveCount(2);
+    await page.screenshot({
+      path: testInfo.outputPath("standard-detail.png"),
+      fullPage: true,
+    });
     // 표준서 상세에는 판단 기준 표가 없다 (사장님 결정). 평가에 복사된 사본은
     // 위험성평가 상세에서 본다.
     await expect(page.locator("#main .criteria-list")).toHaveCount(0);
@@ -255,7 +276,8 @@ test("standard: create, edit, add a seeded assessment round", async ({
     );
     await expect(page.locator("#main")).toContainText("전원 차단 후 잠금");
     await expect(page.locator("#main")).toContainText("개정 이력 (2판)");
-    await expect(page.locator("#main")).toContainText("잠금장치 추가");
+    // 개정 사유는 저장만 되고 이력에는 보이지 않는다 (사장님 결정 2026-09-30).
+    await expect(page.locator("#main")).not.toContainText("잠금장치 추가");
     const current = await pool.query(
       `SELECT r.revision_no FROM standards s
          JOIN standard_revisions r ON r.id = s.current_revision_id WHERE s.id = $1`,
@@ -428,7 +450,10 @@ test("standard: create, edit, add a seeded assessment round", async ({
       .getByRole("button", { name: "발급", exact: true })
       .click();
     await expect(page).toHaveURL(/\/work-orders\/[a-f0-9-]{36}(#qr)?$/);
-    // 지시서 상세: 위험요인은 표준서 평가 그대로, 원본으로 가는 줄이 있다.
+    // 지시서 상세: 작업 정보에 표준서의 보호구·주의사항이 사본으로 온다.
+    await expect(page.locator("#info")).toContainText("안전모");
+    await expect(page.locator("#info")).toContainText("안전블록 없이");
+    // 위험요인은 표준서 평가 그대로, 원본으로 가는 줄이 있다.
     await page.locator("#risk summary").click();
     await expect(page.locator("#risk")).toContainText("끼임");
     await expect(

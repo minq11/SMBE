@@ -12,6 +12,7 @@ import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { SAFETY_INFO_HINTS } from "@/features/assessments/model";
 import { PtwHelp } from "./ptw-help";
+import { PpePicker } from "./ppe-picker";
 import { BasicHelp, ChecklistHelp, MethodHelp, RiskHelp } from "./section-help";
 
 // 빈칸의 예시. 처음 쓰는 사장님이 "뭘 적지" 하지 않게.
@@ -41,6 +42,8 @@ type Risk = {
 type Draft = {
   name: string;
   ptw_required: boolean;
+  ppe: string[];
+  caution: string;
   performed_on: string;
   work_method: string;
   steps: string[];
@@ -66,6 +69,8 @@ function blankDraft(): Draft {
   return {
     name: "",
     ptw_required: false,
+    ppe: [],
+    caution: "",
     performed_on: today,
     work_method: "",
     // 단계·체크리스트는 두 칸씩. 한 칸이면 "하나만 쓰면 되나" 로 읽힌다.
@@ -172,6 +177,8 @@ export function StandardForm({
     const cleaned = {
       name: draft.name.trim(),
       ptw_required: draft.ptw_required,
+      ppe: draft.ppe,
+      caution: draft.caution.trim(),
       // 편집 폼과 같은 모양({ id?, text }). 새 표준서라 id 는 없다.
       steps: draft.steps
         .map((s) => s.trim())
@@ -233,18 +240,23 @@ export function StandardForm({
       <FormErrorDialog message={state?.error} nonce={state} />
 
       {/* 긴 폼이라 구간으로 바로 간다. 좁은 화면에서는 위에 붙는다 (globals.css). */}
+      {/* 표준서는 네 구간을 순서대로 채운다 — 칩과 머리에 번호가 있다. 위험성평가는
+          번호 없이 따로 온다(별도 문서). */}
       <JumpNav
         items={[
-          { id: "std-basic", label: "기본 정보" },
-          { id: "std-method-section", label: "작업 방법" },
-          { id: "std-checklist", label: "안전/품질 체크리스트" },
+          { id: "std-basic", label: "1 기본 정보" },
+          { id: "std-method-section", label: "2 작업 방법" },
+          { id: "std-caution", label: "3 주의사항" },
+          { id: "std-checklist", label: "4 체크리스트" },
           { id: "std-risk", label: "위험성평가" },
         ]}
       />
 
       <section className="std-form-section" id="std-basic">
         <div className="std-section-head">
-          <h2>기본 정보</h2>
+          <h2>
+            <span className="std-step-no">1</span>기본 정보
+          </h2>
           <HelpDialog title="기본 정보" variant="icon">
             <BasicHelp />
           </HelpDialog>
@@ -276,11 +288,14 @@ export function StandardForm({
             <PtwHelp />
           </HelpDialog>
         </div>
+        <PpePicker value={draft.ppe} onChange={(ppe) => setField("ppe", ppe)} />
       </section>
 
       <section className="std-form-section" id="std-method-section">
         <div className="std-section-head">
-          <h2>작업 방법</h2>
+          <h2>
+            <span className="std-step-no">2</span>작업 방법
+          </h2>
           <HelpDialog title="작업 방법" variant="icon">
             <MethodHelp />
           </HelpDialog>
@@ -346,9 +361,29 @@ export function StandardForm({
         </div>
       </section>
 
+      <section className="std-form-section" id="std-caution">
+        <div className="std-section-head">
+          <h2>
+            <span className="std-step-no">3</span>주의사항
+          </h2>
+        </div>
+        <FloatTextarea
+          className="float-field--flush"
+          id="std-caution-text"
+          label="주의사항 (선택)"
+          rows={3}
+          maxLength={2000}
+          value={draft.caution}
+          onChange={(e) => setField("caution", e.target.value)}
+          hint="예: 안전블록 없이 금형 밑에 손 넣지 않기. 우천 시 야외 작업 중지. 사고 시 관리감독자 010-0000-0000"
+        />
+      </section>
+
       <section className="std-form-section" id="std-checklist">
         <div className="std-section-head">
-          <h2>안전/품질 체크리스트</h2>
+          <h2>
+            <span className="std-step-no">4</span>안전/품질 체크리스트
+          </h2>
           <HelpDialog title="안전/품질 체크리스트" variant="icon">
             <ChecklistHelp />
           </HelpDialog>

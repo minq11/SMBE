@@ -21,6 +21,7 @@ import {
 } from "@/features/inspections/model";
 import { PERMIT_LABEL, permitStatus } from "@/features/ptw/model";
 import { CriteriaList } from "@/features/company/criteria-list";
+import { CautionBand, PpeList } from "@/features/standards/ppe-list";
 
 const RISK_LEVEL: Record<string, string> = { HIGH: "상", MID: "중", LOW: "하" };
 
@@ -151,6 +152,8 @@ export default async function WorkerLinkPage({
             작업일자 {target!.work_date} · {at(target!.starts_at)} ~{" "}
             {at(target!.ends_at)}
           </p>
+          <PpeList ppe={data.ppe} />
+          <CautionBand caution={data.caution} />
           <h2>발급 당시 위험요인·감소대책</h2>
           {data.risks.map((r, i) => (
             <article className="wo-risk" key={i}>

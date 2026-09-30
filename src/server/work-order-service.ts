@@ -458,9 +458,11 @@ export async function issueOrder(
     updated_at: string;
     revision_id: string | null;
     revision_no: number | null;
+    ppe: string[] | null;
+    caution: string | null;
   }>(
     `SELECT s.id, s.name, s.ptw_required, s.updated_at,
-            r.id AS revision_id, r.revision_no
+            r.id AS revision_id, r.revision_no, r.ppe, r.caution
        FROM standards s JOIN work_orders w ON w.standard_id = s.id
        LEFT JOIN standard_revisions r
          ON r.id = COALESCE(w.standard_revision_id, s.current_revision_id)
@@ -487,6 +489,8 @@ export async function issueOrder(
           standard_updated_at: stdMeta[0].updated_at,
           standard_revision_id: stdMeta[0].revision_id,
           standard_revision_no: stdMeta[0].revision_no,
+          ppe: stdMeta[0].ppe ?? [],
+          caution: stdMeta[0].caution ?? "",
           captured_at: new Date().toISOString(),
         }),
       ],

@@ -401,8 +401,17 @@ export async function inspectionOverview(
   const managers = (await membersForOrder(client, actor.companyId)).filter(
     (m) => m.role !== "WORKER",
   );
+  // 표준서의 보호구·주의사항 사본. TBM 머리에 위험요인보다 먼저 보인다.
+  const { rows: stdMeta } = await client.query<{
+    payload: { ppe?: string[]; caution?: string };
+  }>(
+    "SELECT payload FROM work_order_snapshots WHERE work_order_id=$1 AND snapshot_kind='STANDARD_META'",
+    [orderId],
+  );
   return {
     order,
+    ppe: stdMeta[0]?.payload.ppe ?? [],
+    caution: stdMeta[0]?.payload.caution ?? "",
     isManager: access.role !== "WORKER",
     // 사진 첨부는 요금제만 가른다 — 역할은 보지 않는다.
     canAttach: access.pro_state !== "FREE",
