@@ -886,7 +886,8 @@ html[data-banner-hidden] .preview-banner {
   gap: 4px;
 }
 .reasons h2,
-.reason-dialog h2 {
+.reason-dialog h2,
+.law-dialog h2 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -910,7 +911,8 @@ html[data-banner-hidden] .preview-banner {
   color: var(--ink-4);
 }
 /* 이유 설명 창. 넓은 화면은 가운데 카드, 좁은 화면은 아래에서 올라오는 시트. */
-.reason-dialog {
+.reason-dialog,
+.law-dialog {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -918,7 +920,8 @@ html[data-banner-hidden] .preview-banner {
   padding: 0;
   width: min(480px, calc(100vw - 32px));
 }
-.reason-dialog::backdrop {
+.reason-dialog::backdrop,
+.law-dialog::backdrop {
   background: rgb(0 0 0 / 45%);
 }
 .reason-dialog-body {
@@ -929,7 +932,8 @@ html[data-banner-hidden] .preview-banner {
   align-items: flex-start;
   gap: 12px;
 }
-.reason-dialog h2 {
+.reason-dialog h2,
+.law-dialog h2 {
   font-size: 24px;
   letter-spacing: -0.6px;
 }
@@ -6512,7 +6516,8 @@ fieldset.form-field legend {
   }
 }
 @media (max-width: 640px) {
-  .reason-dialog {
+  .reason-dialog,
+  .law-dialog {
     width: 100%;
     max-width: none;
     margin: auto 0 0;
@@ -6522,7 +6527,8 @@ fieldset.form-field legend {
   .reason-dialog-body {
     padding: 24px 20px max(20px, env(safe-area-inset-bottom, 0px));
   }
-  .reason-dialog h2 {
+  .reason-dialog h2,
+  .law-dialog h2 {
     font-size: 22px;
   }
 }
@@ -8309,6 +8315,85 @@ fieldset.form-field legend {
 .public-law td {
   color: var(--brand-strong);
   font-weight: 600;
+}
+/* 의무 칸은 단추 — 누르면 조문 요지 창(public-law.tsx). */
+.public-law-duty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin: -6px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.public-law-duty > span {
+  flex: 1;
+  min-width: 0;
+}
+.public-law-duty svg {
+  flex-shrink: 0;
+  color: var(--ink-4);
+}
+.public-law-duty:hover,
+.public-law-duty:focus-visible {
+  color: var(--brand-strong);
+}
+.law-dialog .public-kicker {
+  margin-bottom: -8px;
+}
+.law-gist {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+.law-where {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-softer);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--brand-strong);
+}
+.law-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.law-dialog-actions > * {
+  min-height: 44px;
+}
+/* 무료·유료 비교 (billing/pro-features.ts 그대로) */
+.public-compare caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.public-compare tbody th {
+  width: 36%;
+}
+.public-compare td {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.public-compare td.is-pro {
+  color: var(--brand-strong);
+  font-weight: 700;
 }
 
 /* 요금 */

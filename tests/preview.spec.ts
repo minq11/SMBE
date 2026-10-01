@@ -109,7 +109,10 @@ test("preview renders without secrets and only shows preparation dialogs", async
   // 상단바에도 같은 이름의 링크가 있어 본문으로 좁힌다.
   // 같은 이름의 단추가 머리와 맨 아래 FAQ 끝에 하나씩 — 머리 것부터.
   await expect(
-    page.locator("#main").getByRole("link", { name: /무료로 시작/ }).first(),
+    page
+      .locator("#main")
+      .getByRole("link", { name: /무료로 시작/ })
+      .first(),
   ).toHaveAttribute("href", "/login");
   await expect(
     page.getByRole("link", { name: /우리회사 안전수준 진단/ }),
@@ -170,9 +173,26 @@ test("preview renders without secrets and only shows preparation dialogs", async
       path: test.info().outputPath(`public-panel-${i + 1}.png`),
     });
   }
-  await expect(page.locator(".public-law")).toContainText("산안법 54조 · 57조");
+  const law = page.locator(".public-law").first();
+  await expect(law).toContainText("산안법 54조 · 57조");
+  // 의무를 누르면 조문 요지와 국가법령정보센터 전문 링크가 창으로 뜬다.
+  await law.getByRole("button", { name: /위험성평가 실시·기록/ }).click();
+  const lawDialog = page.locator("dialog.law-dialog");
+  await expect(lawDialog).toBeVisible();
+  await expect(lawDialog).toContainText("제36조");
+  await expect(
+    lawDialog.getByRole("link", { name: /조문 전문 보기/ }),
+  ).toHaveAttribute("href", /law\.go\.kr/);
+  await page.screenshot({ path: test.info().outputPath("law-dialog.png") });
+  await lawDialog.getByRole("button", { name: "닫기" }).last().click();
+  await expect(lawDialog).toBeHidden();
   await expect(page.locator(".public-price")).toContainText("33,000");
   await expect(page.locator(".public-price")).toContainText("인원 제한 없음");
+  // 무료·유료 차이는 요금제의 표 그대로.
+  const compare = page.locator(".public-compare");
+  await expect(compare).toContainText("사진 첨부");
+  await expect(compare).toContainText("문자(SMS) 알림");
+  await expect(compare).toContainText("PDF·인쇄 보고서");
   const faq = page.locator(".public-faq");
   await expect(faq).toHaveCount(6);
   await faq.first().locator("summary").click();

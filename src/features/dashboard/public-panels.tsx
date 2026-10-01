@@ -15,6 +15,8 @@ import {
   WorkerShot,
 } from "./public-mocks";
 import { ScrollReveal, reveal } from "./scroll-reveal";
+import { LawTable, type LawRow } from "./public-law";
+import { PRO_FEATURES } from "@/features/billing/pro-features";
 
 /**
  * 로그인 전 홈의 첫 화면 밑. 좁은 화면에서는 패널 하나가 한 화면이고(풀페이지),
@@ -64,26 +66,88 @@ const STEPS = [
   },
 ];
 
-/* 근거는 사고 할 일(incidents/model.ts DUTY_LABEL)과 같은 표기를 쓴다. */
-const LAW_ROWS: Array<[string, string, string]> = [
-  ["위험성평가 실시·기록", "산안법 36조", "표준서의 위험성평가 · 회차 이력"],
-  [
-    "평가 결과 근로자 공유",
-    "위험성평가 고시 15조",
-    "지시서 QR → 작업자 TBM 확인 기록",
-  ],
-  ["위험작업 허가·감독", "산업안전보건기준규칙", "작업허가서(PTW) · 승인 기록"],
-  [
-    "작업 중지·대피, 재해 보고",
-    "산안법 54조 · 57조",
-    "안전사고 등록 · 산업재해조사표",
-  ],
-  ["재발방지대책 이행", "산안법 57조 2항", "사고 상세의 할 일 · 완료 기록"],
-  [
-    "안전보건 점검·경영책임자 확인",
-    "중처법 시행령 4조",
-    "주간 안전회의 · 경영책임자 확인",
-  ],
+/* 근거는 사고 할 일(incidents/model.ts DUTY_LABEL)과 같은 표기를 쓴다. 요지는 우리가 풀어
+   쓴 것이고 조문 그대로는 국가법령정보센터 링크 너머에 있다 — 법은 바뀐다. */
+const LAW_ROWS: LawRow[] = [
+  {
+    duty: "위험성평가 실시·기록",
+    basis: "산안법 36조",
+    where: "표준서의 위험성평가 · 회차 이력",
+    law: "산업안전보건법",
+    article: "제36조 위험성평가의 실시",
+    gist: [
+      "사업주는 기계·설비·원재료·작업행동 등에서 유해·위험요인을 찾아내어 위험성이 허용 가능한지 평가하고, 그 결과에 따라 조치한다.",
+      "평가할 때 해당 작업장의 근로자를 참여시킨다.",
+      "평가 결과와 조치사항을 기록해 보존한다.",
+      "방법·절차·시기는 고용노동부 고시(사업장 위험성평가에 관한 지침)로 정한다.",
+    ],
+    url: "https://www.law.go.kr/법령/산업안전보건법/제36조",
+  },
+  {
+    duty: "평가 결과 근로자 공유",
+    basis: "위험성평가 고시 15조",
+    where: "지시서 QR → 작업자 TBM 확인 기록",
+    law: "사업장 위험성평가에 관한 지침 (고용노동부 고시)",
+    article: "위험성평가의 시기와 결과 공유",
+    gist: [
+      "위험성평가는 최초 평가 뒤 정기·수시로 다시 하고, 설비·물질·작업 방법이 바뀌거나 사고가 나면 그때 수시 평가를 한다.",
+      "평가 결과 가운데 위험요인과 감소대책은 작업 전 안전점검회의(TBM) 등으로 근로자에게 알린다.",
+      "우리 지시서의 TBM 확인 기록이 그 '알렸다'의 증거다.",
+    ],
+    url: "https://www.law.go.kr/행정규칙/사업장위험성평가에관한지침",
+  },
+  {
+    duty: "위험작업 허가·감독",
+    basis: "산업안전보건기준규칙",
+    where: "작업허가서(PTW) · 승인 기록",
+    law: "산업안전보건기준에 관한 규칙",
+    article: "화기·밀폐공간·고소 등 위험작업의 사전 조치",
+    gist: [
+      "화재위험작업, 밀폐공간 작업, 전기·고소 작업 등은 작업 전에 위험 요인을 확인하고 감시자·감독자를 두는 등 정해진 조치를 한 뒤에 한다.",
+      "밀폐공간은 작업 허가 절차를 포함한 프로그램을 수립해 운영한다.",
+      "우리 작업허가서는 그 사전 조치를 신청·승인 기록으로 남긴다.",
+    ],
+    url: "https://www.law.go.kr/법령/산업안전보건기준에관한규칙",
+  },
+  {
+    duty: "작업 중지·대피, 재해 보고",
+    basis: "산안법 54조 · 57조",
+    where: "안전사고 등록 · 산업재해조사표",
+    law: "산업안전보건법",
+    article: "제54조 중대재해 발생 시 조치 · 제57조 산업재해 보고",
+    gist: [
+      "중대재해가 나면 즉시 작업을 중지하고 근로자를 대피시키는 등 필요한 조치를 하고, 지체 없이 고용노동부에 보고한다 (54조).",
+      "산업재해 발생 사실을 숨기지 않고, 발생 원인 등을 기록해 보존한다 (57조).",
+      "휴업 3일 이상 등 정해진 재해는 산업재해조사표로 한 달 안에 보고한다 (57조).",
+    ],
+    url: "https://www.law.go.kr/법령/산업안전보건법/제57조",
+  },
+  {
+    duty: "재발방지대책 이행",
+    basis: "산안법 57조 2항",
+    where: "사고 상세의 할 일 · 완료 기록",
+    law: "산업안전보건법",
+    article: "제57조 산업재해 발생 은폐 금지 및 보고 등",
+    gist: [
+      "산업재해의 발생 원인 등을 기록하고 보존한다.",
+      "보고 대상 재해는 발생 개요·원인·재발방지 계획을 함께 보고한다.",
+      "우리 사고 상세는 재발방지대책마다 담당·기한·완료를 기록하고, 다 끝나야 종결된다.",
+    ],
+    url: "https://www.law.go.kr/법령/산업안전보건법/제57조",
+  },
+  {
+    duty: "안전보건 점검·경영책임자 확인",
+    basis: "중처법 시행령 4조",
+    where: "주간 안전회의 · 경영책임자 확인",
+    law: "중대재해 처벌 등에 관한 법률 시행령",
+    article: "제4조 안전보건관리체계의 구축 및 이행 조치",
+    gist: [
+      "경영책임자는 안전·보건 목표와 경영방침을 세우고, 유해·위험요인을 확인·개선하는 업무절차를 마련해 반기마다 점검한다.",
+      "안전보건 예산을 편성·집행하고, 관리책임자 등이 일을 하는지 반기마다 평가한다.",
+      "종사자 의견을 듣는 절차, 중대재해에 대비한 매뉴얼(작업 중지·대피·보고·구호)을 마련해 반기마다 점검한다.",
+    ],
+    url: "https://www.law.go.kr/법령/중대재해처벌등에관한법률시행령/제4조",
+  },
 ];
 
 const FAQ: Array<{ q: string; a: string; href?: [string, string] }> = [
@@ -158,30 +222,16 @@ export function PublicPanels() {
       <section className="public-panel" aria-labelledby="public-law-h">
         <div className="public-step-text" {...reveal("fade-up")}>
           <p className="public-kicker">법 대응</p>
-          <h2 id="public-law-h">의무는 법이 정하고, 기록은 여기 남습니다</h2>
+          <h2 id="public-law-h">
+            복잡한 법적 의무들, 심플안전으로 대응 가능합니다.
+          </h2>
           <p className="public-lead">
-            중처법·산안법이 요구하는 것과 그 기록이 남는 화면.
+            해야 하는 것을 누르면 조문 요지와 전문 링크가 뜹니다.
           </p>
         </div>
-        <table className="public-law" {...reveal("fade-up", 150)}>
-          <thead>
-            <tr>
-              <th scope="col">해야 하는 것</th>
-              <th scope="col">심플안전에서</th>
-            </tr>
-          </thead>
-          <tbody>
-            {LAW_ROWS.map(([duty, basis, where]) => (
-              <tr key={duty}>
-                <th scope="row">
-                  {duty}
-                  <small>{basis}</small>
-                </th>
-                <td>{where}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div {...reveal("fade-up", 150)}>
+          <LawTable rows={LAW_ROWS} />
+        </div>
       </section>
 
       <section
@@ -192,8 +242,8 @@ export function PublicPanels() {
           <p className="public-kicker">요금</p>
           <h2 id="public-price-h">무료로 시작, 필요할 때만 유료</h2>
           <p className="public-lead">
-            글자로 하는 일은 모두 무료, 인원 제한도 없습니다. 유료는 부가
-            기능이 필요할 때 인원 구간으로만 갈립니다.
+            글자로 하는 일은 모두 무료, 인원 제한도 없습니다. 유료는 부가 기능이
+            필요할 때 인원 구간으로만 갈립니다.
           </p>
         </div>
         <div className="public-price-free" {...reveal("zoom-in", 100)}>
@@ -226,6 +276,28 @@ export function PublicPanels() {
             </li>
           ))}
         </ul>
+        <table
+          className="public-law public-compare"
+          {...reveal("fade-up", 300)}
+        >
+          <caption>무료와 유료의 차이</caption>
+          <thead>
+            <tr>
+              <th scope="col">기능</th>
+              <th scope="col">무료</th>
+              <th scope="col">유료</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PRO_FEATURES.map((f) => (
+              <tr key={f.key}>
+                <th scope="row">{f.title}</th>
+                <td>{f.freeBehavior}</td>
+                <td className="is-pro">{f.proBehavior}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         <p className="public-price-foot" {...reveal("fade-up", 350)}>
           VAT 포함 · 출시 기념 최대 {maxLaunchDiscountPercent()}% 할인 ·{" "}
           {ENTERPRISE_FROM}인 이상은 <Link href="/contact">문의</Link>
