@@ -217,15 +217,17 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
         {
           const bar = page.locator(".wo-actions, .std-form-actions").first();
           if (await bar.count()) {
-            await page.evaluate(() => {
-              document.documentElement.dataset.keyboard = "open";
-            });
+            // 표시·읽기·지우기를 한 번에. 앱은 입력칸에서 나간 0.35초 뒤에 표시를
+            // 지우는데(viewport-height.tsx focusout), 따로 하면 그 사이에 지워져
+            // "sticky" 로 읽히는 때가 있었다.
             expect(
-              await bar.evaluate((el) => getComputedStyle(el).position),
+              await bar.evaluate((el) => {
+                document.documentElement.dataset.keyboard = "open";
+                const position = getComputedStyle(el).position;
+                delete document.documentElement.dataset.keyboard;
+                return position;
+              }),
             ).toBe("static");
-            await page.evaluate(() => {
-              delete document.documentElement.dataset.keyboard;
-            });
           }
         }
         if (route === "/work-orders/new") {

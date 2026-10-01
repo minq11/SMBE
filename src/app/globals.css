@@ -7858,22 +7858,20 @@ fieldset.form-field legend {
   flex-shrink: 0;
 }
 
-/* 손전화 목업 (public-mocks.tsx) — 안의 글은 예시. 색은 토큰만. */
+/* 손전화 목업 (public-mocks.tsx) — 실제 화면의 구조·문구·색을 축소해 그린다. 안의 치수는
+   전부 em 이라 .shot-screen 의 글자 크기 하나로 넓은 화면에서 같이 커진다. */
 .shot-phone {
   margin: 0;
 }
 .shot-screen {
-  background: var(--surface);
+  background: var(--bg);
   color: var(--ink);
-  border: 6px solid var(--ink);
-  border-radius: 24px;
-  padding: 14px 11px 12px;
+  border: 0.55em solid var(--ink);
+  border-radius: 2.2em;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.4;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+  overflow: hidden;
 }
 .shot-phone figcaption {
   margin-top: 8px;
@@ -7881,38 +7879,162 @@ fieldset.form-field legend {
   font-size: 11px;
   color: var(--ink-3);
 }
+.shot-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.9em 1em 0.7em;
+  background: var(--bg);
+  font-size: 1.15em;
+  font-weight: 800;
+  color: var(--ink);
+}
+.shot-bar b {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shot-bar i {
+  display: grid;
+  place-items: center;
+  width: 1.9em;
+  height: 1.9em;
+  border-radius: 50%;
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+  font-style: normal;
+  font-size: 0.8em;
+}
+.shot-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  padding: 0.6em 1em 1.1em;
+}
 .shot-eyebrow {
-  font-size: 9.5px;
+  font-size: 0.85em;
   font-weight: 800;
-  color: var(--brand);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
+  color: var(--brand-strong);
 }
-.shot-title {
-  font-size: 14px;
+.shot-h1 {
+  font-size: 1.7em;
   font-weight: 800;
-  letter-spacing: -0.3px;
-  margin-top: -5px;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin-top: -0.3em;
 }
-.shot-meta,
-.shot-cap {
-  font-size: 9.5px;
+.shot-h2 {
+  font-size: 1.25em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: 0.3em;
+}
+.shot-meta {
+  font-size: 0.95em;
   color: var(--ink-3);
 }
-.shot-cap {
-  text-align: center;
+.shot-meta b {
+  color: var(--ink);
 }
-.shot-chips {
+.shot-ppe {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 0.4em;
 }
-.shot-chips span {
-  padding: 2px 7px;
+.shot-ppe span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.35em 0.8em;
   border-radius: 999px;
   background: var(--brand-softer);
   color: var(--brand-strong);
-  font-size: 9.5px;
+  font-size: 0.95em;
   font-weight: 700;
+}
+.shot-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  min-height: 2.6em;
+  padding: 0.4em 0.9em;
+  border-radius: 0.9em;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.shot-btn--primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--surface);
+}
+.shot-btn--fit {
+  align-self: flex-start;
+}
+.shot-btn--sticky {
+  margin: 0.4em -1em -1.1em;
+  border-radius: 0.9em 0.9em 0 0;
+  min-height: 3em;
+}
+.shot-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+}
+.shot-btn-row .shot-btn {
+  flex: 1 1 auto;
+  padding-inline: 0.6em;
+  font-size: 0.9em;
+}
+.shot-assess {
+  display: flex;
+  gap: 0.6em;
+  padding: 0.8em 0.9em;
+  border: 1px solid var(--brand-soft);
+  border-radius: 0.9em;
+  background: var(--ok-soft);
+  color: var(--brand-strong);
+  font-weight: 700;
+  font-size: 0.95em;
+  line-height: 1.35;
+}
+.shot-assess small {
+  display: block;
+  margin-top: 0.3em;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.shot-caution {
+  padding: 0.6em 0.9em;
+  border-left: 0.3em solid var(--ink-4);
+  background: var(--surface-2);
+  font-size: 0.95em;
+  font-weight: 600;
+}
+.shot-caution small {
+  display: block;
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.shot-card {
+  padding: 0.9em 1em;
+  border: 1px solid var(--line);
+  border-radius: 0.9em;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.shot-card .shot-h2 {
+  margin-top: 0;
 }
 .shot-steps {
   list-style: none;
@@ -7920,47 +8042,83 @@ fieldset.form-field legend {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.4em;
 }
 .shot-steps li {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 7px;
-  border-radius: 7px;
-  background: var(--surface-2);
+  gap: 0.6em;
   font-weight: 600;
 }
 .shot-steps b {
   display: grid;
   place-items: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 5px;
-  background: var(--brand);
-  color: var(--surface);
-  font-size: 9px;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 0.5em;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 0.9em;
 }
-.shot-doc {
-  padding: 6px 8px;
-  border-left: 3px solid var(--brand);
-  background: var(--brand-softer);
-  border-radius: 0 7px 7px 0;
-  font-size: 9.5px;
-  font-weight: 700;
-  color: var(--brand-strong);
+/* 지시서 상세의 상태 4칸 — 값은 상태색 글자 하나. */
+.shot-statuses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6em 0.8em;
+  padding-bottom: 0.6em;
+  border-bottom: 1px solid var(--line);
 }
-.shot-doc small {
+.shot-statuses small {
   display: block;
-  font-weight: 500;
+  font-size: 0.85em;
   color: var(--ink-3);
 }
-.shot-qr {
-  width: 62%;
-  margin: 2px auto 0;
-  padding: 6px;
+.shot-statuses b {
+  font-size: 1.15em;
+  font-weight: 800;
+}
+.shot-statuses b[data-tone="ok"] {
+  color: var(--ok);
+}
+.shot-statuses b[data-tone="info"] {
+  color: var(--info);
+}
+.shot-today {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  padding: 0.8em 0.9em;
+  border-radius: 0.9em;
+  border-top: 0.3em solid var(--accent);
+  background: var(--surface);
+  font-size: 0.95em;
+}
+.shot-chips {
+  display: flex;
+  gap: 0.4em;
+  overflow: hidden;
+}
+.shot-chips span {
+  flex-shrink: 0;
+  padding: 0.45em 0.9em;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.shot-chips span.is-active {
+  border-color: var(--brand);
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+.shot-qr {
+  width: 52%;
+  padding: 0.5em;
+  border: 1px solid var(--line);
+  border-radius: 0.8em;
   background: var(--surface);
 }
 .shot-qr svg {
@@ -7969,110 +8127,146 @@ fieldset.form-field legend {
   height: auto;
   fill: var(--ink);
 }
-.shot-status {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-.shot-status span {
-  padding: 3px 7px;
-  border-radius: 999px;
-  background: var(--surface-2);
+.shot-field {
+  padding: 0.5em 0.9em;
+  border: 1px solid var(--line);
+  border-radius: 0.8em;
+  background: var(--surface);
+  font-size: 0.9em;
   color: var(--ink-2);
-  font-size: 9.5px;
-  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.shot-status span[data-tone="ok"] {
-  background: var(--ok-soft);
-  color: var(--ok);
+.shot-field small {
+  display: block;
+  font-size: 0.85em;
+  color: var(--ink-3);
 }
-.shot-status span[data-tone="danger"] {
-  background: var(--danger-soft);
-  color: var(--danger);
+/* 작업자 TBM: 위험요인 줄, 체크리스트 항목(양호·불량·해당없음), 확인 문장, 아래 단추 */
+.shot-risk {
+  font-size: 0.95em;
+  color: var(--ink-2);
 }
-.shot-checks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.shot-risk b {
+  display: block;
+  color: var(--ink);
+}
+.shot-item {
+  padding: 0.8em 0.9em;
+  border: 1px solid var(--line);
+  border-radius: 0.9em;
+  background: var(--surface);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.6em;
 }
-.shot-checks li {
-  display: flex;
+.shot-item > b {
+  font-size: 1.05em;
+}
+.shot-item > small {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 7px;
-  border-radius: 7px;
-  background: var(--surface-2);
-  font-weight: 600;
+  gap: 0.4em;
+  color: var(--ink-3);
+  font-size: 0.9em;
 }
-.shot-checks i {
+.shot-radios {
   display: grid;
-  place-items: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  border: 1.5px solid var(--ink-4);
-  color: var(--surface);
-  flex-shrink: 0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4em;
 }
-.shot-checks li.is-done i {
-  background: var(--brand);
-  border-color: var(--brand);
-}
-.shot-btn {
-  margin-top: 2px;
-  padding: 8px;
-  border-radius: 9px;
-  background: var(--brand);
-  color: var(--surface);
-  text-align: center;
-  font-weight: 800;
-  font-size: 11px;
-}
-.shot-now {
-  margin-left: 4px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 9px;
-  vertical-align: middle;
-}
-.shot-agenda {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.shot-agenda li {
+.shot-radios span {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 7px;
-  border-radius: 7px;
-  background: var(--surface-2);
+  justify-content: center;
+  gap: 0.3em;
+  min-height: 2.6em;
+  border: 1px solid var(--line);
+  border-radius: 0.8em;
+  font-size: 0.85em;
   font-weight: 600;
+  white-space: nowrap;
 }
-.shot-route {
-  padding: 1px 5px;
-  border-radius: 5px;
-  font-size: 9px;
-  font-weight: 800;
-  background: var(--info-soft);
-  color: var(--info);
-  flex-shrink: 0;
+.shot-radios i {
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 50%;
+  border: 0.15em solid var(--ink-4);
+  background: var(--surface);
 }
-.shot-route[data-k="incident"] {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-.shot-route[data-k="assessment"] {
+.shot-radios span.is-on {
+  border-color: var(--brand);
   background: var(--brand-softer);
   color: var(--brand-strong);
+}
+.shot-radios span.is-on i {
+  border-color: var(--brand);
+  background: radial-gradient(
+    circle,
+    var(--brand) 45%,
+    var(--surface) 50%
+  );
+}
+.shot-confirm {
+  display: flex;
+  gap: 0.6em;
+  align-items: flex-start;
+  font-size: 0.95em;
+  color: var(--ink-2);
+}
+.shot-check {
+  flex-shrink: 0;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 0.3em;
+  background: var(--ink);
+  position: relative;
+}
+.shot-check::after {
+  content: "";
+  position: absolute;
+  left: 0.42em;
+  top: 0.18em;
+  width: 0.35em;
+  height: 0.7em;
+  border: solid var(--surface);
+  border-width: 0 0.18em 0.18em 0;
+  transform: rotate(45deg);
+}
+/* 주간 회의 항목: 출처 칩(메뉴 · 종류 ›) + 요약 + 확인 상태 */
+.shot-meeting-item b {
+  font-size: 1.05em;
+}
+.shot-meeting-item small {
+  color: var(--ink-3);
+  font-size: 0.9em;
+}
+.shot-route {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.3em 0.7em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 700;
+}
+.shot-route[data-source="INSPECTION_FINDING"] {
+  border-color: var(--brand-soft);
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+}
+.shot-route[data-source="INCIDENT"] {
+  border-color: var(--danger-soft);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.shot-route[data-source="RISK_MEASURE"] {
+  border-color: var(--info-soft);
+  background: var(--info-soft);
+  color: var(--info);
 }
 
 /* 법 대응 표 */
@@ -8282,12 +8476,7 @@ fieldset.form-field legend {
     font-size: 16px;
   }
   .shot-screen {
-    font-size: 13px;
-    padding: 18px 14px 16px;
-    border-radius: 30px;
-  }
-  .shot-title {
-    font-size: 17px;
+    font-size: 12px;
   }
   .public-law {
     font-size: 15px;
@@ -8332,6 +8521,10 @@ fieldset.form-field legend {
   }
   .public-panel h2 {
     font-size: 25px;
+  }
+  /* 목업이 한 화면을 넘지 않게 — 실제 화면 구조를 다 담아서 길다. */
+  .shot-screen {
+    font-size: 9.5px;
   }
 }
 @media (max-width: 960px) {
