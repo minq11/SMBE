@@ -8384,16 +8384,33 @@ fieldset.form-field legend {
   font-weight: 800;
   color: var(--ink);
 }
-.public-compare tbody th {
-  width: 36%;
-}
+.public-compare thead th:not(:first-child),
 .public-compare td {
-  color: var(--ink-3);
-  font-weight: 500;
+  text-align: center;
+  width: 18%;
 }
-.public-compare td.is-pro {
-  color: var(--brand-strong);
-  font-weight: 700;
+.public-compare tbody th small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.public-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.public-mark[data-on="true"] {
+  color: var(--brand);
+  background: var(--brand-softer);
+}
+.public-mark[data-on="false"] {
+  color: var(--ink-4);
+  background: var(--surface-2);
 }
 
 /* 요금 */
@@ -8465,6 +8482,14 @@ fieldset.form-field legend {
 .public-price-grid .public-price-amount span {
   font-size: 11px;
   color: var(--ink-3);
+}
+.public-price-list {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.public-price-list s {
+  text-decoration-thickness: 1.5px;
 }
 .public-price-off {
   margin-top: 6px;
@@ -8623,12 +8648,18 @@ fieldset.form-field legend {
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-areas:
-      "tag amount"
+      "tag list"
+      "range amount"
       "range off";
     column-gap: 12px;
     row-gap: 2px;
     align-items: center;
     padding: 10px 14px;
+  }
+  .public-price-list {
+    grid-area: list;
+    justify-self: end;
+    margin-top: 0;
   }
   .public-price-grid .public-price-tag {
     grid-area: tag;

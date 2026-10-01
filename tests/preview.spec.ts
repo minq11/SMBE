@@ -186,13 +186,17 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await page.screenshot({ path: test.info().outputPath("law-dialog.png") });
   await lawDialog.getByRole("button", { name: "닫기" }).last().click();
   await expect(lawDialog).toBeHidden();
+  // 정가에 취소선, 그 밑에 현재가.
+  await expect(page.locator(".public-price s").first()).toHaveText("55,000원");
   await expect(page.locator(".public-price")).toContainText("33,000");
   await expect(page.locator(".public-price")).toContainText("인원 제한 없음");
   // 무료·유료 차이는 요금제의 표 그대로.
   const compare = page.locator(".public-compare");
   await expect(compare).toContainText("사진 첨부");
   await expect(compare).toContainText("문자(SMS) 알림");
-  await expect(compare).toContainText("PDF·인쇄 보고서");
+  // ○·× 로 본다 — 기능마다 무료 ×, 유료 ○.
+  await expect(compare.locator(".public-mark[data-on='true']")).toHaveCount(7);
+  await expect(compare.locator(".public-mark[data-on='false']")).toHaveCount(7);
   const faq = page.locator(".public-faq");
   await expect(faq).toHaveCount(6);
   await faq.first().locator("summary").click();

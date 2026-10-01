@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, MessageSquare, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Circle,
+  MessageSquare,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import {
   ENTERPRISE_FROM,
   PAID_PLANS,
@@ -266,6 +272,9 @@ export function PublicPanels() {
             <li key={plan.id}>
               <p className="public-price-tag">{plan.name}</p>
               <p className="public-price-range">~{plan.maxHeadcount}인</p>
+              <p className="public-price-list">
+                <s>{formatKrw(withVat(plan.listSupplyKrw))}원</s>
+              </p>
               <p className="public-price-amount">
                 <strong>{formatKrw(withVat(plan.launchSupplyKrw))}</strong>
                 <span>원 / 월</span>
@@ -289,11 +298,31 @@ export function PublicPanels() {
             </tr>
           </thead>
           <tbody>
+            {/* ○·× 한눈에. 무료에서 일부 되는 것은 제목 밑 작은 글로. */}
             {PRO_FEATURES.map((f) => (
               <tr key={f.key}>
-                <th scope="row">{f.title}</th>
-                <td>{f.freeBehavior}</td>
-                <td className="is-pro">{f.proBehavior}</td>
+                <th scope="row">
+                  {f.title}
+                  <small>무료: {f.freeBehavior}</small>
+                </th>
+                <td>
+                  <span
+                    className="public-mark"
+                    data-on="false"
+                    aria-label="불가"
+                  >
+                    <X size={18} strokeWidth={2.5} />
+                  </span>
+                </td>
+                <td className="is-pro">
+                  <span
+                    className="public-mark"
+                    data-on="true"
+                    aria-label="가능"
+                  >
+                    <Circle size={18} strokeWidth={2.5} />
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
