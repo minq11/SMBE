@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
 import { SiteFooter } from "@/features/auth/site-footer";
+import { PublicPanels } from "./public-panels";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { postDate, type PostBrief } from "@/features/board/model";
 
@@ -510,6 +511,7 @@ function DashboardBody({
           <Reasons />
         </div>
       )}
+      {!isAuthenticated && <PublicPanels />}
       {isAuthenticated && today && (
         <section className="today" aria-label="오늘 할 일">
           <h1 className="today-title">

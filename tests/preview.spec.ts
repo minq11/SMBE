@@ -107,8 +107,9 @@ test("preview renders without secrets and only shows preparation dialogs", async
   ).toBeVisible();
   // 로그인 전 화면에는 가짜 데이터를 두지 않는다. 실제로 하는 일과 시작 경로만 있다.
   // 상단바에도 같은 이름의 링크가 있어 본문으로 좁힌다.
+  // 같은 이름의 단추가 머리와 맨 아래 FAQ 끝에 하나씩 — 머리 것부터.
   await expect(
-    page.locator("#main").getByRole("link", { name: /무료로 시작/ }),
+    page.locator("#main").getByRole("link", { name: /무료로 시작/ }).first(),
   ).toHaveAttribute("href", "/login");
   await expect(
     page.getByRole("link", { name: /우리회사 안전수준 진단/ }),
@@ -144,6 +145,45 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await expect(firstDetail).toBeHidden();
   // 여전히 한 화면 — 창이 카드 배치를 밀어내지 않는다.
   if (test.info().project.name === "mobile") await footerBelowFold(page);
+  // 첫 화면 밑: 대표 업무 4단계(미리보기 왼쪽·오른쪽 번갈아) → 법 대응 표 → 요금 →
+  // FAQ 6개. 좁은 화면에서는 패널 하나가 한 화면이고, 내리면 떠오른다(AOS).
+  const panels = page.locator(".public-panel");
+  await expect(panels).toHaveCount(7);
+  await expect(page.locator(".public-step[data-side='left']")).toHaveCount(2);
+  await expect(page.locator(".public-step[data-side='right']")).toHaveCount(2);
+  if (test.info().project.name === "mobile") {
+    const main = page.locator("main");
+    const clientHeight = await main.evaluate((m) => m.clientHeight);
+    const heights = await panels.evaluateAll((els) =>
+      els.map((el) => (el as HTMLElement).offsetHeight),
+    );
+    for (const h of heights) expect(h).toBeGreaterThanOrEqual(clientHeight - 1);
+  }
+  const shot = panels.nth(0).locator(".public-step-shot");
+  await shot.scrollIntoViewIfNeeded();
+  await expect(shot).toHaveClass(/aos-animate/);
+  await expect(shot).toContainText("예시 화면");
+  for (let i = 0; i < 7; i++) {
+    await panels.nth(i).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(900);
+    await page.screenshot({
+      path: test.info().outputPath(`public-panel-${i + 1}.png`),
+    });
+  }
+  await expect(page.locator(".public-law")).toContainText("산안법 54조 · 57조");
+  await expect(page.locator(".public-price")).toContainText("33,000");
+  await expect(page.locator(".public-price")).toContainText("인원 제한 없음");
+  const faq = page.locator(".public-faq");
+  await expect(faq).toHaveCount(6);
+  await faq.first().locator("summary").click();
+  await expect(faq.first()).toHaveAttribute("open", "");
+  await expect(faq.first()).toContainText("앱처럼 씁니다");
+  // 하단은 여전히 맨 끝, 그 밑에는 여백뿐.
+  if (test.info().project.name === "mobile") await footerBelowFold(page);
+  await page.evaluate(() => {
+    document.querySelector("main")?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
+  });
   for (const fake of [
     "오늘의 작업 (예시)",
     "오늘 처리할 일",

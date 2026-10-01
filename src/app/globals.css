@@ -7776,3 +7776,607 @@ fieldset.form-field legend {
 .history-more[open] > summary::before {
   content: "▾";
 }
+
+/* ---- 로그인 전 홈: 첫 화면 밑의 패널들 (features/dashboard/public-panels.tsx) ----
+   대표 업무 4단계(미리보기 왼쪽·오른쪽 번갈아) → 법 대응 표 → 요금 → FAQ. 좁은 화면에서는
+   패널 하나가 한 화면(풀페이지)이고 본문(main)이 가까운 패널 머리로 붙는다(scroll-snap).
+   등장 효과는 AOS 의 CSS 를 쓴다(scroll-reveal.tsx). 감싸는 상자는 display: contents —
+   패널이 본문의 직계 자식이어야 .public-fold 처럼 min-height: 100% 가 잡힌다. */
+.public-panels {
+  display: contents;
+}
+.public-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 0;
+  overflow-x: clip;
+  scroll-snap-align: start;
+}
+.public-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.public-kicker {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--brand-strong);
+}
+.public-panel h2 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.22;
+  color: var(--ink);
+}
+.public-lead {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.public-step-body {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.public-step[data-side="right"] .public-step-body {
+  flex-direction: row-reverse;
+}
+.public-step-shot {
+  width: 54%;
+  max-width: 230px;
+  flex-shrink: 0;
+}
+.public-points {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.public-points li {
+  display: flex;
+  gap: 9px;
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.public-points li::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* 손전화 목업 (public-mocks.tsx) — 안의 글은 예시. 색은 토큰만. */
+.shot-phone {
+  margin: 0;
+}
+.shot-screen {
+  background: var(--surface);
+  color: var(--ink);
+  border: 6px solid var(--ink);
+  border-radius: 24px;
+  padding: 14px 11px 12px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
+  font-size: 11px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.shot-phone figcaption {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.shot-eyebrow {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--brand);
+  letter-spacing: 0.02em;
+}
+.shot-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-top: -5px;
+}
+.shot-meta,
+.shot-cap {
+  font-size: 9.5px;
+  color: var(--ink-3);
+}
+.shot-cap {
+  text-align: center;
+}
+.shot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.shot-chips span {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+  font-size: 9.5px;
+  font-weight: 700;
+}
+.shot-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shot-steps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.shot-steps b {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 5px;
+  background: var(--brand);
+  color: var(--surface);
+  font-size: 9px;
+}
+.shot-doc {
+  padding: 6px 8px;
+  border-left: 3px solid var(--brand);
+  background: var(--brand-softer);
+  border-radius: 0 7px 7px 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--brand-strong);
+}
+.shot-doc small {
+  display: block;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.shot-qr {
+  width: 62%;
+  margin: 2px auto 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.shot-qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  fill: var(--ink);
+}
+.shot-status {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.shot-status span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 9.5px;
+  font-weight: 700;
+}
+.shot-status span[data-tone="ok"] {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.shot-status span[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.shot-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shot-checks li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 7px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.shot-checks i {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-4);
+  color: var(--surface);
+  flex-shrink: 0;
+}
+.shot-checks li.is-done i {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.shot-btn {
+  margin-top: 2px;
+  padding: 8px;
+  border-radius: 9px;
+  background: var(--brand);
+  color: var(--surface);
+  text-align: center;
+  font-weight: 800;
+  font-size: 11px;
+}
+.shot-now {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 9px;
+  vertical-align: middle;
+}
+.shot-agenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shot-agenda li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 7px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.shot-route {
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 800;
+  background: var(--info-soft);
+  color: var(--info);
+  flex-shrink: 0;
+}
+.shot-route[data-k="incident"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.shot-route[data-k="assessment"] {
+  background: var(--brand-softer);
+  color: var(--brand-strong);
+}
+
+/* 법 대응 표 */
+.public-law {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.public-law th,
+.public-law td {
+  text-align: left;
+  vertical-align: top;
+  padding: 11px 12px;
+  border-top: 1px solid var(--line);
+}
+.public-law thead th {
+  border-top: 0;
+  background: var(--surface-2);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.public-law tbody th {
+  width: 48%;
+  font-weight: 700;
+  color: var(--ink);
+}
+.public-law tbody th small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.public-law td {
+  color: var(--brand-strong);
+  font-weight: 600;
+}
+
+/* 요금 */
+.public-price-free {
+  padding: 22px 22px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--brand);
+  color: var(--surface);
+}
+.public-price-tag {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+.public-price-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 4px;
+}
+.public-price-amount strong {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.public-price-free .public-price-amount strong {
+  color: var(--accent);
+}
+.public-price-amount span {
+  font-size: 14px;
+  font-weight: 700;
+}
+.public-price-note {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+.public-price-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.public-price-grid li {
+  padding: 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 0;
+}
+.public-price-grid .public-price-tag {
+  color: var(--ink-3);
+  opacity: 1;
+}
+.public-price-range {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.public-price-grid .public-price-amount strong {
+  font-size: 19px;
+  letter-spacing: -0.4px;
+}
+.public-price-grid .public-price-amount span {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.public-price-off {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 2px 7px;
+  display: inline-block;
+}
+.public-price-foot {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.public-price-foot a {
+  color: var(--brand-strong);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* FAQ */
+.public-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.public-faq > summary {
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 700;
+}
+.public-faq > p {
+  margin: 0 0 4px 19px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.public-faq > p a {
+  color: var(--brand-strong);
+  font-weight: 700;
+  text-decoration: underline;
+}
+.public-cta {
+  margin-top: 4px;
+}
+
+@media (min-width: 961px) {
+  .public-panel {
+    padding: 72px 0;
+    gap: 28px;
+  }
+  .public-panel h2 {
+    font-size: 36px;
+  }
+  .public-lead {
+    font-size: 17px;
+  }
+  /* 넓은 화면: 글과 요점은 한 기둥, 미리보기는 그 옆. 번갈아 좌우. */
+  .public-step {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas:
+      "text shot"
+      "points shot";
+    column-gap: 64px;
+    row-gap: 24px;
+    align-items: center;
+  }
+  .public-step[data-side="right"] {
+    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-areas:
+      "shot text"
+      "shot points";
+  }
+  .public-step .public-step-text {
+    grid-area: text;
+    align-self: end;
+  }
+  .public-step-body {
+    display: contents;
+  }
+  .public-step-shot {
+    grid-area: shot;
+    width: 100%;
+    max-width: 300px;
+  }
+  .public-points {
+    grid-area: points;
+    align-self: start;
+    gap: 14px;
+  }
+  .public-points li {
+    font-size: 16px;
+  }
+  .shot-screen {
+    font-size: 13px;
+    padding: 18px 14px 16px;
+    border-radius: 30px;
+  }
+  .shot-title {
+    font-size: 17px;
+  }
+  .public-law {
+    font-size: 15px;
+  }
+  .public-law th,
+  .public-law td {
+    padding: 14px 18px;
+  }
+  .public-price-grid {
+    gap: 14px;
+  }
+  .public-price-grid li {
+    padding: 20px 18px;
+  }
+  .public-price-grid .public-price-amount strong {
+    font-size: 26px;
+  }
+  .public-faq-list {
+    max-width: 760px;
+  }
+}
+
+@media (max-width: 960px) {
+  /* 좁은 화면: 패널마다 한 화면. 본문은 가까운 패널 머리에 붙는다 — mandatory 가
+     아니라 proximity 라 중간에서 멈춰도 끌려가지 않는다. */
+  .main-content:has(.public-panels) {
+    scroll-snap-type: y proximity;
+    /* 패널의 min-height: 100% 는 본문의 내용 상자 기준이라, 아래 padding 이 있으면
+       그만큼 모자란다. 끝 여백은 하단(사업자 표시)의 margin 으로 준다. */
+    padding-bottom: 0;
+  }
+  .main-content:has(.public-panels) > .site-footer {
+    margin-bottom: 16px;
+  }
+  .public-fold {
+    scroll-snap-align: start;
+  }
+  .public-panel {
+    min-height: 100%;
+    flex-shrink: 0;
+    padding: 24px 0 28px;
+  }
+  .public-panel h2 {
+    font-size: 25px;
+  }
+}
+@media (max-width: 960px) {
+  /* 좁은 화면의 유료 3구간: 가로 세 장이면 금액이 줄바꿈된다. 한 줄에 한 구간 —
+     왼쪽 이름·인원, 오른쪽 금액·할인. */
+  .public-price-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .public-price-grid li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "tag amount"
+      "range off";
+    column-gap: 12px;
+    row-gap: 2px;
+    align-items: center;
+    padding: 10px 14px;
+  }
+  .public-price-grid .public-price-tag {
+    grid-area: tag;
+    font-size: 14px;
+    letter-spacing: 0;
+    color: var(--ink);
+  }
+  .public-price-range {
+    grid-area: range;
+  }
+  .public-price-grid .public-price-amount {
+    grid-area: amount;
+    justify-self: end;
+    margin-top: 0;
+  }
+  .public-price-off {
+    grid-area: off;
+    justify-self: end;
+    margin-top: 0;
+  }
+}
+@media (max-width: 360px) {
+  .public-step-shot {
+    width: 50%;
+  }
+  .public-points li {
+    font-size: 13.5px;
+  }
+}
