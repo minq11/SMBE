@@ -8451,6 +8451,16 @@ fieldset.form-field legend {
   line-height: 1.6;
   opacity: 0.9;
 }
+.public-price-limit {
+  margin-top: 10px;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--accent);
+}
 .public-price-grid {
   list-style: none;
   margin: 0;

@@ -190,6 +190,12 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await expect(page.locator(".public-price s").first()).toHaveText("55,000원");
   await expect(page.locator(".public-price")).toContainText("33,000");
   await expect(page.locator(".public-price")).toContainText("인원 제한 없음");
+  await expect(page.locator(".public-price-free")).toContainText(
+    "일부 기능 제한",
+  );
+  await expect(page.locator(".public-compare caption")).toHaveText(
+    "유료 기능 안내",
+  );
   // 무료·유료 차이는 요금제의 표 그대로.
   const compare = page.locator(".public-compare");
   await expect(compare).toContainText("사진 첨부");

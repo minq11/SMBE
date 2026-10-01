@@ -262,6 +262,9 @@ export function PublicPanels() {
             표준서 · 위험성평가 · 지시서 · 허가서 · TBM · 점검 · 사고 · 주간
             회의
           </p>
+          <p className="public-price-limit">
+            일부 기능 제한 — 사진 첨부·출력·문자 알림 등은 유료 (아래 안내)
+          </p>
         </div>
         <ul
           className="public-price-grid"
@@ -289,7 +292,7 @@ export function PublicPanels() {
           className="public-law public-compare"
           {...reveal("fade-up", 300)}
         >
-          <caption>무료와 유료의 차이</caption>
+          <caption>유료 기능 안내</caption>
           <thead>
             <tr>
               <th scope="col">기능</th>
