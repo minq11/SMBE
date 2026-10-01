@@ -6,7 +6,10 @@ import type { HalfYearReview } from "@/server/assessments";
 import { recordHalfYearReviewAction } from "./actions";
 import { koDate } from "./model";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import {
+  FormErrorDialog,
+  useFormError,
+} from "@/components/ui/form-error-dialog";
 import { FloatTextarea } from "@/components/ui/float-field";
 
 const halfLabel = (half: 1 | 2) => (half === 1 ? "상반기" : "하반기");
@@ -19,7 +22,8 @@ const halfLabel = (half: 1 | 2) => (half === 1 ? "상반기" : "하반기");
 export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  // 서명이 막힌 이유는 몇 번을 눌러도 같은 문장이다 — 그래도 매번 떠야 한다.
+  const err = useFormError();
   const [pending, start] = useTransition();
   const { confirm, dialog } = useConfirm();
   const s = review.stats;
@@ -33,9 +37,9 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
     )
       return;
     start(async () => {
-      setError(null);
+      err.clear();
       const result = await recordHalfYearReviewAction(note);
-      if (!result.ok) setError(result.error);
+      if (!result.ok) err.show(result.error);
       else {
         setOpen(false);
         setNote("");
@@ -149,7 +153,7 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
           </ul>
         </details>
       )}
-      <FormErrorDialog message={error} nonce={error} />
+      <FormErrorDialog message={err.message} nonce={err.nonce} />
       {dialog}
     </section>
   );

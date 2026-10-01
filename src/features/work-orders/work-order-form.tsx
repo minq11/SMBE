@@ -639,7 +639,7 @@ export function WorkOrderForm({
       {mode !== "idle" && <JumpNav items={PARTS} />}
       {notice}
       {backup && (
-        <div className="wo-restore" role="status">
+        <div className="draft-restore" role="status">
           <p>
             <strong>저장하지 않은 입력이 있습니다.</strong>{" "}
             {new Date(backup.at).toLocaleString("ko-KR", {
@@ -653,7 +653,7 @@ export function WorkOrderForm({
             {backup.data.name ? ` (${backup.data.name})` : ""}
             입니다.
           </p>
-          <div className="wo-restore-actions">
+          <div className="draft-restore-actions">
             <button
               type="button"
               className="btn-primary"

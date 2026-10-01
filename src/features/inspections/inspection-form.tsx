@@ -1,5 +1,11 @@
 "use client";
-import { useActionState, useRef, useState, useEffect } from "react";
+import {
+  useActionState,
+  useCallback,
+  useRef,
+  useState,
+  useEffect,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   Camera,
@@ -92,42 +98,60 @@ export function InspectionForm({
     setAnswers(Object.fromEntries(checklist.map((c) => [c.id, "PASS"])));
 
   // 저장 성공 → 들고 있던 사진을 항목별 결과 행에 올리고 → 이동.
-  // 사진이 실패해도 점검 기록은 이미 저장됐으므로 이동은 막지 않는다.
+  //
+  // 사진이 실패하면 **이동하지 않는다.** 점검 기록 자체는 이미 저장됐지만,
+  // 실패 문구를 띄우자마자 다음 화면으로 넘어가면 아무도 그 문구를 못 읽고
+  // 사진까지 저장된 줄 안다. 현장 사진은 불량의 증거라 "올라간 줄 알았다" 가
+  // 제일 나쁜 결과다. 멈춘 자리를 기억해 두고 [다시 시도] 가 그 자리부터 잇는다.
   const saved = state?.saved;
+  const queueRef = useRef<Array<{ resultId: string; file: File }>>([]);
+  const cursorRef = useRef(0);
+  const aliveRef = useRef(true);
+  useEffect(() => () => void (aliveRef.current = false), []);
+
+  const runUploads = useCallback(async () => {
+    if (!saved) return;
+    setUploadError(null);
+    const queue = queueRef.current;
+    for (let i = cursorRef.current; i < queue.length; i++) {
+      if (!aliveRef.current) return;
+      cursorRef.current = i;
+      setUploading(`사진 ${i + 1}/${queue.length} 올리는 중…`);
+      try {
+        await uploadImage(
+          { targetType: "inspection_result", targetId: queue[i].resultId },
+          queue[i].file,
+        );
+      } catch (error) {
+        if (!aliveRef.current) return;
+        setUploading(null);
+        setUploadError(
+          `사진 ${i + 1}/${queue.length} 장을 올리지 못했습니다` +
+            (error instanceof Error ? ` (${error.message})` : "") +
+            ". 점검 기록은 저장되었습니다 — 다시 시도하거나, 사진 없이 넘어갈 수 있습니다.",
+        );
+        return;
+      }
+    }
+    cursorRef.current = queue.length;
+    if (!aliveRef.current) return;
+    setUploading(null);
+    router.push(saved.next);
+  }, [saved, router]);
+
   useEffect(() => {
     if (!saved) return;
-    let alive = true;
-    (async () => {
-      const queue = saved.items.flatMap((item) =>
-        (photos[item.itemId] ?? []).map((file) => ({
-          resultId: item.resultId,
-          file,
-        })),
-      );
-      for (let i = 0; i < queue.length; i++) {
-        if (!alive) return;
-        setUploading(`사진 ${i + 1}/${queue.length} 올리는 중…`);
-        try {
-          await uploadImage(
-            { targetType: "inspection_result", targetId: queue[i].resultId },
-            queue[i].file,
-          );
-        } catch (error) {
-          if (!alive) return;
-          setUploadError(
-            (error instanceof Error ? error.message : "사진 업로드 실패") +
-              " — 점검 기록은 저장되었습니다.",
-          );
-          break;
-        }
-      }
-      if (!alive) return;
-      setUploading(null);
-      router.push(saved.next);
-    })();
-    return () => {
-      alive = false;
-    };
+    queueRef.current = saved.items.flatMap((item) =>
+      (photos[item.itemId] ?? []).map((file) => ({
+        resultId: item.resultId,
+        file,
+      })),
+    );
+    cursorRef.current = 0;
+    // 렌더 중에 state 를 건드리지 않도록 다음 틱에 시작한다
+    // (작업지시 폼의 보관본 복구와 같은 방식).
+    const timer = setTimeout(() => void runUploads(), 0);
+    return () => clearTimeout(timer);
     // photos 는 저장 시점에 고정된 값으로 읽으면 충분하다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved]);
@@ -326,10 +350,32 @@ export function InspectionForm({
             위험요인·감소대책을 확인했고, 내 이름으로 TBM 참여를 기록합니다.
           </label>
         )}
+        {/* 사진이 실패하면 여기서 멈춘다. 저장 단추는 이미 막혀 있으므로
+            나갈 길을 같이 둔다 — 아니면 화면에 갇힌다. */}
         {uploadError && (
-          <p role="alert" className="wo-error">
-            {uploadError}
-          </p>
+          <div className="inspection-upload-failed">
+            <p role="alert" className="wo-error">
+              {uploadError}
+            </p>
+            <div className="inspection-upload-failed-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => void runUploads()}
+                disabled={!!uploading}
+              >
+                <Camera size={14} /> 사진 다시 올리기
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => saved && router.push(saved.next)}
+                disabled={!!uploading}
+              >
+                사진 없이 계속
+              </button>
+            </div>
+          </div>
         )}
         {/* 좁은 화면에서 아래에 붙는다. 항목이 많아도 저장이 보인다. */}
         <div className="inspection-form-actions">
