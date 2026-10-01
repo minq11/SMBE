@@ -5850,6 +5850,12 @@ body.sidebar-lock {
   font-size: 12px;
   color: var(--ink-3);
 }
+/* 가입 폼(회사 만들기·회사코드 참여)의 구간 카드. .form-shell 은 flex 가 아니라
+   칸마다 아래 여백으로 간격을 주므로(.form-field), 카드도 같은 방식으로 띄운다.
+   헌법 5장의 블록 사이 간격 16px. */
+.form-shell .std-form-section {
+  margin-bottom: 16px;
+}
 .form-actions {
   display: flex;
   justify-content: flex-end;

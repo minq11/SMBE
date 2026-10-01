@@ -6,11 +6,22 @@ import { FloatField } from "@/components/ui/float-field";
  *
  * 둘 다 선택 입력이다. 여기서 가입을 막으면 정작 현장에 들어가야 할 사람이
  * 문턱에서 걸린다. 비워 두면 메일은 로그인 계정 주소로 나가고, 문자는 안 간다.
+ *
+ * flush: 구간 카드(`.std-form-section`) 안에 넣을 때. 카드가 gap 으로 간격을
+ * 주므로 칸의 아래 여백을 뺀다.
  */
-export function ContactFields({ defaultEmail }: { defaultEmail: string }) {
+export function ContactFields({
+  defaultEmail,
+  flush = false,
+}: {
+  defaultEmail: string;
+  flush?: boolean;
+}) {
+  const className = flush ? "float-field--flush" : undefined;
   return (
     <>
       <FloatField
+        className={className}
         id="contact_email"
         name="contact_email"
         label="알림 받을 메일 (선택)"
@@ -23,6 +34,7 @@ export function ContactFields({ defaultEmail }: { defaultEmail: string }) {
       />
 
       <FloatField
+        className={className}
         id="phone"
         name="phone"
         label="휴대폰 번호 (선택)"
