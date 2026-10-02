@@ -23,6 +23,7 @@ import {
 import { ScrollReveal, reveal } from "./scroll-reveal";
 import { LawTable, type LawRow } from "./public-law";
 import { PRO_FEATURES } from "@/features/billing/pro-features";
+import { RecognitionBenefits } from "@/features/recognition-check/benefits";
 
 /**
  * 로그인 전 홈의 첫 화면 밑. 좁은 화면에서는 패널 하나가 한 화면이고(풀페이지),
@@ -175,7 +176,7 @@ const FAQ: Array<{ q: string; a: string; href?: [string, string] }> = [
   },
   {
     q: "위험성평가 인정 준비가 되나요?",
-    a: "매일 쌓이는 표준서·지시서·허가서·점검 기록이 그대로 인정 준비 자료입니다. 인정받으면 3년간 정기 감독 유예, 산재보험료 20% 인하.",
+    a: "매일 쌓이는 표준서·지시서·허가서·점검 기록이 그대로 인정 준비 자료입니다. 인정받으면 3년간 정기 감독 유예, 산재보험료 20% 인하, 클린사업장 조성지원 1,000만원 우대.",
     href: ["/recognition-check", "우리 회사 준비도 3분 진단"],
   },
   {
@@ -237,6 +238,9 @@ export function PublicPanels() {
         </div>
         <div {...reveal("fade-up", 150)}>
           <LawTable rows={LAW_ROWS} />
+        </div>
+        <div {...reveal("fade-up", 250)}>
+          <RecognitionBenefits />
         </div>
       </section>
 

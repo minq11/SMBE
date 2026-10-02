@@ -8699,3 +8699,51 @@ fieldset.form-field legend {
     font-size: 13.5px;
   }
 }
+
+/* 인정 혜택 카드 (recognition-check/benefits.tsx) — 홈 법 대응 밑 · 홈 FAQ · 진단 결과 */
+.benefit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+  border-radius: var(--radius);
+  border: 1px solid var(--brand-soft);
+  background: var(--brand-softer);
+}
+.benefit-card h3 {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+.benefit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.benefit-list li {
+  display: flex;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  font-weight: 600;
+  color: var(--ink);
+}
+.benefit-list svg {
+  flex-shrink: 0;
+  margin-top: 4px;
+  color: var(--brand);
+}
+.benefit-card .btn-primary {
+  align-self: flex-start;
+  min-height: 44px;
+}
+.benefit-source {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
