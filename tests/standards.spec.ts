@@ -81,6 +81,19 @@ test("standard: create, edit, add a seeded assessment round", async ({
 
     // 1) 만들기. 이름만 쓰고 저장하면 오류가 위의 띠가 아니라 안내 창으로 뜬다.
     await page.goto("/standards/new");
+    // 위험요인 찾을 때 참고 자료: 과거 사고·아차사고 · 작업자 의견 — 창으로 뜬다.
+    await page.getByRole("button", { name: /작업자 의견/ }).click();
+    const refDialog = page.locator("dialog.ref-dialog");
+    await expect(refDialog).toBeVisible();
+    await expect(refDialog).toContainText("아직 작업자 의견이 없습니다");
+    await refDialog.getByRole("button", { name: "닫기" }).last().click();
+    await expect(refDialog).toBeHidden();
+    await page.getByRole("button", { name: /과거 사고·아차사고/ }).click();
+    await expect(refDialog).toContainText("등록된 사고·아차사고가 없습니다");
+    await page.screenshot({ path: test.info().outputPath("ref-dialog.png") });
+    await refDialog.getByRole("button", { name: "닫기" }).last().click();
+    await page.locator(".ref-row").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: test.info().outputPath("ref-row.png") });
     await page.getByLabel("표준서명").fill("프레스 금형 교체");
     await page
       .getByRole("button", { name: "표준서 저장 · 확정", exact: true })

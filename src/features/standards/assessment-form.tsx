@@ -1,6 +1,8 @@
 "use client";
 
 import { SAFETY_INFO_HINTS } from "@/features/assessments/model";
+import { ReferencePanel } from "@/features/assessments/reference-panel";
+import type { AssessmentReferences } from "@/server/assessment-references";
 
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { useActionState, useState } from "react";
@@ -65,6 +67,7 @@ export function AssessmentForm({
   members,
   criteria,
   seed,
+  references,
 }: {
   standardId: string;
   standardName: string;
@@ -72,6 +75,8 @@ export function AssessmentForm({
   /** 회사의 위험성 판단 기준 (읽기만) */
   criteria: RiskCriteria;
   seed?: AssessmentSeed;
+  /** 위험요인 찾을 때 참고하는 우리 회사 기록 (사고·작업자 의견) */
+  references?: AssessmentReferences;
 }) {
   const [kind, setKind] = useState<Kind>("PERIODIC");
   const [performedOn, setPerformedOn] = useState(todayKst());
@@ -222,6 +227,9 @@ export function AssessmentForm({
             <RiskHelp />
           </HelpDialog>
         </div>
+        {references && (
+          <ReferencePanel references={references} standardId={standardId} />
+        )}
         <ol className="risk-card-list">
           {risks.map((r, i) => (
             <li key={i}>

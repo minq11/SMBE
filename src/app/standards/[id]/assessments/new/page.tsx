@@ -11,6 +11,7 @@ import { withTransaction } from "@/server/db";
 import { readRiskCriteria } from "@/server/company-settings";
 import { AssessmentForm } from "@/features/standards/assessment-form";
 import { riskSeedFromItem } from "@/features/standards/constants";
+import { assessmentReferences } from "@/server/assessment-references";
 
 export const metadata = { title: "위험성평가 다시하기 · 심플안전" };
 
@@ -27,12 +28,15 @@ export default async function NewAssessmentPage({
 
   const { id } = await params;
   const companyId = session.membership.company_id;
-  const [detail, members, isOperator, criteria] = await Promise.all([
-    getStandardDetail(companyId, id),
-    listCompanyMembersForPicker(companyId),
-    isCurrentUserOperator(),
-    withTransaction((c) => readRiskCriteria(c, companyId)),
-  ]);
+  const [detail, members, isOperator, criteria, references] = await Promise.all(
+    [
+      getStandardDetail(companyId, id),
+      listCompanyMembersForPicker(companyId),
+      isCurrentUserOperator(),
+      withTransaction((c) => readRiskCriteria(c, companyId)),
+      withTransaction((c) => assessmentReferences(c, companyId)),
+    ],
+  );
   if (!detail) notFound();
   if (detail.status === "ARCHIVED") redirect(`/standards/${id}`);
 
@@ -67,6 +71,7 @@ export default async function NewAssessmentPage({
         members={members}
         criteria={criteria}
         seed={seed}
+        references={references}
       />
     </AppShell>
   );

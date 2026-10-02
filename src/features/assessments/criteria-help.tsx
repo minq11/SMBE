@@ -23,7 +23,7 @@ export function CriteriaHelp({
       ) : (
         <p>
           바꾸려면{" "}
-          <Link href="/company/criteria">회사정보 &gt; 위험성 판단 기준</Link>
+          <Link href="/company/criteria">기준정보 &gt; 위험성 판단 기준</Link>
           에서 고치세요. 이미 승인된 위험성평가는 그대로입니다.
         </p>
       )}

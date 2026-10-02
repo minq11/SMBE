@@ -155,6 +155,10 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       .getByLabel("코멘트", { exact: true })
       .fill("가드 잠금장치 이탈");
     await workerPage.getByLabel("알림 대상 관리자").selectOption(manager);
+    // 종합의견(선택) — 오늘 작업 전체에 대한 한마디. 기록에 남고 평가의 참고 자료가 된다.
+    await workerPage
+      .getByLabel("종합의견 (선택)")
+      .fill("야간엔 통로 조명이 어둡다");
     expect(
       await workerPage.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -174,6 +178,12 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await expect(workerPage.getByRole("status")).toContainText(
       "점검 기록을 저장했습니다.",
     );
+    // 저장 뒤는 회차 목록이다. 회차를 열면 기록에 종합의견이 파란 띠로 남아 있다.
+    await workerPage.getByRole("link", { name: /작업 중 점검 1건/ }).click();
+    await expect(
+      workerPage.locator(".inspection-record").first(),
+    ).toContainText("종합의견 야간엔 통로 조명이 어둡다");
+    await workerPage.goBack();
     await expect(
       workerPage.getByRole("heading", { name: "불량 조치 · 미조치 1건" }),
     ).toBeVisible();

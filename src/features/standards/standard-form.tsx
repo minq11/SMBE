@@ -11,6 +11,8 @@ import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
 import { SAFETY_INFO_HINTS } from "@/features/assessments/model";
+import { ReferencePanel } from "@/features/assessments/reference-panel";
+import type { AssessmentReferences } from "@/server/assessment-references";
 import { PtwHelp } from "./ptw-help";
 import { PpePicker } from "./ppe-picker";
 import { BasicHelp, ChecklistHelp, MethodHelp, RiskHelp } from "./section-help";
@@ -99,6 +101,7 @@ export function StandardForm({
   members,
   returnHref,
   isPro,
+  references,
 }: {
   /** 회사의 위험성 판단 기준 (읽기만) */
   criteria: RiskCriteria;
@@ -106,6 +109,8 @@ export function StandardForm({
   returnHref?: string;
   /** 유료면 저장 뒤 단계마다 사진을 붙일 수 있다. */
   isPro: boolean;
+  /** 위험요인 찾을 때 참고하는 우리 회사 기록 (사고·작업자 의견) */
+  references?: AssessmentReferences;
 }) {
   const [draft, setDraft] = useState<Draft>(blankDraft);
   const [state, formAction, pending] = useActionState<
@@ -119,7 +124,9 @@ export function StandardForm({
   const BACKUP_KEY = "smbe.std-draft.new";
   const empty = useMemo(() => JSON.stringify(blankDraft()), []);
   const dirty = JSON.stringify(draft) !== empty;
-  const [backup, setBackup] = useState<{ at: string; data: Draft } | null>(null);
+  const [backup, setBackup] = useState<{ at: string; data: Draft } | null>(
+    null,
+  );
 
   useEffect(() => {
     try {
@@ -595,6 +602,7 @@ export function StandardForm({
 
         <div className="form-field">
           <h3 className="std-sub-head">위험요인 · 감소대책</h3>
+          {references && <ReferencePanel references={references} />}
           <ol className="risk-card-list">
             {draft.risks.map((r, i) => (
               <li key={i}>

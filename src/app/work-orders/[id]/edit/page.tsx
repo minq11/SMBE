@@ -20,6 +20,7 @@ import {
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { DeleteDraftButton } from "@/features/work-orders/order-controls";
 import { DraftReview } from "@/features/work-orders/draft-review";
+import { assessmentReferences } from "@/server/assessment-references";
 
 const ACTIONS: Record<string, string> = {
   CREATE: "초안 생성",
@@ -106,6 +107,9 @@ export default async function EditOrderPage({
   const { order } = detail;
   // 작성 중인 지시서는 조회 화면을 거치지 않고 바로 이 편집 화면으로 열린다.
   // 그래서 조회 화면에 있던 검토·발급, 초안 삭제, 변경 이력이 여기 딸려 온다.
+  const references = await withTransaction((c) =>
+    assessmentReferences(c, actor.companyId),
+  );
   return (
     <OrderShell session={session} title={order.name || "작업지시 편집"}>
       <WorkOrderForm
@@ -173,6 +177,7 @@ export default async function EditOrderPage({
         initial={order.draft_data}
         criteria={companyCriteria}
         members={members}
+        references={references}
         standards={standards}
         initialStandardId={order.draft_data.standardId ?? null}
         locations={locations}

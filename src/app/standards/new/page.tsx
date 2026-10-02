@@ -7,6 +7,7 @@ import { listCompanyMembersForPicker } from "@/server/standards-service";
 import { withTransaction } from "@/server/db";
 import { readRiskCriteria } from "@/server/company-settings";
 import { StandardForm } from "@/features/standards/standard-form";
+import { assessmentReferences } from "@/server/assessment-references";
 
 export const metadata = { title: "새 표준서 · 심플안전" };
 
@@ -29,10 +30,11 @@ export default async function NewStandardPage({
       : undefined;
 
   const companyId = session.membership.company_id;
-  const [members, isOperator, criteria] = await Promise.all([
+  const [members, isOperator, criteria, references] = await Promise.all([
     listCompanyMembersForPicker(companyId),
     isCurrentUserOperator(),
     withTransaction((c) => readRiskCriteria(c, companyId)),
+    withTransaction((c) => assessmentReferences(c, companyId)),
   ]);
 
   return (
@@ -53,6 +55,7 @@ export default async function NewStandardPage({
         members={members}
         returnHref={returnHref}
         isPro={tierOf(session.membership) === "유료"}
+        references={references}
       />
     </AppShell>
   );

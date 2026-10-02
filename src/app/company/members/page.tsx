@@ -47,7 +47,7 @@ export default async function CompanyMembersPage() {
     <AppShell
       active="company"
       breadcrumb={[
-        { label: "회사정보", href: "/company/members" },
+        { label: "기준정보", href: "/company/members" },
         { label: "인원관리" },
       ]}
       companyName={session.membership.company_name}

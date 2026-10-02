@@ -282,8 +282,8 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
     expect(
       await drawer.evaluate((el) => el.scrollHeight > el.clientHeight),
     ).toBe(true);
-    // 회사정보는 접힌 채로 열린다. 펴야 그 안의 화면으로 갈 수 있다.
-    await drawer.getByRole("button", { name: "회사정보" }).click();
+    // 기준정보는 접힌 채로 열린다. 펴야 그 안의 화면으로 갈 수 있다.
+    await drawer.getByRole("button", { name: "기준정보" }).click();
     await drawer.getByRole("link", { name: "이용·관리" }).click();
     await expect(page).toHaveURL(/billing/);
     await expect(page.locator("body")).not.toHaveClass(/sidebar-lock/);

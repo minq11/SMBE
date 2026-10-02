@@ -21,7 +21,7 @@ export default async function IncidentManualPage() {
   return (
     <AppShell
       active="manual"
-      breadcrumb={[{ label: "회사정보" }, { label: "중대재해 대응 절차" }]}
+      breadcrumb={[{ label: "기준정보" }, { label: "중대재해 대응 절차" }]}
       companyName={session.membership?.company_name}
       tier={tierOf(session.membership)}
       userName={session.user.displayName ?? undefined}

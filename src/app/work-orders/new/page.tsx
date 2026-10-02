@@ -20,6 +20,7 @@ import {
   type StandardPickerOption,
 } from "@/features/work-orders/work-order-form";
 import { OrderShell } from "@/features/work-orders/order-shell";
+import { assessmentReferences } from "@/server/assessment-references";
 
 export default async function NewOrderPage({
   searchParams,
@@ -121,6 +122,9 @@ export default async function NewOrderPage({
       ? standardParam
       : null;
 
+  const references = await withTransaction((c) =>
+    assessmentReferences(c, actor.companyId),
+  );
   return (
     <OrderShell
       session={session}
@@ -138,6 +142,7 @@ export default async function NewOrderPage({
         }
         initial={initial}
         members={members}
+        references={references}
         standards={standards}
         initialStandardId={initialStandardId}
         locations={locations}
