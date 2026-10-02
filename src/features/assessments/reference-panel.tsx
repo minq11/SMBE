@@ -50,25 +50,29 @@ export function ReferencePanel({
 
   return (
     <>
-      <div className="ref-row" role="group" aria-label="참고 자료">
+      {/* 단추가 아니라 글 한 줄 — "참고 자료 · 과거 사고 n · 작업자 의견 n". 누르면 창. */}
+      <p className="ref-row" role="group" aria-label="참고 자료">
         <span className="ref-row-label">참고 자료</span>
         <button
           type="button"
-          className="btn-secondary ref-btn"
+          className="ref-link-btn"
           onClick={() => setTab("incidents")}
         >
-          <TriangleAlert size={14} /> 과거 사고·아차사고{" "}
+          <TriangleAlert size={13} aria-hidden="true" /> 과거 사고·아차사고{" "}
           <b>{count(incidents.length, mineIncidents)}</b>
         </button>
+        <span className="ref-sep" aria-hidden="true">
+          ·
+        </span>
         <button
           type="button"
-          className="btn-secondary ref-btn"
+          className="ref-link-btn"
           onClick={() => setTab("opinions")}
         >
-          <MessageSquare size={14} /> 작업자 의견{" "}
+          <MessageSquare size={13} aria-hidden="true" /> 작업자 의견{" "}
           <b>{count(opinions.length, mineOpinions)}</b>
         </button>
-      </div>
+      </p>
       <dialog
         ref={ref}
         className="law-dialog ref-dialog"

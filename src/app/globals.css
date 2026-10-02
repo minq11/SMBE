@@ -8787,30 +8787,67 @@ fieldset.form-field legend {
   color: var(--ink-3);
 }
 
-/* 위험성평가 폼의 참고 자료 (assessments/reference-panel.tsx) — 사고·작업자 의견 창 */
+/* 위험성평가 폼의 참고 자료 (assessments/reference-panel.tsx) — 사고·작업자 의견 창.
+   단추가 아니라 글 한 줄이다. 누르는 자리는 44px 높이지만 상자는 없다. */
 .ref-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 0 8px;
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  line-height: 1.4;
 }
 .ref-row-label {
-  font-size: 12.5px;
   font-weight: 700;
   color: var(--ink-3);
-  margin-right: 4px;
 }
-.ref-btn {
-  min-height: 40px;
-  font-size: 13.5px;
+.ref-sep {
+  color: var(--ink-4);
 }
-.ref-btn b {
-  padding: 1px 7px;
+.ref-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--brand-soft);
+  cursor: pointer;
+}
+.ref-link-btn:hover,
+.ref-link-btn:focus-visible {
+  text-decoration-color: var(--brand-strong);
+}
+.ref-link-btn b {
+  padding: 0 7px;
   border-radius: 999px;
   background: var(--brand-softer);
-  color: var(--brand-strong);
   font-size: 12px;
+  line-height: 20px;
+}
+@media (max-width: 600px) {
+  /* 좁은 화면: 이름표는 윗줄, 링크 둘은 그 아래 나란히. 가운뎃점이 줄 끝에 남지 않게. */
+  .ref-row {
+    gap: 0 16px;
+  }
+  .ref-row-label {
+    flex-basis: 100%;
+    min-height: 0;
+    margin-bottom: -6px;
+  }
+  .ref-sep {
+    display: none;
+  }
+  .ref-link-btn {
+    min-height: 40px;
+  }
 }
 .ref-lead {
   margin: 0;
