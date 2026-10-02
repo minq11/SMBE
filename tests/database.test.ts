@@ -523,7 +523,7 @@ test("size-band boundaries use active memberships, retaining initial declared ba
     assert.equal(row.initial_employee_size_band, "FROM_50");
   }
 });
-test("OAuth duplicate email recovers transaction without merging; same-identity callbacks share one user", async () => {
+test("같은 이메일이면 provider 가 달라도 한 계정; 같은 identity 콜백은 한 계정", async () => {
   const email = randomUUID() + "@example.com";
   const first = await transaction((c) =>
     resolveIdentity(c, "GOOGLE", randomUUID(), "test", email),
@@ -537,12 +537,47 @@ test("OAuth duplicate email recovers transaction without merging; same-identity 
     ),
   );
   assert.equal(ids[0], ids[1]);
-  assert.notEqual(ids[0], first);
+  // 네이버가 구글과 같은 주소를 넘겨도 계정이 갈라지지 않는다. 갈라지면
+  // 두 번째 계정에는 company_members 가 없어 소속이 사라진 것처럼 보인다.
+  assert.equal(ids[0], first);
+  // 병합은 identity 행만 추가한다 — 기존 계정의 이메일을 지우지 않는다.
   assert.equal(
-    (await pool.query("SELECT email FROM users WHERE id=$1", [ids[0]])).rows[0]
+    (await pool.query("SELECT email FROM users WHERE id=$1", [first])).rows[0]
       .email,
-    null,
+    email,
   );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM user_identities WHERE user_id=$1",
+        [first],
+      )
+    ).rows[0].n,
+    2,
+  );
+});
+
+test("이메일을 안 주는 provider 는 병합 근거가 없어 각각 새 계정", async () => {
+  // 카카오 이메일 미동의. NULL 끼리는 같은 사람이라고 볼 수 없다.
+  const ids = await Promise.all(
+    [1, 2].map(() =>
+      transaction((c) =>
+        resolveIdentity(c, "KAKAO", randomUUID(), "test", null),
+      ),
+    ),
+  );
+  assert.notEqual(ids[0], ids[1]);
+});
+
+test("대소문자만 다른 이메일도 같은 계정 (citext)", async () => {
+  const local = randomUUID();
+  const first = await transaction((c) =>
+    resolveIdentity(c, "GOOGLE", randomUUID(), "test", `${local}@example.com`),
+  );
+  const second = await transaction((c) =>
+    resolveIdentity(c, "NAVER", randomUUID(), "test", `${local.toUpperCase()}@EXAMPLE.COM`),
+  );
+  assert.equal(second, first);
 });
 
 async function orderFixture(ptw = false) {

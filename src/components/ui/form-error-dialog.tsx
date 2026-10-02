@@ -1,7 +1,34 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CircleAlert } from "lucide-react";
+
+/**
+ * 창을 직접 띄우는 화면(서버 액션의 state 가 아니라 자기 state 로 오류를 들고
+ * 있는 곳)을 위한 짝.
+ *
+ * `nonce` 에 오류 **문자열**을 그냥 넘기면 안 된다 — 같은 항목을 또 빠뜨려 같은
+ * 문장이 나오면 값이 그대로라 리렌더가 일어나지 않고, 이미 닫은 것으로 남아 창이
+ * 다시 뜨지 않는다. 사용자에게는 저장 단추가 고장 난 것처럼 보인다.
+ * 여기서는 시도할 때마다 번호를 올려 그 일을 막는다.
+ *
+ *   const err = useFormError();
+ *   if (!level) return err.show("조치 후 위험성 수준을 고르세요.");
+ *   <FormErrorDialog message={err.message} nonce={err.nonce} />
+ */
+export function useFormError() {
+  const [state, setState] = useState<{
+    message: string;
+    nonce: number;
+  } | null>(null);
+  const count = useRef(0);
+  const show = useCallback((message: string) => {
+    count.current += 1;
+    setState({ message, nonce: count.current });
+  }, []);
+  const clear = useCallback(() => setState(null), []);
+  return { message: state?.message ?? null, nonce: state?.nonce, show, clear };
+}
 
 /**
  * 폼 오류는 위에 조용히 뜨는 띠가 아니라 안내 창이다 (헌법 9장).

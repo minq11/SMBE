@@ -30,32 +30,51 @@ export function JoinForm({
 
       <FormErrorDialog message={state?.error} nonce={state} />
 
-      <FloatField
-        id="display_name"
-        name="display_name"
-        label="내 이름"
-        type="text"
-        defaultValue={defaultDisplayName}
-        required
-        maxLength={60}
-        note="회사에 표시될 이름입니다."
-      />
+      {/* 회사 만들기와 같은 구간 나누기 — 들어갈 회사와 나는 다른 것이다.
+          나란히 놓인 두 화면이라 모양이 달라지면 안 된다. */}
+      <section className="std-form-section">
+        <h2>
+          <span className="std-step-no">1</span>들어갈 회사
+        </h2>
 
-      <FloatField
-        id="company_code"
-        name="company_code"
-        label="회사코드"
-        type="text"
-        required
-        maxLength={32}
-        autoCapitalize="characters"
-        autoCorrect="off"
-        spellCheck={false}
-        hint="예: AB2CD3EF"
-        style={{ fontFamily: "ui-monospace, monospace", letterSpacing: 2 }}
-      />
+        <FloatField
+          className="float-field--flush"
+          id="company_code"
+          name="company_code"
+          label="회사코드"
+          type="text"
+          required
+          maxLength={32}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          hint="예: AB2CD3EF"
+          style={{ fontFamily: "ui-monospace, monospace", letterSpacing: 2 }}
+        />
+      </section>
 
-      <ContactFields defaultEmail={defaultEmail} />
+      <section className="std-form-section">
+        <h2>
+          <span className="std-step-no">2</span>내 정보
+        </h2>
+        <p className="std-form-note">
+          이름은 작업지시·점검 기록에 그대로 남습니다.
+        </p>
+
+        <FloatField
+          className="float-field--flush"
+          id="display_name"
+          name="display_name"
+          label="내 이름"
+          type="text"
+          defaultValue={defaultDisplayName}
+          required
+          maxLength={60}
+          note="회사에 표시될 이름입니다."
+        />
+
+        <ContactFields defaultEmail={defaultEmail} flush />
+      </section>
 
       <div className="form-actions">
         <Link href="/onboarding" className="btn-secondary">

@@ -9,7 +9,10 @@ import type {
 import { RiskLevelPicker, RiskVerdict } from "./risk-level-picker";
 import { recordRiskActionAction } from "./actions";
 import { LEVEL_LABEL, koDate } from "./model";
-import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import {
+  FormErrorDialog,
+  useFormError,
+} from "@/components/ui/form-error-dialog";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import {
   postAllowable,
@@ -102,14 +105,15 @@ function ActionBlock({
   const [followUp, setFollowUp] = useState(item.follow_up_measure ?? "");
   // 조치를 적었는데도 허용 불가면 끝난 게 아니다 (고시 제13조).
   const stillOpen = done && item.post_allowable === false;
-  const [error, setError] = useState<string | null>(null);
+  // 같은 항목을 또 빠뜨려 같은 문장이 나와도 창이 다시 떠야 한다 (useFormError).
+  const err = useFormError();
   const [pending, start] = useTransition();
 
   const save = () =>
     start(async () => {
-      setError(null);
+      err.clear();
       if (!level) {
-        setError("조치 후 위험성 수준을 고르세요.");
+        err.show("조치 후 위험성 수준을 고르세요.");
         return;
       }
       const result = await recordRiskActionAction({
@@ -120,7 +124,7 @@ function ActionBlock({
         postRiskLevel: level,
         followUpMeasure: followUp,
       });
-      if (!result.ok) setError(result.error);
+      if (!result.ok) err.show(result.error);
       else setOpen(false);
     });
 
@@ -208,7 +212,7 @@ function ActionBlock({
               hint="다음에 무엇을 더 할지, 언제까지"
             />
           )}
-          <FormErrorDialog message={error} nonce={error} />
+          <FormErrorDialog message={err.message} nonce={err.nonce} />
           <div className="asmt-action-buttons">
             <button
               type="button"

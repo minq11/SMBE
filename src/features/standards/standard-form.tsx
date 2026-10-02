@@ -2,7 +2,7 @@
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { PeoplePickerDialog } from "@/components/ui/people-picker";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Trash2, X, ListChecks } from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
@@ -113,6 +113,65 @@ export function StandardForm({
     FormData
   >(createStandardAction, undefined);
 
+  // 미저장 입력은 이 기기에 보관했다가 다시 열면 묻는다 (헌법 5장).
+  // 표준서는 작업 단계·체크리스트까지 한 화면에서 길게 쓰는 폼이라, 다른 메뉴에
+  // 다녀오면 전부 빈칸이 되는 것이 가장 아픈 자리였다. 작업지시 폼과 같은 방식.
+  const BACKUP_KEY = "smbe.std-draft.new";
+  const empty = useMemo(() => JSON.stringify(blankDraft()), []);
+  const dirty = JSON.stringify(draft) !== empty;
+  const [backup, setBackup] = useState<{ at: string; data: Draft } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(BACKUP_KEY);
+      if (!raw) return;
+      const stored = JSON.parse(raw) as { at: string; data: Draft };
+      if (JSON.stringify(stored.data) === empty) {
+        localStorage.removeItem(BACKUP_KEY);
+        return;
+      }
+      const timer = setTimeout(() => setBackup(stored), 0);
+      return () => clearTimeout(timer);
+    } catch {
+      /* 보관본이 깨졌으면 없는 것으로 */
+    }
+    // 처음 열릴 때 한 번만 본다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          BACKUP_KEY,
+          JSON.stringify({ at: new Date().toISOString(), data: draft }),
+        );
+      } catch {
+        /* 저장소가 막혀 있으면 보관하지 않는다 */
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+    // state 가 깨어 있어야 한다: 저장이 막혀 오류가 돌아오면 폼은 그대로 남는데
+    // 제출 때 보관본을 지웠으므로, 여기서 다시 보관해 두지 않으면 그 뒤에 나갈 때
+    // 전부 날아간다.
+  }, [draft, dirty, state]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const clearBackup = () => {
+    try {
+      localStorage.removeItem(BACKUP_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
+
   const setField = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
 
@@ -216,6 +275,10 @@ export function StandardForm({
     };
     const form = new FormData(e.target as HTMLFormElement);
     form.set("payload", JSON.stringify(cleaned));
+    // 저장이 막히면(검증 실패) 폼은 그대로 남으므로 보관본도 그대로 둔다.
+    // 성공하면 다른 화면으로 넘어가며 이 컴포넌트가 사라진다 — 그때 보관본이
+    // 남아 있으면 다음에 새 표준서를 쓸 때 지난 내용이 되살아난다.
+    clearBackup();
     formAction(form);
   };
 
@@ -238,6 +301,46 @@ export function StandardForm({
       </header>
 
       <FormErrorDialog message={state?.error} nonce={state} />
+
+      {backup && (
+        <div className="draft-restore" role="status">
+          <p>
+            <strong>저장하지 않은 입력이 있습니다.</strong>{" "}
+            {new Date(backup.at).toLocaleString("ko-KR", {
+              timeZone: "Asia/Seoul",
+              month: "numeric",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            에 이 기기에서 쓰던 내용
+            {backup.data.name ? ` (${backup.data.name})` : ""}
+            입니다.
+          </p>
+          <div className="draft-restore-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                setDraft(backup.data);
+                setBackup(null);
+              }}
+            >
+              이어서 작성
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                clearBackup();
+                setBackup(null);
+              }}
+            >
+              버리기
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 긴 폼이라 구간으로 바로 간다. 좁은 화면에서는 위에 붙는다 (globals.css). */}
       {/* 표준서는 네 구간을 순서대로 채운다 — 칩과 머리에 번호가 있다. 위험성평가는
