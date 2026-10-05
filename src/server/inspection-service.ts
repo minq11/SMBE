@@ -760,7 +760,6 @@ export type LogFilters = {
   from?: string;
   to?: string;
   q?: string;
-  state?: "" | "DONE" | "MISSING" | "FAIL" | "BACKFILLED";
 };
 export type LogRow = {
   session_id: string;
@@ -775,6 +774,8 @@ export type LogRow = {
   open_findings: number;
   total_findings: number;
   backfilled: number;
+  /** 무료 요금제의 열람 창(최근 1주일) 밖의 회차. 날짜·작업명만 있고 집계는 0 이다. */
+  locked: boolean;
 };
 
 /**
@@ -785,16 +786,22 @@ export type LogRow = {
  *
  * 이 화면의 목적은 **누락을 찾는 것**이라 회차를 행으로 놓는다. 점검 구분·
  * 결과별 상세는 회차를 열어 본다.
+ *
+ * 기간·작업명만 여기서 거른다. 이행·미조치 같은 상태는 화면에서 다시 조회
+ * 없이 거른다(features/inspections/log-filter.ts) — 칩을 누를 때마다 서버를
+ * 다녀오면 느리고, 집계 결과에 걸리는 조건이라 SQL 로 걸러도 득이 없다.
  */
 export async function companyInspectionLog(
   client: PoolClient,
   actor: Actor,
   filters: LogFilters = {},
-): Promise<{ rows: LogRow[]; locked: number; limited: boolean }> {
+): Promise<{ rows: LogRow[]; limited: boolean }> {
   const access = await memberAccess(client, actor, true);
   const free = access.pro_state === "FREE";
   const now = await databaseNow(client);
-  // 무료는 최근 1주일만 본다 (기존 열람 제한과 같은 규칙).
+  // 무료는 최근 1주일만 본다 (기존 열람 제한과 같은 규칙). 그보다 오래된 회차는
+  // 목록에서 빼지 않고 잠근 채 둔다 — 누르면 유료 안내가 뜬다. 무엇이 있는지는
+  // 보여야 "열어 보고 싶다" 가 된다.
   const cutoff = free
     ? seoulToday(new Date(now.getTime() - 7 * 86400000))
     : null;
@@ -805,7 +812,6 @@ export async function companyInspectionLog(
     params.push(value);
     where.push(sql.replace("$?", "$" + params.length));
   };
-  if (cutoff) add("s.work_date >= $?::date", cutoff);
   if (filters.from) add("s.work_date >= $?::date", filters.from);
   if (filters.to) add("s.work_date <= $?::date", filters.to);
   if (filters.q) add("w.name ILIKE '%' || $? || '%'", filters.q);
@@ -824,7 +830,7 @@ export async function companyInspectionLog(
        JOIN inspections i ON i.id=r.inspection_id
       WHERE i.session_id=s.id AND f.status='OPEN') AS open_findings`;
 
-  const { rows } = await client.query<LogRow>(
+  const { rows } = await client.query<Omit<LogRow, "locked">>(
     `SELECT s.id AS session_id, s.work_order_id AS order_id, w.name AS order_name,
             s.work_date::text, s.starts_at::text, s.ends_at::text, ${counts}
        FROM work_sessions s JOIN work_orders w ON w.id = s.work_order_id
@@ -833,34 +839,22 @@ export async function companyInspectionLog(
     params,
   );
 
-  // 상태 필터는 집계 결과에 걸리므로 SQL 대신 여기서 거른다.
-  const done = (r: LogRow) =>
-    r.expected > 0 && r.tbm_done >= r.expected && r.during_count > 0;
-  const filtered = rows.filter((r) =>
-    filters.state === "DONE"
-      ? done(r)
-      : filters.state === "MISSING"
-        ? !done(r) && r.work_date <= seoulToday(now)
-        : filters.state === "FAIL"
-          ? r.open_findings > 0
-          : filters.state === "BACKFILLED"
-            ? r.backfilled > 0
-            : true,
+  // 잠긴 회차의 집계는 내보내지 않는다 — 날짜·작업명까지가 무료의 몫이다.
+  const sealed: LogRow[] = rows.slice(0, 200).map((r) =>
+    cutoff && r.work_date < cutoff
+      ? {
+          ...r,
+          expected: 0,
+          tbm_done: 0,
+          during_count: 0,
+          open_findings: 0,
+          total_findings: 0,
+          backfilled: 0,
+          locked: true,
+        }
+      : { ...r, locked: false },
   );
-
-  const locked = cutoff
-    ? (
-        await client.query<{ n: number }>(
-          "SELECT count(*)::int AS n FROM work_sessions s WHERE s.company_id=$1 AND s.work_date < $2::date",
-          [actor.companyId, cutoff],
-        )
-      ).rows[0].n
-    : 0;
-  return {
-    rows: filtered.slice(0, 200),
-    locked,
-    limited: rows.length > 200,
-  };
+  return { rows: sealed, limited: rows.length > 200 };
 }
 
 /* =========================================================================

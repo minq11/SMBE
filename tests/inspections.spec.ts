@@ -299,8 +299,45 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       hasText: "점검 흐름 검증",
     });
     await expect(logRow.first()).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath("inspection-log.png"),
+      fullPage: true,
+    });
+    // 칩은 받은 목록을 화면에서만 거른다 — 주소가 바뀌지 않고 서버를 다시 부르지
+    // 않는다 (features/inspections/log-list.tsx). 불량은 다 조치했으니 비어 있다.
+    const failChip = page.getByRole("button", { name: "미조치 있음", exact: true });
+    await failChip.click();
+    await expect(failChip).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL(/\/inspections$/);
+    await expect(page.getByText("조건에 맞는 회차가 없습니다.")).toBeVisible();
+    await page.getByRole("button", { name: "전체", exact: true }).click();
+    await expect(logRow.first()).toBeVisible();
+    // 무료의 1주일 밖 회차는 잠긴 채 목록에 남고, 누르면 유료 안내가 잠깐 떴다
+    // 사라진다 — 화면에 미리 써 두지 않는다 (헌법 5장).
+    const oldSession = (
+      await pool.query<{ id: string }>(
+        `INSERT INTO work_sessions(company_id,work_order_id,work_date,starts_at,ends_at,expected_assignees)
+         SELECT company_id,work_order_id,work_date-10,starts_at-interval '10 days',
+                ends_at-interval '10 days',expected_assignees
+           FROM work_sessions WHERE work_order_id=$1 ORDER BY work_date LIMIT 1
+         RETURNING id`,
+        [orderId],
+      )
+    ).rows[0].id;
+    await page.reload();
+    const lockedRow = page.locator(".wo-log-row.is-locked").first();
+    await expect(lockedRow).toContainText("점검 흐름 검증");
+    await expect(lockedRow.getByRole("link")).toHaveCount(0);
+    await lockedRow.getByRole("button").click();
+    await expect(page.locator(".toast")).toContainText("유료 요금제");
+    await expect(page).toHaveURL(/\/inspections$/);
+    await page.screenshot({
+      path: testInfo.outputPath("inspection-log-locked.png"),
+      fullPage: true,
+    });
+    await pool.query("DELETE FROM work_sessions WHERE id=$1", [oldSession]);
     // 자세한 필터는 접혀 있다 — 빠른 필터 칩이 기본이다 (inspections/page.tsx).
-    await page.getByText("기간·작업명·상태로 자세히 찾기").click();
+    await page.getByText("기간·작업명으로 자세히 찾기").click();
     await page.getByLabel("작업명").fill("있을 리 없는 작업");
     await page.getByRole("button", { name: "조회", exact: true }).click();
     await expect(page.getByText("조건에 맞는 회차가 없습니다.")).toBeVisible();

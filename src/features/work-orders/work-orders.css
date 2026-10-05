@@ -740,30 +740,78 @@
   flex-shrink: 0;
   padding-inline: 14px;
 }
-/* 점검 기록의 빠른 필터 칩 */
+/* 점검 기록의 빠른 필터 칩. 서버를 다녀오는 링크(a)와 화면에서만 거르는 단추(button)
+   가 같은 모양이다 — 사용자에게는 같은 "칩" 이다. */
 .wo-presets {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin: 0 0 12px;
 }
-.wo-presets a {
+.wo-presets a,
+.wo-presets button {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink-2);
+  font: inherit;
   font-size: 13px;
   text-decoration: none;
+  cursor: pointer;
 }
-.wo-presets a[aria-current] {
+.wo-presets a[aria-current],
+.wo-presets button[aria-pressed="true"] {
   border-color: var(--brand);
   background: var(--brand-soft);
   color: var(--brand-strong);
   font-weight: 700;
+}
+/* 구간 머리: 제목 왼쪽, 물음표 오른쪽. 설명 문단 대신 물음표 하나다. */
+.wo-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -10px 0 8px;
+}
+.wo-section-head h2 {
+  margin: 0;
+}
+.wo-section-head .help-dialog-icon {
+  margin-right: -12px;
+}
+/* 자세히 찾기 머리의 기간 표시 ("최근 4주", "9/1 ~ 9/30") */
+.wo-period {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+/* 잠긴 회차(무료의 1주일 밖): 날짜·작업명만, 누르면 토스트 */
+.wo-log-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin: -10px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.wo-log-lock svg {
+  color: var(--ink-3);
 }
 .wo-filter-details {
   margin-bottom: 16px;
