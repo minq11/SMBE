@@ -20,6 +20,7 @@ import { Pool } from "pg";
 import { encode } from "next-auth/jwt";
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
+import { weekStartKst } from "../src/features/meetings/model";
 
 // desktop·mobile 두 프로젝트가 같은 파일을 덮어쓰지 않게 폴더를 나눈다.
 // 제출용은 desktop, 좁은 화면 눈으로 보기는 mobile.
@@ -156,6 +157,66 @@ test("가입 폼 구간 나누기 확인용 캡처", async ({ page, context }) =
       page.getByRole("heading", { name: "회사코드로 참여" }),
     ).toBeVisible();
     await page.screenshot({ path: `${OUT}/4-회사코드참여.png`, fullPage: true });
+  } finally {
+    await pool.end();
+  }
+});
+
+// 주간 회의 상세 — [회의 목록] 단추를 뺀 뒤 머리말이 어떻게 보이는지 눈으로 본다.
+test("주간 회의 상세 머리말 캡처", async ({ page, context }) => {
+  test.skip(process.env.SMBE_ORDER_UI_TESTS !== "1", "isolated DB only");
+  const schema = process.env.SMBE_ORDER_UI_SCHEMA ?? "";
+  if (!/^orders_ui_[a-f0-9]{32}$/.test(schema))
+    throw new Error("Invalid schema");
+  const OUT = outDir(test.info().project.name);
+  await mkdir(OUT, { recursive: true });
+  const pool = new Pool({
+    connectionString:
+      "postgresql://postgres:smbe-test-only@127.0.0.1:55439/smbe_regression",
+    options: "-c search_path=" + schema + ",public",
+  });
+  try {
+    const manager = randomUUID();
+    const company = randomUUID();
+    await pool.query(
+      "INSERT INTO users(id,display_name) VALUES ($1,'회의 관리자')",
+      [manager],
+    );
+    await pool.query(
+      `INSERT INTO companies(id,name,business_type,company_code,initial_employee_size_band,
+         current_employee_size_band,active_headcount,business_start_date,
+         expected_annual_revenue_manwon,created_by)
+       VALUES ($1,'회의 검증 회사','제조업',$2,'UNDER_5','UNDER_5',1,'2026-01-01',0,$3)`,
+      [company, randomUUID(), manager],
+    );
+    await pool.query(
+      `INSERT INTO company_members(user_id,company_id,role,status,joined_via,snapshot_display_name)
+       VALUES ($1,$2,'MANAGER_SUPERVISOR','ACTIVE','DIRECT_JOIN','회의 관리자')`,
+      [manager, company],
+    );
+    await context.addCookies([
+      {
+        name: "authjs.session-token",
+        value: await encode({
+          token: { appUserId: manager, sub: manager, name: "회의 관리자" },
+          secret: "smbe-isolated-browser-test-secret-only",
+          salt: "authjs.session-token",
+        }),
+        domain: "127.0.0.1",
+        path: "/",
+        httpOnly: true,
+        secure: false,
+      },
+    ]);
+    // 회의를 열지 않은 주도 상세 화면이 뜬다 ("아직 열지 않은 주입니다").
+    await page.goto("/meetings/" + weekStartKst());
+    await expect(
+      page.getByRole("heading", { name: /주간 회의/ }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "뒤로 가기" })).toBeVisible();
+    // 같은 곳(/meetings)으로 가는 단추가 제목 양쪽에 둘 있으면 안 된다.
+    await expect(page.getByRole("link", { name: "회의 목록" })).toHaveCount(0);
+    await page.screenshot({ path: `${OUT}/5-주간회의-상세.png`, fullPage: true });
   } finally {
     await pool.end();
   }
