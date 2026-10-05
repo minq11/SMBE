@@ -98,11 +98,9 @@ export default async function MeetingPage({
               : `작성 중 · 작성 ${data.meeting.created_by_name}`
             : "아직 열지 않은 주입니다."
         }
-        actions={
-          <Link className="btn-secondary" href="/meetings">
-            회의 목록
-          </Link>
-        }
+        /* [회의 목록] 단추는 뒀다가 뺐다. PageHeader 의 뒤로가기(←)가 히스토리가
+           아니라 구조로 한 단계 위(/meetings)로 가므로, 글자 그대로 같은 곳으로
+           가는 단추가 제목 양쪽에 둘 있었다. */
       />
 
       {!data.meeting && (
