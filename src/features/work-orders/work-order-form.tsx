@@ -10,6 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
+import { ReferencePanel } from "@/features/assessments/reference-panel";
+import type { AssessmentReferences } from "@/server/assessment-references";
 import {
   CheckCircle2,
   FileText,
@@ -194,6 +196,7 @@ export function WorkOrderForm({
   revision,
   initial,
   members,
+  references,
   standards = [],
   initialStandardId = null,
   locations = [],
@@ -211,6 +214,8 @@ export function WorkOrderForm({
   revision: number;
   initial: WorkDraft;
   members: MemberOption[];
+  /** 위험요인 찾을 때 참고하는 우리 회사 기록 (사고·작업자 의견) */
+  references?: AssessmentReferences;
   standards?: StandardPickerOption[];
   initialStandardId?: string | null;
   locations?: LocationOption[];
@@ -457,6 +462,12 @@ export function WorkOrderForm({
           onChange={(e) => set("performedOn", e.target.value)}
         />
       </div>
+      {references && (
+        <ReferencePanel
+          references={references}
+          standardId={data.standardId || null}
+        />
+      )}
       <ol className="risk-card-list">
         {data.risks.map((risk, i) => (
           <li key={i}>

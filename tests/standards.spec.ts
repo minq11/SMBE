@@ -49,6 +49,14 @@ test("standard: create, edit, add a seeded assessment round", async ({
         [id, company, role, name],
       );
     }
+    // 참고 자료 창이 많은 기록에도 안 깨지는지 — 아차사고 60건 (창은 최근 50건).
+    await pool.query(
+      `INSERT INTO incidents(company_id,kind,occurred_at,location,occurrence_type,description,grade,reported_by,updated_by,retention_until)
+       SELECT $1,'NEAR_MISS', now() - (g || ' days')::interval, '2공장 프레스실', 'CAUGHT',
+              '금형 교체 중 손이 끼일 뻔함 ' || g, 'NEAR_MISS', $2, $2, (now() + interval '3 years')::date
+         FROM generate_series(1, 60) AS g`,
+      [company, manager],
+    );
     await context.addCookies([
       {
         name: "authjs.session-token",
@@ -81,6 +89,35 @@ test("standard: create, edit, add a seeded assessment round", async ({
 
     // 1) 만들기. 이름만 쓰고 저장하면 오류가 위의 띠가 아니라 안내 창으로 뜬다.
     await page.goto("/standards/new");
+    // 위험요인 찾을 때 참고 자료: 과거 사고·아차사고 · 작업자 의견 — 창으로 뜬다.
+    await page.getByRole("button", { name: /작업자 의견/ }).click();
+    const refDialog = page.locator("dialog.ref-dialog");
+    await expect(refDialog).toBeVisible();
+    await expect(refDialog).toContainText("아직 작업자 의견이 없습니다");
+    await refDialog.getByRole("button", { name: "닫기" }).last().click();
+    await expect(refDialog).toBeHidden();
+    await page.getByRole("button", { name: /과거 사고·아차사고/ }).click();
+    // 목록이 많아도 창 안에서만 스크롤되고, 창은 화면 안에 들어오며 닫기가 보인다.
+    const refList = refDialog.locator(".ref-list");
+    await expect(refList.locator("li")).toHaveCount(50);
+    const geom = await refList.evaluate((el) => ({
+      scroll: el.scrollHeight,
+      client: el.clientHeight,
+    }));
+    expect(geom.scroll).toBeGreaterThan(geom.client);
+    const dialogBox = (await refDialog.boundingBox())!;
+    const viewportHeight = await page.evaluate(() => innerHeight);
+    expect(dialogBox.y).toBeGreaterThanOrEqual(0);
+    expect(dialogBox.y + dialogBox.height).toBeLessThanOrEqual(
+      viewportHeight + 1,
+    );
+    await expect(
+      refDialog.getByRole("button", { name: "닫기" }).last(),
+    ).toBeInViewport();
+    await page.screenshot({ path: test.info().outputPath("ref-dialog.png") });
+    await refDialog.getByRole("button", { name: "닫기" }).last().click();
+    await page.locator(".ref-row").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: test.info().outputPath("ref-row.png") });
     await page.getByLabel("표준서명").fill("프레스 금형 교체");
     await page
       .getByRole("button", { name: "표준서 저장 · 확정", exact: true })

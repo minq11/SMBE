@@ -140,8 +140,8 @@ export async function submitInspection(
   // 현장 입력은 본인이 본인 것을 넣는다 — recorded_by 가 inspector 와 같고 backfilled 는 false.
   // 관리자 사후 입력이 생기면 이 두 값이 갈라진다 (0014).
   await client.query(
-    `INSERT INTO inspections(id,session_id,inspector_id,inspector_name,inspector_role,category,entry_path,confirmed,submitted_at,recorded_by,recorded_by_name)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$3,$4)`,
+    `INSERT INTO inspections(id,session_id,inspector_id,inspector_name,inspector_role,category,entry_path,confirmed,submitted_at,recorded_by,recorded_by_name,overall_comment)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$3,$4,$10)`,
     [
       data.id,
       session.id,
@@ -152,6 +152,7 @@ export async function submitInspection(
       data.entryPath,
       data.confirmed,
       now.toISOString(),
+      data.overallComment,
     ],
   );
   for (const r of data.results) {
@@ -347,6 +348,7 @@ export async function inspectionOverview(
     submitted_at: string;
     backfilled: boolean;
     recorded_by_name: string;
+    overall_comment: string;
     results: Array<{
       result_id: string;
       item_text: string;
@@ -365,7 +367,7 @@ export async function inspectionOverview(
     }>;
   }>(
     `SELECT i.id,i.session_id,i.inspector_id,i.inspector_name,i.inspector_role,i.category,i.entry_path,i.submitted_at::text,
-    i.backfilled,i.recorded_by_name,
+    i.backfilled,i.recorded_by_name,i.overall_comment,
     (SELECT jsonb_agg(jsonb_build_object('result_id',r.id,'item_text',r.item_text,'result',r.result,'comment',r.comment,
       'assigned_manager_id',f.assigned_manager_id,'finding_status',f.status,
       'photos',coalesce((SELECT jsonb_agg(jsonb_build_object('id',a.id,'filename',a.original_filename,'mimeType',a.mime_type,

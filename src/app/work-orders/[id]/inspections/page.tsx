@@ -358,6 +358,11 @@ export default async function InspectionPage({
                     </li>
                   ))}
                 </ul>
+                {r.overall_comment && (
+                  <p className="insp-overall">
+                    <strong>종합의견</strong> {r.overall_comment}
+                  </p>
+                )}
                 <Facts
                   className="wo-facts--tight"
                   rows={[

@@ -77,8 +77,12 @@ export function InspectionForm({
     const counts = { PASS: 0, FAIL: 0, NA: 0 } as Record<string, number>;
     for (const c of checklist)
       counts[answers[c.id] ?? ""] = (counts[answers[c.id] ?? ""] ?? 0) + 1;
+    const overall = String(
+      new FormData(event.currentTarget).get("overall") ?? "",
+    ).trim();
     const summary =
       `${RESULT_LABEL.PASS} ${counts.PASS}건 · ${RESULT_LABEL.FAIL} ${counts.FAIL}건 · ${RESULT_LABEL.NA} ${counts.NA}건` +
+      (overall ? "\n종합의견: " + overall : "") +
       (counts.FAIL > 0 ? "\n불량은 선택한 관리자의 알림함에 등록됩니다." : "") +
       "\n저장 후에는 수정할 수 없습니다.";
     void confirm(summary, {
@@ -163,6 +167,7 @@ export function InspectionForm({
       category,
       entryPath: path,
       confirmed: form.get("confirmed") === "on",
+      overallComment: String(form.get("overall") ?? ""),
       results: checklist.map((c) => ({
         itemId: c.id,
         result: form.get(
@@ -339,6 +344,17 @@ export function InspectionForm({
             )}
           </fieldset>
         ))}
+        {/* 종합의견은 선택이다. 항목 코멘트는 그 항목 얘기고, 여기는 오늘 작업 전체에
+            대해 한마디 — 위험성평가에서 작업자 의견으로 모아 본다. */}
+        <FloatTextarea
+          id="inspection-overall"
+          label="종합의견 (선택)"
+          name="overall"
+          rows={2}
+          maxLength={2000}
+          disabled={pending}
+          hint="오늘 작업 전체에 대해 한마디. 예: 야간엔 통로 조명이 어둡다"
+        />
         {category === "TBM" && (
           <label className="inspection-confirm">
             <input

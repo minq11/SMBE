@@ -31,6 +31,7 @@ import {
   type CheckResult,
   type SectionResult,
 } from "./scoring";
+import { RecognitionBenefits } from "./benefits";
 
 type Step = "intro" | "targeting" | SectionKey | "result";
 const STORAGE_KEY = "smbe.recognition-check.v2";
@@ -581,6 +582,8 @@ function ResultPanel({
       </div>
 
       <SmbeSummary result={result} />
+
+      <RecognitionBenefits cta={false} />
 
       {!result.answeredAll && (
         <p className="check-notice" role="alert">

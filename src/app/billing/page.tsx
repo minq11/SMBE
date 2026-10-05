@@ -29,7 +29,7 @@ export default async function BillingPage() {
     <AppShell
       active="billing"
       breadcrumb={[
-        { label: "회사정보", href: "/company/members" },
+        { label: "기준정보", href: "/company/members" },
         { label: "이용·관리" },
         { label: "요금제" },
       ]}

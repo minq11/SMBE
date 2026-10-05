@@ -1,6 +1,8 @@
 "use client";
 
 import { SAFETY_INFO_HINTS } from "@/features/assessments/model";
+import { ReferencePanel } from "@/features/assessments/reference-panel";
+import type { AssessmentReferences } from "@/server/assessment-references";
 
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { useActionState, useState } from "react";
@@ -34,6 +36,8 @@ export type AssessmentSeed = {
   risks: RiskCardValue[];
 };
 
+/* 다시하기는 정기·수시 둘뿐이다(사장님 결정 2026-10-02). 최초는 표준서를 만들 때
+   저절로 생기고, 상시는 매일의 TBM·점검이 그 일이라 회차로 따로 열지 않는다. */
 const KIND_OPTIONS: Array<{ key: Kind; label: string; note: string }> = [
   { key: "PERIODIC", label: "정기 위험성평가", note: "매년 1회" },
   {
@@ -41,19 +45,14 @@ const KIND_OPTIONS: Array<{ key: Kind; label: string; note: string }> = [
     label: "수시 위험성평가",
     note: "설비·물질·인력 변경, 사고 뒤",
   },
-  {
-    key: "CONTINUOUS",
-    label: "상시 위험성평가",
-    note: "정기 위험성평가를 상시 활동으로",
-  },
-  { key: "FIRST", label: "최초 위험성평가", note: "처음부터 다시" },
 ];
 
 const todayKst = () =>
   new Date(new Date().getTime() + 9 * 3600_000).toISOString().slice(0, 10);
 
 /**
- * 위험성평가 다시하기(회차 추가). 세 덩어리 — 실시 정보, 위험요인·대책, 참여자.
+ * 위험성평가 다시하기(회차 추가). 세 덩어리 — 참여자, 실시 정보, 위험요인·대책.
+ * 참여자가 맨 위다: 누가 같이 봤는지가 먼저고, 고시도 근로자 참여를 요구한다.
  *
  * 정기평가는 지난 평가를 다시 보는 일이다. 그래서 지난 회차의 위험요인·대책·
  * 안전보건정보를 그대로 채워 두고, 바뀐 것만 고치게 한다. 판단 기준은 회사가
@@ -65,6 +64,7 @@ export function AssessmentForm({
   members,
   criteria,
   seed,
+  references,
 }: {
   standardId: string;
   standardName: string;
@@ -72,6 +72,8 @@ export function AssessmentForm({
   /** 회사의 위험성 판단 기준 (읽기만) */
   criteria: RiskCriteria;
   seed?: AssessmentSeed;
+  /** 위험요인 찾을 때 참고하는 우리 회사 기록 (사고·작업자 의견) */
+  references?: AssessmentReferences;
 }) {
   const [kind, setKind] = useState<Kind>("PERIODIC");
   const [performedOn, setPerformedOn] = useState(todayKst());
@@ -139,13 +141,43 @@ export function AssessmentForm({
 
       <JumpNav
         items={[
+          { id: "asmt-people", label: "참여자" },
           { id: "asmt-info", label: "실시 정보" },
           { id: "asmt-risks", label: "위험요인" },
-          { id: "asmt-people", label: "참여자" },
         ]}
       />
 
       <FormErrorDialog message={state?.error} nonce={state} />
+
+      <section className="std-form-section" id="asmt-people">
+        <h2>참여자</h2>
+        <FloatTextarea
+          className="float-field--flush"
+          id="asmt-worker-opinion"
+          label="근로자 의견 (선택)"
+          rows={2}
+          maxLength={2000}
+          value={workerOpinion}
+          onChange={(e) => setWorkerOpinion(e.target.value)}
+          hint="위험요인을 찾을 때 작업자가 말한 것"
+        />
+        {members.length === 0 ? (
+          <p className="std-form-note">
+            구성원이 없어요. 인원관리에서 초대해 주세요.
+          </p>
+        ) : (
+          <PeoplePickerDialog
+            legend="위험성평가에 실제 참여한 근로자"
+            members={members}
+            selected={participants}
+            onToggle={(id) =>
+              setParticipants((p) =>
+                p.includes(id) ? p.filter((x) => x !== id) : [...p, id],
+              )
+            }
+          />
+        )}
+      </section>
 
       <section className="std-form-section" id="asmt-info">
         <h2>실시 정보</h2>
@@ -184,35 +216,29 @@ export function AssessmentForm({
           value={workMethod}
           onChange={(e) => setWorkMethod(e.target.value)}
         />
-        <details className="std-fold" open={!seeded}>
-          <summary>
-            사전조사 안전보건정보 {seeded ? "(지난 회차 값 그대로)" : ""}
-          </summary>
-          <div className="std-safety-grid">
-            {(
-              [
-                ["equipment", "기계·기구·설비"],
-                ["materials", "취급 유해물질"],
-                ["environment", "공정·주변 환경"],
-                ["history", "재해·아차사고 이력"],
-              ] as const
-            ).map(([key, label]) => (
-              <FloatTextarea
-                key={key}
-                className="float-field--flush"
-                id={`asmt-${key}`}
-                label={label}
-                rows={2}
-                maxLength={2000}
-                value={safety[key]}
-                onChange={(e) =>
-                  setSafety({ ...safety, [key]: e.target.value })
-                }
-                hint={SAFETY_INFO_HINTS[key]}
-              />
-            ))}
-          </div>
-        </details>
+        <h3 className="std-sub-head">사전조사 안전보건정보</h3>
+        <div className="std-safety-grid">
+          {(
+            [
+              ["equipment", "기계·기구·설비"],
+              ["materials", "취급 유해물질"],
+              ["environment", "공정·주변 환경"],
+              ["history", "재해·아차사고 이력"],
+            ] as const
+          ).map(([key, label]) => (
+            <FloatTextarea
+              key={key}
+              className="float-field--flush"
+              id={`asmt-${key}`}
+              label={label}
+              rows={2}
+              maxLength={2000}
+              value={safety[key]}
+              onChange={(e) => setSafety({ ...safety, [key]: e.target.value })}
+              hint={SAFETY_INFO_HINTS[key]}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="std-form-section" id="asmt-risks">
@@ -222,6 +248,9 @@ export function AssessmentForm({
             <RiskHelp />
           </HelpDialog>
         </div>
+        {references && (
+          <ReferencePanel references={references} standardId={standardId} />
+        )}
         <ol className="risk-card-list">
           {risks.map((r, i) => (
             <li key={i}>
@@ -250,36 +279,6 @@ export function AssessmentForm({
         >
           <Plus size={14} /> 위험요인 추가
         </button>
-      </section>
-
-      <section className="std-form-section" id="asmt-people">
-        <h2>참여자</h2>
-        <FloatTextarea
-          className="float-field--flush"
-          id="asmt-worker-opinion"
-          label="근로자 의견 (선택)"
-          rows={2}
-          maxLength={2000}
-          value={workerOpinion}
-          onChange={(e) => setWorkerOpinion(e.target.value)}
-          hint="위험요인을 찾을 때 작업자가 말한 것"
-        />
-        {members.length === 0 ? (
-          <p className="std-form-note">
-            구성원이 없어요. 인원관리에서 초대해 주세요.
-          </p>
-        ) : (
-          <PeoplePickerDialog
-            legend="위험성평가에 실제 참여한 근로자"
-            members={members}
-            selected={participants}
-            onToggle={(id) =>
-              setParticipants((p) =>
-                p.includes(id) ? p.filter((x) => x !== id) : [...p, id],
-              )
-            }
-          />
-        )}
       </section>
 
       <div className="std-form-actions sticky-actions">

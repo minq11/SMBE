@@ -664,6 +664,7 @@ async function inspectionFixture() {
     orderId: setup.id,
     sessionId: session.id,
     category,
+    overallComment: "",
     entryPath: "QR",
     confirmed: true,
     results: checklist

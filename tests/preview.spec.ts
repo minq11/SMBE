@@ -186,6 +186,17 @@ test("preview renders without secrets and only shows preparation dialogs", async
   await page.screenshot({ path: test.info().outputPath("law-dialog.png") });
   await lawDialog.getByRole("button", { name: "닫기" }).last().click();
   await expect(lawDialog).toBeHidden();
+  // 인정 혜택: 클린사업장 우대·점수 근거, 조건·출처는 맨 아래 한 줄.
+  const benefit = page.locator(".benefit-card");
+  await expect(benefit).toContainText("1,000만원");
+  await expect(benefit).toContainText("심사기준(2024.12.18 개정)");
+  await expect(benefit.locator(".benefit-source")).toContainText("50인 미만");
+  await expect(
+    benefit.getByRole("link", { name: /인정 준비도 진단/ }),
+  ).toHaveAttribute("href", "/recognition-check");
+  await benefit.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: test.info().outputPath("benefit.png") });
   // 정가에 취소선, 그 밑에 현재가.
   await expect(page.locator(".public-price s").first()).toHaveText("55,000원");
   await expect(page.locator(".public-price")).toContainText("33,000");

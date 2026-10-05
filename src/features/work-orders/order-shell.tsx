@@ -29,7 +29,7 @@ export async function OrderShell({
       isOperator={await isCurrentUserOperator()}
       breadcrumb={[
         active === "locations" || active === "criteria"
-          ? { label: "회사정보", href: "/company/members" }
+          ? { label: "기준정보", href: "/company/members" }
           : active === "inspection" ||
               active === "meetings" ||
               active === "monitoring"

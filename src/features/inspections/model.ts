@@ -8,6 +8,8 @@ export const inspectionSchema = z.object({
   category: z.enum(["TBM", "DURING_WORK"]),
   entryPath: z.enum(["WEB", "QR", "LINK"]),
   confirmed: z.boolean(),
+  /** 종합의견 (선택) — 오늘 작업 전체에 대해 한마디. 위험성평가의 작업자 의견이 된다. */
+  overallComment: z.string().trim().max(2000).default(""),
   results: z
     .array(
       z.object({
