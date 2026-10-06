@@ -226,3 +226,128 @@ test("위험성평가 조치 기록도 같은 이유로 두 번 막히면 두 �
     await pool.end();
   }
 });
+
+// ---------------------------------------------------------------------------
+// 4. 알림이 갈 주소가 없는 채로 가입되지 않는다
+// ---------------------------------------------------------------------------
+
+/**
+ * 카카오처럼 이메일을 넘기지 않는 provider 로 가입하면 users.email 이 비어 있다.
+ * 그 사람이 '알림 받을 메일' 까지 비우면 알림 쿼리들이
+ * COALESCE(contact_email, email) IS NOT NULL 로 걸러서 **아무 오류 없이**
+ * 그 사람에게만 메일이 안 간다. 그래서 그 경우에만 필수로 받는다.
+ */
+test("로그인 계정에 메일이 없으면 회사 만들기에서 알림 메일을 받아 둔다", async ({
+  page,
+}) => {
+  const pool = isolatedPool();
+  try {
+    // 회사 없이 사용자만 — 이메일 없는 계정 (카카오 미동의와 같은 상태).
+    const userId = randomUUID();
+    await pool.query(
+      "INSERT INTO users(id,display_name) VALUES ($1,'카카오 사용자')",
+      [userId],
+    );
+    await page.context().addCookies([
+      {
+        name: "authjs.session-token",
+        value: await encode({
+          token: { appUserId: userId, sub: userId },
+          secret: "smbe-isolated-browser-test-secret-only",
+          salt: "authjs.session-token",
+        }),
+        domain: "127.0.0.1",
+        path: "/",
+        httpOnly: true,
+        secure: false,
+      },
+    ]);
+
+    await page.goto("/onboarding/create-company");
+    const email = page.getByLabel("알림 받을 메일", { exact: true });
+    // "(선택)" 이 아니라 필수로 뜬다.
+    await expect(email).toBeVisible();
+    await expect(email).toHaveAttribute("required", "");
+    await expect(email).toHaveValue("");
+
+    // 화면의 required 를 우회해도 서버가 막는다.
+    await page.locator("#name").fill("메일없는 회사");
+    await page.locator("#business_type").fill("제조업");
+    await page.selectOption("#initial_employee_size_band", "UNDER_5");
+    await page.locator("#business_start_date").fill("2026-01-01");
+    await page.locator("#expected_annual_revenue_manwon").fill("10000");
+    await email.evaluate((el: HTMLInputElement) => el.removeAttribute("required"));
+    await page.getByRole("button", { name: "회사 만들기" }).click();
+
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText("알림 받을 메일");
+    await dialog.getByRole("button", { name: "확인" }).click();
+
+    // 저장이 막혔다고 입력이 날아가면 안 된다. React 19 는 form action 이
+    // 끝나면 폼을 초기화하는데, 이 폼의 칸은 비제어라 그대로 두면 안내와 함께
+    // 빈 폼을 보게 된다 (onSubmit 에서 기본 제출을 막는 이유).
+    await expect(page.locator("#name")).toHaveValue("메일없는 회사");
+    await expect(page.locator("#business_type")).toHaveValue("제조업");
+    await expect(page.locator("#business_start_date")).toHaveValue("2026-01-01");
+    await expect(page.locator("#expected_annual_revenue_manwon")).toHaveValue(
+      "10000",
+    );
+
+    // 회사는 만들어지지 않았다. desktop·mobile 두 프로젝트가 같은 스키마를
+    // 쓰므로 이름이 아니라 이 사용자로 좁혀 본다.
+    const blocked = await pool.query(
+      "SELECT id FROM companies WHERE created_by = $1",
+      [userId],
+    );
+    expect(blocked.rows.length).toBe(0);
+
+    // 주소를 넣으면 통과하고, 그 주소가 저장된다.
+    await email.fill("kakao.user@example.com");
+    await page.getByRole("button", { name: "회사 만들기" }).click();
+    await expect(page).toHaveURL(/\/$|\/company/);
+    const saved = await pool.query(
+      "SELECT contact_email FROM users WHERE id=$1",
+      [userId],
+    );
+    expect(saved.rows[0].contact_email).toBe("kakao.user@example.com");
+  } finally {
+    await pool.end();
+  }
+});
+
+test("로그인 계정에 메일이 있으면 알림 메일은 그대로 선택 입력", async ({
+  page,
+}) => {
+  const pool = isolatedPool();
+  try {
+    const userId = randomUUID();
+    const loginEmail = `google-${randomUUID()}@example.com`;
+    await pool.query(
+      "INSERT INTO users(id,display_name,email) VALUES ($1,'구글 사용자',$2)",
+      [userId, loginEmail],
+    );
+    await page.context().addCookies([
+      {
+        name: "authjs.session-token",
+        value: await encode({
+          token: { appUserId: userId, sub: userId },
+          secret: "smbe-isolated-browser-test-secret-only",
+          salt: "authjs.session-token",
+        }),
+        domain: "127.0.0.1",
+        path: "/",
+        httpOnly: true,
+        secure: false,
+      },
+    ]);
+
+    await page.goto("/onboarding/create-company");
+    const email = page.getByLabel("알림 받을 메일 (선택)");
+    await expect(email).toBeVisible();
+    await expect(email).toHaveValue(loginEmail);
+    await expect(email).not.toHaveAttribute("required", "");
+  } finally {
+    await pool.end();
+  }
+});

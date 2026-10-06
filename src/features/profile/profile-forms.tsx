@@ -16,6 +16,9 @@ export function ProfileForm({
   version: string;
 }) {
   const [state, action, pending] = useActionState(saveProfileAction, undefined);
+  // 로그인 계정에 메일이 없으면(카카오 이메일 미동의) 이 칸이 유일한 통로라
+  // 비울 수 없다. 판단은 서버도 한다 (profile-service.ts).
+  const emailRequired = !loginEmail;
   return (
     <form action={action} className="account-form">
       <input type="hidden" name="version" value={state?.version ?? version} />
@@ -33,9 +36,10 @@ export function ProfileForm({
         id="profile-contact-email"
         type="email"
         name="contactEmail"
-        label="알림 받을 메일 (선택)"
+        label={emailRequired ? "알림 받을 메일" : "알림 받을 메일 (선택)"}
         autoComplete="email"
         defaultValue={contactEmail ?? loginEmail ?? ""}
+        required={emailRequired}
         maxLength={254}
         hint="example@company.com"
         className="float-field--flush"
@@ -53,9 +57,12 @@ export function ProfileForm({
       />
       <p className="account-muted">
         이름 변경은 앞으로 표시되는 정보에 적용됩니다. 기존 지시서·점검 기록의
-        이름은 유지됩니다. 작업지시 링크·승인 요청·회의 알림은 위 메일로 가고,
-        비워 두면 로그인 계정의 메일로 갑니다. 전화번호는 추후 문자·알림톡
-        발송에 씁니다.
+        이름은 유지됩니다. 작업지시 링크·승인 요청·회의 알림은 위 메일로
+        갑니다.{" "}
+        {emailRequired
+          ? "로그인에 쓴 계정에 메일 주소가 없어 비울 수 없습니다."
+          : "비워 두면 로그인 계정의 메일로 갑니다."}{" "}
+        전화번호는 추후 문자·알림톡 발송에 씁니다.
       </p>
       {state?.error && (
         <p role="alert" className="account-error">

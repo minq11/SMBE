@@ -1,7 +1,11 @@
 import type { PoolClient } from "@neondatabase/serverless";
 import { z } from "zod";
 import { lockCompany, refreshHeadcount } from "./membership-mutations";
-import { contactEmailField, phoneField } from "./contact-input";
+import {
+  NOTIFY_EMAIL_REQUIRED,
+  contactEmailField,
+  phoneField,
+} from "./contact-input";
 
 export class ProfileError extends Error {}
 const profileSchema = z.object({
@@ -29,11 +33,18 @@ export async function updateOwnProfile(
       parsed.error.issues[0]?.message ?? "입력값을 확인하세요.",
     );
   const d = parsed.data;
-  const { rows } = await client.query(
-    "SELECT updated_at::text AS version FROM users WHERE id=$1 AND status='ACTIVE' FOR UPDATE",
+  const { rows } = await client.query<{
+    version: string;
+    email: string | null;
+  }>(
+    "SELECT updated_at::text AS version, email FROM users WHERE id=$1 AND status='ACTIVE' FOR UPDATE",
     [userId],
   );
   if (!rows.length) throw new ProfileError("사용 가능한 계정이 아닙니다.");
+  // 가입 때 받아 둔 주소를 여기서 지워 버리면 또 알림이 갈 곳이 없어진다.
+  // 로그인 계정에 메일이 있는 사람은 그쪽으로 가므로 비워도 된다.
+  if (!rows[0].email && !d.contactEmail)
+    throw new ProfileError(NOTIFY_EMAIL_REQUIRED);
   if (rows[0].version !== d.version)
     throw new ProfileError(
       "다른 화면에서 정보가 변경됐습니다. 새로고침 후 다시 입력하세요.",

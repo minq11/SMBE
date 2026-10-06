@@ -18,9 +18,12 @@ const bands = [
 export function CreateCompanyForm({
   defaultDisplayName,
   defaultEmail,
+  emailRequired,
 }: {
   defaultDisplayName: string;
   defaultEmail: string;
+  /** 로그인 계정에 메일이 없으면 이 칸을 비울 수 없다 (notifyEmailState). */
+  emailRequired: boolean;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     createCompanyAction,
@@ -28,7 +31,20 @@ export function CreateCompanyForm({
   );
 
   return (
-    <form action={formAction} className="form-shell">
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        // React 19 는 form action 이 끝나면 폼을 초기화한다. 이 폼의 칸은
+        // 비제어라, 저장이 막히면 "무엇이 잘못됐다" 는 안내와 함께 **빈 폼**을
+        // 보게 된다 — 회사명·업종·사업개시일을 전부 다시 쳐야 한다.
+        // 기본 제출을 막고 액션만 직접 부르면 초기화가 일어나지 않는다
+        // (표준서 폼이 쓰는 방식). 필수 칸 검사는 제출 이벤트 전에 끝나므로
+        // 그대로 동작한다.
+        e.preventDefault();
+        formAction(new FormData(e.currentTarget));
+      }}
+      className="form-shell"
+    >
       <h1>회사 만들기</h1>
       <p className="lead">
         회사 정보를 등록하면 바로 시작할 수 있어요. 만든 사람이 이 회사의
@@ -131,7 +147,11 @@ export function CreateCompanyForm({
           note="회사 내에서 표시될 이름입니다."
         />
 
-        <ContactFields defaultEmail={defaultEmail} flush />
+        <ContactFields
+          defaultEmail={defaultEmail}
+          emailRequired={emailRequired}
+          flush
+        />
       </section>
 
       <div className="form-actions">

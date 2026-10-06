@@ -6,7 +6,9 @@ import { auth } from "@/auth";
 import { queryOne, withTransaction } from "@/server/db";
 import { lockCompany } from "@/server/membership-mutations";
 import { notifyJoinRequest } from "@/server/membership-notify";
+import { notifyEmailState } from "@/server/profile";
 import {
+  NOTIFY_EMAIL_REQUIRED,
   contactEmailField,
   optionalText,
   phoneField,
@@ -86,6 +88,13 @@ export async function createCompanyAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "입력 값을 확인하세요" };
+  }
+
+  // 화면의 required 는 거들 뿐이다. 로그인 계정에 메일이 없는 사람이 이 칸까지
+  // 비우면 알림이 갈 주소가 없어지는데, 알림 쿼리들은 조용히 건너뛰기만 한다.
+  const notify = await notifyEmailState(userId);
+  if (notify.required && !parsed.data.contact_email) {
+    return { error: NOTIFY_EMAIL_REQUIRED };
   }
 
   const existingActive = await queryOne<{ id: string }>(
@@ -174,6 +183,13 @@ export async function joinCompanyAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "입력 값을 확인하세요" };
+  }
+
+  // 화면의 required 는 거들 뿐이다. 로그인 계정에 메일이 없는 사람이 이 칸까지
+  // 비우면 알림이 갈 주소가 없어지는데, 알림 쿼리들은 조용히 건너뛰기만 한다.
+  const notify = await notifyEmailState(userId);
+  if (notify.required && !parsed.data.contact_email) {
+    return { error: NOTIFY_EMAIL_REQUIRED };
   }
 
   const existingActive = await queryOne<{ id: string }>(

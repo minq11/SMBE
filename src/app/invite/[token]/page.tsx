@@ -8,8 +8,9 @@ import { revalidatePath } from "next/cache";
 import { PublicHeader } from "@/features/auth/public-header";
 import { SiteFooter } from "@/features/auth/site-footer";
 import { ContactFields } from "@/features/onboarding/contact-fields";
-import { notifyEmailOf } from "@/server/profile";
+import { notifyEmailState } from "@/server/profile";
 import {
+  NOTIFY_EMAIL_REQUIRED,
   contactEmailField,
   optionalText,
   phoneField,
@@ -106,7 +107,7 @@ export default async function InvitePage({
     );
   }
 
-  const defaultEmail = await notifyEmailOf(userId);
+  const notify = await notifyEmailState(userId);
 
   async function acceptAction(form: FormData) {
     "use server";
@@ -118,6 +119,12 @@ export default async function InvitePage({
       optionalText(form.get("contact_email")),
     );
     const phone = phoneField.safeParse(optionalText(form.get("phone")));
+    // 형식이 틀린 값은 버리고 수락은 통과시키지만, 로그인 계정에 메일이 없는
+    // 사람은 여기서 받지 못하면 알림이 갈 주소가 아예 없어진다 — 그때만 막는다.
+    const notifyNow = await notifyEmailState(current.user.id);
+    if (notifyNow.required && !(contactEmail.success && contactEmail.data)) {
+      redirect(`/invite/${encodeURIComponent(token)}?failed=email`);
+    }
     try {
       await withTransaction((client) =>
         acceptInvite(client, token, current.user.id, {
@@ -141,13 +148,21 @@ export default async function InvitePage({
         <div className="pending-notice">
           <h2>{invite.company_name} 회사 초대</h2>
           <p>수락하면 이 회사의 구성원으로 가입합니다.</p>
-          {failed && (
-            <p role="alert">
-              초대를 수락하지 못했습니다. 다시 시도하거나 관리자에게 문의하세요.
-            </p>
+          {failed === "email" ? (
+            <p role="alert">{NOTIFY_EMAIL_REQUIRED}</p>
+          ) : (
+            failed && (
+              <p role="alert">
+                초대를 수락하지 못했습니다. 다시 시도하거나 관리자에게
+                문의하세요.
+              </p>
+            )
           )}
           <form action={acceptAction} className="invite-accept-form">
-            <ContactFields defaultEmail={defaultEmail} />
+            <ContactFields
+              defaultEmail={notify.defaultEmail}
+              emailRequired={notify.required}
+            />
             <button type="submit" className="btn-primary">
               <Check size={14} /> 초대 수락하기
             </button>

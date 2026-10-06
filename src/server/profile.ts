@@ -2,16 +2,28 @@ import "server-only";
 import { query, queryOne } from "./db";
 
 /**
- * 알림이 나갈 주소. 따로 정한 값이 있으면 그것, 없으면 로그인 계정의 메일이다.
+ * 알림이 나갈 주소와, 그 칸을 비울 수 있는지.
+ *
+ * `defaultEmail` — 따로 정한 값이 있으면 그것, 없으면 로그인 계정의 메일이다.
  * 가입 화면의 기본값으로 쓴다 — 퇴사 후 다른 회사에 다시 들어올 때, 전에 정해
  * 둔 주소가 그대로 채워져 있어야 한다.
+ *
+ * `required` — 로그인 계정에 메일이 없으면(카카오 이메일 미동의) true. 그런
+ * 사람이 이 칸까지 비우면 알림이 갈 주소가 아예 없어지는데, 알림 쿼리들은
+ * 조용히 건너뛰기만 한다 (contact-input.ts 의 NOTIFY_EMAIL_REQUIRED).
  */
-export async function notifyEmailOf(userId: string): Promise<string> {
-  const row = await queryOne<{ email: string | null }>(
-    "SELECT COALESCE(contact_email, email) AS email FROM users WHERE id=$1",
+export async function notifyEmailState(
+  userId: string,
+): Promise<{ defaultEmail: string; required: boolean }> {
+  const row = await queryOne<{
+    email: string | null;
+    login_email: string | null;
+  }>(
+    `SELECT COALESCE(contact_email, email) AS email, email AS login_email
+       FROM users WHERE id=$1`,
     [userId],
   );
-  return row?.email ?? "";
+  return { defaultEmail: row?.email ?? "", required: !row?.login_email };
 }
 
 export async function ownProfile(userId: string) {

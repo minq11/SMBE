@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/server/session";
-import { notifyEmailOf } from "@/server/profile";
+import { notifyEmailState } from "@/server/profile";
 import { PublicHeader } from "@/features/auth/public-header";
 import { SiteFooter } from "@/features/auth/site-footer";
 import { JoinForm } from "@/features/onboarding/join-form";
@@ -11,7 +11,7 @@ export default async function JoinPage() {
   const session = await getCurrentSession();
   if (!session) redirect("/login");
   if (session.membership) redirect("/onboarding");
-  const defaultEmail = await notifyEmailOf(session.user.id);
+  const notify = await notifyEmailState(session.user.id);
 
   return (
     <div className="auth-shell">
@@ -19,7 +19,8 @@ export default async function JoinPage() {
       <main className="auth-main">
         <JoinForm
           defaultDisplayName={session.user.displayName ?? ""}
-          defaultEmail={defaultEmail}
+          defaultEmail={notify.defaultEmail}
+      emailRequired={notify.required}
         />
       </main>
       <SiteFooter />

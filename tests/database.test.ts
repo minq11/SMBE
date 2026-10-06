@@ -2246,3 +2246,96 @@ test("risk criteria: new company starts with three levels; edits validate; asses
   ).rows[0];
   assert.deepEqual(criteria_snapshot, initial);
 });
+
+/**
+ * 카카오처럼 이메일을 넘기지 않는 provider 로 가입하면 users.email 이 비어 있다.
+ * 그 사람이 '알림 받을 메일' 까지 비우면 알림 쿼리들이
+ * COALESCE(contact_email, email) IS NOT NULL 로 걸러서 **아무 오류 없이**
+ * 그 사람에게만 메일이 안 간다. 그래서 그 경우에만 필수로 받는다.
+ */
+test("로그인 계정에 메일이 없으면 알림 받을 메일을 비울 수 없다", async () => {
+  const id = await user(); // users.email = NULL
+  const version = async () =>
+    (
+      await pool.query("SELECT updated_at::text AS v FROM users WHERE id=$1", [
+        id,
+      ])
+    ).rows[0].v;
+
+  const v1 = await version();
+  await assert.rejects(
+    transaction((c) =>
+      updateOwnProfile(c, id, {
+        displayName: "이름",
+        phone: "",
+        contactEmail: "",
+        version: v1,
+      }),
+    ),
+    /알림 받을 메일/,
+  );
+
+  // 채워 넣으면 저장되고, 그 뒤로는 알림이 갈 곳이 있다.
+  await transaction((c) =>
+    updateOwnProfile(c, id, {
+      displayName: "이름",
+      phone: "",
+      contactEmail: "alert@example.com",
+      version: v1,
+    }),
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT COALESCE(contact_email, email) AS email FROM users WHERE id=$1",
+        [id],
+      )
+    ).rows[0].email,
+    "alert@example.com",
+  );
+
+  // 한 번 채운 뒤에도 다시 비우지는 못한다 — 비우면 원점이다.
+  const v2 = await version();
+  await assert.rejects(
+    transaction((c) =>
+      updateOwnProfile(c, id, {
+        displayName: "이름",
+        phone: "",
+        contactEmail: "",
+        version: v2,
+      }),
+    ),
+    /알림 받을 메일/,
+  );
+});
+
+test("로그인 계정에 메일이 있으면 알림 받을 메일은 비울 수 있다", async () => {
+  const id = await user();
+  await pool.query("UPDATE users SET email=$2 WHERE id=$1", [
+    id,
+    randomUUID() + "@example.com",
+  ]);
+  const version = (
+    await pool.query("SELECT updated_at::text AS v FROM users WHERE id=$1", [
+      id,
+    ])
+  ).rows[0].v;
+
+  // 비워도 로그인 계정의 메일로 간다.
+  await transaction((c) =>
+    updateOwnProfile(c, id, {
+      displayName: "이름",
+      phone: "",
+      contactEmail: "",
+      version,
+    }),
+  );
+  const after = (
+    await pool.query(
+      "SELECT contact_email, COALESCE(contact_email, email) AS notify FROM users WHERE id=$1",
+      [id],
+    )
+  ).rows[0];
+  assert.equal(after.contact_email, null);
+  assert.equal(String(after.notify).includes("@"), true);
+});
