@@ -4,20 +4,7 @@ import { useState } from "react";
 import { Node, mergeAttributes } from "@tiptap/core";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import {
-  Bold,
-  Heading2,
-  Image as ImageIcon,
-  Italic,
-  Link2,
-  List,
-  ListOrdered,
-  Loader2,
-  Redo2,
-  Underline,
-  Undo2,
-  Video,
-} from "lucide-react";
+import { Bold, Heading2, Image as ImageIcon, Italic, Link2, List, ListOrdered, Loader2, Redo2, Underline, Undo2, Video, Check, X } from "lucide-react";
 import { uploadImage } from "@/features/attachments/upload";
 import { usePaidToast } from "@/components/ui/paid-lock";
 import { attachmentUrl, type BoardDoc } from "./model";
@@ -365,14 +352,14 @@ export function BoardEditor({
             onChange={(e) => setLink(e.target.value)}
           />
           <button type="submit" className="btn-primary">
-            {link.trim() ? "적용" : "링크 제거"}
+            <Check size={14} /> {link.trim() ? "적용" : "링크 제거"}
           </button>
           <button
             type="button"
             className="btn-secondary"
             onClick={() => setLink(null)}
           >
-            취소
+            <X size={14} /> 취소
           </button>
         </form>
       )}

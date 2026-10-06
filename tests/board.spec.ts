@@ -84,6 +84,9 @@ test("board: manager writes and publishes a notice; popup shows on home and hide
     const popup = page.locator("dialog.notice-popup");
     await expect(popup).toBeVisible();
     await expect(popup.getByText("보호구 착용")).toBeVisible();
+    // 닫기는 오른쪽 위 × 하나, 아래 줄은 "안 보기" 둘뿐 (헌법 4장).
+    await expect(popup.getByRole("button", { name: "닫기" })).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath("notice-popup.png") });
     await popup.getByRole("button", { name: "오늘 하루 안 보기" }).click();
     // 같은 실행의 다른 시험이 올린 안전소식(모든 회사에 뜬다)이 뒤에 올 수 있다.
     // 이 공지는 다시 안 보이면 된다.

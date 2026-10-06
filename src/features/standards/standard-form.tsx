@@ -4,7 +4,7 @@ import { PeoplePickerDialog } from "@/components/ui/people-picker";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Save, Trash2, X, ListChecks } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, X, ListChecks, PenLine } from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
@@ -333,17 +333,18 @@ export function StandardForm({
                 setBackup(null);
               }}
             >
-              이어서 작성
+              <PenLine size={14} /> 이어서 작성
             </button>
             <button
               type="button"
               className="btn-secondary"
+              data-tone="danger"
               onClick={() => {
                 clearBackup();
                 setBackup(null);
               }}
             >
-              버리기
+              <Trash2 size={14} /> 버리기
             </button>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, X, Check } from "lucide-react";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -343,7 +343,7 @@ export function StandardEditForm({
 
       <div className="std-form-actions sticky-actions">
         <Link href={`/standards/${standardId}`} className="btn-secondary btn--sm">
-          취소
+          <X size={14} /> 취소
         </Link>
         <button type="submit" className="btn-secondary" disabled={pending}>
           <Save size={14} />
@@ -355,7 +355,7 @@ export function StandardEditForm({
           disabled={pending}
           onClick={saveAndApprove}
         >
-          {pending ? "저장 중..." : "저장하고 확정"}
+          <Check size={14} /> {pending ? "저장 중..." : "저장하고 확정"}
         </button>
       </div>
     </form>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PaidLockButton } from "@/components/ui/paid-lock";
 import { CautionBand, PpeList } from "@/features/standards/ppe-list";
-import { ArrowLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, ArrowRight, CheckCircle2, ClipboardCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withTransaction } from "@/server/db";
@@ -279,17 +279,17 @@ export default async function InspectionPage({
           <div className="wo-actions insp-session-actions">
             {!mineTBM && (
               <Link
-                className="btn-primary"
+                className="btn-accent"
                 href={root + "?type=TBM" + sessionQ}
               >
-                TBM 확인
+                <CheckCircle2 size={16} /> TBM 확인
               </Link>
             )}
             <Link
               className="btn-secondary"
               href={root + "?type=DURING_WORK" + sessionQ}
             >
-              작업 중 점검
+              <ClipboardCheck size={16} /> 작업 중 점검
             </Link>
           </div>
         )}

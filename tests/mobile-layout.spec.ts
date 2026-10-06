@@ -86,6 +86,7 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
               "main select",
               "main textarea",
               "main a.btn-primary",
+              "main a.btn-accent",
               "main a.btn-secondary",
               "main a.row",
               "main a.action-card",

@@ -4941,7 +4941,8 @@ html[data-banner-hidden] .preview-banner {
     flex-wrap: nowrap;
   }
   /* 본 동작은 폭을 다 쓰고, 취소는 글자만큼만 차지한다. */
-  .sticky-actions .btn-primary {
+  .sticky-actions .btn-primary,
+  .sticky-actions .btn-accent {
     flex: 1;
     justify-content: center;
   }
@@ -5933,6 +5934,23 @@ fieldset.form-field legend {
 .btn-secondary:hover {
   border-color: var(--brand);
   color: var(--brand-strong);
+}
+/* 지금·여기의 단추 — 작업자의 오늘 TBM 확인. 오늘 배지와 같은 포인트색(헌법 2장),
+   화면에 하나만. 다른 주 행동은 초록이다. */
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 800;
+  font-size: 14px;
+  min-height: 44px;
+}
+.btn-accent:hover {
+  background: color-mix(in srgb, var(--accent) 86%, var(--accent-ink));
 }
 .btn-primary:disabled,
 .btn-secondary:disabled,

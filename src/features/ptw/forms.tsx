@@ -1,5 +1,6 @@
 "use client";
 import { useActionState, useState } from "react";
+import { CheckCheck, Send, Check, MapPin } from "lucide-react";
 import { permitAction, bulkApproveAction } from "./actions";
 import Link from "next/link";
 import {
@@ -46,7 +47,7 @@ export function PermitList({
         </section>
       ))}
       <button disabled={pending} className="btn-primary">
-        선택 허가 일괄 승인
+        <CheckCheck size={14} /> 선택 허가 일괄 승인
       </button>
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
@@ -239,7 +240,7 @@ export function PermitRequestForm({
       {state?.message && <p role="status">{state.message}</p>}
       <div className="form-actions sticky-actions">
         <button disabled={pending} className="btn-primary">
-          {pending
+          <Send size={14} /> {pending
             ? "처리 중…"
             : data.approverId === userId
               ? "신청&승인"
@@ -300,7 +301,7 @@ export function PermitCommand({
         </FloatSelect>
       )}
       <button disabled={pending} className="btn-secondary">
-        {pending ? "처리 중…" : labels[command]}
+        <Check size={14} /> {pending ? "처리 중…" : labels[command]}
       </button>
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
@@ -322,7 +323,7 @@ export function LocationForm() {
         hint="예: 용접장"
       />
       <button className="btn-primary" disabled={pending}>
-        장소 등록
+        <MapPin size={14} /> 장소 등록
       </button>
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}

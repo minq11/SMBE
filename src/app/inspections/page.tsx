@@ -132,7 +132,7 @@ export default async function InspectionsPage({
                 />
               </label>
               <button className="btn-secondary" type="submit">
-                조회
+                <Search size={14} /> 조회
               </button>
               <Link className="go-link" href="/inspections">
                 초기화 <ArrowRight size={14} />

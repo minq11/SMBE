@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, ChevronDown, Save } from "lucide-react";
+import { Check, ChevronDown, Save, X } from "lucide-react";
 import type {
   AssessmentDetail,
   AssessmentItemDetail,
@@ -219,7 +219,7 @@ function ActionBlock({
               className="btn-secondary"
               onClick={() => setOpen(false)}
             >
-              취소
+              <X size={14} /> 취소
             </button>
             <button
               type="button"

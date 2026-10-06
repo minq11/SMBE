@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Save } from "lucide-react";
 import { FloatTextarea } from "@/components/ui/float-field";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { updateIncidentManualAction } from "./actions";
@@ -37,7 +38,7 @@ export function IncidentManualForm({
         required
       />
       <button className="btn-primary" disabled={pending}>
-        {pending ? "저장 중…" : "대응 절차 저장"}
+        <Save size={14} /> {pending ? "저장 중…" : "대응 절차 저장"}
       </button>
       <FormErrorDialog message={state?.error} nonce={state} />
       {state?.message && <p role="status">{state.message}</p>}

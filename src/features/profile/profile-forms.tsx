@@ -1,5 +1,6 @@
 "use client";
 import { useActionState } from "react";
+import { Save, UserMinus } from "lucide-react";
 import { FloatField } from "@/components/ui/float-field";
 import { saveProfileAction, leaveCompanyAction } from "./actions";
 export function ProfileForm({
@@ -64,7 +65,7 @@ export function ProfileForm({
       )}
       {state?.message && <p role="status">{state.message}</p>}
       <button className="btn-primary" disabled={pending}>
-        {pending ? "저장 중…" : "내 정보 저장"}
+        <Save size={14} /> {pending ? "저장 중…" : "내 정보 저장"}
       </button>
     </form>
   );
@@ -98,7 +99,12 @@ export function LeaveCompanyForm({
           {state.error}
         </p>
       )}
-      <button className="btn-secondary" disabled={pending || blocked}>
+      <button
+        className="btn-secondary"
+        data-tone="danger"
+        disabled={pending || blocked}
+      >
+        <UserMinus size={14} />{" "}
         {pending
           ? "처리 중…"
           : pendingApproval

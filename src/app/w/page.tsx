@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardCheck } from "lucide-react";
 import { PaidLockButton } from "@/components/ui/paid-lock";
 import { AddToHomeHint } from "@/components/pwa/add-to-home-hint";
 import { NoticePopup } from "@/features/board/notice-popup";
@@ -260,17 +260,17 @@ export default async function WorkerLinkPage({
                       <div className="wo-actions">
                         {!mine && (
                           <Link
-                            className="btn-primary"
+                            className="btn-accent"
                             href={`/w?session=${s.id}&type=TBM`}
                           >
-                            TBM 확인
+                            <CheckCircle2 size={16} /> TBM 확인
                           </Link>
                         )}
                         <Link
                           className="btn-secondary"
                           href={`/w?session=${s.id}&type=DURING_WORK`}
                         >
-                          작업 중 점검
+                          <ClipboardCheck size={16} /> 작업 중 점검
                         </Link>
                       </div>
                     )}

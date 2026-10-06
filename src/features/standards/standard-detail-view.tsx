@@ -5,15 +5,7 @@ import { CautionBand, PpeList } from "./ppe-list";
 import { useTransition } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
-import {
-  Archive,
-  ArrowLeft,
-  ArrowRight,
-  CircleAlert,
-  Pencil,
-  Plus,
-  ShieldCheck,
-} from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight, CircleAlert, Pencil, Plus, ShieldCheck, PenLine, Check } from "lucide-react";
 import {
   ASSESSMENT_KIND_LABEL,
   type StandardDetail,
@@ -210,7 +202,7 @@ export function StandardDetailView({
                 href={`/standards/${detail.standard_id}/edit`}
                 className="btn-primary"
               >
-                이어서 수정
+                <PenLine size={14} /> 이어서 수정
               </Link>
               <button
                 type="button"
@@ -218,7 +210,7 @@ export function StandardDetailView({
                 onClick={onApprove}
                 disabled={pending}
               >
-                이대로 확정
+                <Check size={14} /> 이대로 확정
               </button>
               <button
                 type="button"

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ClipboardList, FileText } from "lucide-react";
+import { ArrowRight, ClipboardList, FileText, Plus } from "lucide-react";
 import { workSession } from "@/server/work-orders";
 import { standardsForNewAssessment } from "@/server/assessments";
 import { AppShell } from "@/components/shell/app-shell";
@@ -48,7 +48,7 @@ export default async function NewAssessmentPickPage() {
             <strong>표준서가 아직 없어요</strong>
             <p>표준서를 만들면 최초 위험성평가가 같이 등록됩니다.</p>
             <Link href="/standards/new" className="btn-primary">
-              표준서 만들기
+              <Plus size={14} /> 표준서 만들기
             </Link>
           </div>
         </div>

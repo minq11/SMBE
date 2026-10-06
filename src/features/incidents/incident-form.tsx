@@ -738,7 +738,7 @@ export function IncidentForm({
           <div className="wo-actions">
             {initial && (
               <Link href={`/incidents/${initial.id}`} className="btn-secondary">
-                취소
+                <X size={14} /> 취소
               </Link>
             )}
             <button type="submit" className="btn-primary" disabled={pending}>

@@ -12,17 +12,7 @@ import {
 import Link from "next/link";
 import { ReferencePanel } from "@/features/assessments/reference-panel";
 import type { AssessmentReferences } from "@/server/assessment-references";
-import {
-  CheckCircle2,
-  FileText,
-  History,
-  Plus,
-  Save,
-  Send,
-  ShieldCheck,
-  Search,
-  X,
-} from "lucide-react";
+import { CheckCircle2, FileText, History, Plus, Save, Send, ShieldCheck, Search, X, PenLine, Trash2 } from "lucide-react";
 import {
   FloatField,
   FloatSelect,
@@ -581,7 +571,8 @@ export function WorkOrderForm({
               {data[key].length > 1 && (
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-secondary btn--sm"
+                  data-tone="danger"
                   aria-label={title + " 항목 " + (i + 1) + " 삭제"}
                   onClick={() =>
                     set(
@@ -590,7 +581,7 @@ export function WorkOrderForm({
                     )
                   }
                 >
-                  삭제
+                  <Trash2 size={14} /> 삭제
                 </button>
               )}
             </div>
@@ -665,14 +656,15 @@ export function WorkOrderForm({
               className="btn-primary"
               onClick={restoreBackup}
             >
-              이어서 작성
+              <PenLine size={14} /> 이어서 작성
             </button>
             <button
               type="button"
               className="btn-secondary"
+                  data-tone="danger"
               onClick={discardBackup}
             >
-              버리기
+              <Trash2 size={14} /> 버리기
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ClipboardCheck, Users, ArrowRight } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, Users, ArrowRight, Search, CreditCard } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { inspectionMonitor } from "@/server/inspection-service";
@@ -51,7 +51,7 @@ export default async function MonitoringPage({
           </p>
           <p className="wo-actions">
             <Link className="btn-primary" href="/billing">
-              요금제 보기
+              <CreditCard size={14} /> 요금제 보기
             </Link>
             <Link className="go-link" href="/inspections">
               점검 기록 <ArrowRight size={14} />
@@ -84,7 +84,7 @@ export default async function MonitoringPage({
               ))}
             </FloatSelect>
             <button className="btn-secondary" type="submit">
-              조회
+              <Search size={14} /> 조회
             </button>
             <Link className="go-link" href="/monitoring">
               오늘로 <ArrowRight size={14} />

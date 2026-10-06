@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, ChevronDown, CircleCheckBig, LockOpen, Square, SquareCheckBig, ArrowRight } from "lucide-react";
+import { Check, ChevronDown, CircleCheckBig, LockOpen, Square, SquareCheckBig, ArrowRight, RotateCcw } from "lucide-react";
 import { FloatTextarea } from "@/components/ui/float-field";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -174,7 +174,7 @@ function DutyRow({
                 disabled={pending}
                 onClick={() => submit(false)}
               >
-                다시 열기
+                <RotateCcw size={14} /> 다시 열기
               </button>
             )}
             <button
@@ -183,7 +183,8 @@ function DutyRow({
               disabled={pending}
               onClick={() => submit(true)}
             >
-              {pending ? "저장 중…" : done ? "메모 저장" : "끝냈습니다"}
+              <Check size={14} />{" "}
+                {pending ? "저장 중…" : done ? "메모 저장" : "끝냈습니다"}
             </button>
           </div>
         </div>
@@ -321,7 +322,7 @@ function ActionRow({
                 disabled={pending}
                 onClick={() => submit(false)}
               >
-                다시 열기
+                <RotateCcw size={14} /> 다시 열기
               </button>
             )}
             <button
@@ -330,7 +331,8 @@ function ActionRow({
               disabled={pending}
               onClick={() => submit(true)}
             >
-              {pending ? "저장 중…" : done ? "메모 저장" : "완료했습니다"}
+              <Check size={14} />{" "}
+                {pending ? "저장 중…" : done ? "메모 저장" : "완료했습니다"}
             </button>
           </div>
         </div>

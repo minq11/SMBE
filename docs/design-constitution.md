@@ -153,6 +153,14 @@
   목록 줄 안의 작은 행동은 `btn--sm`(40px). 옛 `primary-button`·`ghost-button`·
   `secondary-button` 은 없다. "점검 기록으로·회차 목록·보기·열기" 같은 이동을 단추로
   그리면 진짜 행동이 묻힌다.
+  - **단추마다 그림 하나, 뜻마다 그림은 하나로.** 저장 `Save`, 발급·신청 `Send`, 조회·검색
+    `Search`, 고치기·이어서 `PenLine`, 복사 `Copy`, 인쇄 `Printer`, 취소(창 닫기 성격) `X`,
+    지시서 취소 `Ban`, 버리기·삭제 `Trash2`, 폐기 `Archive`, 승인·확인·완료 `Check`,
+    일괄 승인 `CheckCheck`, 추가 `Plus`, 다시 열기 `RotateCcw`, 서명 `PenLine`, 이동 `ArrowRight`.
+  - **지금·여기의 단추 하나는 노랑**(`btn-accent`, 오늘 배지와 같은 포인트색): 작업자의
+    오늘 TBM 확인. 화면에 하나뿐이고 다른 주 행동은 초록이다.
+  - **창의 닫기는 오른쪽 위 × 하나**(`reason-dialog-close`, `aria-label="닫기"`). 아래 단추
+    줄에 글자 "닫기" 를 두지 않는다. 확인 창의 "확인"·"취소" 는 답이라 글자 단추로 둔다.
 
 ## 5. 움직임과 피드백
 

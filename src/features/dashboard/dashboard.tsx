@@ -226,7 +226,7 @@ function ReasonDialog({
           )}
           <p className="reason-dialog-detail">{reason.detail}</p>
           <button type="button" className="btn-primary" onClick={onClose}>
-            확인
+            <Check size={14} /> 확인
           </button>
         </div>
       )}
@@ -417,7 +417,7 @@ function DashboardBody({
                         </span>
                       ) : (
                         <Link
-                          className="btn-primary"
+                          className="btn-accent"
                           href={root + "?type=TBM&via=web"}
                         >
                           <CheckCircle2 size={16} /> TBM 확인

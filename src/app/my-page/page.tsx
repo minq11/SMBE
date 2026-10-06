@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogOut } from "lucide-react";
 import { tierOf } from "@/components/shell/tier";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/server/session";
@@ -202,7 +203,7 @@ export default async function MyPage({
         </section>
       )}
       <form action={logoutAction}>
-        <button className="btn-secondary">로그아웃</button>
+        <button className="btn-secondary"><LogOut size={14} /> 로그아웃</button>
       </form>
     </AppShell>
   );

@@ -225,6 +225,13 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     );
     await pool.query("SELECT create_work_sessions($1)", [orderId]);
     await workerPage.goto(path + "?via=link");
+    // 오늘 할 일 하나(TBM 확인)만 노란 포인트색 단추다 (헌법 4장).
+    await expect(
+      workerPage.locator("a.btn-accent", { hasText: "TBM 확인하기" }),
+    ).toBeVisible();
+    await workerPage.screenshot({
+      path: testInfo.outputPath("worker-today-card.png"),
+    });
     await workerPage
       .getByRole("link", { name: "TBM 확인하기", exact: true })
       .click();
