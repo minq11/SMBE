@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { encode } from "next-auth/jwt";
 import { Pool } from "pg";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { seoulToday } from "../src/features/work-orders/model";
 
 test("manager authors, self-approves and issues; worker reads; copy resets; cancellation blocks QR", async ({
@@ -244,6 +244,28 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(page.getByLabel("작업 링크", { exact: true })).toHaveValue(
       /\?via=link$/,
     );
+    // 메일의 작업자 링크(/w/<토큰>)는 토큰을 쿠키로 바꾸고 /w 로 되돌린다. 되돌리는
+    // 주소를 서버의 request.url 로 만들면 프록시 뒤에서 0.0.0.0 으로 튕긴다 — 상대 경로
+    // (또는 APP_URL)여야 한다.
+    {
+      const issuedId = page.url().match(/\/work-orders\/([0-9a-f-]{36})/)![1];
+      const token = randomBytes(16).toString("base64url");
+      const hash = createHash("sha256").update(token).digest("hex");
+      await pool.query(
+        `INSERT INTO work_order_access_grants
+           (work_order_id, issue_version, user_id, access_token_hash, token_expires_at)
+         SELECT id, issue_version, $2, $3, now() + interval '1 day' FROM work_orders WHERE id=$1
+         ON CONFLICT (work_order_id, issue_version, user_id) DO UPDATE
+           SET access_token_hash=EXCLUDED.access_token_hash,
+               token_expires_at=EXCLUDED.token_expires_at, token_revoked_at=NULL`,
+        [issuedId, worker, hash],
+      );
+      const hop = await page.request.get("/w/" + token, { maxRedirects: 0 });
+      expect(hop.status()).toBe(303);
+      const location = hop.headers()["location"];
+      expect(location).not.toContain("0.0.0.0");
+      expect(location.replace(/^https?:\/\/[^/]+/, "")).toBe("/w");
+    }
     // 무료 회사: 출력 버튼은 보이지만 눌러도 토스트만 잠깐 뜨고 출력물이 만들어지지
     // 않는다 (헌법 5장). 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전
     // 클릭은 삼켜진다.

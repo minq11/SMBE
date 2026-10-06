@@ -17,12 +17,13 @@
 - 지시서 PTW 비상연락처가 다 비어 있으면 휴대폰이 있는 관리감독자들을 미리 넣는다
   (`defaultEmergencyContacts`, `membersForOrder` 가 `u.phone` 을 같이 준다). 적어 둔 게
   있으면 건드리지 않는다.
-- 작업자에게 가는 작업지시 메일 링크가 0.0.0.0 으로 나갔다. `appOrigin()` 은 APP_URL 아니면
-  localhost 였고, 운영 환경의 APP_URL 이 비거나 0.0.0.0 이었던 것. 새
-  `server/request-origin.ts`: APP_URL 이 밖에서 열 수 있는 주소면 그것, 아니면 요청의
-  x-forwarded-host/proto(또는 host). 지시서 메일·허가 알림·지시서 화면의 작업 링크·구성원
-  초대가 이걸 쓴다. 요청 밖(푸시·회의 알림)은 여전히 APP_URL 이 필요하다 — 운영에
-  `APP_URL=https://도메인` 을 넣어야 그 둘도 바르다.
+- 작업자에게 가는 작업지시 메일 링크가 0.0.0.0 으로 "나간다" 고 봤는데, 사장님: "APP_URL 은
+  도메인으로 잘 들어가 있었고 회의 알림 메일은 정상". 다시 보니 메일 링크는 맞고, 링크를
+  누른 뒤 `/w/[token]` 라우트가 `/w` 로 되돌릴 때 `new URL("/w", request.url)` 로 절대
+  주소를 만들어, 프록시 뒤 Node 서버의 `request.url`(http://0.0.0.0:3000)로 튕긴 것이었다.
+  되돌리는 주소는 APP_URL 이 있으면 그것, 없으면 상대 경로(Location: /w)로. 쿠키 secure 도
+  x-forwarded-proto 로 판단. 먼저 넣은 `request-origin.ts`(APP_URL 없을 때 요청 호스트로
+  링크를 만드는 것)는 그대로 둔다 — 틀린 건 아니고, APP_URL 이 빠진 환경의 보험이다.
 
 ## 2026-10-06 주 단추는 오른쪽 끝으로 — 열다섯 자리
 
