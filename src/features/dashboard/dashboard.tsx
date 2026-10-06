@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Users,
   X,
+  Siren,
 } from "lucide-react";
 import { AppShell } from "@/components/shell/app-shell";
 import { SiteFooter } from "@/features/auth/site-footer";
@@ -471,7 +472,10 @@ function DashboardBody({
         {/* 다칠 뻔한 일을 올리는 길. 오늘 작업 카드 아래 한 줄 — 사고는 예고 없이
             오고, 찾을 메뉴가 없으면 말하지 않는다. */}
         <Link href="/incidents/report" className="worker-report">
-          <span>
+          <span className="worker-report-icon" aria-hidden="true">
+            <Siren size={18} />
+          </span>
+          <span className="worker-report-text">
             <strong>아차사고·사고 신고</strong>
             <small>세 칸만 적으면 관리자에게 바로 갑니다.</small>
           </span>

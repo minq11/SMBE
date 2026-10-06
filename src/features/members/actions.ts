@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { requestOrigin } from "@/server/request-origin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentSession, type MembershipRole } from "@/server/session";
@@ -26,14 +26,6 @@ const ROLE_LABEL: Record<MembershipRole, string> = {
   WORKER: "작업자",
 };
 
-async function resolveOrigin(): Promise<string> {
-  const configured = process.env.APP_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
-}
 
 const ROLE_VALUES = ["MANAGER_SUPERVISOR", "MANAGER_SAFETY", "WORKER"] as const;
 
@@ -165,7 +157,7 @@ export async function createInviteAction(
   let inviteEmail: EmailStatus = "none";
   let inviteEmailError: string | undefined;
   if (email) {
-    const origin = await resolveOrigin();
+    const origin = await requestOrigin();
     const acceptUrl = `${origin}/invite/${insertedToken}`;
     const companyRow = await queryOne<{ name: string }>(
       "SELECT name FROM companies WHERE id = $1",

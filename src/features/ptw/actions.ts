@@ -6,7 +6,8 @@ import { query, withTransaction } from "@/server/db";
 import { requestPermit, decidePermit, addLocation } from "@/server/ptw-service";
 import { WorkOrderError } from "@/features/work-orders/model";
 import { sendEmail } from "@/server/email";
-import { deliverOrder, workOrderOrigin } from "@/server/work-order-delivery";
+import { deliverOrder } from "@/server/work-order-delivery";
+import { requestOrigin } from "@/server/request-origin";
 export type PermitState = { error?: string; message?: string } | undefined;
 export async function bulkApproveAction(
   _previous: PermitState,
@@ -117,7 +118,8 @@ export async function permitAction(
         ["request", "reassign", "withdraw"].includes(command) &&
         p.status !== "APPROVED"
       ) {
-        const url = workOrderOrigin() + "/work-orders/" + orderId + "/permit";
+        const url =
+          (await requestOrigin()) + "/work-orders/" + orderId + "/permit";
         const result = p.email
           ? await sendEmail({
               to: p.email,

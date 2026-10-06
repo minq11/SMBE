@@ -6,7 +6,7 @@ import { BookOpen, Copy, CircleHelp } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { workSession, orderDetail, orderMembers } from "@/server/work-orders";
-import { workOrderOrigin } from "@/server/work-order-delivery";
+import { requestOrigin } from "@/server/request-origin";
 import {
   WorkOrderError,
   STATUS_LABEL,
@@ -97,7 +97,7 @@ export default async function OrderDetailPage({
   const permit = await withTransaction((c) => readPermit(c, actor, id));
   const issued = Boolean(order.issued_at);
   const active = ["ISSUED", "IN_PROGRESS"].includes(order.status);
-  const url = workOrderOrigin() + "/work-orders/" + id;
+  const url = (await requestOrigin()) + "/work-orders/" + id;
   // 나눠 주는 주소에는 들어온 길을 붙인다. QR 은 qr, 복사·출력물의 글자 주소는 link.
   // 그 길로 들어오면 지시서만 보이고 복사·취소·QR 은 없다 (manages).
   const shareUrl = url + "?via=link";

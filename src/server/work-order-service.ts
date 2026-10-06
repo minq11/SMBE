@@ -90,7 +90,7 @@ export async function membersForOrder(
 ): Promise<MemberOption[]> {
   return (
     await client.query<MemberOption>(
-      `SELECT m.user_id, u.display_name, m.role FROM company_members m JOIN users u ON u.id=m.user_id
+      `SELECT m.user_id, u.display_name, m.role, u.phone FROM company_members m JOIN users u ON u.id=m.user_id
      WHERE m.company_id=$1 AND m.status='ACTIVE' AND m.left_at IS NULL ORDER BY u.display_name`,
       [companyId],
     )

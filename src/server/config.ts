@@ -5,11 +5,27 @@ import { z } from "zod";
  * 발송(work-order-delivery)과 링크 토큰(worker-access) 양쪽이 쓰므로
  * 둘 사이에 순환 참조가 생기지 않도록 여기에 둔다.
  */
-export function appOrigin() {
-  const url = new URL(process.env.APP_URL || "http://localhost:3000");
+const UNROUTABLE = /^(0\.0\.0\.0|localhost|127\.0\.0\.1|\[::\]|::1)$/;
+
+/**
+ * APP_URL 이 밖에서 열 수 있는 주소면 그 origin, 아니면 null. 운영에서 0.0.0.0·
+ * localhost 가 적혀 있으면 없는 것으로 친다 — 그 주소로 메일을 보내면 아무도 못 연다.
+ * 개발에서는 localhost 를 그대로 쓴다.
+ */
+export function configuredOrigin(): string | null {
+  const raw = process.env.APP_URL?.trim();
+  if (!raw) return null;
+  const url = new URL(raw);
   if (!["http:", "https:"].includes(url.protocol))
     throw new Error("APP_URL을 확인하세요.");
+  if (UNROUTABLE.test(url.hostname) && process.env.NODE_ENV === "production")
+    return null;
   return url.origin;
+}
+
+/** 요청 밖(크론·푸시)에서 쓰는 기준 주소. 요청 안에서는 request-origin.ts 를 쓴다. */
+export function appOrigin() {
+  return configuredOrigin() ?? "http://localhost:3000";
 }
 
 // No eager validation: the UI and image build must work without cloud secrets.

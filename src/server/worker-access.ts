@@ -49,8 +49,8 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export function workerLinkUrl(token: string): string {
-  return `${appOrigin()}/w/${token}`;
+export function workerLinkUrl(token: string, origin = appOrigin()): string {
+  return `${origin}/w/${token}`;
 }
 
 /** 링크 진입 시 토큰을 담는 쿠키. URL 에서 토큰을 지우기 위한 교환 수단이다. */

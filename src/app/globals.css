@@ -258,6 +258,9 @@ html[data-banner-hidden] .preview-banner {
   display: flex;
   align-items: center;
   padding: 0 8px;
+  /* 서랍 머리는 row-reverse(닫기가 DOM 먼저). 로고는 왼쪽 끝에 붙인다 — 닫기가
+     숨는 넓은 화면에서 혼자 오른쪽으로 밀리지 않게 (사장님 2026-10-06). */
+  margin-right: auto;
 }
 .brand-logo {
   font-size: 20px;
@@ -7774,23 +7777,41 @@ fieldset.form-field legend {
 }
 
 /* 작업자 홈의 사고 신고 한 줄. 놓친 회차 줄과 같은 모양, 색은 바탕(경고가 아니다). */
+/* 사고는 예고 없이 온다 — 사이렌을 노란 포인트색 칩에 담아 눈에 띄게 (사장님 2026-10-06).
+   노란 "단추" 는 오늘 TBM 하나뿐이고, 이건 줄 안의 그림 칩이다. */
 .worker-report {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   min-height: 44px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
   background: var(--surface);
   border-radius: var(--radius);
   color: var(--ink);
   text-decoration: none;
 }
-.worker-report span {
+.worker-report-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  flex-shrink: 0;
+}
+.worker-report-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.worker-report .row-chev {
+  color: var(--ink-4);
+  flex-shrink: 0;
 }
 .worker-report small {
   color: var(--ink-3);

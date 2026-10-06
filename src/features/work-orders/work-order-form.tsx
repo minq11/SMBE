@@ -42,6 +42,7 @@ import {
   withSessionRange,
   type WorkDraft,
   type MemberOption,
+  defaultEmergencyContacts,
 } from "./model";
 
 /** 이전 지시서 불러오기 창의 한 줄 (server/work-orders.ts listOrdersForCopy) */
@@ -937,19 +938,33 @@ export function WorkOrderForm({
                       options={PTW_OPTIONS}
                       onChange={(v) => {
                         const on = v === "yes";
-                        setData((d) => ({
-                          ...d,
-                          ptwRequired: on,
-                          permit:
-                            on && userId
-                              ? {
-                                  ...(d.permit ?? blankPermit()),
-                                  approverId: d.permit?.approverId || userId,
-                                  responsibleId:
-                                    d.permit?.responsibleId || userId,
-                                }
-                              : (d.permit ?? blankPermit()),
-                        }));
+                        setData((d) => {
+                          const permit = d.permit ?? blankPermit();
+                          // 비상연락처가 다 비어 있으면 관리감독자 연락처를 미리 넣는다
+                          // (사장님 2026-10-06). 적어 둔 게 있으면 건드리지 않는다.
+                          const blank = permit.contacts.every(
+                            (c) => !c.name.trim() && !c.phone.trim(),
+                          );
+                          const defaults = defaultEmergencyContacts(members);
+                          const contacts =
+                            on && blank && defaults.length
+                              ? defaults
+                              : permit.contacts;
+                          return {
+                            ...d,
+                            ptwRequired: on,
+                            permit:
+                              on && userId
+                                ? {
+                                    ...permit,
+                                    contacts,
+                                    approverId: permit.approverId || userId,
+                                    responsibleId:
+                                      permit.responsibleId || userId,
+                                  }
+                                : { ...permit, contacts },
+                          };
+                        });
                       }}
                     />
                     <HelpDialog

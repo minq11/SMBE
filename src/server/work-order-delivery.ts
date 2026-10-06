@@ -9,9 +9,11 @@ import {
 import { sendEmail } from "./email";
 import { issueAccessToken, workerLinkUrl, linkExpiry } from "./worker-access";
 import { WorkOrderError } from "../features/work-orders/model";
+import { requestOrigin } from "./request-origin";
 
-export { appOrigin as workOrderOrigin } from "./config";
 export async function deliverOrder(actor: Actor, orderId: string) {
+  // 링크는 지금 요청의 주소로 만든다 — APP_URL 이 비었거나 0.0.0.0 이어도 도메인으로.
+  const origin = await requestOrigin();
   const claimed = await withTransaction(async (client) => {
     await memberAccess(client, actor, true);
     const order = await readOrder(client, actor, orderId);
@@ -60,7 +62,7 @@ export async function deliverOrder(actor: Actor, orderId: string) {
   await Promise.all(
     claimed.map(async (item) => {
       // 로그인 없이 열리는 개인 링크. 배정된 본인에게만 보낸다.
-      const url = workerLinkUrl(item.token);
+      const url = workerLinkUrl(item.token, origin);
       const result = item.link_target
         ? await sendEmail({
             to: item.link_target,

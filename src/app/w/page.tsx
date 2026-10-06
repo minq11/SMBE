@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, ClipboardCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardCheck,
+  Siren,
+} from "lucide-react";
 import { PaidLockButton } from "@/components/ui/paid-lock";
 import { AddToHomeHint } from "@/components/pwa/add-to-home-hint";
 import { NoticePopup } from "@/features/board/notice-popup";
@@ -306,10 +312,14 @@ export default async function WorkerLinkPage({
           신고할 수 있어야 은폐가 막힌다. */}
       {!showForm && (
         <Link href="/w/report" className="worker-report">
-          <span>
+          <span className="worker-report-icon" aria-hidden="true">
+            <Siren size={18} />
+          </span>
+          <span className="worker-report-text">
             <strong>아차사고·사고 신고</strong>
             <small>세 칸만 적으면 관리자에게 바로 갑니다.</small>
           </span>
+          <ChevronRight size={16} className="row-chev" />
         </Link>
       )}
       <p className="wo-muted link-work-foot">

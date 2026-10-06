@@ -177,7 +177,16 @@ export type MemberOption = {
   user_id: string;
   display_name: string;
   role: string;
+  /** 비상연락처 기본값에 쓴다 (관리감독자). 없으면 null. */
+  phone?: string | null;
 };
+
+/** PTW 비상연락처가 비어 있을 때 넣는 기본값 — 휴대폰이 있는 관리감독자들. */
+export function defaultEmergencyContacts(members: MemberOption[]) {
+  return members
+    .filter((m) => m.role === "MANAGER_SUPERVISOR" && m.phone?.trim())
+    .map((m) => ({ name: m.display_name, phone: m.phone!.trim() }));
+}
 export class WorkOrderError extends Error {}
 export function seoulToday(now = new Date()) {
   return new Date(now.getTime() + 9 * 3600_000).toISOString().slice(0, 10);
