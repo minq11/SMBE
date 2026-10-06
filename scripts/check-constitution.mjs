@@ -218,6 +218,38 @@ async function checkRawFields() {
   }
 }
 
+// 4장 — 단추는 한 가족(btn-*), 단추마다 그림 하나, 창의 닫기는 × 하나.
+async function checkButtons() {
+  const files = (await walk(join(root, "src"))).filter(
+    (f) => f.endsWith(".tsx") || f.endsWith(".css"),
+  );
+  const oldFamily = /\b(primary-button|secondary-button|ghost-button)\b/;
+  // 여는 태그부터 닫는 태그까지. 속성이 여러 줄이어도 잡는다.
+  const button =
+    /<(button|Link|a)\b((?:[^>]|\n)*?)>((?:.|\n)*?)<\/\1>/g;
+  for (const file of files) {
+    const text = await readFile(file, "utf8");
+    text.split("\n").forEach((line, i) => {
+      if (oldFamily.test(line))
+        fail("4장 단추 가족", file, `${i + 1}행: 옛 클래스 → btn-primary/btn-secondary`);
+    });
+    if (!file.endsWith(".tsx")) continue;
+    for (const m of text.matchAll(button)) {
+      const [, , attrs, body] = m;
+      const line = text.slice(0, m.index).split("\n").length;
+      const isBtn = /className=[{"`][^"`}]*\bbtn-(primary|secondary|accent|danger)\b/.test(
+        attrs,
+      );
+      const hasIcon = /<[A-Z][A-Za-z0-9]*[\s/]/.test(body);
+      const plain = body.replace(/\{[^}]*\}|<[^>]+>/g, "").trim();
+      if (isBtn && !hasIcon)
+        fail("4장 단추 그림", file, `${line}행: "${plain.slice(0, 20)}" 에 그림이 없다`);
+      if (plain === "닫기" && !/aria-label/.test(attrs))
+        fail("4장 창 닫기", file, `${line}행: 글자 "닫기" 대신 오른쪽 위 × (reason-dialog-close)`);
+    }
+  }
+}
+
 await Promise.all([
   checkRawFields(),
   checkLoading(),
@@ -227,6 +259,7 @@ await Promise.all([
   checkPublicCopy(),
   checkThemeColor(),
   checkFonts(),
+  checkButtons(),
 ]);
 
 if (problems.length) {
@@ -236,5 +269,5 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(
-  "디자인 헌법 검사 통과 (입력칸 · loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴)",
+  "디자인 헌법 검사 통과 (입력칸 · loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴 · 단추)",
 );

@@ -188,7 +188,7 @@ export function PushOptIn({ compact = false }: { compact?: boolean }) {
         </button>
       ) : state.kind === "busy" ? (
         <button type="button" className="btn-primary" disabled>
-          잠시만요…
+          <Bell size={14} /> 잠시만요…
         </button>
       ) : null}
       {!compact && (

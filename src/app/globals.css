@@ -4955,7 +4955,7 @@ html[data-banner-hidden] .preview-banner {
    13. Buttons (shared)
    ========================================================================= */
 /* 단추는 한 가족이다: btn-primary / btn-secondary / btn-danger (아래 .btn-* 정의).
-   옛 primary-button·ghost-button·secondary-button 은 2026-10-06 에 합쳤다. */
+   옛 두 번째 가족은 2026-10-06 에 합쳤다 (헌법 4장, check-constitution 이 막는다). */
 .logout-button {
   padding: 7px 14px;
   border-radius: var(--radius-sm);
