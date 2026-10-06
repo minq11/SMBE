@@ -5345,11 +5345,19 @@ html[data-banner-hidden] .preview-banner {
     gap: 12px;
     margin-bottom: 16px;
   }
+  /* 주 행동은 좁은 화면에서도 오른쪽에 (사장님 2026-10-06). 글 링크가 같이 있으면
+     그 왼쪽에 붙는다. */
   .page-header-side {
-    justify-content: flex-start;
+    justify-content: flex-end;
+  }
+  .page-header-actions {
+    justify-content: flex-end;
+    width: 100%;
   }
   .page-header .wo-actions {
     margin: 0;
+    width: 100%;
+    justify-content: flex-end;
   }
   /* 본문(.main-content)이 flex gap(28px) 으로 블록 사이를 띄운다. 바로 밑에 놓인
      블록의 제 여백까지 더해지면 두 배가 되므로, 직계 자식의 위아래 여백은 0. */

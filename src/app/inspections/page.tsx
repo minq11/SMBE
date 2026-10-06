@@ -82,17 +82,21 @@ export default async function InspectionsPage({
 
   return (
     <OrderShell session={session} title="안전점검" active="inspection">
-      <PageHeader title="안전점검" />
-      <p className="wo-actions">
-        <Link className="btn-primary" href="/work-orders">
-          <Search size={14} /> 작업 선택 · TBM 및 작업 중 점검
-        </Link>
-        {isManager && (
-          <Link className="go-link" href="/meetings">
-            주간 안전점검 회의 <ArrowRight size={14} />
-          </Link>
-        )}
-      </p>
+      <PageHeader
+        title="안전점검"
+        actions={
+          <div className="wo-actions">
+            {isManager && (
+              <Link className="go-link" href="/meetings">
+                주간 안전점검 회의 <ArrowRight size={14} />
+              </Link>
+            )}
+            <Link className="btn-primary" href="/work-orders">
+              <Search size={14} /> 작업 선택 · TBM 및 작업 중 점검
+            </Link>
+          </div>
+        }
+      />
 
       {isManager && (
         <InspectionLog rows={rows} today={today} limited={log.limited}>

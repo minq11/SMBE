@@ -48,7 +48,6 @@ export default async function IncidentsPage() {
     >
       <PageHeader
         title="안전사고"
-        description="아차사고부터 재해까지. 등록하면 법이 요구하는 할 일이 기한과 함께 생깁니다."
         actions={
           <div className="wo-actions">
             <Link href="/company/incident-manual" className="go-link">

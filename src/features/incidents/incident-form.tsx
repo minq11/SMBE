@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useId, useMemo, useState } from "react";
+import { HelpDialog } from "@/components/ui/help-dialog";
 import Link from "next/link";
 import { Link2, Plus, Save, Search, Trash2, X } from "lucide-react";
 import {
@@ -151,6 +152,9 @@ function fromDetail(d?: IncidentDetail): Draft {
       : [blankAction()],
   };
 }
+
+// 할 일 미리보기의 번호. 일곱을 넘을 일은 없다(할 일 종류가 일곱).
+const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦"];
 
 /**
  * 사고 등록·수정. 한 장, 구간 칩(헌법 1-6): 무슨 일 → 다친 사람 → 바로 한 조치 →
@@ -466,7 +470,17 @@ export function IncidentForm({
           </section>
 
           <section className="wo-part" id="inc-victims">
-            <h2>다친 사람</h2>
+            <div className="wo-section-head">
+              <h2>다친 사람</h2>
+              <HelpDialog title="다친 사람" variant="icon">
+                <dl className="help-rows">
+                  <dt>누구</dt>
+                  <dd>구성원만. 외부인은 사고 내용에 적습니다.</dd>
+                  <dt>기준</dt>
+                  <dd>예상 휴업일 3일 이상이면 산업재해조사표 대상, 사망이면 중대재해.</dd>
+                </dl>
+              </HelpDialog>
+            </div>
             {data.kind !== "INJURY" ? (
               <p className="wo-muted">
                 {data.kind === "NEAR_MISS"
@@ -475,10 +489,6 @@ export function IncidentForm({
               </p>
             ) : (
               <>
-                <p className="wo-muted">
-                  구성원만 적습니다. 예상 휴업일이 3일 이상이면 산업재해조사표
-                  대상입니다.
-                </p>
                 <ul className="inc-cards" role="list">
                   {data.victims.map((v, i) => (
                     <li key={v.key} className="inc-card">
@@ -586,9 +596,7 @@ export function IncidentForm({
                         />
                         <span>
                           <strong>사망</strong>
-                          <small>
-                            중대재해 — 노동부 즉시 보고 할 일이 생깁니다.
-                          </small>
+                          <small>중대재해 · 노동부 즉시 보고</small>
                         </span>
                       </label>
                     </li>
@@ -607,13 +615,16 @@ export function IncidentForm({
             )}
             {preview && (
               <p className="inc-preview" aria-live="polite">
-                이대로 저장하면 등급은{" "}
+                등급{" "}
                 <strong data-grade={preview.grade}>
                   {GRADE_LABEL[preview.grade]}
                 </strong>
-                . 할 일 {preview.duties.length}개가 생깁니다 —{" "}
-                {preview.duties.map((d) => DUTY_LABEL[d.kind].title).join(", ")}
-                .
+                {" · "}할 일{" "}
+                {preview.duties.map((d, i) => (
+                  <span className="inc-preview-duty" key={d.kind}>
+                    {CIRCLED[i] ?? i + 1} {DUTY_LABEL[d.kind].title}
+                  </span>
+                ))}
               </p>
             )}
           </section>

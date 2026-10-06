@@ -100,7 +100,7 @@ export const DUTY_LABEL: Record<
   RISK_ASSESSMENT: {
     title: "수시 위험성평가",
     basis: "위험성평가 고시 15조",
-    hint: "이 작업의 표준서 회차를 새로 열어 위험요인과 감소대책을 다시 본다.",
+    hint: "표준서에서 새 회차 평가를 등록하면 저절로 끝난다. 표준서가 없는 사고만 손으로.",
   },
   PREVENTION: {
     title: "재발방지대책 이행",

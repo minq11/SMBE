@@ -156,6 +156,7 @@ export default async function IncidentPage({
           duties={detail.duties}
           today={today}
           locked={locked}
+          paid={paid}
           riskAssessmentHref={
             detail.standard_id
               ? `/standards/${detail.standard_id}/assessments/new`

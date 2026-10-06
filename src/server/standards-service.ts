@@ -1097,6 +1097,19 @@ export async function addAssessmentRound(input: {
       payload,
     });
 
+    // 이 표준서로 발급된 작업에서 난 사고의 "수시 위험성평가" 할 일은 이 회차가
+    // 그 답이다 — 사고 뒤에 한 평가만, 끝내기 단추 없이 저절로 끝난다.
+    await client.query(
+      `UPDATE incident_duties d
+          SET done_at = now(), done_by = $3,
+              note = coalesce(nullif(d.note,''), $4 || ' 회차 위험성평가 등록 (자동)')
+         FROM incidents i JOIN work_orders wo ON wo.id = i.work_order_id
+        WHERE d.incident_id = i.id AND d.kind = 'RISK_ASSESSMENT' AND d.done_at IS NULL
+          AND i.company_id = $1 AND wo.standard_id = $2
+          AND (i.occurred_at AT TIME ZONE 'Asia/Seoul')::date <= $4::date`,
+      [companyId, standardId, actorId, payload.performed_on],
+    );
+
     await client.query(
       `INSERT INTO audit_logs
          (company_id, actor_id, action, target_type, target_id, path,

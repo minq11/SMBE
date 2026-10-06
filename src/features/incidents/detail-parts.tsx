@@ -3,8 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, ChevronDown, CircleCheckBig, LockOpen, Square, SquareCheckBig, ArrowRight, RotateCcw } from "lucide-react";
+import { Check, ChevronDown, CircleCheckBig, LockOpen, Square, SquareCheckBig, ArrowRight, RotateCcw, MessageSquare } from "lucide-react";
 import { FloatTextarea } from "@/components/ui/float-field";
+import { useToast } from "@/components/ui/toast";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { koDate } from "@/features/assessments/model";
@@ -36,12 +37,15 @@ export function DutyList({
   duties,
   today,
   locked,
+  paid,
   riskAssessmentHref,
 }: {
   incidentId: string;
   duties: Duty[];
   today: string;
   locked: boolean;
+  /** 유료 요금제 — 근로자 공유의 문자 공지. */
+  paid: boolean;
   /** 수시 위험성평가로 가는 길 (표준서가 있을 때). */
   riskAssessmentHref: string | null;
 }) {
@@ -54,6 +58,7 @@ export function DutyList({
           duty={d}
           today={today}
           locked={locked}
+          paid={paid}
           extraHref={d.kind === "RISK_ASSESSMENT" ? riskAssessmentHref : null}
         />
       ))}
@@ -66,12 +71,14 @@ function DutyRow({
   duty,
   today,
   locked,
+  paid,
   extraHref,
 }: {
   incidentId: string;
   duty: Duty;
   today: string;
   locked: boolean;
+  paid: boolean;
   extraHref: string | null;
 }) {
   const router = useRouter();
@@ -81,7 +88,24 @@ function DutyRow({
   const [pending, start] = useTransition();
   const done = Boolean(duty.done_at);
   const overdue = !done && Boolean(duty.due_on) && duty.due_on! < today;
-  const auto = duty.kind === "PREVENTION";
+  // 저절로 끝나는 할 일: 재발방지대책 이행(대책이 다 끝나면), 수시 위험성평가(표준서가
+  // 있으면 새 회차 평가를 등록해야 끝난다 — "끝냈습니다" 로 넘길 수 없다. 사장님
+  // 2026-10-06). 표준서가 없는 사고만 손으로 끝낸다.
+  const auto =
+    duty.kind === "PREVENTION" ||
+    (duty.kind === "RISK_ASSESSMENT" && Boolean(extraHref));
+  const { show: toast, toast: toastEl } = useToast();
+  const sms = () =>
+    toast(
+      paid ? (
+        "문자 공지는 준비 중입니다. 지금은 공지사항·TBM 으로 알리세요."
+      ) : (
+        <>
+          문자 공지는 유료 요금제에서 씁니다.{" "}
+          <Link href="/billing">요금제 보기</Link>
+        </>
+      ),
+    );
   const label = DUTY_LABEL[duty.kind];
 
   const submit = (next: boolean) =>
@@ -166,6 +190,13 @@ function DutyRow({
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
+          {duty.kind === "SHARE" && !done && (
+            <p className="inc-duty-share">
+              <button type="button" className="btn-secondary" onClick={sms}>
+                <MessageSquare size={14} /> 문자로 공지
+              </button>
+            </p>
+          )}
           <div className="inc-duty-buttons">
             {done && (
               <button
@@ -174,7 +205,7 @@ function DutyRow({
                 disabled={pending}
                 onClick={() => submit(false)}
               >
-                <RotateCcw size={14} /> 다시 열기
+                <RotateCcw size={14} /> 끝내기 취소
               </button>
             )}
             <button
@@ -190,6 +221,7 @@ function DutyRow({
         </div>
       )}
       <FormErrorDialog message={error} nonce={error} />
+      {toastEl}
     </li>
   );
 }
@@ -322,7 +354,7 @@ function ActionRow({
                 disabled={pending}
                 onClick={() => submit(false)}
               >
-                <RotateCcw size={14} /> 다시 열기
+                <RotateCcw size={14} /> 끝내기 취소
               </button>
             )}
             <button
