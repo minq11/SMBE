@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { PaidLockButton } from "@/components/ui/paid-lock";
 import { AddToHomeHint } from "@/components/pwa/add-to-home-hint";
 import { NoticePopup } from "@/features/board/notice-popup";
@@ -209,8 +210,8 @@ export default async function WorkerLinkPage({
             }
           />
           <p>
-            <Link className="btn-secondary" href="/w">
-              회차 목록으로
+            <Link className="go-link" href="/w">
+              <ArrowLeft size={14} /> 회차 목록
             </Link>
           </p>
         </section>

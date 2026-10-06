@@ -282,10 +282,10 @@ export function AssessmentForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
-        <Link href={`/standards/${standardId}`} className="ghost-button">
+        <Link href={`/standards/${standardId}`} className="btn-secondary btn--sm">
           <X size={13} /> 취소
         </Link>
-        <button type="submit" className="primary-button" disabled={pending}>
+        <button type="submit" className="btn-primary" disabled={pending}>
           <Save size={14} />
           {pending ? "저장 중…" : "위험성평가 저장"}
         </button>

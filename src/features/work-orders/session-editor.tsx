@@ -92,7 +92,7 @@ export function SessionEditor({
         {value.length > 0 && (
           <button
             type="button"
-            className="ghost-button"
+            className="btn-secondary btn--sm"
             onClick={() => setOpen(true)}
           >
             <CalendarDays size={14} /> 작업 회차 만들기

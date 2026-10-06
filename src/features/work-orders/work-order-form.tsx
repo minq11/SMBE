@@ -797,7 +797,7 @@ export function WorkOrderForm({
                       {standards.length > 0 && (
                         <button
                           type="button"
-                          className="primary-button"
+                          className="btn-primary"
                           onClick={() => setStdOpen(true)}
                         >
                           <Search size={13} /> 작업표준서 찾기
@@ -808,7 +808,7 @@ export function WorkOrderForm({
                       {standards.length === 0 && (
                         <Link
                           href={NEW_STANDARD_HREF}
-                          className="primary-button"
+                          className="btn-primary"
                           prefetch={false}
                         >
                           <Plus size={13} /> 새 표준서 만들기
@@ -816,7 +816,7 @@ export function WorkOrderForm({
                       )}
                       <button
                         type="button"
-                        className={`ghost-button wo-std-exception${mode === "simple" ? " is-on" : ""}`}
+                        className={`btn-secondary btn--sm wo-std-exception${mode === "simple" ? " is-on" : ""}`}
                         onClick={chooseSimple}
                         aria-pressed={mode === "simple"}
                       >

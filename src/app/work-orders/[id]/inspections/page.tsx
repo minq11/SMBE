@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PaidLockButton } from "@/components/ui/paid-lock";
 import { CautionBand, PpeList } from "@/features/standards/ppe-list";
-import { ArrowLeft, ChevronRight, FileText } from "lucide-react";
+import { ArrowLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withTransaction } from "@/server/db";
@@ -125,8 +125,8 @@ export default async function InspectionPage({
           title={title}
           description={data.order.name}
           actions={
-            <Link className="btn-secondary" href={"/work-orders/" + id}>
-              <FileText size={14} /> 작업지시 보기
+            <Link className="go-link" href={"/work-orders/" + id}>
+              작업지시 보기 <ArrowRight size={14} />
             </Link>
           }
         />
@@ -228,7 +228,7 @@ export default async function InspectionPage({
           description={data.order.name}
           actions={
             <Link
-              className="btn-secondary"
+              className="go-link"
               href={root + (path === "WEB" ? "" : "?" + viaQ.slice(1))}
             >
               <ArrowLeft size={14} /> 회차 목록
@@ -434,8 +434,8 @@ export default async function InspectionPage({
         title="점검 기록"
         description={data.order.name}
         actions={
-          <Link className="btn-secondary" href={"/work-orders/" + id}>
-            <FileText size={14} /> 작업지시 보기
+          <Link className="go-link" href={"/work-orders/" + id}>
+            작업지시 보기 <ArrowRight size={14} />
           </Link>
         }
       />

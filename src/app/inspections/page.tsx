@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, ArrowRight } from "lucide-react";
 import { seoulToday, validDate } from "@/features/work-orders/model";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
@@ -88,8 +88,8 @@ export default async function InspectionsPage({
           <Search size={14} /> 작업 선택 · TBM 및 작업 중 점검
         </Link>
         {isManager && (
-          <Link className="btn-secondary" href="/meetings">
-            <CalendarCheck size={14} /> 주간 안전점검 회의
+          <Link className="go-link" href="/meetings">
+            주간 안전점검 회의 <ArrowRight size={14} />
           </Link>
         )}
       </p>
@@ -134,8 +134,8 @@ export default async function InspectionsPage({
               <button className="btn-secondary" type="submit">
                 조회
               </button>
-              <Link className="btn-secondary" href="/inspections">
-                초기화
+              <Link className="go-link" href="/inspections">
+                초기화 <ArrowRight size={14} />
               </Link>
             </form>
           </details>

@@ -122,7 +122,7 @@ export default async function PermitsPage({
           />
           자가 승인 건만
         </label>
-        <button className="secondary-button">조회</button>
+        <button className="btn-secondary">조회</button>
       </form>
       {visible.length ? (
         <PermitList

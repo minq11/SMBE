@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Save, Send, Trash2 } from "lucide-react";
+import { Save, Send, Trash2, ArrowRight } from "lucide-react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { BoardEditor } from "./editor";
 import { deletePostAction, savePostAction } from "./actions";
@@ -198,8 +198,8 @@ export function PostForm({
       <div className="board-form-actions">
         {published ? (
           <>
-            <a className="btn-secondary" href={`/board/${slug}/${post.id}`}>
-              <Eye size={15} /> 보기
+            <a className="go-link" href={`/board/${slug}/${post.id}`}>
+              보기 <ArrowRight size={14} />
             </a>
             <button
               type="button"

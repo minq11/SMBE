@@ -227,11 +227,11 @@ function IntroPanel({
       </ul>
       <div className="check-actions">
         {hasSaved && (
-          <button type="button" className="ghost-button" onClick={onReset}>
+          <button type="button" className="btn-secondary btn--sm" onClick={onReset}>
             <RotateCcw size={13} /> 이전 응답 지우고 새로 시작
           </button>
         )}
-        <button type="button" className="primary-button" onClick={onStart}>
+        <button type="button" className="btn-primary" onClick={onStart}>
           <Sparkles size={14} />
           {hasSaved ? "이어서 하기" : "진단 시작"}
         </button>
@@ -313,12 +313,12 @@ function TargetingStep({
       </fieldset>
 
       <div className="check-actions">
-        <button type="button" className="ghost-button" onClick={onBack}>
+        <button type="button" className="btn-secondary btn--sm" onClick={onBack}>
           <ArrowLeft size={13} /> 이전
         </button>
         <button
           type="button"
-          className="primary-button"
+          className="btn-primary"
           disabled={!canContinue}
           onClick={onNext}
         >
@@ -442,10 +442,10 @@ function SectionStep({
       )}
 
       <div className="check-actions">
-        <button type="button" className="ghost-button" onClick={onBack}>
+        <button type="button" className="btn-secondary btn--sm" onClick={onBack}>
           <ArrowLeft size={13} /> 이전
         </button>
-        <button type="button" className="primary-button" onClick={handleNext}>
+        <button type="button" className="btn-primary" onClick={handleNext}>
           {sectionKey === "SECTION_IV" ? "결과 보기" : "다음"}{" "}
           <ArrowRight size={14} />
         </button>
@@ -605,13 +605,13 @@ function ResultPanel({
       <NeedsList result={result} />
 
       <div className="check-actions">
-        <button type="button" className="ghost-button" onClick={onReset}>
+        <button type="button" className="btn-secondary btn--sm" onClick={onReset}>
           <RotateCcw size={13} /> 다시 진단하기
         </button>
-        <button type="button" className="ghost-button" onClick={onBack}>
+        <button type="button" className="btn-secondary btn--sm" onClick={onBack}>
           <ArrowLeft size={13} /> 응답 수정
         </button>
-        <Link href="/guide" className="ghost-button">
+        <Link href="/guide" className="btn-secondary btn--sm">
           <Eye size={13} /> 안전법 가이드 보기
         </Link>
       </div>
@@ -706,7 +706,7 @@ function SmbeSummary({ result }: { result: CheckResult }) {
           기록이 그대로 증빙이 됩니다.
         </p>
       </div>
-      <Link href="/login?next=/onboarding" className="primary-button">
+      <Link href="/login?next=/onboarding" className="btn-primary">
         무료로 시작 <ArrowRight size={14} />
       </Link>
     </section>

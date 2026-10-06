@@ -463,7 +463,7 @@ export function StandardForm({
           </ol>
           <button
             type="button"
-            className="ghost-button std-add-button"
+            className="btn-secondary btn--sm std-add-button"
             onClick={() => addStringItem("steps")}
           >
             <Plus size={13} /> 단계 추가
@@ -661,10 +661,10 @@ export function StandardForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
-        <Link href={returnHref ?? "/standards"} className="ghost-button">
+        <Link href={returnHref ?? "/standards"} className="btn-secondary btn--sm">
           <X size={13} /> 취소
         </Link>
-        <button type="submit" className="primary-button" disabled={pending}>
+        <button type="submit" className="btn-primary" disabled={pending}>
           <Save size={14} />
           {pending ? "저장 중..." : "표준서 저장 · 확정"}
         </button>
@@ -717,7 +717,7 @@ function ChecklistBlock({
       </ol>
       <button
         type="button"
-        className="ghost-button std-add-button"
+        className="btn-secondary btn--sm std-add-button"
         onClick={onAdd}
       >
         <Plus size={13} /> 항목 추가

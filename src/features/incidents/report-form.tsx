@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Send } from "lucide-react";
+import { CheckCircle2, Send, ArrowLeft } from "lucide-react";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { Segmented } from "@/features/assessments/risk-level-picker";
@@ -50,8 +50,8 @@ export function WorkerReportForm({
             />
           </div>
         ) : null}
-        <Link href={backHref} className="btn-secondary">
-          {backLabel}
+        <Link href={backHref} className="go-link">
+          <ArrowLeft size={14} /> {backLabel}
         </Link>
       </section>
     );

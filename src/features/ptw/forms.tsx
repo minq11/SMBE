@@ -45,7 +45,7 @@ export function PermitList({
           </label>
         </section>
       ))}
-      <button disabled={pending} className="primary-button">
+      <button disabled={pending} className="btn-primary">
         선택 허가 일괄 승인
       </button>
       {state?.error && <p role="alert">{state.error}</p>}
@@ -238,7 +238,7 @@ export function PermitRequestForm({
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
       <div className="form-actions sticky-actions">
-        <button disabled={pending} className="primary-button">
+        <button disabled={pending} className="btn-primary">
           {pending
             ? "처리 중…"
             : data.approverId === userId
@@ -299,7 +299,7 @@ export function PermitCommand({
           ))}
         </FloatSelect>
       )}
-      <button disabled={pending} className="secondary-button">
+      <button disabled={pending} className="btn-secondary">
         {pending ? "처리 중…" : labels[command]}
       </button>
       {state?.error && <p role="alert">{state.error}</p>}
@@ -321,7 +321,7 @@ export function LocationForm() {
         maxLength={200}
         hint="예: 용접장"
       />
-      <button className="primary-button" disabled={pending}>
+      <button className="btn-primary" disabled={pending}>
         장소 등록
       </button>
       {state?.error && <p role="alert">{state.error}</p>}

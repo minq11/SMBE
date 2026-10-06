@@ -39,7 +39,7 @@ export function AssessmentPolicyForm({
         maxLength={4000}
         required
       />
-      <button className="primary-button" disabled={pending}>
+      <button className="btn-primary" disabled={pending}>
         {pending ? "저장 중…" : "실시규정 저장"}
       </button>
       <FormErrorDialog message={state?.error} nonce={state} />

@@ -3,14 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Check,
-  ChevronDown,
-  CircleCheckBig,
-  LockOpen,
-  Square,
-  SquareCheckBig,
-} from "lucide-react";
+import { Check, ChevronDown, CircleCheckBig, LockOpen, Square, SquareCheckBig, ArrowRight } from "lucide-react";
 import { FloatTextarea } from "@/components/ui/float-field";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -143,9 +136,9 @@ function DutyRow({
         {!locked && (
           <span className="inc-duty-actions">
             {extraHref && !done && (
-              <Link href={extraHref} className="btn-secondary">
-                평가하러 가기
-              </Link>
+              <Link href={extraHref} className="go-link">
+                  평가하러 가기 <ArrowRight size={14} />
+                </Link>
             )}
             {!auto && (
               <button

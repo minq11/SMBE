@@ -63,7 +63,7 @@ export function ProfileForm({
         </p>
       )}
       {state?.message && <p role="status">{state.message}</p>}
-      <button className="primary-button" disabled={pending}>
+      <button className="btn-primary" disabled={pending}>
         {pending ? "저장 중…" : "내 정보 저장"}
       </button>
     </form>
@@ -98,7 +98,7 @@ export function LeaveCompanyForm({
           {state.error}
         </p>
       )}
-      <button className="secondary-button" disabled={pending || blocked}>
+      <button className="btn-secondary" disabled={pending || blocked}>
         {pending
           ? "처리 중…"
           : pendingApproval

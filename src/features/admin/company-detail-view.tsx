@@ -188,7 +188,7 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
               note="기본 10명. 100인 이상 개별 협의 시 이 값으로 조정."
               className="float-field--flush"
             />
-            <button type="submit" className="primary-button" disabled={pending}>
+            <button type="submit" className="btn-primary" disabled={pending}>
               <Save size={13} />
               {pending ? "저장 중..." : "저장"}
             </button>

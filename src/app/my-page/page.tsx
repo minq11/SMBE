@@ -202,7 +202,7 @@ export default async function MyPage({
         </section>
       )}
       <form action={logoutAction}>
-        <button className="secondary-button">로그아웃</button>
+        <button className="btn-secondary">로그아웃</button>
       </form>
     </AppShell>
   );

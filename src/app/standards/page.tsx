@@ -38,7 +38,7 @@ export default async function StandardsPage() {
         title="작업표준서"
         description="반복 작업의 방법·체크리스트·위험성평가를 표준서로 한 번 등록하면 이후 지시서에서 바로 선택해 사용할 수 있습니다."
         actions={
-          <Link href="/standards/new" className="primary-button">
+          <Link href="/standards/new" className="btn-primary">
             <Plus size={14} /> 표준서 만들기
           </Link>
         }

@@ -69,7 +69,7 @@ export function GuideIndexView() {
         </div>
         <Link
           href="/recognition-check"
-          className="primary-button guide-check-cta-button"
+          className="btn-primary guide-check-cta-button"
         >
           <ClipboardCheck size={14} />
           인정 준비도 진단 시작

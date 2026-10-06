@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
@@ -98,11 +99,9 @@ export default async function MeetingsPage() {
                 )}
               </div>
               {w.meeting_id ? (
-                <Link
-                  className="btn-secondary"
-                  href={"/meetings/" + w.week_start}
-                >
-                  {w.status === "COMPLETED" ? "회의록 보기" : "이어서 작성"}
+                <Link className="go-link" href={"/meetings/" + w.week_start}>
+                  {w.status === "COMPLETED" ? "회의록 보기" : "이어서 작성"}{" "}
+                  <ArrowRight size={14} />
                 </Link>
               ) : (
                 <OpenMeetingButton week={w.week_start} />

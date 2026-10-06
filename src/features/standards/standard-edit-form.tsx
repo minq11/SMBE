@@ -276,7 +276,7 @@ export function StandardEditForm({
           </ol>
           <button
             type="button"
-            className="ghost-button std-add-button"
+            className="btn-secondary btn--sm std-add-button"
             onClick={addStep}
           >
             <Plus size={13} /> 단계 추가
@@ -342,7 +342,7 @@ export function StandardEditForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
-        <Link href={`/standards/${standardId}`} className="ghost-button">
+        <Link href={`/standards/${standardId}`} className="btn-secondary btn--sm">
           취소
         </Link>
         <button type="submit" className="btn-secondary" disabled={pending}>
@@ -351,7 +351,7 @@ export function StandardEditForm({
         </button>
         <button
           type="button"
-          className="primary-button"
+          className="btn-primary"
           disabled={pending}
           onClick={saveAndApprove}
         >
@@ -404,7 +404,7 @@ function ChecklistBlock({
       </ol>
       <button
         type="button"
-        className="ghost-button std-add-button"
+        className="btn-secondary btn--sm std-add-button"
         onClick={onAdd}
       >
         <Plus size={13} /> 항목 추가
