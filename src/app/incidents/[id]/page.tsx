@@ -10,6 +10,7 @@ import { AppShell } from "@/components/shell/app-shell";
 import { tierOf } from "@/components/shell/tier";
 import { isCurrentUserOperator } from "@/server/operator";
 import { PageHeader } from "@/components/ui/page-header";
+import { PaidLockButton } from "@/components/ui/paid-lock";
 import { Facts, StatStrip } from "@/components/ui/facts";
 import { HistoryLog } from "@/components/ui/history-log";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
@@ -298,9 +299,14 @@ export default async function IncidentPage({
             )}
           </>
         ) : (
-          <p className="wo-muted">
-            유료 요금제에서 현장 사진을 붙일 수 있습니다.
-          </p>
+          !locked && (
+            <PaidLockButton
+              className="btn-secondary"
+              message="현장 사진 첨부는 유료 요금제에서 씁니다."
+            >
+              사진 붙이기
+            </PaidLockButton>
+          )
         )}
       </section>
 

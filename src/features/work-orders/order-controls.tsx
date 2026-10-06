@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { usePaidToast } from "@/components/ui/paid-lock";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { flushSync } from "react-dom";
@@ -193,25 +193,20 @@ export function CancelOrderButton({
  * 안내가 뜨면 무엇을 얻는지 알고 결정할 수 있다.
  */
 export function PrintButton({ allowed = true }: { allowed?: boolean }) {
-  const [blocked, setBlocked] = useState(false);
+  const { block, toast } = usePaidToast(
+    "지시서 인쇄(A4 한 장, QR 포함)는 유료 요금제에서 씁니다.",
+  );
   return (
     <div className="wo-no-print">
       <button
         type="button"
         className="btn-primary"
-        onClick={() => (allowed ? window.print() : setBlocked(true))}
+        onClick={() => (allowed ? window.print() : block())}
       >
         <Printer size={14} />
         지시서 인쇄 / PDF 저장
       </button>
-      {blocked && (
-        <p role="alert" className="wo-notice">
-          지시서 출력물은 유료 요금제에서 이용할 수 있습니다. 작업 정보와 QR 이
-          A4 한 장으로 정리되어, 작업 장소에 붙여 두면 작업자가 QR 로 바로
-          들어옵니다. 무료 요금제에서는 화면의 QR 과 이메일 링크로 전달하세요.{" "}
-          <Link href="/billing">요금제 보기</Link>
-        </p>
-      )}
+      {toast}
     </div>
   );
 }

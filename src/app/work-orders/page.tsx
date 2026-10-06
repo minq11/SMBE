@@ -5,6 +5,7 @@ import { parsePage } from "@/lib/paging";
 import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
+import { PaidLockButton } from "@/components/ui/paid-lock";
 import { STATUS_LABEL, STATUS_TONE } from "@/features/work-orders/model";
 import { DeleteDraftButton } from "@/features/work-orders/order-controls";
 
@@ -27,7 +28,6 @@ export default async function WorkOrdersPage({
     <OrderShell session={session} title="작업지시 내역">
       <PageHeader
         title={result.isManager ? "작업지시 내역" : "내 작업"}
-        description="작업 정보를 확인하고, 승인된 평가를 바탕으로 지시서를 발급합니다."
         actions={
           result.isManager && (
             <Link className="btn-primary" href="/work-orders/new">
@@ -71,13 +71,6 @@ export default async function WorkOrdersPage({
           <span>검색</span>
         </button>
       </form>
-      {result.locked > 0 && (
-        <p className="wo-notice">
-          최근 1주일보다 오래된 지난 기록 {result.locked}건은 유료 요금제에서
-          열람할 수 있습니다. 발급·진행 중인 작업은 기간 제한 없이 확인할 수
-          있습니다.
-        </p>
-      )}
       {result.rows.length ? (
         <div className="wo-table-wrap">
           <table className="wo-table">
@@ -97,18 +90,28 @@ export default async function WorkOrdersPage({
               {result.rows.map((row) => (
                 <tr key={row.id}>
                   <td data-label="작업명">
-                    {/* 작성 중인 지시서는 조회가 아니라 편집으로 연다. */}
-                    <Link
-                      href={
-                        "/work-orders/" +
-                        row.id +
-                        (result.isManager && row.status === "DRAFT"
-                          ? "/edit"
-                          : "")
-                      }
-                    >
-                      {row.name}
-                    </Link>
+                    {row.locked ? (
+                      // 완료·취소 뒤 1주일이 지난 지시서는 무료에서 열리지 않는다.
+                      <PaidLockButton
+                        className="wo-table-lock"
+                        message="지난 지시서는 유료 요금제에서 열립니다. 무료는 완료 뒤 1주일까지."
+                      >
+                        {row.name}
+                      </PaidLockButton>
+                    ) : (
+                      /* 작성 중인 지시서는 조회가 아니라 편집으로 연다. */
+                      <Link
+                        href={
+                          "/work-orders/" +
+                          row.id +
+                          (result.isManager && row.status === "DRAFT"
+                            ? "/edit"
+                            : "")
+                        }
+                      >
+                        {row.name}
+                      </Link>
+                    )}
                     <small>
                       {row.assessment_status === "APPROVED"
                         ? "평가 승인 완료"

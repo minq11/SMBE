@@ -12,6 +12,7 @@ import { JumpNav } from "@/components/ui/jump-nav";
 import { PtwHelp } from "./ptw-help";
 import { PpePicker } from "./ppe-picker";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
+import { PaidLockButton } from "@/components/ui/paid-lock";
 import {
   AttachmentList,
   type AttachmentItem,
@@ -257,9 +258,12 @@ export function StandardEditForm({
                         icon="clip"
                       />
                     ) : (
-                      <p className="attach-uploader-hint">
-                        유료 요금제에서 작업 단계 사진을 첨부할 수 있습니다.
-                      </p>
+                      <PaidLockButton
+                        className="attach-uploader-lock"
+                        message="단계 사진 첨부는 유료 요금제에서 씁니다."
+                      >
+                        사진 붙이기
+                      </PaidLockButton>
                     )}
                   </div>
                 ) : (

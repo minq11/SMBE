@@ -69,6 +69,8 @@ export type OrderSummary = {
   assignee_count: number;
   assessment_status: string | null;
   revision: number;
+  /** 무료의 열람 창(완료·취소 뒤 1주일) 밖. 이름·기간·상태만 있고 열리지 않는다. */
+  locked: boolean;
 };
 /**
  * 복사할 이전 지시서 목록 (관리자). 작성 중 초안은 뺀다 — 복사할 게 아니라 이어 쓸
@@ -134,19 +136,17 @@ export async function listOrders(
       actor.userId,
       access.pro_state !== "FREE",
     ];
-    const { rows: counts } = await client.query<{ locked: number }>(
-      base + " SELECT count(*)::int AS locked FROM visible WHERE NOT can_read",
-      params,
-    );
+    // 잠긴 지시서도 목록에 남긴다 — 누르면 유료 안내가 뜬다. 건수만 남기면
+    // 무엇이 있는지 모른 채 "유료" 글만 읽게 된다.
     const { rows } = await client.query<OrderSummary>(
       base +
         ` SELECT id,name,display_status AS status,work_period_start::text AS start_date,
        work_period_end::text AS end_date,to_char(work_start_time,'HH24:MI') AS start_time,
        to_char(work_end_time,'HH24:MI') AS end_time,
        coalesce(location_free_text,draft_data->>'location','') AS location,
-       jsonb_array_length(draft_data->'assigneeIds') AS assignee_count, assessment_status, revision
-       FROM visible WHERE can_read
-         AND ($5='all' OR ($5='draft' AND display_status='DRAFT')
+       jsonb_array_length(draft_data->'assigneeIds') AS assignee_count, assessment_status, revision,
+       NOT can_read AS locked
+       FROM visible WHERE ($5='all' OR ($5='draft' AND display_status='DRAFT')
            OR ($5='active' AND display_status IN ('ISSUED','IN_PROGRESS')))
          AND name ILIKE $6 ORDER BY created_at DESC LIMIT ${PAGE_SIZE + 1} OFFSET $7`,
       [
@@ -159,7 +159,6 @@ export async function listOrders(
     return {
       rows: rows.slice(0, PAGE_SIZE),
       hasMore: rows.length > PAGE_SIZE,
-      locked: counts[0].locked,
       isManager: access.role !== "WORKER",
       pro: access.pro_state !== "FREE",
     };

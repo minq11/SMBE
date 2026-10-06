@@ -41,7 +41,7 @@ export default async function BillingPage() {
     >
       <PageHeader
         title="요금제"
-        description="인원 수와 무관하게 텍스트 기반 기능은 무료로 사용할 수 있습니다. 유료 전환은 아래의 부가 기능이 필요해질 때 하는 선택이며, 요금은 인원 구간으로만 갈립니다."
+        description="글로 쓰는 기능은 인원과 무관하게 무료. 유료는 아래 부가 기능이 필요할 때."
       />
       <BillingView overview={overview} />
     </AppShell>

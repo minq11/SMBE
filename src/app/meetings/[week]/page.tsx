@@ -12,6 +12,7 @@ import { readMeeting } from "@/server/safety-meeting";
 import { WorkOrderError } from "@/features/work-orders/model";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
+import { HelpDialog } from "@/components/ui/help-dialog";
 import {
   MeetingItemForm,
   CompleteMeetingForm,
@@ -106,8 +107,7 @@ export default async function MeetingPage({
       {!data.meeting && (
         <section className="wo-section">
           <p className="wo-muted">
-            회의를 열면 그 주의 점검 불량, 기한이 지난 감소대책, 사고·아차사고를
-            모아 보여줍니다.
+            열면 그 주의 점검 불량·기한 지난 감소대책·사고를 모읍니다.
           </p>
           <OpenMeetingButton week={week} label="이 주 회의 열기" />
         </section>
@@ -116,13 +116,28 @@ export default async function MeetingPage({
       {data.meeting && (
         <>
           <section className="wo-section">
-            <h2>수집 항목 {data.items.length}건</h2>
-            <p className="wo-muted">
-              그 주에 발생한 점검 불량, 기한이 지났는데 완료되지 않은 위험성평가
-              감소대책, 그 주의 사고·아차사고와 기한이 온 사고 할 일을
-              모았습니다. 칩을 누르면 원본으로 갑니다. 여기서 확인해도 원본은
-              종결되지 않습니다.
-            </p>
+            <div className="wo-section-head">
+              <h2>수집 항목 {data.items.length}건</h2>
+              <HelpDialog title="수집 항목" variant="icon">
+                <dl className="help-rows">
+                  <dt>무엇</dt>
+                  <dd>
+                    그 주의 점검 불량, 기한이 지났는데 안 끝난 위험성평가
+                    감소대책, 그 주의 사고·아차사고와 기한이 온 사고 할 일.
+                  </dd>
+                  <dt>원본</dt>
+                  <dd>
+                    칩을 누르면 원본으로 갑니다. 여기서 확인해도 원본은
+                    종결되지 않습니다. 종결은 각 처리 화면에서.
+                  </dd>
+                  <dt>다시</dt>
+                  <dd>
+                    주 중간에 생긴 항목은 [다시 수집]으로 덧붙입니다. 이미 적은
+                    확인·비고는 그대로.
+                  </dd>
+                </dl>
+              </HelpDialog>
+            </div>
             {!data.items.length && (
               <p>이 주에 모을 항목이 없습니다. 참석자만 기록하고 완료하세요.</p>
             )}
@@ -135,10 +150,6 @@ export default async function MeetingPage({
             ))}
             {!done && (
               <div className="meeting-recollect">
-                <p className="wo-muted">
-                  주 중간에 새로 생긴 항목은 다시 수집해 덧붙일 수 있습니다.
-                  이미 적은 확인·비고는 그대로 보존됩니다.
-                </p>
                 <OpenMeetingButton week={week} label="다시 수집" />
               </div>
             )}

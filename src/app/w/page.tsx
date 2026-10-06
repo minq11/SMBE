@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PaidLockButton } from "@/components/ui/paid-lock";
 import { AddToHomeHint } from "@/components/pwa/add-to-home-hint";
 import { NoticePopup } from "@/features/board/notice-popup";
 import { activePopupNotices } from "@/server/board";
@@ -283,10 +284,19 @@ export default async function WorkerLinkPage({
               <li className="wo-muted">회차가 없습니다.</li>
             )}
           </ul>
-          {data.lockedSessions > 0 && (
-            <p className="wo-muted">
-              무료 이용의 과거 열람 제한 회차: {data.lockedSessions}건
-            </p>
+          {data.lockedSessions.length > 0 && (
+            <ul className="link-session-list" aria-label="지난 회차">
+              {data.lockedSessions.map((s) => (
+                <li className="link-session is-locked" key={s.id}>
+                  <PaidLockButton
+                    message="지난 회차는 유료 요금제에서 열립니다."
+                    link={false}
+                  >
+                    {s.work_date} · {at(s.starts_at)} ~ {at(s.ends_at)}
+                  </PaidLockButton>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
       )}

@@ -215,10 +215,11 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     await expect(sheet).toContainText("다친 작업자");
     await expect(sheet).toContainText("휴업 5일");
     await expect(sheet).toContainText("안전블록");
+    // 무료면 토스트만 잠깐 (헌법 5장).
     await page.getByRole("button", { name: /조사표 인쇄/ }).click();
-    await expect(
-      page.getByText("유료 요금제에서 이용할 수 있습니다"),
-    ).toBeVisible();
+    await expect(page.locator(".toast")).toContainText(
+      "산업재해조사표 인쇄는 유료 요금제에서",
+    );
     await page.screenshot({
       path: test.info().outputPath("survey.png"),
       fullPage: true,

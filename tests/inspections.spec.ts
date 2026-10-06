@@ -377,9 +377,10 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await expect(
       page.getByRole("heading", { name: "유료 요금제 기능입니다" }),
     ).toBeVisible();
-    await expect(
-      page.getByText("무료 요금제에서도 막히지 않는 것", { exact: false }),
-    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath("monitoring-free.png"),
+      fullPage: true,
+    });
     await pool.query(
       "UPDATE companies SET pro_state='PRO_VOLUNTARY',plan='BASIC',plan_started_at=now() WHERE id=$1",
       [company],

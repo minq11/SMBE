@@ -1171,7 +1171,7 @@ test("inspection: previous resolved actions are shared on next TBM and old open 
   );
   const old = await transaction((c) => inspectionOverview(c, g.actor, g.id));
   assert.equal(old.records.length, 0);
-  assert.equal(old.lockedSessions, 1);
+  assert.equal(old.lockedSessions.length, 1);
   assert.equal(old.openCount, 1);
   const open = (await transaction((c) => pendingFindings(c, g.actor)))[0];
   await transaction((c) =>

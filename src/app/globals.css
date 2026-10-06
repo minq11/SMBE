@@ -3969,6 +3969,23 @@ html[data-banner-hidden] .preview-banner {
 .std-list--with-attach > li > .attach-uploader-hint {
   margin: 0 0 4px 38px;
 }
+/* 무료 회사의 "사진 붙이기" 자리: 글 단추, 누르면 유료 토스트 */
+.attach-uploader-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.attach-uploader-lock svg {
+  color: var(--ink-3);
+}
 .std-step-attach {
   display: flex;
   flex-direction: column;
@@ -4849,6 +4866,23 @@ html[data-banner-hidden] .preview-banner {
   margin: -10px 0;
 }
 .std-section-head .help-dialog-icon {
+  margin-right: -12px;
+}
+/* 구간 머리: 제목 왼쪽, 물음표 오른쪽. 설명 문단 대신 물음표 하나다. */
+.wo-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -10px 0 8px;
+}
+.wo-section-head h2 {
+  margin: 0;
+}
+.account-panel .wo-section-head {
+  margin-top: 0;
+}
+.wo-section-head .help-dialog-icon {
   margin-right: -12px;
 }
 /* 라벨 글자에 바로 붙는 물음표. 그림은 15px 로 작게 보이되 누르는 자리는 44px 을
@@ -6989,6 +7023,24 @@ fieldset.form-field legend {
   border-radius: 12px;
   padding: 14px 16px;
   background: #fff;
+}
+.link-session.is-locked {
+  padding: 0;
+}
+.link-session.is-locked > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
 }
 .link-session.is-current {
   border-color: var(--brand);

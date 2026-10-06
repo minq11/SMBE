@@ -419,7 +419,15 @@ export async function inspectionOverview(
     canAttach: access.pro_state !== "FREE",
     current,
     sessions: visible,
-    lockedSessions: sessions.length - visible.length,
+    // 무료의 1주일 밖 회차. 목록 끝에 잠긴 줄로 남고, 누르면 유료 안내가 뜬다.
+    lockedSessions: sessions
+      .filter((s) => !visible.includes(s))
+      .map((s) => ({
+        id: s.id,
+        work_date: s.work_date,
+        starts_at: s.starts_at,
+        ends_at: s.ends_at,
+      })),
     checklist,
     risks: risks[0]?.payload.items ?? [],
     criteria: risks[0]?.payload.criteria_snapshot ?? [],

@@ -293,11 +293,6 @@ export function StandardDetailView({
           <p className="std-form-note">등록된 단계가 없습니다.</p>
         )}
         {/* 확정된 판은 사진도 고정이다. 붙이거나 지우는 건 개정 초안에서. */}
-        {!isPro && detail.steps.length > 0 && (
-          <p className="attach-uploader-hint">
-            유료 요금제에서 작업 단계별 사진을 첨부할 수 있습니다.
-          </p>
-        )}
         {isPro && !archived && detail.steps.length > 0 && (
           <p className="attach-uploader-hint">
             사진을 붙이거나 지우려면 개정을 시작해 초안에서 하세요. 확정된 판은
@@ -405,11 +400,6 @@ export function StandardDetailView({
                 </li>
               ))}
             </ol>
-            {!isPro && (
-              <p className="attach-uploader-hint">
-                유료 요금제에서 조치 전·후 사진을 첨부할 수 있습니다.
-              </p>
-            )}
           </div>
           {current.participant_names.length > 0 && (
             <p className="std-detail-participants">
