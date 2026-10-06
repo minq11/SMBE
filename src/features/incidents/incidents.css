@@ -488,3 +488,7 @@
     display: none !important;
   }
 }
+/* 체크 줄 다음의 글칸: 떠 있는 라벨이 체크 설명과 겹치지 않게 한 칸 띄운다 */
+.inc-check + .float-field {
+  margin-top: 12px;
+}
