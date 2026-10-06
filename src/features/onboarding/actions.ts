@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { queryOne, withTransaction } from "@/server/db";
 import { lockCompany } from "@/server/membership-mutations";
 import { notifyJoinRequest } from "@/server/membership-notify";
+import { requestOrigin } from "@/server/request-origin";
 import { notifyEmailState } from "@/server/profile";
 import {
   NOTIFY_EMAIL_REQUIRED,
@@ -240,6 +241,7 @@ export async function joinCompanyAction(
   // 신청은 이미 저장됐다. 메일은 거들 뿐이라 실패해도 가입을 되돌리지 않는다.
   try {
     await notifyJoinRequest({
+      origin: await requestOrigin(),
       companyId: company.id,
       companyName: company.name,
       applicantName: parsed.data.display_name,

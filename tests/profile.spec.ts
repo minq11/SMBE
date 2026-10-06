@@ -187,6 +187,11 @@ test("own profile saves, membership exit preserves history, last supervisor prot
     await expect(
       page.getByRole("tab", { name: /가입 승인 대기/ }),
     ).toHaveAttribute("aria-selected", "true");
+    // 승인 요청 메일의 링크(via=acceptlink)로 들어오면 그 탭이 열리고 탭 줄까지 내려와 있다.
+    await page.goto("/company/members?via=acceptlink");
+    const pendingTab = page.getByRole("tab", { name: /가입 승인 대기/ });
+    await expect(pendingTab).toHaveAttribute("aria-selected", "true");
+    await expect(pendingTab).toBeInViewport();
 
     await page.goto("/my-page");
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();

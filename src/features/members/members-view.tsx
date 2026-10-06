@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ClientPager } from "@/components/ui/pager-client";
 import { pageOf } from "@/lib/paging";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Check, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
 import type { MembershipRole } from "@/server/session";
@@ -49,6 +49,8 @@ export function MembersView({
   origin,
   managerRole,
   currentUserId,
+  initialTab,
+  focusTabs = false,
 }: {
   overview: CompanyOverview;
   members: MemberRow[];
@@ -56,10 +58,20 @@ export function MembersView({
   origin: string;
   managerRole: MembershipRole;
   currentUserId: string;
+  /** 처음 열 탭. 승인 요청 메일(via=acceptlink)은 "가입 승인 대기". */
+  initialTab?: Tab;
+  /** 탭 줄로 내려가서 멈춘다 — 메일에서 온 사람은 초대 패널이 아니라 승인 줄을 봐야 한다. */
+  focusTabs?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>(
-    overview.pending_count > 0 ? "pending" : "active",
+    initialTab ?? (overview.pending_count > 0 ? "pending" : "active"),
   );
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!focusTabs) return;
+    tabsRef.current?.scrollIntoView({ block: "start" });
+    tabsRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus();
+  }, [focusTabs]);
   // 탭을 바꾸면 1쪽부터 — 탭마다 쪽을 따로 기억할 만큼 길지 않다.
   const [page, setPage] = useState(1);
   const pickTab = (t: Tab) => {
@@ -88,7 +100,7 @@ export function MembersView({
       />
 
       <div className="stack">
-        <div className="tabs" role="tablist" aria-label="인원 상태">
+        <div className="tabs" role="tablist" aria-label="인원 상태" ref={tabsRef}>
           <TabButton
             label="재직"
             count={grouped.active.length}

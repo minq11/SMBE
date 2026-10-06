@@ -16,6 +16,8 @@ import { appOrigin } from "./config";
  * 지시서·PTW 발송과 같은 규칙이다.
  */
 export async function notifyJoinRequest(input: {
+  /** 요청 안에서 만든 링크 기준 주소 (server/request-origin.ts). 없으면 APP_URL. */
+  origin?: string;
   companyId: string;
   companyName: string;
   applicantName: string;
@@ -32,8 +34,9 @@ export async function notifyJoinRequest(input: {
   );
   if (!managers.length) return { notified: 0 };
 
-  // 인원관리 화면은 승인 대기가 있으면 그 탭을 먼저 연다.
-  const url = appOrigin() + "/company/members";
+  // 메일에서 들어온 길(via=acceptlink)은 인원관리가 "가입 승인 대기" 탭을 열고 그 자리로
+  // 내려 준다 (사장님 2026-10-06). 주소는 요청 안에서 온 origin 이 있으면 그것.
+  const url = (input.origin ?? appOrigin()) + "/company/members?via=acceptlink";
   const subject = `[SMBE] ${input.applicantName} 님이 ${input.companyName} 참여를 요청했습니다`;
   const text = [
     `${input.applicantName} 님이 회사코드로 ${input.companyName} 참여를 요청했습니다.`,

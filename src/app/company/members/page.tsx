@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { tierOf } from "@/components/shell/tier";
-import { headers } from "next/headers";
+import { requestOrigin } from "@/server/request-origin";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
 import {
@@ -14,16 +14,21 @@ import { MembersView } from "@/features/members/members-view";
 
 export const metadata = { title: "인원관리 · 심플안전" };
 
-async function currentOrigin(): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
-}
-
-export default async function CompanyMembersPage() {
+export default async function CompanyMembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ via?: string }>;
+}) {
+  const { via } = await searchParams;
+  // 승인 요청 메일의 링크. 로그인부터 해야 하면 그 뒤에 같은 주소로 돌아온다.
+  const fromMail = via === "acceptlink";
   const session = await getCurrentSession();
-  if (!session) redirect("/login");
+  if (!session)
+    redirect(
+      fromMail
+        ? "/login?next=" + encodeURIComponent("/company/members?via=acceptlink")
+        : "/login",
+    );
   if (!session.membership || session.membership.status !== "ACTIVE") {
     redirect("/onboarding");
   }
@@ -37,7 +42,7 @@ export default async function CompanyMembersPage() {
       getCompanyOverview(companyId),
       listMembers(companyId),
       listOpenInvites(companyId),
-      currentOrigin(),
+      requestOrigin(),
       isCurrentUserOperator(),
     ]);
 
@@ -67,6 +72,8 @@ export default async function CompanyMembersPage() {
         origin={origin}
         managerRole={session.membership.role}
         currentUserId={session.user.id}
+        initialTab={fromMail ? "pending" : undefined}
+        focusTabs={fromMail}
       />
     </AppShell>
   );
