@@ -37,7 +37,7 @@ export default async function ReportIncidentPage() {
     >
       <PageHeader
         title="사고 신고"
-        description="다칠 뻔한 일도 알려 주세요. 세 칸만 적으면 관리자에게 바로 갑니다."
+        description="다칠 뻔한 일도 알려 주세요. 관리자에게 바로 갑니다."
         back={manager}
       />
       <WorkerReportForm backHref="/" backLabel="홈으로" />

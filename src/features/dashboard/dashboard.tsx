@@ -477,7 +477,7 @@ function DashboardBody({
           </span>
           <span className="worker-report-text">
             <strong>아차사고·사고 신고</strong>
-            <small>세 칸만 적으면 관리자에게 바로 갑니다.</small>
+            <small>관리자에게 바로 갑니다.</small>
           </span>
           <ChevronRight size={16} className="row-chev" />
         </Link>
