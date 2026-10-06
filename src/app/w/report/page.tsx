@@ -30,8 +30,8 @@ export default async function LinkReportPage() {
         </p>
         <h1>사고 신고</h1>
         <p className="wo-muted">
-          {rows[0]?.name ? `${rows[0].name} 작업 중 생긴 일을 ` : ""}세 칸만
-          적으면 관리자에게 바로 갑니다. 다칠 뻔한 일도 알려 주세요.
+          {rows[0]?.name ? `${rows[0].name} 작업 중 생긴 일. ` : ""}관리자에게
+          바로 갑니다. 다칠 뻔한 일도 알려 주세요.
         </p>
       </header>
       <section className="wo-section">
