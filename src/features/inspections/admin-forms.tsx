@@ -156,10 +156,12 @@ export function BackfillForm({
           )}
         </fieldset>
       ))}
-      <button className="btn-primary" disabled={pending || !items.length}>
-        <UserPlus size={14} />
-        {pending ? "저장 중…" : "사후 입력으로 저장"}
-      </button>
+      <div className="form-actions">
+        <button className="btn-primary" disabled={pending || !items.length}>
+          <UserPlus size={14} />
+          {pending ? "저장 중…" : "사후 입력으로 저장"}
+        </button>
+      </div>
     </form>
   );
 }

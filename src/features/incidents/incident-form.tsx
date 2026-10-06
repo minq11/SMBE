@@ -746,7 +746,7 @@ export function IncidentForm({
             </button>
           </section>
 
-          <div className="wo-actions">
+          <div className="form-actions sticky-actions">
             {initial && (
               <Link href={`/incidents/${initial.id}`} className="btn-secondary">
                 <X size={14} /> 취소

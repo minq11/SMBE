@@ -65,9 +65,15 @@
   }
 }
 .inspection-form-actions {
+  display: flex;
+  justify-content: flex-end;
   margin-top: 16px;
 }
 @media (max-width: 960px) {
+  .inspection-form-actions .btn-primary {
+    flex: 1;
+    justify-content: center;
+  }
   .inspection-form-actions {
     position: sticky;
     bottom: 0;
@@ -923,6 +929,13 @@ button.insp-row {
 /* 편집 화면 아래 띠에서는 임시저장과 같은 크기의 단추. 지우는 동작이라 빨간 글자. */
 .wo-actions .wo-delete {
   flex: none;
+}
+/* 지시서 편집의 아래 줄: 넓은 화면도 오른쪽 끝. 삭제(되돌리기 어려운 것)는 왼쪽에 떨어뜨린다. */
+.wo-editor .wo-actions {
+  justify-content: flex-end;
+}
+.wo-editor .wo-actions .wo-delete {
+  margin-right: auto;
 }
 .wo-actions .wo-delete-button {
   min-height: 44px;

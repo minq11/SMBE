@@ -87,9 +87,11 @@ export function RiskCriteriaForm({
           />
         </fieldset>
       ))}
-      <button className="btn-primary" disabled={pending}>
-        <Save size={14} /> {pending ? "저장 중…" : "저장"}
-      </button>
+      <div className="form-actions">
+        <button className="btn-primary" disabled={pending}>
+          <Save size={14} /> {pending ? "저장 중…" : "저장"}
+        </button>
+      </div>
       <FormErrorDialog message={state?.error} nonce={state} />
       {state?.message && <p role="status">{state.message}</p>}
     </form>

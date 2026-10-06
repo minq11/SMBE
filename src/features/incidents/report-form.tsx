@@ -91,7 +91,7 @@ export function WorkerReportForm({
         defaultValue={defaultLocation}
         required
       />
-      <div className="wo-actions">
+      <div className="form-actions sticky-actions">
         <button
           type="submit"
           className="btn-primary"

@@ -146,6 +146,7 @@
 .asmt-head-links {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
 /* 평가의 출처 — 표준서(몇 회차 개정본인지 흐리게 아래), 지시서(왜 붙었는지 아래). */

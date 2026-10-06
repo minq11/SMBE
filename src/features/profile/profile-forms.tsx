@@ -71,9 +71,11 @@ export function ProfileForm({
         </p>
       )}
       {state?.message && <p role="status">{state.message}</p>}
-      <button className="btn-primary" disabled={pending}>
-        <Save size={14} /> {pending ? "저장 중…" : "내 정보 저장"}
-      </button>
+      <div className="form-actions">
+        <button className="btn-primary" disabled={pending}>
+          <Save size={14} /> {pending ? "저장 중…" : "내 정보 저장"}
+        </button>
+      </div>
     </form>
   );
 }
@@ -106,18 +108,20 @@ export function LeaveCompanyForm({
           {state.error}
         </p>
       )}
-      <button
-        className="btn-secondary"
-        data-tone="danger"
-        disabled={pending || blocked}
-      >
-        <UserMinus size={14} />{" "}
-        {pending
-          ? "처리 중…"
-          : pendingApproval
-            ? "가입 신청 취소"
-            : "본인 퇴사 처리"}
-      </button>
+      <div className="form-actions">
+        <button
+          className="btn-secondary"
+          data-tone="danger"
+          disabled={pending || blocked}
+        >
+          <UserMinus size={14} />{" "}
+          {pending
+            ? "처리 중…"
+            : pendingApproval
+              ? "가입 신청 취소"
+              : "본인 퇴사 처리"}
+        </button>
+      </div>
     </form>
   );
 }

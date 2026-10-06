@@ -46,9 +46,11 @@ export function PermitList({
           </label>
         </section>
       ))}
-      <button disabled={pending} className="btn-primary">
-        <CheckCheck size={14} /> 선택 허가 일괄 승인
-      </button>
+      <div className="form-actions">
+        <button disabled={pending} className="btn-primary">
+          <CheckCheck size={14} /> 선택 허가 일괄 승인
+        </button>
+      </div>
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
     </form>
@@ -322,9 +324,11 @@ export function LocationForm() {
         maxLength={200}
         hint="예: 용접장"
       />
-      <button className="btn-primary" disabled={pending}>
-        <MapPin size={14} /> 장소 등록
-      </button>
+      <div className="form-actions">
+        <button className="btn-primary" disabled={pending}>
+          <MapPin size={14} /> 장소 등록
+        </button>
+      </div>
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
     </form>

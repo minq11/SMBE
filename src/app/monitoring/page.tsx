@@ -49,12 +49,12 @@ export default async function MonitoringPage({
           <p className="wo-muted">
             오늘 누가 TBM 을 안 찍었고 어느 작업에 점검이 없는지, 한 화면에서.
           </p>
-          <p className="wo-actions">
-            <Link className="btn-primary" href="/billing">
-              <CreditCard size={14} /> 요금제 보기
-            </Link>
+          <p className="form-actions">
             <Link className="go-link" href="/inspections">
               점검 기록 <ArrowRight size={14} />
+            </Link>
+            <Link className="btn-primary" href="/billing">
+              <CreditCard size={14} /> 요금제 보기
             </Link>
           </p>
         </section>

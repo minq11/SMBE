@@ -2199,7 +2199,8 @@ html[data-banner-hidden] .preview-banner {
   font-weight: 600;
 }
 .billing-current-actions {
-  display: inline-flex;
+  display: flex;
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
@@ -4383,8 +4384,12 @@ html[data-banner-hidden] .preview-banner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   margin-top: 10px;
+}
+.std-draft-actions .text-button {
+  margin-right: auto;
 }
 .std-warn-banner {
   display: flex;
@@ -5876,11 +5881,19 @@ body.sidebar-lock {
 .form-shell .std-form-section {
   margin-bottom: 16px;
 }
+/* 폼 끝의 단추 줄: 주 행동은 오른쪽 끝, 되돌리기(취소)는 그 왼쪽. 글 링크·도움말은
+   왼쪽에 남아도 된다 (사장님 2026-10-06). */
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 8px;
+}
+.form-actions .go-link,
+.form-actions .text-button {
+  margin-right: auto;
 }
 /* 라디오 묶음도 다른 칸과 같은 얼굴 — 브라우저 기본 fieldset 테두리를 지운다 */
 fieldset.form-field {
