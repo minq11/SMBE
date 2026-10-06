@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, Plus, Trash2, X } from "lucide-react";
 import { FloatField } from "@/components/ui/float-field";
 import {
   generateSessions,
@@ -92,7 +92,7 @@ export function SessionEditor({
         {value.length > 0 && (
           <button
             type="button"
-            className="ghost-button"
+            className="btn-secondary btn--sm"
             onClick={() => setOpen(true)}
           >
             <CalendarDays size={14} /> 작업 회차 만들기
@@ -248,7 +248,7 @@ export function SessionEditor({
                 className="btn-secondary"
                 onClick={() => setOpen(false)}
               >
-                취소
+                <X size={14} /> 취소
               </button>
               <button
                 type="button"
@@ -259,7 +259,7 @@ export function SessionEditor({
                   setOpen(false);
                 }}
               >
-                회차 만들기
+                <Plus size={14} /> 회차 만들기
               </button>
             </div>
           </div>

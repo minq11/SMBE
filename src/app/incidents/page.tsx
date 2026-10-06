@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarClock, Plus } from "lucide-react";
+import { CalendarClock, Plus, CircleHelp } from "lucide-react";
 import { getCurrentSession } from "@/server/session";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
@@ -48,11 +48,10 @@ export default async function IncidentsPage() {
     >
       <PageHeader
         title="안전사고"
-        description="아차사고부터 재해까지. 등록하면 법이 요구하는 할 일이 기한과 함께 생깁니다."
         actions={
           <div className="wo-actions">
-            <Link href="/company/incident-manual" className="btn-secondary">
-              대응 절차
+            <Link href="/company/incident-manual" className="go-link">
+              <CircleHelp size={14} /> 대응 절차
             </Link>
             <Link href="/incidents/new" className="btn-primary">
               <Plus size={15} /> 사고 등록
@@ -81,11 +80,13 @@ export default async function IncidentsPage() {
       </div>
 
       {overview.due_soon.length > 0 && (
-        <section className="asmt-section" aria-label="기한이 다가온 할 일">
-          <h2>
-            <CalendarClock size={15} style={{ verticalAlign: "-2px" }} /> 기한이
-            다가온 할 일
-          </h2>
+        // 기본은 접힘 — 목록이 먼저다. 건수가 머리에 보이니 열어 볼지 정할 수 있다
+        // (사장님 2026-10-06).
+        <details className="std-fold inc-due-fold">
+          <summary>
+            <CalendarClock size={15} aria-hidden="true" /> 기한이 다가온 할 일 ·{" "}
+            {overview.due_soon.length}건
+          </summary>
           <ul className="asmt-needs">
             {overview.due_soon.map((d) => (
               <li key={d.incident_id + d.kind} className="asmt-need">
@@ -109,7 +110,7 @@ export default async function IncidentsPage() {
               </li>
             ))}
           </ul>
-        </section>
+        </details>
       )}
 
       <IncidentsListView items={items} />

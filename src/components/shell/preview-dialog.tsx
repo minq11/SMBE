@@ -57,7 +57,7 @@ export function PreviewDialogProvider({ children }: { children: ReactNode }) {
           아직 준비 중인 기능입니다. 현재는 메인 화면만 살펴볼 수 있으며 업무
           데이터는 저장·변경되지 않습니다.
         </p>
-        <button className="primary-button" onClick={close}>
+        <button className="btn-primary" onClick={close}>
           <CheckCircle2 size={14} /> 확인했어요
         </button>
       </dialog>

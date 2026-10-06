@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CircleAlert, Plus } from "lucide-react";
+import { CircleAlert, Plus, ClipboardCheck } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import {
@@ -96,7 +96,7 @@ export default async function AssessmentsPage() {
                   href={`/standards/${s.standard_id}/assessments/new`}
                   className="btn-primary"
                 >
-                  위험성평가하기
+                  <ClipboardCheck size={14} /> 위험성평가하기
                 </Link>
               </li>
             ))}
@@ -110,7 +110,7 @@ export default async function AssessmentsPage() {
                   href={`/standards/${s.standard_id}/assessments/new`}
                   className="btn-secondary"
                 >
-                  미리 위험성평가
+                  <ClipboardCheck size={14} /> 미리 위험성평가
                 </Link>
               </li>
             ))}

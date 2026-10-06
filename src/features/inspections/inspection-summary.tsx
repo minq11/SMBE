@@ -78,7 +78,7 @@ export function InspectionSummary({
               </span>
             ) : (
               <Link
-                className="btn-primary"
+                className="btn-accent"
                 href={root + "?type=TBM&via=" + path}
               >
                 <CheckCircle2 size={14} /> TBM 확인하기

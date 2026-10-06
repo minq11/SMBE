@@ -2,7 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, X, Check } from "lucide-react";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -12,6 +12,7 @@ import { JumpNav } from "@/components/ui/jump-nav";
 import { PtwHelp } from "./ptw-help";
 import { PpePicker } from "./ppe-picker";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
+import { PaidLockButton } from "@/components/ui/paid-lock";
 import {
   AttachmentList,
   type AttachmentItem,
@@ -257,9 +258,12 @@ export function StandardEditForm({
                         icon="clip"
                       />
                     ) : (
-                      <p className="attach-uploader-hint">
-                        유료 요금제에서 작업 단계 사진을 첨부할 수 있습니다.
-                      </p>
+                      <PaidLockButton
+                        className="attach-uploader-lock"
+                        message="단계 사진 첨부는 유료 요금제에서 씁니다."
+                      >
+                        사진 붙이기
+                      </PaidLockButton>
                     )}
                   </div>
                 ) : (
@@ -272,7 +276,7 @@ export function StandardEditForm({
           </ol>
           <button
             type="button"
-            className="ghost-button std-add-button"
+            className="btn-secondary btn--sm std-add-button"
             onClick={addStep}
           >
             <Plus size={13} /> 단계 추가
@@ -338,8 +342,8 @@ export function StandardEditForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
-        <Link href={`/standards/${standardId}`} className="ghost-button">
-          취소
+        <Link href={`/standards/${standardId}`} className="btn-secondary btn--sm">
+          <X size={14} /> 취소
         </Link>
         <button type="submit" className="btn-secondary" disabled={pending}>
           <Save size={14} />
@@ -347,11 +351,11 @@ export function StandardEditForm({
         </button>
         <button
           type="button"
-          className="primary-button"
+          className="btn-primary"
           disabled={pending}
           onClick={saveAndApprove}
         >
-          {pending ? "저장 중..." : "저장하고 확정"}
+          <Check size={14} /> {pending ? "저장 중..." : "저장하고 확정"}
         </button>
       </div>
     </form>
@@ -400,7 +404,7 @@ function ChecklistBlock({
       </ol>
       <button
         type="button"
-        className="ghost-button std-add-button"
+        className="btn-secondary btn--sm std-add-button"
         onClick={onAdd}
       >
         <Plus size={13} /> 항목 추가

@@ -1745,7 +1745,7 @@ html[data-banner-hidden] .preview-banner {
   display: flex;
   justify-content: flex-end;
 }
-.invite-form-actions .primary-button {
+.invite-form-actions .btn-primary {
   min-height: 38px;
   padding: 9px 16px;
 }
@@ -2000,7 +2000,7 @@ html[data-banner-hidden] .preview-banner {
   color: var(--ink);
   min-width: 0;
 }
-.admin-search .ghost-button {
+.admin-search .btn-secondary {
   padding: 6px 12px;
 }
 
@@ -2960,8 +2960,8 @@ html[data-banner-hidden] .preview-banner {
   justify-content: flex-end;
   padding-top: 8px;
 }
-.check-actions .primary-button,
-.check-actions .ghost-button {
+.check-actions .btn-primary,
+.check-actions .btn-secondary {
   min-height: 40px;
 }
 
@@ -3598,7 +3598,7 @@ html[data-banner-hidden] .preview-banner {
   font-style: normal;
   color: var(--brand-strong);
 }
-.check-smbe-summary .primary-button {
+.check-smbe-summary .btn-primary {
   min-height: 44px;
   white-space: nowrap;
 }
@@ -3968,6 +3968,23 @@ html[data-banner-hidden] .preview-banner {
 .std-step-attach,
 .std-list--with-attach > li > .attach-uploader-hint {
   margin: 0 0 4px 38px;
+}
+/* 무료 회사의 "사진 붙이기" 자리: 글 단추, 누르면 유료 토스트 */
+.attach-uploader-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.attach-uploader-lock svg {
+  color: var(--ink-3);
 }
 .std-step-attach {
   display: flex;
@@ -4851,6 +4868,23 @@ html[data-banner-hidden] .preview-banner {
 .std-section-head .help-dialog-icon {
   margin-right: -12px;
 }
+/* 구간 머리: 제목 왼쪽, 물음표 오른쪽. 설명 문단 대신 물음표 하나다. */
+.wo-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -10px 0 8px;
+}
+.wo-section-head h2 {
+  margin: 0;
+}
+.account-panel .wo-section-head {
+  margin-top: 0;
+}
+.wo-section-head .help-dialog-icon {
+  margin-right: -12px;
+}
 /* 라벨 글자에 바로 붙는 물음표. 그림은 15px 로 작게 보이되 누르는 자리는 44px 을
    지킨다 (헌법 4장). 음수 여백으로 그 44px 이 라벨 줄을 밀거나 넓히지 않게 한다. */
 .help-dialog-icon--inline {
@@ -4907,12 +4941,11 @@ html[data-banner-hidden] .preview-banner {
     flex-wrap: nowrap;
   }
   /* 본 동작은 폭을 다 쓰고, 취소는 글자만큼만 차지한다. */
-  .sticky-actions .primary-button,
-  .sticky-actions .btn-primary {
+  .sticky-actions .btn-primary,
+  .sticky-actions .btn-accent {
     flex: 1;
     justify-content: center;
   }
-  .sticky-actions .ghost-button,
   .sticky-actions .btn-secondary {
     flex-shrink: 0;
   }
@@ -4921,59 +4954,8 @@ html[data-banner-hidden] .preview-banner {
 /* =========================================================================
    13. Buttons (shared)
    ========================================================================= */
-.primary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: var(--brand);
-  color: #fff;
-  border-radius: var(--radius-sm);
-  padding: 11px 18px;
-  min-height: 40px;
-  font-weight: 700;
-  font-size: 13px;
-  transition: background 0.15s;
-}
-.primary-button:hover {
-  background: var(--brand-strong);
-}
-.ghost-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink);
-  transition:
-    border-color 0.15s,
-    color 0.15s;
-  white-space: nowrap;
-}
-.ghost-button:hover {
-  border-color: var(--brand);
-  color: var(--brand);
-}
-.ghost-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.ghost-button--primary {
-  border-color: var(--brand);
-  color: var(--brand);
-}
-.ghost-button--primary:hover {
-  background: var(--brand);
-  color: #fff;
-}
-.ghost-button--danger:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-}
+/* 단추는 한 가족이다: btn-primary / btn-secondary / btn-danger (아래 .btn-* 정의).
+   옛 두 번째 가족은 2026-10-06 에 합쳤다 (헌법 4장, check-constitution 이 막는다). */
 .logout-button {
   padding: 7px 14px;
   border-radius: var(--radius-sm);
@@ -5048,7 +5030,7 @@ html[data-banner-hidden] .preview-banner {
   color: var(--ink-3);
   line-height: 1.7;
 }
-.preview-dialog .primary-button {
+.preview-dialog .btn-primary {
   width: 100%;
   margin-top: 22px;
   padding: 12px 20px;
@@ -5363,11 +5345,19 @@ html[data-banner-hidden] .preview-banner {
     gap: 12px;
     margin-bottom: 16px;
   }
+  /* 주 행동은 좁은 화면에서도 오른쪽에 (사장님 2026-10-06). 글 링크가 같이 있으면
+     그 왼쪽에 붙는다. */
   .page-header-side {
-    justify-content: flex-start;
+    justify-content: flex-end;
+  }
+  .page-header-actions {
+    justify-content: flex-end;
+    width: 100%;
   }
   .page-header .wo-actions {
     margin: 0;
+    width: 100%;
+    justify-content: flex-end;
   }
   /* 본문(.main-content)이 flex gap(28px) 으로 블록 사이를 띄운다. 바로 밑에 놓인
      블록의 제 여백까지 더해지면 두 배가 되므로, 직계 자식의 위아래 여백은 0. */
@@ -5497,11 +5487,10 @@ html[data-banner-hidden] .preview-banner {
     min-height: 44px;
     min-width: 44px;
   }
-  .primary-button,
-  .secondary-button,
-  .ghost-button,
+  .btn-primary,
+  .btn-secondary,
   .text-button,
-  .invite-form-actions .primary-button,
+  .invite-form-actions .btn-primary,
   .tabs button,
   .wo-tabs a {
     min-height: 44px;
@@ -5589,9 +5578,7 @@ body.sidebar-lock {
     overflow-wrap: anywhere;
   }
   .page-header-actions > a,
-  .page-header-actions > button,
-  .primary-button,
-  .secondary-button {
+  .page-header-actions > button {
     min-height: 44px;
   }
   .topbar {
@@ -5951,6 +5938,76 @@ fieldset.form-field legend {
 }
 .btn-danger:hover {
   background: #99300f;
+}
+.btn-secondary:hover {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+/* 지금·여기의 단추 — 작업자의 오늘 TBM 확인. 오늘 배지와 같은 포인트색(헌법 2장),
+   화면에 하나만. 다른 주 행동은 초록이다. */
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 800;
+  font-size: 14px;
+  min-height: 44px;
+}
+.btn-accent:hover {
+  background: color-mix(in srgb, var(--accent) 86%, var(--accent-ink));
+}
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* 목록 줄 안의 작은 행동(승인·거절·항목 추가). 큰 단추와 섞이지 않게 한 치수 작다. */
+.btn--sm {
+  min-height: 40px;
+  padding: 9px 14px;
+  font-size: 13px;
+  gap: 6px;
+  white-space: nowrap;
+}
+/* 되돌리기 어려운 행동(취소·폐기·퇴사·삭제)은 화면에서도 빨갛다 (헌법 5장). */
+.btn-secondary[data-tone="danger"] {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  color: var(--danger);
+}
+.btn-secondary[data-tone="danger"]:hover {
+  border-color: var(--danger);
+  background: var(--danger-soft, var(--surface-2));
+  color: var(--danger);
+}
+/* 이동 링크. 아무것도 바꾸지 않고 다른 화면으로 가는 것은 단추가 아니다 — 상자 없이
+   글과 화살표만. 누르는 자리는 44px 을 지킨다 (헌법 4장). */
+.go-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 4px;
+  border-radius: 6px;
+  color: var(--brand-strong);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.go-link svg {
+  color: var(--brand);
+  flex-shrink: 0;
+}
+@media (hover: hover) {
+  .go-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
 }
 
 /* 사람 고르기 칩 (components/ui/people-picker.tsx). 속은 체크박스다. */
@@ -6990,6 +7047,24 @@ fieldset.form-field legend {
   padding: 14px 16px;
   background: #fff;
 }
+.link-session.is-locked {
+  padding: 0;
+}
+.link-session.is-locked > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
 .link-session.is-current {
   border-color: var(--brand);
   box-shadow: 0 0 0 1px var(--brand);
@@ -7187,7 +7262,7 @@ fieldset.form-field legend {
 .criteria-form-level legend {
   padding: 0 4px;
 }
-.criteria-form > .primary-button {
+.criteria-form > .btn-primary {
   align-self: flex-start;
 }
 /* 실시규정 (features/company/policy-form.tsx) */
@@ -7210,7 +7285,7 @@ fieldset.form-field legend {
   line-height: 1.7;
   resize: vertical;
 }
-.policy-form > .primary-button {
+.policy-form > .btn-primary {
   align-self: flex-start;
 }
 .policy-readonly {
@@ -8919,4 +8994,56 @@ fieldset.form-field legend {
 .insp-overall strong {
   margin-right: 6px;
   color: var(--info);
+}
+
+/* 휘발성 안내 (components/ui/toast.tsx). 막힌 행위에 그 자리에서 몇 초 답하고 사라진다.
+   늘 그려 두고 글만 바꾸므로 보이지 않을 때도 자리는 없다(fixed). */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom, 0px));
+  z-index: 90;
+  width: max-content;
+  max-width: min(calc(100vw - 32px), 480px);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transition:
+    opacity 0.18s,
+    transform 0.18s,
+    visibility 0.18s;
+}
+.toast[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+.toast a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -12px 0;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transition: none;
+  }
 }

@@ -7,14 +7,7 @@ import {
   useEffect,
 } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Camera,
-  CheckCheck,
-  CheckCircle2,
-  MessageSquare,
-  Save,
-  X,
-} from "lucide-react";
+import { Camera, CheckCheck, CheckCircle2, MessageSquare, Save, X, ArrowRight } from "lucide-react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { FloatSelect, FloatTextarea } from "@/components/ui/float-field";
 import { uploadImage } from "@/features/attachments/upload";
@@ -388,7 +381,7 @@ export function InspectionForm({
                 onClick={() => saved && router.push(saved.next)}
                 disabled={!!uploading}
               >
-                사진 없이 계속
+                사진 없이 계속 <ArrowRight size={14} />
               </button>
             </div>
           </div>

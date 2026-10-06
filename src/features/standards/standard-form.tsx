@@ -4,7 +4,7 @@ import { PeoplePickerDialog } from "@/components/ui/people-picker";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Save, Trash2, X, ListChecks } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, X, ListChecks, PenLine } from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
@@ -333,17 +333,18 @@ export function StandardForm({
                 setBackup(null);
               }}
             >
-              이어서 작성
+              <PenLine size={14} /> 이어서 작성
             </button>
             <button
               type="button"
               className="btn-secondary"
+              data-tone="danger"
               onClick={() => {
                 clearBackup();
                 setBackup(null);
               }}
             >
-              버리기
+              <Trash2 size={14} /> 버리기
             </button>
           </div>
         </div>
@@ -463,7 +464,7 @@ export function StandardForm({
           </ol>
           <button
             type="button"
-            className="ghost-button std-add-button"
+            className="btn-secondary btn--sm std-add-button"
             onClick={() => addStringItem("steps")}
           >
             <Plus size={13} /> 단계 추가
@@ -661,10 +662,10 @@ export function StandardForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
-        <Link href={returnHref ?? "/standards"} className="ghost-button">
+        <Link href={returnHref ?? "/standards"} className="btn-secondary btn--sm">
           <X size={13} /> 취소
         </Link>
-        <button type="submit" className="primary-button" disabled={pending}>
+        <button type="submit" className="btn-primary" disabled={pending}>
           <Save size={14} />
           {pending ? "저장 중..." : "표준서 저장 · 확정"}
         </button>
@@ -717,7 +718,7 @@ function ChecklistBlock({
       </ol>
       <button
         type="button"
-        className="ghost-button std-add-button"
+        className="btn-secondary btn--sm std-add-button"
         onClick={onAdd}
       >
         <Plus size={13} /> 항목 추가

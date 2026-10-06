@@ -12,17 +12,7 @@ import {
 import Link from "next/link";
 import { ReferencePanel } from "@/features/assessments/reference-panel";
 import type { AssessmentReferences } from "@/server/assessment-references";
-import {
-  CheckCircle2,
-  FileText,
-  History,
-  Plus,
-  Save,
-  Send,
-  ShieldCheck,
-  Search,
-  X,
-} from "lucide-react";
+import { CheckCircle2, FileText, History, Plus, Save, Send, ShieldCheck, Search, X, PenLine, Trash2 } from "lucide-react";
 import {
   FloatField,
   FloatSelect,
@@ -436,10 +426,6 @@ export function WorkOrderForm({
   // 위험성평가·체크리스트 본문. 표준서 모드에서는 접힘 안에, 간이평가는 그대로.
   const riskBody = (
     <>
-      <p className="wo-muted">
-        기본값으로 위험을 판단하지 않습니다. 현장에서 본 수준과 허용 여부를 직접
-        고르세요.
-      </p>
       <div className="wo-columns">
         <FloatSelect
           id="wo-assessment-kind"
@@ -585,7 +571,8 @@ export function WorkOrderForm({
               {data[key].length > 1 && (
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-secondary btn--sm"
+                  data-tone="danger"
                   aria-label={title + " 항목 " + (i + 1) + " 삭제"}
                   onClick={() =>
                     set(
@@ -594,7 +581,7 @@ export function WorkOrderForm({
                     )
                   }
                 >
-                  삭제
+                  <Trash2 size={14} /> 삭제
                 </button>
               )}
             </div>
@@ -618,12 +605,11 @@ export function WorkOrderForm({
   const standardRiskBody = (
     <>
       <p className="wo-muted">
-        표준서의 승인된 위험성평가를 그대로 씁니다. 발급하면 그 시점의 내용이
-        지시서에 남습니다. 위험요인이 달라졌으면{" "}
+        표준서의 승인된 평가를 그대로 씁니다. 바꾸려면{" "}
         <Link href={`/standards/${standardId}/assessments/new`}>
           표준서에서 새 회차 평가
         </Link>
-        를 먼저 하세요.
+        .
       </p>
       {data.risks.map((r, i) => (
         <article className="wo-risk" key={i}>
@@ -670,14 +656,15 @@ export function WorkOrderForm({
               className="btn-primary"
               onClick={restoreBackup}
             >
-              이어서 작성
+              <PenLine size={14} /> 이어서 작성
             </button>
             <button
               type="button"
               className="btn-secondary"
+                  data-tone="danger"
               onClick={discardBackup}
             >
-              버리기
+              <Trash2 size={14} /> 버리기
             </button>
           </div>
         </div>
@@ -790,22 +777,19 @@ export function WorkOrderForm({
                   <>
                     {standards.length > 0 ? (
                       <p className="wo-muted">
-                        표준서를 고르면 승인된 위험성평가와
-                        작업방법·체크리스트가 함께 채워집니다. 표준서가 없는
-                        1회성 작업만 &lsquo;표준서 없이 진행&rsquo; 을 쓰세요.
+                        표준서를 고르면 평가·작업방법·체크리스트가 채워집니다.
                       </p>
                     ) : (
                       <p className="wo-muted">
-                        등록된 작업표준서가 없습니다. 반복 작업이면 표준서를
-                        먼저 만드세요. 1회성이면 표준서 없이 진행하고
-                        위험성평가를 아래에서 직접 적습니다.
+                        표준서가 아직 없습니다. 반복 작업이면 표준서 먼저,
+                        1회성이면 표준서 없이.
                       </p>
                     )}
                     <div className="wo-std-picker-actions">
                       {standards.length > 0 && (
                         <button
                           type="button"
-                          className="primary-button"
+                          className="btn-primary"
                           onClick={() => setStdOpen(true)}
                         >
                           <Search size={13} /> 작업표준서 찾기
@@ -816,7 +800,7 @@ export function WorkOrderForm({
                       {standards.length === 0 && (
                         <Link
                           href={NEW_STANDARD_HREF}
-                          className="primary-button"
+                          className="btn-primary"
                           prefetch={false}
                         >
                           <Plus size={13} /> 새 표준서 만들기
@@ -824,7 +808,7 @@ export function WorkOrderForm({
                       )}
                       <button
                         type="button"
-                        className={`ghost-button wo-std-exception${mode === "simple" ? " is-on" : ""}`}
+                        className={`btn-secondary btn--sm wo-std-exception${mode === "simple" ? " is-on" : ""}`}
                         onClick={chooseSimple}
                         aria-pressed={mode === "simple"}
                       >

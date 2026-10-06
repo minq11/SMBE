@@ -5,15 +5,7 @@ import { CautionBand, PpeList } from "./ppe-list";
 import { useTransition } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
-import {
-  Archive,
-  ArrowLeft,
-  ArrowRight,
-  CircleAlert,
-  Pencil,
-  Plus,
-  ShieldCheck,
-} from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight, CircleAlert, Pencil, Plus, ShieldCheck, PenLine, Check } from "lucide-react";
 import {
   ASSESSMENT_KIND_LABEL,
   type StandardDetail,
@@ -155,7 +147,7 @@ export function StandardDetailView({
           {active && !noValid && (
             <Link
               href={`/work-orders/new?standard=${detail.standard_id}`}
-              className="primary-button"
+              className="btn-primary"
             >
               <ShieldCheck size={14} /> 이 표준서로 지시서 작성
               <ArrowRight size={13} />
@@ -166,7 +158,7 @@ export function StandardDetailView({
               {!detail.draft && (
                 <button
                   type="button"
-                  className="ghost-button"
+                  className="btn-secondary btn--sm"
                   onClick={onStartRevision}
                   disabled={pending}
                 >
@@ -175,13 +167,13 @@ export function StandardDetailView({
               )}
               <Link
                 href={`/standards/${detail.standard_id}/assessments/new`}
-                className="ghost-button"
+                className="btn-secondary btn--sm"
               >
                 <Plus size={13} /> 위험성평가 다시하기
               </Link>
               <button
                 type="button"
-                className="ghost-button ghost-button--danger"
+                className="btn-secondary btn--sm" data-tone="danger"
                 onClick={onArchive}
                 disabled={pending}
               >
@@ -210,7 +202,7 @@ export function StandardDetailView({
                 href={`/standards/${detail.standard_id}/edit`}
                 className="btn-primary"
               >
-                이어서 수정
+                <PenLine size={14} /> 이어서 수정
               </Link>
               <button
                 type="button"
@@ -218,7 +210,7 @@ export function StandardDetailView({
                 onClick={onApprove}
                 disabled={pending}
               >
-                이대로 확정
+                <Check size={14} /> 이대로 확정
               </button>
               <button
                 type="button"
@@ -293,11 +285,6 @@ export function StandardDetailView({
           <p className="std-form-note">등록된 단계가 없습니다.</p>
         )}
         {/* 확정된 판은 사진도 고정이다. 붙이거나 지우는 건 개정 초안에서. */}
-        {!isPro && detail.steps.length > 0 && (
-          <p className="attach-uploader-hint">
-            유료 요금제에서 작업 단계별 사진을 첨부할 수 있습니다.
-          </p>
-        )}
         {isPro && !archived && detail.steps.length > 0 && (
           <p className="attach-uploader-hint">
             사진을 붙이거나 지우려면 개정을 시작해 초안에서 하세요. 확정된 판은
@@ -405,11 +392,6 @@ export function StandardDetailView({
                 </li>
               ))}
             </ol>
-            {!isPro && (
-              <p className="attach-uploader-hint">
-                유료 요금제에서 조치 전·후 사진을 첨부할 수 있습니다.
-              </p>
-            )}
           </div>
           {current.participant_names.length > 0 && (
             <p className="std-detail-participants">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, X } from "lucide-react";
+import { BellRing, X, Bell, BellOff } from "lucide-react";
 import {
   pushSetupAction,
   removePushSubscriptionAction,
@@ -180,15 +180,15 @@ export function PushOptIn({ compact = false }: { compact?: boolean }) {
       </div>
       {state.kind === "subscribed" ? (
         <button type="button" className="btn-secondary" onClick={unsubscribe}>
-          알림 끄기
+          <BellOff size={14} /> 알림 끄기
         </button>
       ) : state.kind === "ready" || state.kind === "error" ? (
         <button type="button" className="btn-primary" onClick={subscribe}>
-          알림 켜기
+          <Bell size={14} /> 알림 켜기
         </button>
       ) : state.kind === "busy" ? (
         <button type="button" className="btn-primary" disabled>
-          잠시만요…
+          <Bell size={14} /> 잠시만요…
         </button>
       ) : null}
       {!compact && (

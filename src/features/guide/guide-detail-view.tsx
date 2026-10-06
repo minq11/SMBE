@@ -101,7 +101,7 @@ export function GuideDetailView({ topic }: { topic: LawSummary["topic"] }) {
             <li key={action.text}>
               <p>{action.text}</p>
               {action.ctaHref && action.ctaLabel && (
-                <Link href={action.ctaHref} className="ghost-button">
+                <Link href={action.ctaHref} className="btn-secondary btn--sm">
                   {action.ctaLabel} <ArrowRight size={13} />
                 </Link>
               )}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withTransaction } from "@/server/db";
@@ -108,7 +109,7 @@ export default async function AssessmentPage({
               href={`/standards/${detail.standard_id}/assessments/new`}
               className="btn-primary"
             >
-              새 회차 위험성평가
+              <Plus size={14} /> 새 회차 위험성평가
             </Link>
           )}
         </div>

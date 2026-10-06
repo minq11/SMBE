@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, PenLine, X } from "lucide-react";
 import type { HalfYearReview } from "@/server/assessments";
 import { recordHalfYearReviewAction } from "./actions";
 import { koDate } from "./model";
@@ -102,7 +102,7 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
             className="btn-primary"
             onClick={() => setOpen(true)}
           >
-            {review.current ? "다시 서명" : "점검 확인 서명"}
+            <PenLine size={14} /> {review.current ? "다시 서명" : "점검 확인 서명"}
           </button>
         </div>
       ) : (
@@ -123,7 +123,7 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
               className="btn-secondary"
               onClick={() => setOpen(false)}
             >
-              취소
+              <X size={14} /> 취소
             </button>
             <button
               type="button"
@@ -131,7 +131,7 @@ export function HalfYearReviewCard({ review }: { review: HalfYearReview }) {
               onClick={sign}
               disabled={pending}
             >
-              {pending ? "저장 중…" : "서명"}
+              <PenLine size={14} /> {pending ? "저장 중…" : "서명"}
             </button>
           </div>
         </div>

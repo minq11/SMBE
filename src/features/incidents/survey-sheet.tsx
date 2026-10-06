@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
 import { Printer } from "lucide-react";
+import { usePaidToast } from "@/components/ui/paid-lock";
 import {
   KIND_LABEL,
   OCCURRENCE_LABEL,
@@ -19,23 +18,19 @@ export type SurveyCompany = {
 
 /** 인쇄 / PDF 저장. 무료 요금제는 안내만. 지시서 출력물의 단추와 같은 모양. */
 export function SurveyPrintButton({ allowed }: { allowed: boolean }) {
-  const [blocked, setBlocked] = useState(false);
+  const { block, toast } = usePaidToast(
+    "산업재해조사표 인쇄는 유료 요금제에서 씁니다.",
+  );
   return (
     <div className="wo-no-print">
       <button
         type="button"
         className="btn-primary"
-        onClick={() => (allowed ? window.print() : setBlocked(true))}
+        onClick={() => (allowed ? window.print() : block())}
       >
         <Printer size={14} /> 조사표 인쇄 / PDF 저장
       </button>
-      {blocked && (
-        <p role="alert" className="wo-notice">
-          산업재해조사표 출력은 유료 요금제에서 이용할 수 있습니다. 우리
-          기록으로 채울 수 있는 칸을 채워 별지 서식으로 냅니다.{" "}
-          <Link href="/billing">요금제 보기</Link>
-        </p>
-      )}
+      {toast}
     </div>
   );
 }

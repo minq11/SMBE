@@ -1,4 +1,6 @@
 "use client";
+
+import { X } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -77,7 +79,7 @@ export function useConfirm() {
               className="btn-secondary"
               onClick={() => settle(false)}
             >
-              {content.cancelLabel ?? "취소"}
+              <X size={14} /> {content.cancelLabel ?? "취소"}
             </button>
             <button
               type="button"

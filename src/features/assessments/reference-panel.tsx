@@ -187,9 +187,6 @@ export function ReferencePanel({
               </ul>
             )}
             <div className="law-dialog-actions">
-              <button type="button" className="btn-secondary" onClick={close}>
-                닫기
-              </button>
             </div>
           </div>
         )}

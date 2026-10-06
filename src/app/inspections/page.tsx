@@ -1,19 +1,20 @@
 import Link from "next/link";
-import { CalendarCheck, ChevronDown, Search } from "lucide-react";
-import { seoulToday } from "@/features/work-orders/model";
+import { ChevronDown, Search, ArrowRight } from "lucide-react";
+import { seoulToday, validDate } from "@/features/work-orders/model";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import {
   pendingFindings,
   companyInspectionLog,
-  type LogRow,
 } from "@/server/inspection-service";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { FindingResolution } from "@/features/inspections/inspection-form";
+import { InspectionLog } from "@/features/inspections/log-list";
 import { PageHeader } from "@/components/ui/page-header";
+import { HelpDialog } from "@/components/ui/help-dialog";
 import { Pager } from "@/components/ui/pager";
 import { pageOf, parsePage } from "@/lib/paging";
-import { FloatField, FloatSelect } from "@/components/ui/float-field";
+import { FloatField } from "@/components/ui/float-field";
 import "@/features/work-orders/work-orders.css";
 
 const at = (value: string) =>
@@ -24,18 +25,13 @@ const at = (value: string) =>
     hour12: false,
   });
 
-const STATE_OPTIONS = [
-  ["", "전체"],
-  ["MISSING", "누락 회차만"],
-  ["DONE", "완료 회차만"],
-  ["FAIL", "미조치 불량 있음"],
-  ["BACKFILLED", "사후 입력 포함"],
-] as const;
-
-/** 회차 한 줄이 이행됐는가 — 배정 전원 TBM + 작업 중 1건 이상. */
-function done(r: LogRow) {
-  return r.expected > 0 && r.tbm_done >= r.expected && r.during_count > 0;
-}
+/** 기본 조회 기간. 오늘까지 4주 — 한 달치 누락을 한 번에 훑는다. */
+const DEFAULT_DAYS = 28;
+const shiftDay = (day: string, days: number) =>
+  new Date(new Date(day + "T00:00:00Z").getTime() + days * 86400000)
+    .toISOString()
+    .slice(0, 10);
+const md = (day: string) => `${Number(day.slice(5, 7))}/${Number(day.slice(8))}`;
 
 export default async function InspectionsPage({
   searchParams,
@@ -44,138 +40,71 @@ export default async function InspectionsPage({
     from?: string;
     to?: string;
     q?: string;
-    state?: string;
-    page?: string;
     fpage?: string;
   }>;
 }) {
   const filters = await searchParams;
-  // 쪽 넘김은 지금 조건을 그대로 들고 간다. 필터가 바뀌면 1쪽부터.
-  const hrefWith = (patch: Record<string, string | undefined>) => {
-    const q = new URLSearchParams();
-    for (const [k, v] of Object.entries({ ...filters, ...patch }))
-      if (v && k !== "page" && k !== "fpage") q.set(k, v);
-    if (patch.page && patch.page !== "1") q.set("page", patch.page);
-    if (patch.fpage && patch.fpage !== "1") q.set("fpage", patch.fpage);
-    const qs = q.toString();
-    return "/inspections" + (qs ? "?" + qs : "");
-  };
   const { session, actor } = await workSession("/inspections");
-  // 빠른 필터. 좁은 화면에서 날짜 두 개를 고르는 대신 한 번 누른다.
-  const today = seoulToday();
-  const weekStart = (() => {
-    const d = new Date(today + "T00:00:00+09:00");
-    const dow = (d.getUTCDay() + 6) % 7; // 월요일 = 0
-    d.setUTCDate(d.getUTCDate() - dow);
-    return d.toISOString().slice(0, 10);
-  })();
-  const PRESETS = [
-    {
-      key: "today",
-      label: "오늘",
-      href: `/inspections?from=${today}&to=${today}`,
-    },
-    {
-      key: "week",
-      label: "이번 주",
-      href: `/inspections?from=${weekStart}&to=${today}`,
-    },
-    { key: "missing", label: "미이행만", href: "/inspections?state=MISSING" },
-    { key: "fail", label: "미조치 있음", href: "/inspections?state=FAIL" },
-  ] as const;
-  const activePreset =
-    filters.from === today &&
-    filters.to === today &&
-    !filters.q &&
-    !filters.state
-      ? "today"
-      : filters.from === weekStart &&
-          filters.to === today &&
-          !filters.q &&
-          !filters.state
-        ? "week"
-        : filters.state === "MISSING" &&
-            !filters.from &&
-            !filters.to &&
-            !filters.q
-          ? "missing"
-          : filters.state === "FAIL" &&
-              !filters.from &&
-              !filters.to &&
-              !filters.q
-            ? "fail"
-            : null;
-  const customFilter =
-    !activePreset &&
-    Boolean(filters.from || filters.to || filters.q || filters.state);
   const isManager = session.membership?.role !== "WORKER";
-  type LogState = (typeof STATE_OPTIONS)[number][0];
-  const state: LogState = (STATE_OPTIONS.find(
-    ([v]) => v === filters.state,
-  )?.[0] ?? "") as LogState;
+  // 기간은 서버가 한 번 거르고, 오늘·이번 주·미이행 같은 칩은 받은 목록을 화면에서
+  // 거른다 (features/inspections/log-list.tsx). 날짜가 비면 오늘까지 4주.
+  const today = seoulToday();
+  const custom = Boolean(filters.from || filters.to || filters.q);
+  const from =
+    filters.from && validDate(filters.from)
+      ? filters.from
+      : shiftDay(today, -(DEFAULT_DAYS - 1));
+  const to = filters.to && validDate(filters.to) ? filters.to : today;
+  const period = custom ? `${md(from)} ~ ${md(to)}` : "최근 4주";
   const [findings, log] = await Promise.all([
     isManager
       ? withTransaction((client) => pendingFindings(client, actor))
       : Promise.resolve([]),
     isManager
       ? withTransaction((client) =>
-          companyInspectionLog(client, actor, {
-            from: filters.from,
-            to: filters.to,
-            q: filters.q,
-            state,
-          }),
+          companyInspectionLog(client, actor, { from, to, q: filters.q }),
         )
-      : Promise.resolve({ rows: [], locked: 0, limited: false }),
+      : Promise.resolve({ rows: [], limited: false }),
   ]);
-  const logPage = pageOf(log.rows, parsePage(filters.page));
+  const rows = log.rows.map((r) => ({
+    ...r,
+    time: `${at(r.starts_at)} ~ ${at(r.ends_at)}`,
+  }));
   const findingPage = pageOf(findings.slice(0, 100), parsePage(filters.fpage));
+  const findingHref = (n: number) => {
+    const q = new URLSearchParams();
+    for (const k of ["from", "to", "q"] as const)
+      if (filters[k]) q.set(k, filters[k]);
+    if (n !== 1) q.set("fpage", String(n));
+    const qs = q.toString();
+    return "/inspections" + (qs ? "?" + qs : "");
+  };
 
   return (
     <OrderShell session={session} title="안전점검" active="inspection">
       <PageHeader
         title="안전점검"
-        description="회사 전체의 회차별 점검 이행 현황과 나에게 배정된 불량 조치"
+        actions={
+          <div className="wo-actions">
+            {isManager && (
+              <Link className="go-link" href="/meetings">
+                주간 안전점검 회의 <ArrowRight size={14} />
+              </Link>
+            )}
+            <Link className="btn-primary" href="/work-orders">
+              <Search size={14} /> 작업 선택 · TBM 및 작업 중 점검
+            </Link>
+          </div>
+        }
       />
-      <p className="wo-actions">
-        <Link className="btn-primary" href="/work-orders">
-          <Search size={14} /> 작업 선택 · TBM 및 작업 중 점검
-        </Link>
-        {isManager && (
-          <Link className="btn-secondary" href="/meetings">
-            <CalendarCheck size={14} /> 주간 안전점검 회의
-          </Link>
-        )}
-      </p>
 
       {isManager && (
-        <section className="wo-section">
-          <h2>점검 기록 · 회차 {log.rows.length}건</h2>
-          <p className="wo-muted">
-            배정 인원 전원 TBM + 작업 중 점검 1건 이상이면 이행 완료입니다.
-            회차를 열면 작업자별 기록과 관리자 사후 입력·수정을 할 수 있습니다.
-          </p>
-          <nav className="wo-presets" aria-label="빠른 필터">
-            {PRESETS.map((p) => (
-              <Link
-                key={p.key}
-                href={p.href}
-                aria-current={activePreset === p.key ? "page" : undefined}
-              >
-                {p.label}
-              </Link>
-            ))}
-            <Link
-              href="/inspections"
-              aria-current={!activePreset && !customFilter ? "page" : undefined}
-            >
-              전체
-            </Link>
-          </nav>
-          <details className="wo-filter-details" open={customFilter}>
+        <InspectionLog rows={rows} today={today} limited={log.limited}>
+          <details className="wo-filter-details" open={custom}>
             <summary>
-              <ChevronDown size={14} aria-hidden="true" /> 기간·작업명·상태로
-              자세히 찾기
+              <ChevronDown size={14} aria-hidden="true" />
+              <span className="wo-period">{period}</span>
+              기간·작업명으로 자세히 찾기
             </summary>
             {/* account-form 은 빼 둔다 — 그 입력칸 규칙이 float-field 보다 세다. */}
             <form className="account-panel wo-log-filter">
@@ -185,7 +114,7 @@ export default async function InspectionsPage({
                 label="시작일"
                 type="date"
                 name="from"
-                defaultValue={filters.from ?? ""}
+                defaultValue={from}
               />
               <FloatField
                 id="inspections-filter-to"
@@ -193,7 +122,7 @@ export default async function InspectionsPage({
                 label="종료일"
                 type="date"
                 name="to"
-                defaultValue={filters.to ?? ""}
+                defaultValue={to}
               />
               <label>
                 작업명
@@ -206,87 +135,38 @@ export default async function InspectionsPage({
                   enterKeyHint="search"
                 />
               </label>
-              <FloatSelect
-                id="inspections-filter-state"
-                className="float-field--flush"
-                label="상태"
-                name="state"
-                defaultValue={state}
-              >
-                {STATE_OPTIONS.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </FloatSelect>
               <button className="btn-secondary" type="submit">
-                조회
+                <Search size={14} /> 조회
               </button>
-              <Link className="btn-secondary" href="/inspections">
-                초기화
+              <Link className="go-link" href="/inspections">
+                초기화 <ArrowRight size={14} />
               </Link>
             </form>
           </details>
-
-          {!log.rows.length && <p>조건에 맞는 회차가 없습니다.</p>}
-          {logPage.rows.map((r) => (
-            <article className="wo-risk wo-log-row" key={r.session_id}>
-              <h3>
-                <Link
-                  href={
-                    "/work-orders/" +
-                    r.order_id +
-                    "/inspections?session=" +
-                    r.session_id
-                  }
-                >
-                  {r.work_date} · {r.order_name}
-                </Link>
-              </h3>
-              <p className="wo-muted">
-                {at(r.starts_at)} ~ {at(r.ends_at)}
-              </p>
-              <p>
-                TBM {r.tbm_done}/{r.expected}명 · 작업 중 {r.during_count}건 ·{" "}
-                {done(r) ? "이행 완료" : "미이행"}
-              </p>
-              <p>
-                불량 {r.total_findings}건
-                {r.open_findings > 0 && ` · 미조치 ${r.open_findings}건`}
-                {r.backfilled > 0 && ` · 사후 입력 ${r.backfilled}건`}
-              </p>
-            </article>
-          ))}
-          <Pager
-            page={logPage.page}
-            pageCount={logPage.pageCount}
-            hrefFor={(n) => hrefWith({ page: String(n), fpage: filters.fpage })}
-          />
-          {log.limited && (
-            <p className="wo-muted">
-              200건까지만 표시합니다. 기간을 좁혀 조회하세요.
-            </p>
-          )}
-          {log.locked > 0 && (
-            <p className="wo-muted">
-              무료 요금제는 최근 1주일만 열람할 수 있습니다. 이전 회차{" "}
-              {log.locked}건은 보관되어 있으며 유료 전환 시 다시 열립니다.
-            </p>
-          )}
-        </section>
+        </InspectionLog>
       )}
 
       {isManager && (
         <section className="wo-section">
-          <h2>
-            내 불량 알림함 · {findings.length > 100 ? "100+" : findings.length}
-            건
-          </h2>
-          <p className="wo-muted">
-            나에게 지정된 미조치 항목을 오래된 순으로 최대 100건 표시합니다.
-            과거 점검 원문 열람 제한과 별개로 미조치 항목은 계속 처리할 수
-            있습니다. 이메일·푸시 알림은 아직 제공하지 않습니다.
-          </p>
+          <div className="wo-section-head">
+            <h2>
+              내 불량 알림함 ·{" "}
+              {findings.length > 100 ? "100+" : findings.length}건
+            </h2>
+            <HelpDialog title="내 불량 알림함" variant="icon">
+              <dl className="help-rows">
+                <dt>무엇</dt>
+                <dd>나에게 지정된 미조치 항목. 오래된 순으로 최대 100건.</dd>
+                <dt>언제</dt>
+                <dd>
+                  지난 점검의 열람 제한과 상관없이 처리할 수 있습니다. 홈의
+                  처리할 일에도 같이 보입니다.
+                </dd>
+                <dt>알림</dt>
+                <dd>이메일·푸시는 아직 없습니다. 이 화면과 홈에서 확인.</dd>
+              </dl>
+            </HelpDialog>
+          </div>
           {!findings.length && <p>처리할 불량이 없습니다.</p>}
           {findingPage.rows.map((f) => (
             <article className="wo-risk" key={f.id}>
@@ -297,7 +177,7 @@ export default async function InspectionsPage({
               <p className="wo-detail-text">{f.comment || "코멘트 없음"}</p>
               <p>
                 <Link href={"/work-orders/" + f.order_id + "/inspections"}>
-                  원본 점검 보기 (열람 권한 적용)
+                  원본 점검 보기
                 </Link>
               </p>
               <FindingResolution id={f.id} />
@@ -306,7 +186,7 @@ export default async function InspectionsPage({
           <Pager
             page={findingPage.page}
             pageCount={findingPage.pageCount}
-            hrefFor={(n) => hrefWith({ page: filters.page, fpage: String(n) })}
+            hrefFor={findingHref}
           />
         </section>
       )}

@@ -44,6 +44,7 @@ import {
   type InspectionInput,
   type SessionRow,
 } from "../src/features/inspections/model";
+import { isDone, matchesChip } from "../src/features/inspections/log-filter";
 import {
   listMeetings,
   openMeeting,
@@ -870,22 +871,13 @@ test("inspection log: the company view counts each session and honours the free 
   assert.equal(row.tbm_done, 1);
   assert.equal(row.expected, 1);
   assert.equal(row.during_count, 0);
-  // 필터는 집계 결과에 걸린다 — 아직 작업 중 점검이 없으므로 누락이다.
-  assert.equal(
-    (
-      await transaction((c) =>
-        companyInspectionLog(c, f.actor, { state: "DONE" }),
-      )
-    ).rows.length,
-    0,
-  );
-  assert.ok(
-    (
-      await transaction((c) =>
-        companyInspectionLog(c, f.actor, { state: "MISSING" }),
-      )
-    ).rows.some((r) => r.session_id === f.session.id),
-  );
+  assert.equal(row.locked, false);
+  // 상태는 서버가 아니라 화면의 칩이 거른다 — 아직 작업 중 점검이 없으므로 미이행.
+  const today = seoulToday();
+  assert.equal(isDone(row), false);
+  assert.ok(matchesChip(row, "missing", today));
+  assert.equal(matchesChip(row, "fail", today), false);
+  assert.ok(matchesChip(row, "all", today));
   // 이름이 맞지 않으면 걸러진다.
   assert.equal(
     (
@@ -900,7 +892,8 @@ test("inspection log: the company view counts each session and honours the free 
     transaction((c) => companyInspectionLog(c, f.workerActor, {})),
     /권한/,
   );
-  // 무료는 최근 1주일만 본다. 그보다 오래된 회차는 목록에서 빠지고 건수만 남는다.
+  // 무료는 최근 1주일만 본다. 그보다 오래된 회차는 목록에 잠긴 채 남는다 — 날짜·
+  // 작업명만 있고 집계는 비며, 이행·미조치 칩에도 걸리지 않는다.
   await pool.query(
     `UPDATE work_sessions SET work_date=work_date-30,
        starts_at=starts_at-interval '30 days', ends_at=ends_at-interval '30 days'
@@ -908,19 +901,20 @@ test("inspection log: the company view counts each session and honours the free 
     [f.session.id],
   );
   const free = await transaction((c) => companyInspectionLog(c, f.actor, {}));
-  assert.equal(
-    free.rows.some((r) => r.session_id === f.session.id),
-    false,
-  );
-  assert.equal(free.locked, 1);
-  // 유료로 올리면 같은 회차가 다시 보인다.
+  const sealed = free.rows.find((r) => r.session_id === f.session.id)!;
+  assert.equal(sealed.locked, true);
+  assert.equal(sealed.tbm_done, 0);
+  assert.equal(sealed.expected, 0);
+  assert.equal(matchesChip(sealed, "missing", today), false);
+  // 유료로 올리면 같은 회차가 열린다.
   await pool.query(
     "UPDATE companies SET pro_state='PRO_VOLUNTARY',plan='BASIC',plan_started_at=now() WHERE id=$1",
     [f.actor.companyId],
   );
   const opened = await transaction((c) => companyInspectionLog(c, f.actor, {}));
-  assert.ok(opened.rows.some((r) => r.session_id === f.session.id));
-  assert.equal(opened.locked, 0);
+  const open = opened.rows.find((r) => r.session_id === f.session.id)!;
+  assert.equal(open.locked, false);
+  assert.equal(open.tbm_done, 1);
 });
 
 test("inspection: concurrent retries are idempotent; different TBM requests have one winner", async () => {
@@ -1177,7 +1171,7 @@ test("inspection: previous resolved actions are shared on next TBM and old open 
   );
   const old = await transaction((c) => inspectionOverview(c, g.actor, g.id));
   assert.equal(old.records.length, 0);
-  assert.equal(old.lockedSessions, 1);
+  assert.equal(old.lockedSessions.length, 1);
   assert.equal(old.openCount, 1);
   const open = (await transaction((c) => pendingFindings(c, g.actor)))[0];
   await transaction((c) =>

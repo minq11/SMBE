@@ -4,21 +4,9 @@ import { useState } from "react";
 import { Node, mergeAttributes } from "@tiptap/core";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import {
-  Bold,
-  Heading2,
-  Image as ImageIcon,
-  Italic,
-  Link2,
-  List,
-  ListOrdered,
-  Loader2,
-  Redo2,
-  Underline,
-  Undo2,
-  Video,
-} from "lucide-react";
+import { Bold, Heading2, Image as ImageIcon, Italic, Link2, List, ListOrdered, Loader2, Redo2, Underline, Undo2, Video, Check, X } from "lucide-react";
 import { uploadImage } from "@/features/attachments/upload";
+import { usePaidToast } from "@/components/ui/paid-lock";
 import { attachmentUrl, type BoardDoc } from "./model";
 
 /**
@@ -119,6 +107,10 @@ export function BoardEditor({
   const [error, setError] = useState<string | null>(null);
   /** 링크 입력 칸. 브라우저 prompt 대신 도구 막대 아래에 편다 (헌법 9장). */
   const [link, setLink] = useState<string | null>(null);
+  // 무료 회사의 사진·동영상 단추는 숨기지 않는다 — 누르면 유료 토스트 (헌법 5장).
+  const { block: blockAttach, toast: paidToast } = usePaidToast(
+    "사진·동영상 첨부는 유료 요금제에서 씁니다.",
+  );
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -285,9 +277,10 @@ export function BoardEditor({
         <span className="board-toolbar-gap" />
         {/* 파일 고르기는 label 이 연다 — ref 없이 된다. */}
         <label
-          className={`board-tool${!canAttach || uploading ? " is-disabled" : ""}`}
-          title={canAttach ? "사진" : "사진 (유료)"}
-          aria-label={canAttach ? "사진" : "사진 (유료)"}
+          className={`board-tool${uploading ? " is-disabled" : ""}`}
+          title="사진"
+          aria-label="사진"
+          onClick={canAttach ? undefined : blockAttach}
         >
           <ImageIcon size={18} />
           <input
@@ -303,9 +296,10 @@ export function BoardEditor({
           />
         </label>
         <label
-          className={`board-tool${!canAttach || uploading ? " is-disabled" : ""}`}
-          title={canAttach ? "동영상" : "동영상 (유료)"}
-          aria-label={canAttach ? "동영상" : "동영상 (유료)"}
+          className={`board-tool${uploading ? " is-disabled" : ""}`}
+          title="동영상"
+          aria-label="동영상"
+          onClick={canAttach ? undefined : blockAttach}
         >
           <Video size={18} />
           <input
@@ -358,14 +352,14 @@ export function BoardEditor({
             onChange={(e) => setLink(e.target.value)}
           />
           <button type="submit" className="btn-primary">
-            {link.trim() ? "적용" : "링크 제거"}
+            <Check size={14} /> {link.trim() ? "적용" : "링크 제거"}
           </button>
           <button
             type="button"
             className="btn-secondary"
             onClick={() => setLink(null)}
           >
-            취소
+            <X size={14} /> 취소
           </button>
         </form>
       )}
@@ -381,12 +375,11 @@ export function BoardEditor({
           </span>
         ) : (
           <span className="board-editor-status">
-            {canAttach
-              ? (attachHint ?? "사진·동영상은 본문 안에 들어갑니다.")
-              : "사진·동영상 첨부는 유료 요금제에서 쓸 수 있습니다."}
+            {attachHint ?? "사진·동영상은 본문 안에 들어갑니다."}
           </span>
         )}
       </div>
+      {paidToast}
     </div>
   );
 }

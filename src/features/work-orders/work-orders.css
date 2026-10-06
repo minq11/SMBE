@@ -106,6 +106,20 @@
 .insp-row:hover {
   border-color: var(--brand);
 }
+/* 잠긴 회차(무료의 1주일 밖): 같은 줄 모양의 단추, 누르면 유료 토스트 */
+button.insp-row {
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.insp-row.is-locked {
+  color: var(--ink-2);
+}
+.insp-row.is-locked svg {
+  color: var(--ink-3);
+}
 .insp-row[aria-current] {
   border-color: var(--line);
   box-shadow: inset 3px 0 0 var(--accent);
@@ -740,30 +754,64 @@
   flex-shrink: 0;
   padding-inline: 14px;
 }
-/* 점검 기록의 빠른 필터 칩 */
+/* 점검 기록의 빠른 필터 칩. 서버를 다녀오는 링크(a)와 화면에서만 거르는 단추(button)
+   가 같은 모양이다 — 사용자에게는 같은 "칩" 이다. */
 .wo-presets {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin: 0 0 12px;
 }
-.wo-presets a {
+.wo-presets a,
+.wo-presets button {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink-2);
+  font: inherit;
   font-size: 13px;
   text-decoration: none;
+  cursor: pointer;
 }
-.wo-presets a[aria-current] {
+.wo-presets a[aria-current],
+.wo-presets button[aria-pressed="true"] {
   border-color: var(--brand);
   background: var(--brand-soft);
   color: var(--brand-strong);
   font-weight: 700;
+}
+/* 자세히 찾기 머리의 기간 표시 ("최근 4주", "9/1 ~ 9/30") */
+.wo-period {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+/* 잠긴 회차(무료의 1주일 밖): 날짜·작업명만, 누르면 토스트 */
+.wo-log-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin: -10px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.wo-log-lock svg {
+  color: var(--ink-3);
 }
 .wo-filter-details {
   margin-bottom: 16px;
@@ -808,6 +856,28 @@
   font-weight: 650;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+/* 잠긴 지시서: 줄(좁은 화면은 카드) 전체가 누르는 자리. 이름 옆 자물쇠는 표시만. */
+.wo-row-locked {
+  cursor: pointer;
+}
+.wo-row-locked:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+.wo-table-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  font-weight: 650;
+}
+/* 잠긴 회차(점검 기록): 카드 전체가 누르는 자리 */
+.wo-log-row.is-locked {
+  cursor: pointer;
+}
+.wo-table-lock svg {
+  color: var(--ink-3);
 }
 .wo-table small {
   display: block;

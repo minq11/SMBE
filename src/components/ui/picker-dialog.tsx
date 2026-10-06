@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Check } from "lucide-react";
 
 /**
  * 고르는 창 — 인원·표준서처럼 목록이 길어질 수 있는 선택을 화면 밖 팝업으로 뺀다.
@@ -103,7 +103,7 @@ export function PickerDialog({
               />
             </label>
             <button type="button" className="btn-secondary" onClick={apply}>
-              검색
+              <Search size={14} /> 검색
             </button>
           </div>
           <div className="picker-dialog-scroll">{children}</div>
@@ -112,7 +112,7 @@ export function PickerDialog({
               {extra && <div className="picker-dialog-extra">{extra}</div>}
               {done && (
                 <button type="button" className="btn-primary" onClick={onClose}>
-                  완료
+                  <Check size={14} /> 완료
                 </button>
               )}
             </div>

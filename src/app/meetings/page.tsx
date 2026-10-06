@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { ArrowRight, CircleHelp } from "lucide-react";
 import { notFound } from "next/navigation";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { listMeetings, monthlyTally } from "@/server/safety-meeting";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
+import { HelpDialog } from "@/components/ui/help-dialog";
 import { OpenMeetingButton } from "@/features/meetings/meeting-forms";
 import { weekLabel, weekStartKst } from "@/features/meetings/model";
 import "@/features/work-orders/work-orders.css";
@@ -23,28 +25,36 @@ export default async function MeetingsPage() {
 
   return (
     <OrderShell session={session} title="주간 안전점검 회의" active="meetings">
-      <PageHeader
-        title="주간 안전점검 회의"
-        description="상시 위험성평가의 매주 논의·공유·이행점검 기록"
-      />
+      <PageHeader title="주간 안전점검 회의" />
       <section className="wo-section">
-        <h2>이번 달 집계</h2>
+        <div className="wo-section-head">
+          <h2>이번 달 집계</h2>
+          <HelpDialog title="이번 달 집계" variant="icon">
+            <dl className="help-rows">
+              <dt>무엇</dt>
+              <dd>상시 위험성평가의 월간 요건 근거. 불량 발생일(작업일자) 기준.</dd>
+            </dl>
+          </HelpDialog>
+        </div>
         <p>
           {tally.month} · 발굴 {tally.found}건 · 조치 완료 {tally.resolved}건
-        </p>
-        <p className="wo-muted">
-          상시평가의 월간 요건 근거로 쓰입니다. 불량 발생일(작업일자) 기준으로
-          셉니다.
         </p>
       </section>
 
       <section className="wo-section">
-        <h2>최근 12주</h2>
-        <p className="wo-muted">
-          회의에서 항목을 확인해도 원본 불량·평가 대책은 종결되지 않습니다.
-          종결은 각 처리 화면에서 합니다. 주가 끝났는데 회의 기록이 없으면
-          관리감독자·안전관리자에게 메일로 한 번 알립니다.
-        </p>
+        <div className="wo-section-head">
+          <h2>최근 12주</h2>
+          <HelpDialog title="주간 회의" variant="icon">
+            <dl className="help-rows">
+              <dt>무엇</dt>
+              <dd>매주 점검 불량·감소대책·사고를 모아 논의하고 이행을 확인한 기록.</dd>
+              <dt>원본</dt>
+              <dd>회의에서 확인해도 원본은 종결되지 않습니다. 종결은 각 처리 화면에서.</dd>
+              <dt>알림</dt>
+              <dd>주가 끝났는데 기록이 없으면 관리감독자·안전관리자에게 메일 한 번.</dd>
+            </dl>
+          </HelpDialog>
+        </div>
         <ul className="meeting-weeks">
           {weeks.map((w) => (
             <li
@@ -89,11 +99,16 @@ export default async function MeetingsPage() {
                 )}
               </div>
               {w.meeting_id ? (
-                <Link
-                  className="btn-secondary"
-                  href={"/meetings/" + w.week_start}
-                >
-                  {w.status === "COMPLETED" ? "회의록 보기" : "이어서 작성"}
+                <Link className="go-link" href={"/meetings/" + w.week_start}>
+                  {w.status === "COMPLETED" ? (
+                    <>
+                      <CircleHelp size={14} /> 회의록 보기
+                    </>
+                  ) : (
+                    <>
+                      이어서 작성 <ArrowRight size={14} />
+                    </>
+                  )}
                 </Link>
               ) : (
                 <OpenMeetingButton week={w.week_start} />

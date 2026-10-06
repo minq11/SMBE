@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, Check } from "lucide-react";
 
 /**
  * 창을 직접 띄우는 화면(서버 액션의 state 가 아니라 자기 state 로 오류를 들고
@@ -81,7 +81,7 @@ export function FormErrorDialog({
               onClick={close}
               autoFocus
             >
-              확인
+              <Check size={14} /> 확인
             </button>
           </div>
         </div>

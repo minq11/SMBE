@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { PaidLockButton } from "@/components/ui/paid-lock";
 import { CautionBand, PpeList } from "@/features/standards/ppe-list";
-import { ArrowLeft, ChevronRight, FileText } from "lucide-react";
+import { ArrowLeft, ChevronRight, CheckCircle2, ClipboardCheck, CircleHelp } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withTransaction } from "@/server/db";
@@ -124,8 +125,8 @@ export default async function InspectionPage({
           title={title}
           description={data.order.name}
           actions={
-            <Link className="btn-secondary" href={"/work-orders/" + id}>
-              <FileText size={14} /> 작업지시 보기
+            <Link className="go-link" href={"/work-orders/" + id}>
+              <CircleHelp size={14} /> 작업지시 보기
             </Link>
           }
         />
@@ -227,7 +228,7 @@ export default async function InspectionPage({
           description={data.order.name}
           actions={
             <Link
-              className="btn-secondary"
+              className="go-link"
               href={root + (path === "WEB" ? "" : "?" + viaQ.slice(1))}
             >
               <ArrowLeft size={14} /> 회차 목록
@@ -278,17 +279,17 @@ export default async function InspectionPage({
           <div className="wo-actions insp-session-actions">
             {!mineTBM && (
               <Link
-                className="btn-primary"
+                className="btn-accent"
                 href={root + "?type=TBM" + sessionQ}
               >
-                TBM 확인
+                <CheckCircle2 size={16} /> TBM 확인
               </Link>
             )}
             <Link
               className="btn-secondary"
               href={root + "?type=DURING_WORK" + sessionQ}
             >
-              작업 중 점검
+              <ClipboardCheck size={16} /> 작업 중 점검
             </Link>
           </div>
         )}
@@ -433,8 +434,8 @@ export default async function InspectionPage({
         title="점검 기록"
         description={data.order.name}
         actions={
-          <Link className="btn-secondary" href={"/work-orders/" + id}>
-            <FileText size={14} /> 작업지시 보기
+          <Link className="go-link" href={"/work-orders/" + id}>
+            <CircleHelp size={14} /> 작업지시 보기
           </Link>
         }
       />
@@ -460,11 +461,6 @@ export default async function InspectionPage({
       )}
       <section className="wo-section">
         <h2>회차</h2>
-        {data.lockedSessions > 0 && (
-          <p className="wo-muted">
-            무료 이용의 과거 열람 제한 회차 {data.lockedSessions}건
-          </p>
-        )}
         <div className="insp-list">
           {sessionPage.rows.map((s) => {
             const state = sessionState(s, now);
@@ -520,6 +516,23 @@ export default async function InspectionPage({
               : "?" + viaQ.slice(1) + (n > 1 ? "&page=" + n : ""))
           }
         />
+        {data.lockedSessions.length > 0 && (
+          <div className="insp-list" aria-label="지난 회차">
+            {data.lockedSessions.map((s) => (
+              <PaidLockButton
+                key={s.id}
+                className="insp-row is-locked"
+                message="지난 회차는 유료 요금제에서 열립니다. 무료는 최근 1주일까지."
+                link={data.isManager}
+              >
+                <strong>{dayLabel(s.work_date)}</strong>
+                <span className="wo-muted">
+                  {timeRange(s.starts_at, s.ends_at)}
+                </span>
+              </PaidLockButton>
+            ))}
+          </div>
+        )}
       </section>
       {(data.findings.length > 0 || data.isManager) && (
         <section className="wo-section">

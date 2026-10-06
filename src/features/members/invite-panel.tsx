@@ -66,7 +66,7 @@ export function InvitePanel({
         </div>
         <button
           type="button"
-          className="ghost-button"
+          className="btn-secondary btn--sm"
           onClick={() => setOpen((v) => !v)}
         >
           {open ? (
@@ -123,7 +123,7 @@ export function InvitePanel({
           </p>
           <FormErrorDialog message={state?.error} nonce={state} />
           <div className="invite-form-actions">
-            <button type="submit" className="primary-button" disabled={pending}>
+            <button type="submit" className="btn-primary" disabled={pending}>
               <UserPlus size={14} />
               {pending ? "발송 중..." : "초대하기"}
             </button>
@@ -167,7 +167,7 @@ export function InvitePanel({
           </div>
           <button
             type="button"
-            className="ghost-button"
+            className="btn-secondary btn--sm"
             onClick={() => copy(createdUrl)}
           >
             {copied === createdUrl ? (
@@ -219,7 +219,7 @@ export function InvitePanel({
                     <span className="row-actions">
                       <button
                         type="button"
-                        className="ghost-button"
+                        className="btn-secondary btn--sm"
                         onClick={() => copy(url)}
                       >
                         {copied === url ? (
@@ -239,7 +239,7 @@ export function InvitePanel({
                       >
                         <button
                           type="submit"
-                          className="ghost-button ghost-button--danger"
+                          className="btn-secondary btn--sm" data-tone="danger"
                         >
                           <X size={13} /> 폐기
                         </button>

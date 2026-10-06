@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Save } from "lucide-react";
 import { updateRiskCriteriaAction } from "./criteria-actions";
 import {
   ACCEPTANCE_LABEL,
@@ -86,8 +87,8 @@ export function RiskCriteriaForm({
           />
         </fieldset>
       ))}
-      <button className="primary-button" disabled={pending}>
-        {pending ? "저장 중…" : "저장"}
+      <button className="btn-primary" disabled={pending}>
+        <Save size={14} /> {pending ? "저장 중…" : "저장"}
       </button>
       <FormErrorDialog message={state?.error} nonce={state} />
       {state?.message && <p role="status">{state.message}</p>}

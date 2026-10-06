@@ -1,5 +1,6 @@
 "use client";
 import { useActionState, useState } from "react";
+import { CheckCheck, Send, Check, MapPin } from "lucide-react";
 import { permitAction, bulkApproveAction } from "./actions";
 import Link from "next/link";
 import {
@@ -45,8 +46,8 @@ export function PermitList({
           </label>
         </section>
       ))}
-      <button disabled={pending} className="primary-button">
-        선택 허가 일괄 승인
+      <button disabled={pending} className="btn-primary">
+        <CheckCheck size={14} /> 선택 허가 일괄 승인
       </button>
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
@@ -238,8 +239,8 @@ export function PermitRequestForm({
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
       <div className="form-actions sticky-actions">
-        <button disabled={pending} className="primary-button">
-          {pending
+        <button disabled={pending} className="btn-primary">
+          <Send size={14} /> {pending
             ? "처리 중…"
             : data.approverId === userId
               ? "신청&승인"
@@ -299,8 +300,8 @@ export function PermitCommand({
           ))}
         </FloatSelect>
       )}
-      <button disabled={pending} className="secondary-button">
-        {pending ? "처리 중…" : labels[command]}
+      <button disabled={pending} className="btn-secondary">
+        <Check size={14} /> {pending ? "처리 중…" : labels[command]}
       </button>
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}
@@ -321,8 +322,8 @@ export function LocationForm() {
         maxLength={200}
         hint="예: 용접장"
       />
-      <button className="primary-button" disabled={pending}>
-        장소 등록
+      <button className="btn-primary" disabled={pending}>
+        <MapPin size={14} /> 장소 등록
       </button>
       {state?.error && <p role="alert">{state.error}</p>}
       {state?.message && <p role="status">{state.message}</p>}

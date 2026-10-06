@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 import { workSession } from "@/server/work-orders";
 import { query } from "@/server/db";
 import { OrderShell } from "@/features/work-orders/order-shell";
@@ -122,7 +123,7 @@ export default async function PermitsPage({
           />
           자가 승인 건만
         </label>
-        <button className="secondary-button">조회</button>
+        <button className="btn-secondary"><Search size={14} /> 조회</button>
       </form>
       {visible.length ? (
         <PermitList

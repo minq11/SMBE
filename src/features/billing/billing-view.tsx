@@ -52,11 +52,11 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
         </div>
         {/* 요금표는 같은 화면 아래에 있다. 문의는 공개 문의 폼 그대로. */}
         <div className="billing-current-actions">
-          <a href="#billing-pricing" className="primary-button billing-cta">
+          <a href="#billing-pricing" className="btn-primary billing-cta">
             요금표 보기
             <ArrowDown size={14} />
           </a>
-          <Link href="/contact" className="ghost-button" prefetch={false}>
+          <Link href="/contact" className="btn-secondary btn--sm" prefetch={false}>
             <MessageCircle size={13} />
             문의하기
           </Link>

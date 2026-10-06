@@ -100,9 +100,6 @@ export function LawTable({ rows }: { rows: LawRow[] }) {
               >
                 <ExternalLink size={15} /> 조문 전문 보기 · 국가법령정보센터
               </a>
-              <button type="button" className="btn-secondary" onClick={close}>
-                닫기
-              </button>
             </div>
           </div>
         )}

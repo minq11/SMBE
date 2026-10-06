@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ClipboardCheck, Users } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, Users, ArrowRight, Search, CreditCard, CircleHelp } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { inspectionMonitor } from "@/server/inspection-service";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { FloatField, FloatSelect } from "@/components/ui/float-field";
 import { PageHeader } from "@/components/ui/page-header";
+import { HelpDialog } from "@/components/ui/help-dialog";
 import { Pager } from "@/components/ui/pager";
 import { pageOf, parsePage } from "@/lib/paging";
 import { PERMIT_LABEL } from "@/features/ptw/model";
@@ -40,30 +41,20 @@ export default async function MonitoringPage({
 
   return (
     <OrderShell session={session} title="점검 모니터링" active="monitoring">
-      <PageHeader
-        title="점검 모니터링"
-        description="선택한 날짜에 도는 작업의 TBM·작업 중 점검 진행 상황"
-      />
+      <PageHeader title="점검 모니터링" />
 
       {!data.paid ? (
         <section className="wo-section">
           <h2>유료 요금제 기능입니다</h2>
           <p className="wo-muted">
-            점검 모니터링은 회사 전체의 오늘 진행 상황을 한 화면에서 봅니다.
-            누가 아직 TBM 을 찍지 않았는지, 어느 작업에 작업 중 점검이 없는지를
-            작업지시를 하나씩 열지 않고 확인합니다.
-          </p>
-          <p className="wo-muted">
-            <strong>무료 요금제에서도 막히지 않는 것:</strong> 홈의 오늘 작업과
-            지시서 상세의 회차 상태는 그대로 보입니다. 이 메뉴는 그것을 모아
-            보여 주는 기능이지, 기존에 보던 것을 가져가지 않습니다.
+            오늘 누가 TBM 을 안 찍었고 어느 작업에 점검이 없는지, 한 화면에서.
           </p>
           <p className="wo-actions">
             <Link className="btn-primary" href="/billing">
-              요금제 보기
+              <CreditCard size={14} /> 요금제 보기
             </Link>
-            <Link className="btn-secondary" href="/inspections">
-              점검 기록으로
+            <Link className="go-link" href="/inspections">
+              점검 기록 <ArrowRight size={14} />
             </Link>
           </p>
         </section>
@@ -93,10 +84,10 @@ export default async function MonitoringPage({
               ))}
             </FloatSelect>
             <button className="btn-secondary" type="submit">
-              조회
+              <Search size={14} /> 조회
             </button>
-            <Link className="btn-secondary" href="/monitoring">
-              오늘로
+            <Link className="go-link" href="/monitoring">
+              오늘로 <ArrowRight size={14} />
             </Link>
           </form>
 
@@ -125,14 +116,19 @@ export default async function MonitoringPage({
           </section>
 
           <section className="wo-section">
-            <h2>
-              {data.date} 작업 {data.summary.sessions}건
-            </h2>
-            <p className="wo-muted">
-              배정 인원 전원 TBM + 작업 중 점검 1건 이상이면 이행 완료입니다.
-              미조치 불량은 작업일과 무관하게 남으므로 요약에서는 전체 기간을
-              셉니다.
-            </p>
+            <div className="wo-section-head">
+              <h2>
+                {data.date} 작업 {data.summary.sessions}건
+              </h2>
+              <HelpDialog title="점검 모니터링" variant="icon">
+                <dl className="help-rows">
+                  <dt>완료</dt>
+                  <dd>배정 인원 전원 TBM + 작업 중 점검 1건 이상이면 이행 완료.</dd>
+                  <dt>불량</dt>
+                  <dd>미조치 불량은 작업일과 무관하게 남아, 요약은 전체 기간을 셉니다.</dd>
+                </dl>
+              </HelpDialog>
+            </div>
             {!data.summary.sessions && <p>이 날짜에 도는 작업이 없습니다.</p>}
             <ul className="monitor-list" role="list">
               {paged.rows.map((row) => {
@@ -178,7 +174,7 @@ export default async function MonitoringPage({
                       )}
                     </div>
                     <Link
-                      className="btn-secondary"
+                      className="go-link"
                       href={
                         "/work-orders/" +
                         row.order_id +
@@ -186,7 +182,7 @@ export default async function MonitoringPage({
                         row.session_id
                       }
                     >
-                      점검 보기
+                      <CircleHelp size={14} /> 점검 보기
                     </Link>
                   </li>
                 );

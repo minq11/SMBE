@@ -296,7 +296,7 @@ function MemberRowView({
           <>
             <button
               type="button"
-              className="ghost-button ghost-button--primary"
+              className="btn-secondary btn--sm"
               disabled={pending}
               onClick={() =>
                 runAction(() => approvePendingAction(row.member_id))
@@ -306,7 +306,7 @@ function MemberRowView({
             </button>
             <button
               type="button"
-              className="ghost-button ghost-button--danger"
+              className="btn-secondary btn--sm" data-tone="danger"
               disabled={pending}
               onClick={() =>
                 runAction(() => rejectPendingAction(row.member_id))
@@ -326,7 +326,7 @@ function MemberRowView({
             />
             <button
               type="button"
-              className="ghost-button ghost-button--danger"
+              className="btn-secondary btn--sm" data-tone="danger"
               disabled={pending}
               onClick={async () => {
                 if (
@@ -411,7 +411,7 @@ function RoleChanger({
     <div className="role-changer">
       <button
         type="button"
-        className="ghost-button"
+        className="btn-secondary btn--sm"
         disabled={pending}
         onClick={() => setOpen((v) => !v)}
       >

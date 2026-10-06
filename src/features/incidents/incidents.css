@@ -117,11 +117,41 @@
   font-size: 14px;
   line-height: 1.6;
 }
+/* 바로 한 조치의 체크 줄. board-check 와 같은 모양이지만 board.css 가 이 화면에
+   없으므로 여기서 다 적는다 — 안 그러면 글이 한 줄로 이어져 안 꺾인다. */
 .inc-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
   padding: 4px 0;
+  cursor: pointer;
+}
+.inc-check input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--brand);
+  flex-shrink: 0;
+}
+.inc-check > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 .inc-check strong {
   font-size: 14px;
+}
+.inc-check small {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+.inc-preview-duty {
+  display: inline-block;
+  margin-right: 10px;
+  white-space: nowrap;
 }
 
 /* 저장 전 등급 미리보기. 알림 띠와 같은 회색 — 등급 글자만 상태색. */
@@ -286,6 +316,10 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+/* 근로자 공유의 문자 공지 — 증빙 메모 밑, 끝내기 줄 위 */
+.inc-duty-share {
+  margin: 0 0 12px;
 }
 @media (max-width: 600px) {
   .inc-duty-row {
@@ -453,4 +487,16 @@
   .wo-no-print {
     display: none !important;
   }
+}
+/* 체크 줄 다음의 글칸: 떠 있는 라벨이 체크 설명과 겹치지 않게 한 칸 띄운다 */
+.inc-check + .float-field {
+  margin-top: 12px;
+}
+/* 사고 목록의 "기한이 다가온 할 일" — 접힌 채 시작. 머리의 그림과 글 사이 한 칸. */
+.inc-due-fold > summary svg {
+  margin-right: 6px;
+  color: var(--ink-3);
+}
+.inc-due-fold[open] > summary {
+  margin-bottom: 8px;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Save } from "lucide-react";
 import { updateAssessmentPolicyAction } from "./criteria-actions";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { FloatTextarea } from "@/components/ui/float-field";
@@ -39,8 +40,8 @@ export function AssessmentPolicyForm({
         maxLength={4000}
         required
       />
-      <button className="primary-button" disabled={pending}>
-        {pending ? "저장 중…" : "실시규정 저장"}
+      <button className="btn-primary" disabled={pending}>
+        <Save size={14} /> {pending ? "저장 중…" : "실시규정 저장"}
       </button>
       <FormErrorDialog message={state?.error} nonce={state} />
       {state?.message && <p role="status">{state.message}</p>}

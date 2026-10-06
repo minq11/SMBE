@@ -244,10 +244,11 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(page.getByLabel("작업 링크", { exact: true })).toHaveValue(
       /\?via=link$/,
     );
-    // 무료 회사: 출력 버튼은 보이지만 눌러도 안내만 뜨고 출력물이 만들어지지 않는다.
-    // 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전 클릭은 삼켜진다.
-    const notice = page.getByRole("alert").filter({
-      hasText: "지시서 출력물은 유료 요금제에서",
+    // 무료 회사: 출력 버튼은 보이지만 눌러도 토스트만 잠깐 뜨고 출력물이 만들어지지
+    // 않는다 (헌법 5장). 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전
+    // 클릭은 삼켜진다.
+    const notice = page.locator(".toast").filter({
+      hasText: "지시서 인쇄(A4 한 장, QR 포함)는 유료 요금제에서",
     });
     await expect(async () => {
       await page
@@ -460,6 +461,21 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(page.getByAltText("이 작업지시를 여는 QR 코드")).toHaveCount(
       0,
     );
+    // 취소 뒤 1주일이 지난 지시서는 무료 목록에서 빠지는 대신 잠긴 줄로 남고,
+    // 누르면 유료 토스트가 잠깐 뜬다 (헌법 5장). 주소는 그대로.
+    const orderId = page.url().match(/\/work-orders\/([0-9a-f-]{36})/)![1];
+    await pool.query(
+      "UPDATE work_orders SET canceled_at=now()-interval '8 days' WHERE id=$1",
+      [orderId],
+    );
+    await page.goto("/work-orders?tab=all");
+    // 자물쇠만이 아니라 줄(카드) 어디를 눌러도 안내가 뜬다.
+    const lockedRow = page.locator(".wo-row-locked").first();
+    await expect(lockedRow.locator(".wo-table-lock")).toBeVisible();
+    await lockedRow.locator('td[data-label="장소"]').click();
+    await expect(page.locator(".toast").first()).toContainText("유료 요금제");
+    await expect(page).toHaveURL(/\/work-orders\?tab=all$/);
+    await page.screenshot({ path: testInfo.outputPath("orders-locked.png") });
   } finally {
     await pool.end();
   }

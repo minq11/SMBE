@@ -167,7 +167,7 @@ export function PeoplePickerDialog({
           )}
           <button
             type="button"
-            className="ghost-button people-picker-open"
+            className="btn-secondary btn--sm people-picker-open"
             onClick={() => setOpen(true)}
           >
             <UserPlus size={14} /> {buttonLabel}

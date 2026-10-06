@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CircleHelp, Paperclip } from "lucide-react";
+import { CircleHelp, Paperclip, Check } from "lucide-react";
 
 /**
  * 폼 안의 "이게 뭔가요?" 글 단추와 그 답.
@@ -86,7 +86,7 @@ export function HelpDialog({
                 onClick={() => setOpen(false)}
                 autoFocus
               >
-                확인
+                <Check size={14} /> 확인
               </button>
             </div>
           </div>

@@ -135,9 +135,7 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     await page.getByLabel("다친 부위").fill("오른손 검지");
     await page.getByLabel("부상·질병", { exact: true }).fill("골절");
     await page.getByLabel("예상 휴업일 (일)").fill("5");
-    await expect(page.getByText("이대로 저장하면 등급은")).toContainText(
-      "보고 대상",
-    );
+    await expect(page.locator(".inc-preview")).toContainText("보고 대상");
     // 바로 한 조치 · 원인 · 대책
     await page.getByRole("checkbox", { name: /작업을 중지했다/ }).check();
     await page.getByLabel("응급조치·바로 한 일").fill("119 신고, 병원 이송");
@@ -149,6 +147,12 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
       .fill("금형 교체 시 안전블록 삽입을 체크리스트에 넣는다.");
     await page.getByLabel("담당").selectOption({ label: "사고 관리자" });
     await page.getByLabel("기한").fill("2026-10-10");
+    // 바로 한 조치의 체크 줄이 꺾이고, 할 일 미리보기는 ①②③ 한 줄이다.
+    await page.locator("#inc-response").scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: test.info().outputPath("incident-form-response.png"),
+    });
+    await expect(page.locator(".inc-preview")).toContainText("① 작업 중지");
     await page.getByRole("button", { name: "사고 등록" }).click();
 
     // 상세: 등급·할 일
@@ -215,10 +219,11 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     await expect(sheet).toContainText("다친 작업자");
     await expect(sheet).toContainText("휴업 5일");
     await expect(sheet).toContainText("안전블록");
+    // 무료면 토스트만 잠깐 (헌법 5장).
     await page.getByRole("button", { name: /조사표 인쇄/ }).click();
-    await expect(
-      page.getByText("유료 요금제에서 이용할 수 있습니다"),
-    ).toBeVisible();
+    await expect(page.locator(".toast")).toContainText(
+      "산업재해조사표 인쇄는 유료 요금제에서",
+    );
     await page.screenshot({
       path: test.info().outputPath("survey.png"),
       fullPage: true,
@@ -267,6 +272,7 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
       .click();
     await expect(strip).toContainText("종결");
     await expect(page.getByRole("link", { name: "고치기" })).toHaveCount(0);
+    // 종결한 사고를 되돌리는 단추(사고 단위). 할 일의 "끝내기 취소" 와는 다른 것.
     await expect(page.getByRole("button", { name: "다시 열기" })).toBeVisible();
     // 종결 뒤 편집 주소는 상세로 돌아온다.
     await page.goto(url + "/edit");

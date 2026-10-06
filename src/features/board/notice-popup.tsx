@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Megaphone, Newspaper } from "lucide-react";
+import { Megaphone, Newspaper, EyeOff, X } from "lucide-react";
 import { KIND_LABEL, SLUG_BY_KIND, postDate, type BoardKind } from "./model";
 
 export type PopupNoticeView = {
@@ -81,6 +81,16 @@ export function NoticePopup({
         if (current) next();
       }}
     >
+      {/* 닫기는 × 기호 하나 (헌법 4장). */}
+      <button
+        type="button"
+        className="reason-dialog-close"
+        aria-label="닫기"
+        autoFocus
+        onClick={next}
+      >
+        <X size={20} />
+      </button>
       <div className="notice-popup-body">
         <p className="notice-popup-eyebrow">
           {current.kind === "NEWS" ? (
@@ -118,7 +128,7 @@ export function NoticePopup({
               next();
             }}
           >
-            오늘 하루 안 보기
+            <EyeOff size={14} /> 오늘 하루 안 보기
           </button>
           <button
             type="button"
@@ -128,15 +138,7 @@ export function NoticePopup({
               next();
             }}
           >
-            7일간 안 보기
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={next}
-            autoFocus
-          >
-            닫기
+            <EyeOff size={14} /> 7일간 안 보기
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { FileText, PenLine } from "lucide-react";
+import { PenLine, CircleHelp } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { readIncident } from "@/server/incidents";
@@ -10,6 +10,7 @@ import { AppShell } from "@/components/shell/app-shell";
 import { tierOf } from "@/components/shell/tier";
 import { isCurrentUserOperator } from "@/server/operator";
 import { PageHeader } from "@/components/ui/page-header";
+import { PaidLockButton } from "@/components/ui/paid-lock";
 import { Facts, StatStrip } from "@/components/ui/facts";
 import { HistoryLog } from "@/components/ui/history-log";
 import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
@@ -155,6 +156,7 @@ export default async function IncidentPage({
           duties={detail.duties}
           today={today}
           locked={locked}
+          paid={paid}
           riskAssessmentHref={
             detail.standard_id
               ? `/standards/${detail.standard_id}/assessments/new`
@@ -298,9 +300,14 @@ export default async function IncidentPage({
             )}
           </>
         ) : (
-          <p className="wo-muted">
-            유료 요금제에서 현장 사진을 붙일 수 있습니다.
-          </p>
+          !locked && (
+            <PaidLockButton
+              className="btn-secondary"
+              message="현장 사진 첨부는 유료 요금제에서 씁니다."
+            >
+              사진 붙이기
+            </PaidLockButton>
+          )
         )}
       </section>
 
@@ -332,8 +339,8 @@ export default async function IncidentPage({
               ]}
             />
             <div className="wo-doc-links">
-              <Link href={`${path}/survey`} className="btn-secondary">
-                <FileText size={14} /> 산업재해조사표 열기
+              <Link href={`${path}/survey`} className="go-link">
+                <CircleHelp size={14} /> 산업재해조사표 열기
               </Link>
             </div>
           </section>
