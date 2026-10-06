@@ -5,7 +5,8 @@ import { parsePage } from "@/lib/paging";
 import { workSession, listOrders } from "@/server/work-orders";
 import { OrderShell } from "@/features/work-orders/order-shell";
 import { PageHeader } from "@/components/ui/page-header";
-import { PaidLockButton } from "@/components/ui/paid-lock";
+import { PaidLockRow } from "@/components/ui/paid-lock";
+import { Lock } from "lucide-react";
 import { STATUS_LABEL, STATUS_TONE } from "@/features/work-orders/model";
 import { DeleteDraftButton } from "@/features/work-orders/order-controls";
 
@@ -87,17 +88,17 @@ export default async function WorkOrdersPage({
             <tbody>
               {/* data-label 은 좁은 화면에서 이 표가 카드로 접힐 때
                   각 칸 앞에 붙는 이름표다 (work-orders.css @media). */}
-              {result.rows.map((row) => (
-                <tr key={row.id}>
+              {result.rows.map((row) => {
+                const cells = (
+                  <>
                   <td data-label="작업명">
                     {row.locked ? (
                       // 완료·취소 뒤 1주일이 지난 지시서는 무료에서 열리지 않는다.
-                      <PaidLockButton
-                        className="wo-table-lock"
-                        message="지난 지시서는 유료 요금제에서 열립니다. 무료는 완료 뒤 1주일까지."
-                      >
+                      // 줄 전체(PaidLockRow)가 누르는 자리라 여기는 표시만.
+                      <span className="wo-table-lock">
+                        <Lock size={14} aria-hidden="true" />
                         {row.name}
-                      </PaidLockButton>
+                      </span>
                     ) : (
                       /* 작성 중인 지시서는 조회가 아니라 편집으로 연다. */
                       <Link
@@ -148,8 +149,20 @@ export default async function WorkOrdersPage({
                       )}
                     </td>
                   )}
-                </tr>
-              ))}
+                  </>
+                );
+                return row.locked ? (
+                  <PaidLockRow
+                    key={row.id}
+                    className="wo-row-locked"
+                    message="지난 지시서는 유료 요금제에서 열립니다. 무료는 완료 뒤 1주일까지."
+                  >
+                    {cells}
+                  </PaidLockRow>
+                ) : (
+                  <tr key={row.id}>{cells}</tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

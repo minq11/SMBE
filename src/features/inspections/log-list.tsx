@@ -77,9 +77,15 @@ export function InspectionLog({
       {!shown.length && <p>조건에 맞는 회차가 없습니다.</p>}
       {current.rows.map((r) =>
         r.locked ? (
-          <article className="wo-risk wo-log-row is-locked" key={r.session_id}>
+          // 카드 어디를 눌러도 안내가 뜬다. 안의 단추는 키보드·읽기 도구의 자리이고
+          // 누름은 카드로 올라와 한 번만 처리된다.
+          <article
+            className="wo-risk wo-log-row is-locked"
+            key={r.session_id}
+            onClick={lockedTap}
+          >
             <h3>
-              <button type="button" className="wo-log-lock" onClick={lockedTap}>
+              <button type="button" className="wo-log-lock">
                 <Lock size={14} aria-hidden="true" />
                 {r.work_date} · {r.order_name}
               </button>

@@ -335,7 +335,8 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     const lockedRow = page.locator(".wo-log-row.is-locked").first();
     await expect(lockedRow).toContainText("점검 흐름 검증");
     await expect(lockedRow.getByRole("link")).toHaveCount(0);
-    await lockedRow.getByRole("button").click();
+    // 카드 어디를 눌러도 안내가 뜬다 — 자물쇠 글자가 아니라 시각 줄을 누른다.
+    await lockedRow.locator("p").click();
     await expect(page.locator(".toast")).toContainText("유료 요금제");
     await expect(page).toHaveURL(/\/inspections$/);
     await page.screenshot({

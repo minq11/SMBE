@@ -857,20 +857,23 @@ button.insp-row {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-/* 잠긴 지시서 이름: 링크 자리의 단추. 누르면 유료 토스트 */
+/* 잠긴 지시서: 줄(좁은 화면은 카드) 전체가 누르는 자리. 이름 옆 자물쇠는 표시만. */
+.wo-row-locked {
+  cursor: pointer;
+}
+.wo-row-locked:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
 .wo-table-lock {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
-  margin: -12px 0;
-  padding: 0;
-  border: 0;
-  background: none;
   color: var(--ink-2);
-  font: inherit;
   font-weight: 650;
-  text-align: left;
+}
+/* 잠긴 회차(점검 기록): 카드 전체가 누르는 자리 */
+.wo-log-row.is-locked {
   cursor: pointer;
 }
 .wo-table-lock svg {

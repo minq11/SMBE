@@ -492,3 +492,11 @@
 .inc-check + .float-field {
   margin-top: 12px;
 }
+/* 사고 목록의 "기한이 다가온 할 일" — 접힌 채 시작. 머리의 그림과 글 사이 한 칸. */
+.inc-due-fold > summary svg {
+  margin-right: 6px;
+  color: var(--ink-3);
+}
+.inc-due-fold[open] > summary {
+  margin-bottom: 8px;
+}

@@ -469,9 +469,10 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       [orderId],
     );
     await page.goto("/work-orders?tab=all");
-    const lockedName = page.locator(".wo-table-lock").first();
-    await expect(lockedName).toBeVisible();
-    await lockedName.click();
+    // 자물쇠만이 아니라 줄(카드) 어디를 눌러도 안내가 뜬다.
+    const lockedRow = page.locator(".wo-row-locked").first();
+    await expect(lockedRow.locator(".wo-table-lock")).toBeVisible();
+    await lockedRow.locator('td[data-label="장소"]').click();
     await expect(page.locator(".toast").first()).toContainText("유료 요금제");
     await expect(page).toHaveURL(/\/work-orders\?tab=all$/);
     await page.screenshot({ path: testInfo.outputPath("orders-locked.png") });
