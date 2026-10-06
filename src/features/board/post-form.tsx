@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Send, Trash2, ArrowRight } from "lucide-react";
+import { Save, Send, Trash2, CircleHelp } from "lucide-react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { BoardEditor } from "./editor";
 import { deletePostAction, savePostAction } from "./actions";
@@ -199,7 +199,7 @@ export function PostForm({
         {published ? (
           <>
             <a className="go-link" href={`/board/${slug}/${post.id}`}>
-              보기 <ArrowRight size={14} />
+              <CircleHelp size={14} /> 보기
             </a>
             <button
               type="button"

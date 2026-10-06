@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { PenLine, ArrowRight } from "lucide-react";
+import { PenLine, CircleHelp } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { readIncident } from "@/server/incidents";
@@ -339,7 +339,7 @@ export default async function IncidentPage({
             />
             <div className="wo-doc-links">
               <Link href={`${path}/survey`} className="go-link">
-                산업재해조사표 열기 <ArrowRight size={14} />
+                <CircleHelp size={14} /> 산업재해조사표 열기
               </Link>
             </div>
           </section>

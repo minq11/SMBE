@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ClipboardCheck, Users, ArrowRight, Search, CreditCard } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, Users, ArrowRight, Search, CreditCard, CircleHelp } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { inspectionMonitor } from "@/server/inspection-service";
@@ -182,7 +182,7 @@ export default async function MonitoringPage({
                         row.session_id
                       }
                     >
-                      점검 보기 <ArrowRight size={14} />
+                      <CircleHelp size={14} /> 점검 보기
                     </Link>
                   </li>
                 );

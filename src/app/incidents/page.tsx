@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarClock, Plus, ArrowRight } from "lucide-react";
+import { CalendarClock, Plus, CircleHelp } from "lucide-react";
 import { getCurrentSession } from "@/server/session";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
@@ -52,7 +52,7 @@ export default async function IncidentsPage() {
         actions={
           <div className="wo-actions">
             <Link href="/company/incident-manual" className="go-link">
-              대응 절차 <ArrowRight size={14} />
+              <CircleHelp size={14} /> 대응 절차
             </Link>
             <Link href="/incidents/new" className="btn-primary">
               <Plus size={15} /> 사고 등록

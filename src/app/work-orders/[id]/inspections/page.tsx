@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PaidLockButton } from "@/components/ui/paid-lock";
 import { CautionBand, PpeList } from "@/features/standards/ppe-list";
-import { ArrowLeft, ChevronRight, ArrowRight, CheckCircle2, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, ChevronRight, CheckCircle2, ClipboardCheck, CircleHelp } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withTransaction } from "@/server/db";
@@ -126,7 +126,7 @@ export default async function InspectionPage({
           description={data.order.name}
           actions={
             <Link className="go-link" href={"/work-orders/" + id}>
-              작업지시 보기 <ArrowRight size={14} />
+              <CircleHelp size={14} /> 작업지시 보기
             </Link>
           }
         />
@@ -435,7 +435,7 @@ export default async function InspectionPage({
         description={data.order.name}
         actions={
           <Link className="go-link" href={"/work-orders/" + id}>
-            작업지시 보기 <ArrowRight size={14} />
+            <CircleHelp size={14} /> 작업지시 보기
           </Link>
         }
       />

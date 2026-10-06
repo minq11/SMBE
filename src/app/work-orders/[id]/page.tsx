@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PpeList } from "@/features/standards/ppe-list";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { BookOpen, Copy, ArrowRight } from "lucide-react";
+import { BookOpen, Copy, CircleHelp } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { workSession, orderDetail, orderMembers } from "@/server/work-orders";
@@ -673,7 +673,7 @@ export default async function OrderDetailPage({
                 href={"/work-orders/" + id + "/permit"}
                 className="go-link"
               >
-                허가서 열기 <ArrowRight size={14} />
+                <CircleHelp size={14} /> 허가서 열기
               </Link>
             </div>
           </section>
