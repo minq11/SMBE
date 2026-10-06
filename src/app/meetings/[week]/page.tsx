@@ -107,9 +107,9 @@ export default async function MeetingPage({
       {!data.meeting && (
         <section className="wo-section">
           <p className="wo-muted">
-            열면 그 주의 점검 불량·기한 지난 감소대책·사고를 모읍니다.
+            작성을 시작하면 그 주의 점검 불량·기한 지난 감소대책·사고를 모읍니다.
           </p>
-          <OpenMeetingButton week={week} label="이 주 회의 열기" />
+          <OpenMeetingButton week={week} label="이 주 회의록 작성" />
         </section>
       )}
 

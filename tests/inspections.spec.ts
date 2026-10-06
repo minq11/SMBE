@@ -427,7 +427,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     const thisWeek = page.locator(".meeting-week").first();
     await expect(thisWeek).toContainText("미실시");
     await expect(async () => {
-      await thisWeek.getByRole("button", { name: "회의 열기" }).click();
+      await thisWeek.getByRole("button", { name: "회의록 작성" }).click();
       await expect(page).toHaveURL(/\/meetings\/\d{4}-\d{2}-\d{2}$/, {
         timeout: 2000,
       });

@@ -231,7 +231,7 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
 
     // 주간 안전점검 회의: 그 주(9/14~9/20)를 열면 사고가 안전사고 칩으로 모인다.
     await page.goto("/meetings/2026-09-14");
-    await page.getByRole("button", { name: "이 주 회의 열기" }).click();
+    await page.getByRole("button", { name: "이 주 회의록 작성" }).click();
     await expect(
       page.getByRole("heading", { name: /수집 항목/ }),
     ).toBeVisible();

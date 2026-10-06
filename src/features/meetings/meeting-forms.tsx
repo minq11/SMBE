@@ -29,7 +29,7 @@ function Feedback({
 
 export function OpenMeetingButton({
   week,
-  label = "회의 열기",
+  label = "회의록 작성",
 }: {
   week: string;
   label?: string;
