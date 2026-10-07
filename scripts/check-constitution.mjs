@@ -218,6 +218,15 @@ async function checkRawFields() {
   }
 }
 
+// 5장 — 이동에는 늘 신호가 있다. loading.tsx 는 폴더가 바뀔 때만 뜨므로, 쿼리만 바뀌는
+// 이동용 덮개(NavPending)가 루트 레이아웃에 있어야 한다.
+async function checkNavPending() {
+  const layout = join(root, "src/app/layout.tsx");
+  const text = await readFile(layout, "utf8");
+  if (!/<NavPending\s*\/>/.test(text))
+    fail("5장 이동 신호", layout, "루트 레이아웃에 <NavPending /> 이 없다");
+}
+
 // 4장 — 단추는 한 가족(btn-*), 단추마다 그림 하나, 창의 닫기는 × 하나.
 async function checkButtons() {
   const files = (await walk(join(root, "src"))).filter(
@@ -260,6 +269,7 @@ await Promise.all([
   checkThemeColor(),
   checkFonts(),
   checkButtons(),
+  checkNavPending(),
 ]);
 
 if (problems.length) {
@@ -269,5 +279,5 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(
-  "디자인 헌법 검사 통과 (입력칸 · loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴 · 단추)",
+  "디자인 헌법 검사 통과 (입력칸 · loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴 · 단추 · 이동 신호)",
 );
