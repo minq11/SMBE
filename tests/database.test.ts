@@ -185,7 +185,7 @@ test("annual policy: year isolation, stale writes, tenant and worker permissions
   assert.deepEqual(await transaction(c => safetyPolicyYears(c, actor)), [2027, 2026]);
   assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026)))?.goals, "매일 TBM");
   await assert.rejects(transaction(c => readSafetyPolicy(c, actor, 2026, true)), /유료/);
-  await pool.query("UPDATE companies SET pro_state='PRO_VOLUNTARY' WHERE id=$1", [f.companyId]);
+  await pool.query("UPDATE companies SET pro_state='PRO_VOLUNTARY', plan='PRO', plan_started_at=now() WHERE id=$1", [f.companyId]);
   assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026, true)))?.revision, 1);
   await transaction(c => saveSafetyPolicy(c, actor, { ...input, revision: 1, goals: "수정 목표" }));
   assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026)))?.revision, 2);

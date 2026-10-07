@@ -101,7 +101,7 @@ test("annual policy writes, restores, copies without overwriting, worker reads a
     ).toBe(true);
     await page.screenshot({ path: info.outputPath("policy-detail.png") });
     await pool.query(
-      "UPDATE companies SET pro_state='PRO_VOLUNTARY' WHERE id=$1",
+      "UPDATE companies SET pro_state='PRO_VOLUNTARY', plan='BASIC', plan_started_at=now() WHERE id=$1",
       [company],
     );
     await page.reload();
