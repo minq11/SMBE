@@ -20,9 +20,9 @@
   display: grid;
   gap: 20px;
 }
-.policy-fields legend {
-  font-weight: 700;
-  padding: 0 6px;
+.policy-fields h2 {
+  font-size: 17px;
+  margin: 0;
 }
 .policy-fields-row {
   display: grid;
@@ -31,9 +31,7 @@
 }
 .policy-tools {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-end;
 }
 .policy-document {
   max-width: 850px;
@@ -85,18 +83,6 @@
   }
   .policy-fields-row {
     grid-template-columns: 1fr;
-  }
-  .policy-tools {
-    flex-wrap: wrap;
-  }
-  .policy-save {
-    position: sticky;
-    bottom: 0;
-    background: var(--bg);
-    padding: 12px 0;
-  }
-  html[data-keyboard="open"] .policy-save {
-    position: static;
   }
 }
 @media print {

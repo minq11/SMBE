@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Save, RotateCcw, Trash2, ArrowLeft } from "lucide-react";
+import { Copy, Save, PenLine, Trash2, ArrowLeft } from "lucide-react";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import {
   FormErrorDialog,
@@ -104,19 +104,20 @@ export function PolicyForm({
             <button
               type="button"
               className="btn-secondary"
+              data-tone="danger"
               onClick={clearBackup}
             >
               <Trash2 size={14} /> 버리기
             </button>
             <button
               type="button"
-              className="btn-secondary"
+              className="btn-primary"
               onClick={() => {
                 change(backup);
                 setBackup(null);
               }}
             >
-              <RotateCcw size={14} /> 이어서 작성
+              <PenLine size={14} /> 이어서 작성
             </button>
           </div>
         </section>
@@ -124,20 +125,24 @@ export function PolicyForm({
       <fieldset
         className="policy-card policy-fields"
         disabled={pending || backup !== null}
+        aria-labelledby="policy-fields-head"
       >
-        <legend>{initial.year}년 방침·목표</legend>
-        <div className="policy-tools">
+        {/* 제목 왼쪽, 물음표 오른쪽 (헌법 4장). legend 는 자리를 못 잡아 h2 로. */}
+        <div className="wo-section-head">
+          <h2 id="policy-fields-head">{initial.year}년 방침·목표</h2>
           <HelpDialog title="방침·목표 작성" variant="icon">
-            <p>
-              기본 방침을 우리 현장에 맞게 고치고, 올해 실행할 목표를 적습니다.
-            </p>
-            <p>예: 작업 전 TBM 매일 실시, 발견한 위험요인 7일 안에 조치.</p>
-            <p>
-              대표자명은 게시 문서에 표시됩니다. 저장은 전자서명이나 별도 승인이
-              아닙니다.
-            </p>
+            <dl className="help-rows">
+              <dt>무엇</dt>
+              <dd>기본 방침을 우리 현장에 맞게 고치고, 올해 실행할 목표를 적습니다.</dd>
+              <dt>예</dt>
+              <dd>작업 전 TBM 매일 실시, 발견한 위험요인 7일 안에 조치.</dd>
+              <dt>게시</dt>
+              <dd>대표자명과 작성일이 게시 문서에 찍힙니다.</dd>
+            </dl>
           </HelpDialog>
-          {previous && (
+        </div>
+        {previous && (
+          <div className="policy-tools">
             <button
               type="button"
               className="btn-secondary"
@@ -159,8 +164,8 @@ export function PolicyForm({
             >
               <Copy size={14} /> 작년 내용 가져오기
             </button>
-          )}
-        </div>
+          </div>
+        )}
         <FloatTextarea
           id="safety-policy"
           label="안전보건 방침"
@@ -201,7 +206,7 @@ export function PolicyForm({
           />
         </div>
       </fieldset>
-      <div className="form-actions policy-save">
+      <div className="form-actions sticky-actions">
         <Link className="go-link" href={href}>
           <ArrowLeft size={14} /> 돌아가기
         </Link>

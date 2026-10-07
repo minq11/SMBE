@@ -89,8 +89,9 @@ test("annual policy writes, restores, copies without overwriting, worker reads a
     await expect(page.locator(".policy-document")).toContainText(
       "위험요인 7일 안에 조치",
     );
+    // 연도를 고르면 바로 간다 — 조회 단추가 없다.
     await page.getByLabel("연도", { exact: true }).selectOption(String(year));
-    await page.getByRole("button", { name: "조회", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`safety-policy\\?year=${year}$`));
     await expect(page.locator(".policy-document")).toContainText(
       "TBM 매일 실시",
     );

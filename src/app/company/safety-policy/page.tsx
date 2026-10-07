@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PenLine, Plus, ArrowRight, Search } from "lucide-react";
+import { PenLine, Plus, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { FloatSelect } from "@/components/ui/float-field";
+import { YearPicker } from "@/features/safety-policy/year-picker";
 import { workSession } from "@/server/work-orders";
 import { withTransaction } from "@/server/db";
 import { readSafetyPolicy, safetyPolicyYears } from "@/server/safety-policy";
@@ -52,28 +52,14 @@ export default async function PolicyPage({
           </>
         }
       />
-      <form className="policy-year-form" action="/company/safety-policy">
-        <FloatSelect
-          id="policy-year"
-          label="연도"
-          name="year"
-          defaultValue={year}
-        >
-          {options.map((y) => (
-            <option key={y} value={y}>
-              {y}년
-            </option>
-          ))}
-        </FloatSelect>
-        <button className="btn-secondary" type="submit">
-          <Search size={14} /> 조회
-        </button>
+      <div className="policy-year-form">
+        <YearPicker year={year} options={options} />
         {year !== current && (
           <Link className="go-link" href="/company/safety-policy">
             올해로 <ArrowRight size={14} />
           </Link>
         )}
-      </form>
+      </div>
       {policy ? (
         <PolicyDocument
           policy={policy}
