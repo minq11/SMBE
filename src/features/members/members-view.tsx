@@ -5,7 +5,9 @@ import { ClientPager } from "@/components/ui/pager-client";
 import { pageOf } from "@/lib/paging";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { Check, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
+import { Check, ShieldCheck, UserMinus, UserPlus, X, PenLine, Save } from "lucide-react";
+import { FloatTextarea } from "@/components/ui/float-field";
+import { FormErrorDialog, useFormError } from "@/components/ui/form-error-dialog";
 import type { MembershipRole } from "@/server/session";
 import type {
   CompanyOverview,
@@ -17,6 +19,7 @@ import {
   changeRoleAction,
   rejectPendingAction,
   resignMemberAction,
+  updateDutyNoteAction,
 } from "./actions";
 import { InvitePanel } from "./invite-panel";
 import {
@@ -297,6 +300,7 @@ function MemberRowView({
             <> · 퇴사 {new Date(row.left_at).toLocaleDateString("ko-KR")}</>
           )}
         </small>
+        {row.duty_note && <small className="member-duty-note">업무 비고: {row.duty_note}</small>}
       </span>
       <span className="row-meta">
         <span className="row-contact">
@@ -330,6 +334,7 @@ function MemberRowView({
         )}
         {tab === "active" && (
           <>
+            <DutyNoteEditor row={row} />
             <RoleChanger
               memberId={row.member_id}
               currentRole={row.role}
@@ -363,6 +368,49 @@ function MemberRowView({
       {error && <span className="row-error">{error}</span>}
       {dialog}
     </div>
+  );
+}
+
+function DutyNoteEditor({ row }: { row: MemberRow }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [note, setNote] = useState(row.duty_note);
+  const [pending, start] = useTransition();
+  const err = useFormError();
+  return (
+    <>
+      <button type="button" className="btn-secondary btn--sm" onClick={() => {
+        setNote(row.duty_note);
+        err.clear();
+        dialog.current?.showModal();
+      }}>
+        <PenLine size={13} /> 업무 비고
+      </button>
+      <dialog ref={dialog} className="confirm-dialog" aria-label="업무 비고" onCancel={(event) => {
+        if (pending) event.preventDefault();
+      }}>
+        <form className="confirm-dialog-body" onSubmit={(event) => {
+          event.preventDefault();
+          start(async () => {
+            err.clear();
+            try {
+              const result = await updateDutyNoteAction(row.member_id, note);
+              if (result?.error) err.show(result.error);
+              else dialog.current?.close();
+            } catch {
+              err.show("저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+            }
+          });
+        }}>
+          <button type="button" className="reason-dialog-close" aria-label="닫기" disabled={pending} onClick={() => dialog.current?.close()}><X size={20} /></button>
+          <h2>{row.display_name || row.snapshot_display_name} · 업무 비고</h2>
+          <FloatTextarea id={`duty-note-${row.member_id}`} label="업무 비고 (선택)" hint="예: 설비 점검, 보호구 확인" value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} rows={4} disabled={pending} />
+          <div className="form-actions">
+            <button type="submit" className="btn-primary" disabled={pending}><Save size={14} /> {pending ? "저장 중…" : "저장"}</button>
+          </div>
+        </form>
+        <FormErrorDialog message={err.message} nonce={err.nonce} />
+      </dialog>
+    </>
   );
 }
 

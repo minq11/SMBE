@@ -1814,6 +1814,10 @@ html[data-banner-hidden] .preview-banner {
 .row--static {
   padding: 16px 4px;
 }
+.member-duty-note {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .row-actions {
   display: inline-flex;
   align-items: center;
@@ -3539,6 +3543,12 @@ html[data-banner-hidden] .preview-banner {
 }
 .check-result-hint--offline {
   color: var(--ink-2);
+}
+.check-result-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
 }
 .check-result-cta {
   display: inline-flex;

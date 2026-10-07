@@ -227,7 +227,7 @@ export async function revokeInviteAction(
 
 async function runMemberMutation(
   memberId: string,
-  operation: "approve" | "reject" | "resign" | "role",
+  operation: "approve" | "reject" | "resign" | "role" | "note",
   role?: string,
 ): Promise<ActionState> {
   if (!z.string().uuid().safeParse(memberId).success)
@@ -280,4 +280,10 @@ export async function resignMemberAction(
   memberId: string,
 ): Promise<ActionState> {
   return runMemberMutation(memberId, "resign");
+}
+
+export async function updateDutyNoteAction(memberId: string, note: string): Promise<ActionState> {
+  if (typeof note !== "string" || note.trim().length > 500)
+    return { error: "업무 비고는 500자 이내로 적어 주세요." };
+  return runMemberMutation(memberId, "note", note);
 }

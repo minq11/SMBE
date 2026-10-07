@@ -174,6 +174,25 @@ async function invitation(
   );
   return token;
 }
+test("member duty note: managers only, company boundary, active only, length and clearing", async () => {
+  const f = await fixture();
+  const other = await fixture();
+  const worker = await user();
+  const workerMember = await member(f.companyId, worker);
+  const change = (id: string, note: string, userId = f.userId) =>
+    transaction(c => mutateMember(c, { companyId: f.companyId, userId }, id, "note", note));
+  assert.ok((await change(f.memberId, "  설비 점검  ")).message);
+  assert.equal((await pool.query("SELECT duty_note FROM company_members WHERE id=$1", [f.memberId])).rows[0].duty_note, "설비 점검");
+  assert.ok((await change(workerMember, "보호구 확인")).message);
+  assert.ok((await change(workerMember, "불가", worker)).error);
+  assert.ok((await change(other.memberId, "불가")).error);
+  assert.ok((await change(workerMember, "가".repeat(501))).error);
+  assert.ok((await change(workerMember, "")).message);
+  assert.equal((await pool.query("SELECT duty_note FROM company_members WHERE id=$1", [workerMember])).rows[0].duty_note, "");
+  await pool.query("UPDATE company_members SET status='RESIGNED', left_at=now() WHERE id=$1", [workerMember]);
+  assert.ok((await change(workerMember, "불가")).error);
+});
+
 test("profile: validation, stale write protection and audit privacy", async () => {
   const id = await user();
   const version = (

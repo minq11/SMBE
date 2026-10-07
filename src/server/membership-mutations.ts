@@ -126,7 +126,7 @@ export async function mutateMember(
   client: PoolClient,
   actor: { userId: string; companyId: string },
   memberId: string,
-  operation: "approve" | "reject" | "resign" | "role",
+  operation: "approve" | "reject" | "resign" | "role" | "note",
   nextRole?: string,
 ): Promise<{ error?: string; message?: string }> {
   await lockCompany(client, actor.companyId);
@@ -146,6 +146,15 @@ export async function mutateMember(
   const pending = operation === "approve" || operation === "reject";
   if (!target || target.status !== (pending ? "JOIN_PENDING" : "ACTIVE")) {
     return { error: "대상을 찾을 수 없거나 이미 처리된 요청입니다." };
+  }
+  if (operation === "note") {
+    if (typeof nextRole !== "string" || nextRole.trim().length > 500)
+      return { error: "업무 비고는 500자 이내로 적어 주세요." };
+    await client.query(
+      "UPDATE company_members SET duty_note = $2 WHERE id = $1 AND company_id = $3",
+      [memberId, nextRole.trim(), actor.companyId],
+    );
+    return { message: "업무 비고를 저장했습니다." };
   }
   if (operation === "role") {
     if (

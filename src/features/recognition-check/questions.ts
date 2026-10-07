@@ -38,6 +38,8 @@ export type Question = {
   maxScore: number;
   choices: Choice[];
   smbeHint?: { href: string; label: string };
+  /** 같은 문항의 두 번째 업무 연결. 점수는 문항당 한 번만 계산한다. */
+  secondaryHint?: { href: string; label: string };
   /** 심플안전으로는 대응할 수 없는 항목의 아주 짧은 대안 안내. */
   offlineTip?: string;
 };
@@ -343,7 +345,8 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "확인만 하고 미공유", score: 5 },
       { key: "OK", label: "우수", detail: "주기적 확인·공유", score: 10 },
     ],
-    smbeHint: { href: "/inspections", label: "점검·공유 기록" },
+    smbeHint: { href: "/inspections", label: "점검·조치 확인" },
+    secondaryHint: { href: "/meetings", label: "주간회의 기록" },
   },
 
   // --------------------------------------------------------- SECTION III (worker 30)
@@ -373,7 +376,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 단계만 참여", score: 5 },
       { key: "OK", label: "우수", detail: "전 단계 참여", score: 10 },
     ],
-    smbeHint: { href: "/company/members", label: "구성원 초대" },
+    smbeHint: { href: "/assessments", label: "평가 참여·의견 기록" },
   },
   {
     id: "III-3-3",

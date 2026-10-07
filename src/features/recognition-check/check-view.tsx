@@ -765,6 +765,7 @@ function NeedItem({
   item: CheckResult["sections"][number]["items"][number];
 }) {
   const hint = item.question.smbeHint;
+  const links = [hint, item.question.secondaryHint].filter((link) => link != null);
   return (
     <li
       className={`check-result-item ${
@@ -794,7 +795,7 @@ function NeedItem({
             <span className="check-smbe-badge">
               <Check size={12} strokeWidth={3} /> 심플안전 대응
             </span>{" "}
-            &lsquo;{hint.label}&rsquo; 에서 바로 기록합니다
+            {links.map((link) => link.label).join(" · ")}
           </span>
         ) : (
           <span className="check-result-hint check-result-hint--offline">
@@ -803,12 +804,17 @@ function NeedItem({
         )}
       </div>
       {hint && (
-        <Link
-          href={`/login?next=${encodeURIComponent(hint.href)}`}
-          className="check-result-cta"
-        >
-          바로가기 <ArrowRight size={14} />
-        </Link>
+        <div className="check-result-links">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={`/login?next=${encodeURIComponent(link.href)}`}
+              className="check-result-cta"
+            >
+              {link.label} <ArrowRight size={14} />
+            </Link>
+          ))}
+        </div>
       )}
     </li>
   );

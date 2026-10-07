@@ -19,6 +19,7 @@ export type MemberRow = {
   approved_at: string | null;
   email: string | null;
   phone: string | null;
+  duty_note: string;
 };
 
 export type OpenInviteRow = {
@@ -86,6 +87,7 @@ export async function listMembers(companyId: string): Promise<MemberRow[]> {
             m.joined_at,
             m.left_at,
             m.approved_at,
+            m.duty_note,
             u.email,
             u.phone
        FROM company_members m
