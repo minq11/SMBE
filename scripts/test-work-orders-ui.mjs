@@ -122,6 +122,7 @@ try {
           "tests/standards.spec.ts",
           "tests/board.spec.ts",
           "tests/incidents.spec.ts",
+          "tests/safety-policy.spec.ts",
         ]),
     "--workers=1",
   ]);

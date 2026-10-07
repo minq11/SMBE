@@ -68,6 +68,7 @@ export type NavKey =
   | "locations"
   | "criteria"
   | "manual"
+  | "safetyPolicy"
   | "notices"
   | "news"
   | "resources"
@@ -106,6 +107,12 @@ const NAV: ReadonlyArray<NavEntry> = [
         title: "위험성 판단 기준",
         icon: ShieldCheck,
         href: "/company/criteria",
+      },
+      {
+        key: "safetyPolicy",
+        title: "안전보건 방침·목표",
+        icon: ShieldCheck,
+        href: "/company/safety-policy",
       },
       {
         key: "manual",

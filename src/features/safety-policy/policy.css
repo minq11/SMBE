@@ -1,0 +1,141 @@
+.policy-year-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.policy-year-form .float-field {
+  width: 150px;
+}
+.policy-card,
+.policy-document {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  min-width: 0;
+}
+.policy-form-page,
+.policy-fields {
+  display: grid;
+  gap: 20px;
+}
+.policy-fields legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+.policy-fields-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.policy-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.policy-document {
+  max-width: 850px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-wrap: anywhere;
+}
+.policy-document header {
+  text-align: center;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--brand);
+}
+.policy-document h2 {
+  font-size: 26px;
+  margin: 12px 0;
+}
+.policy-document section {
+  margin-top: 28px;
+}
+.policy-document h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+.policy-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.9;
+}
+.policy-document footer {
+  margin-top: 36px;
+  text-align: right;
+  line-height: 2;
+  overflow-wrap: anywhere;
+}
+.policy-sign {
+  display: none;
+}
+.policy-print-page {
+  display: grid;
+  gap: 20px;
+}
+.policy-print-page .policy-sign {
+  display: inline;
+}
+@media (max-width: 600px) {
+  .policy-card,
+  .policy-document {
+    padding: 18px;
+  }
+  .policy-fields-row {
+    grid-template-columns: 1fr;
+  }
+  .policy-tools {
+    flex-wrap: wrap;
+  }
+  .policy-save {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    padding: 12px 0;
+  }
+  html[data-keyboard="open"] .policy-save {
+    position: static;
+  }
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm;
+  }
+  html:has(.policy-print-page),
+  body:has(.policy-print-page),
+  body:has(.policy-print-page) .app-shell,
+  body:has(.policy-print-page) .main-shell,
+  body:has(.policy-print-page) main {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body:has(.policy-print-page) .sidebar,
+  body:has(.policy-print-page) .topbar,
+  body:has(.policy-print-page) .preview-banner,
+  .policy-print-page .page-header {
+    display: none !important;
+  }
+  .policy-print-page .policy-document {
+    border: 0;
+    padding: 0;
+    max-width: none;
+    font-size: 12pt;
+  }
+  .policy-print-page h3 {
+    break-after: avoid;
+  }
+  .policy-print-page footer {
+    break-inside: avoid;
+  }
+  body:has(.policy-form-page),
+  body:has(.policy-year-form) {
+    display: none !important;
+  }
+}

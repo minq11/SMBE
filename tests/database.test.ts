@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readSafetyPolicy, saveSafetyPolicy, safetyPolicyYears } from "../src/server/safety-policy";
 import { before, after, test } from "node:test";
 import { readFile, readdir } from "node:fs/promises";
 import {
@@ -174,6 +175,30 @@ async function invitation(
   );
   return token;
 }
+test("annual policy: year isolation, stale writes, tenant and worker permissions, paid printing", async () => {
+  const f = await fixture(), other = await fixture();
+  const actor = { companyId: f.companyId, userId: f.userId };
+  const input = { year: 2026, revision: 0, policy: "방침", goals: "매일 TBM", representative: "대표", establishedOn: "2026-10-07" };
+  await transaction(c => saveSafetyPolicy(c, actor, input));
+  await assert.rejects(transaction(c => saveSafetyPolicy(c, actor, input)), /변경/);
+  await transaction(c => saveSafetyPolicy(c, actor, { ...input, year: 2027, goals: "설비 점검" }));
+  assert.deepEqual(await transaction(c => safetyPolicyYears(c, actor)), [2027, 2026]);
+  assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026)))?.goals, "매일 TBM");
+  await assert.rejects(transaction(c => readSafetyPolicy(c, actor, 2026, true)), /유료/);
+  await pool.query("UPDATE companies SET pro_state='PRO_VOLUNTARY' WHERE id=$1", [f.companyId]);
+  assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026, true)))?.revision, 1);
+  await transaction(c => saveSafetyPolicy(c, actor, { ...input, revision: 1, goals: "수정 목표" }));
+  assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026)))?.revision, 2);
+  const workerId = await user();
+  await member(f.companyId, workerId);
+  const workerActor = { companyId: f.companyId, userId: workerId };
+  assert.ok(await transaction(c => readSafetyPolicy(c, workerActor, 2026)));
+  await assert.rejects(transaction(c => saveSafetyPolicy(c, workerActor, { ...input, revision: 2 })), /권한/);
+  await assert.rejects(transaction(c => readSafetyPolicy(c, { ...actor, companyId: other.companyId }, 2026)), /권한/);
+  for (const patch of [{ goals: " " }, { policy: "가".repeat(4001) }, { year: 2101 }, { establishedOn: "2026-02-30" }])
+    await assert.rejects(transaction(c => saveSafetyPolicy(c, actor, { ...input, revision: 2, ...patch })));
+});
+
 test("member duty note: managers only, company boundary, active only, length and clearing", async () => {
   const f = await fixture();
   const other = await fixture();

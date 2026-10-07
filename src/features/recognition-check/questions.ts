@@ -62,7 +62,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "일부 장소에 게시", score: 5 },
       { key: "OK", label: "우수", detail: "사무실·현장 상시 게시", score: 10 },
     ],
-    offlineTip: "방침·목표를 문서로 정해 사무실·현장에 게시하세요.",
+    smbeHint: { href: "/company/safety-policy", label: "안전보건 방침·목표" },
   },
   {
     id: "I-1-2",
