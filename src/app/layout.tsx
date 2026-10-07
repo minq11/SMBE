@@ -5,6 +5,7 @@ import "./globals.css";
 import { PreviewBanner } from "@/components/preview-banner";
 import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
 import { ViewportHeight } from "@/components/shell/viewport-height";
+import { NavPending } from "@/components/shell/nav-pending";
 export const metadata: Metadata = {
   title: "심플안전 · 무료로 시작하는 포털형 안전관리",
   description:
@@ -57,6 +58,7 @@ export default function RootLayout({
         <ViewportHeight />
         <PreviewBanner />
         {children}
+        <NavPending />
       </body>
     </html>
   );

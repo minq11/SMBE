@@ -9081,3 +9081,16 @@ fieldset.form-field legend {
     transition: none;
   }
 }
+/* 이동 중 덮개 (components/shell/nav-pending.tsx). loading.tsx 와 같은 로고를 화면 위에 덮는다.
+   바탕을 살짝 비춰 어디서 어디로 가는지 감이 남고, 누름은 막는다. */
+.nav-pending {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+}
+.nav-pending .loading-logo--fullscreen {
+  min-height: 0;
+}

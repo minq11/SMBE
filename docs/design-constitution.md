@@ -174,6 +174,9 @@
   제출은 버튼 글자가 "저장 중…" 으로. 아무 신호 없는 대기는 없다.
   새 화면 폴더를 만들면 검사 항목: `find src/app -name page.tsx` 의 각 폴더에
   자식 폴더가 있으면 `loading.tsx` 가 있어야 한다 (8장 검증).
+  loading.tsx 는 세그먼트가 바뀔 때만 뜨므로, 같은 화면에서 쿼리만 바뀌는 이동(회차 열기
+  `?session=`, TBM 확인 `?type=`, 조회 폼)은 `components/shell/nav-pending.tsx` 가 링크·GET
+  폼을 누르는 순간 같은 로고를 띄우고 주소가 바뀌면 내린다 (사장님 2026-10-07).
 - **스크롤 등장 효과는 로그인 전 홈에만.** 파는 화면이라 내리면 글과 미리보기가 떠오른다
   (AOS 의 CSS, `data-aos` + `.aos-animate`, `features/dashboard/scroll-reveal.tsx`). 일하는
   화면에는 없다 — 기다리게 하는 움직임이다. 움직임을 줄이라는 기기(prefers-reduced-motion)
