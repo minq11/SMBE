@@ -206,6 +206,19 @@ test("standard: create, edit, add a seeded assessment round", async ({
       fullPage: true,
     });
     await page.getByLabel("감소대책", { exact: true }).fill("방호덮개 설치");
+    // 아래쪽 칸이 비면 어느 칸인지 이름으로 말하고, 확인을 누르면 그 칸으로 간다.
+    // (예전엔 zod 영문 "Too small" 만 떴다.)
+    await page
+      .getByRole("button", { name: "표준서 저장 · 확정", exact: true })
+      .click();
+    await expect(errorDialog).toBeVisible();
+    await expect(errorDialog).toContainText(
+      "안전보건정보의 설비를 입력하세요.",
+    );
+    await expect(errorDialog).not.toContainText("Too small");
+    await errorDialog.getByRole("button", { name: "확인" }).click();
+    await expect(errorDialog).toBeHidden();
+    await expect(page.locator("#std-safety-equipment")).toBeFocused();
     for (const label of ["설비", "물질", "주변 환경", "재해·아차사고 정보"])
       await page.getByLabel(label, { exact: true }).fill("확인함");
     // 인원은 팝업에서 고른다. 고른 사람은 칩으로 남고 × 로 뺀다.

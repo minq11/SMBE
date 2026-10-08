@@ -46,13 +46,17 @@ export {
 // -----------------------------------------------------------------------------
 
 const riskItemSchema = z.object({
-  hazard: z.string().trim().min(1).max(500),
+  hazard: z.string().trim().min(1, "유해·위험요인을 입력하세요.").max(500),
   // 평가 시점에 이미 하던 안전조치. 3단계 판단법 양식의 둘째 칸. 비워도 된다.
   current_control: z.string().trim().max(1000).optional().default(""),
-  initial_risk_level: z.enum(["HIGH", "MID", "LOW"]),
+  initial_risk_level: z.enum(["HIGH", "MID", "LOW"], "위험성 수준을 고르세요."),
   // 화면이 보내도 무시한다. 허용 여부는 수준 + 회사 기준에서 서버가 정한다.
   initial_allowable: z.boolean().optional(),
-  reduction_measure: z.string().trim().min(1).max(1000),
+  reduction_measure: z
+    .string()
+    .trim()
+    .min(1, "감소대책을 입력하세요.")
+    .max(1000),
   responsible_user_id: z.string().uuid().nullable(),
   planned_completion_date: z
     .string()
@@ -60,11 +64,29 @@ const riskItemSchema = z.object({
     .nullable(),
 });
 
+// 사전조사 안전보건정보 네 칸은 모두 적는다 (없으면 "없음"). 어느 칸이 비었는지
+// 오류문에 이름이 나와야 긴 폼 아래쪽을 다시 뒤지지 않는다.
 const safetyInfoSchema = z.object({
-  equipment: z.string().trim().min(1).max(2000),
-  materials: z.string().trim().min(1).max(2000),
-  environment: z.string().trim().min(1).max(2000),
-  history: z.string().trim().min(1).max(2000),
+  equipment: z
+    .string()
+    .trim()
+    .min(1, "안전보건정보의 설비를 입력하세요.")
+    .max(2000),
+  materials: z
+    .string()
+    .trim()
+    .min(1, "안전보건정보의 물질을 입력하세요.")
+    .max(2000),
+  environment: z
+    .string()
+    .trim()
+    .min(1, "안전보건정보의 주변 환경을 입력하세요.")
+    .max(2000),
+  history: z
+    .string()
+    .trim()
+    .min(1, "안전보건정보의 재해·아차사고 정보를 입력하세요.")
+    .max(2000),
 });
 
 // 표준서 저장(신규·편집) 페이로드 (평가는 별도 함수)
@@ -79,17 +101,19 @@ export const standardEditSchema = z.object({
     .array(
       z.object({
         id: z.string().uuid().optional(),
-        text: z.string().trim().min(1).max(500),
+        text: z.string().trim().min(1, "작업 단계를 입력하세요.").max(500),
       }),
     )
     .min(1, "작업 단계를 하나 이상 입력하세요.")
     .max(30),
   checklist_tbm: z
-    .array(z.string().trim().min(1).max(500))
+    .array(z.string().trim().min(1, "TBM 체크리스트를 입력하세요.").max(500))
     .min(1, "TBM 체크리스트를 하나 이상 입력하세요.")
     .max(30),
   checklist_during: z
-    .array(z.string().trim().min(1).max(500))
+    .array(
+      z.string().trim().min(1, "작업 중 체크리스트를 입력하세요.").max(500),
+    )
     .min(1, "작업 중 체크리스트를 하나 이상 입력하세요.")
     .max(30),
   // 무엇을 왜 바꿨나. 개정 초안에만 있고 승인 이력에 남는다.
@@ -111,7 +135,10 @@ export const assessmentRoundSchema = z.object({
   safety_info: safetyInfoSchema,
   // 위험요인을 찾을 때 근로자가 말한 것 (고시 제6조 참여의 흔적). 비워도 된다.
   worker_opinion: z.string().trim().max(2000).optional().default(""),
-  risks: z.array(riskItemSchema).min(1).max(30),
+  risks: z
+    .array(riskItemSchema)
+    .min(1, "위험요인을 하나 이상 입력하세요.")
+    .max(30),
   participant_user_ids: z
     .array(z.string().uuid())
     .min(1, "참여 근로자를 선택하세요.")

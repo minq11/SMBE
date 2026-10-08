@@ -2,10 +2,18 @@
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { PeoplePickerDialog } from "@/components/ui/people-picker";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { MembershipLink } from "@/components/ui/paid-lock";
-import { ArrowLeft, Plus, Save, Trash2, X, ListChecks, PenLine } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Save,
+  Trash2,
+  X,
+  ListChecks,
+  PenLine,
+} from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
@@ -31,6 +39,11 @@ const DURING_HINTS = ["예: 회전부 덮개 유지", "예: 작업 구역 출입
 const hint = (list: string[], i: number, fallback: string) =>
   list[i] ?? fallback;
 import { createStandardAction, type StandardActionState } from "./actions";
+import {
+  checkStandardDraft,
+  goToProblem,
+  type DraftProblem,
+} from "./draft-check";
 
 type Risk = {
   hazard: string;
@@ -238,8 +251,31 @@ export function StandardForm({
         : [...d.participant_user_ids, userId],
     }));
 
+  // 빈 칸은 서버에 보내기 전에 여기서 잡아 그 칸으로 데려간다 (draft-check.ts).
+  const formRef = useRef<HTMLFormElement>(null);
+  const [problem, setProblem] = useState<DraftProblem | null>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const found = checkStandardDraft({
+      steps: draft.steps,
+      checklist_tbm: draft.checklist_tbm,
+      checklist_during: draft.checklist_during,
+      assessment: {
+        work_method: draft.work_method,
+        safety_info: draft.safety_info,
+        risks: draft.risks.map((r) => ({
+          hazard: r.hazard,
+          level: r.initial_risk_level,
+          measure: r.reduction_measure,
+        })),
+        participant_user_ids: draft.participant_user_ids,
+      },
+    });
+    if (found) {
+      setProblem(found);
+      return;
+    }
     // 새 스키마: 표준서 필드 + first_assessment 로 중첩
     const cleaned = {
       name: draft.name.trim(),
@@ -291,7 +327,12 @@ export function StandardForm({
   };
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className="std-form">
+    <form
+      ref={formRef}
+      action={formAction}
+      onSubmit={handleSubmit}
+      className="std-form"
+    >
       <Link
         href={returnHref ?? "/standards"}
         className="text-button std-back-link"
@@ -308,7 +349,15 @@ export function StandardForm({
         </p>
       </header>
 
-      <FormErrorDialog message={state?.error} nonce={state} />
+      <FormErrorDialog
+        message={problem?.message ?? state?.error}
+        nonce={problem ?? state}
+        onClose={() => {
+          if (!problem) return;
+          setProblem(null);
+          goToProblem(formRef.current, problem);
+        }}
+      />
 
       {backup && (
         <div className="draft-restore" role="status">
@@ -446,8 +495,8 @@ export function StandardForm({
                     </p>
                   ) : (
                     <p>
-                      멤버십에 가입된 회사는 단계마다 사진을 붙일 수 있습니다. 사진이
-                      있으면 신입도 그대로 따라 합니다.{" "}
+                      멤버십에 가입된 회사는 단계마다 사진을 붙일 수 있습니다.
+                      사진이 있으면 신입도 그대로 따라 합니다.{" "}
                       <MembershipLink />
                     </p>
                   )}
@@ -664,7 +713,10 @@ export function StandardForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
-        <Link href={returnHref ?? "/standards"} className="btn-secondary btn--sm">
+        <Link
+          href={returnHref ?? "/standards"}
+          className="btn-secondary btn--sm"
+        >
           <X size={13} /> 취소
         </Link>
         <button type="submit" className="btn-primary" disabled={pending}>

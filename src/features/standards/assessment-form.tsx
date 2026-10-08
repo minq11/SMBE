@@ -5,10 +5,11 @@ import { ReferencePanel } from "@/features/assessments/reference-panel";
 import type { AssessmentReferences } from "@/server/assessment-references";
 
 import type { RiskCriteria } from "@/features/company/risk-criteria";
-import { useActionState, useState } from "react";
+import { useActionState, useState, useRef } from "react";
 import Link from "next/link";
 import { Plus, Save, X } from "lucide-react";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
+import { checkAssessment, goToProblem, type DraftProblem } from "./draft-check";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { JumpNav } from "@/components/ui/jump-nav";
@@ -96,8 +97,29 @@ export function AssessmentForm({
     FormData
   >(addAssessmentAction, undefined);
 
+  // 빈 칸은 서버에 보내기 전에 여기서 잡아 그 칸으로 데려간다 (draft-check.ts).
+  const formRef = useRef<HTMLFormElement>(null);
+  const [problem, setProblem] = useState<DraftProblem | null>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const found = checkAssessment(
+      {
+        work_method: workMethod,
+        safety_info: safety,
+        risks: risks.map((r) => ({
+          hazard: r.hazard,
+          level: r.level,
+          measure: r.measure,
+        })),
+        participant_user_ids: participants,
+      },
+      { method: "asmt-method" },
+    );
+    if (found) {
+      setProblem(found);
+      return;
+    }
     const payload = {
       kind,
       performed_on: performedOn,
@@ -129,7 +151,12 @@ export function AssessmentForm({
   const seeded = Boolean(seed?.risks.length);
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className="std-form">
+    <form
+      ref={formRef}
+      action={formAction}
+      onSubmit={handleSubmit}
+      className="std-form"
+    >
       <header className="std-form-hero">
         <h1>{standardName} · 위험성평가 다시하기</h1>
         <p>
@@ -147,7 +174,15 @@ export function AssessmentForm({
         ]}
       />
 
-      <FormErrorDialog message={state?.error} nonce={state} />
+      <FormErrorDialog
+        message={problem?.message ?? state?.error}
+        nonce={problem ?? state}
+        onClose={() => {
+          if (!problem) return;
+          setProblem(null);
+          goToProblem(formRef.current, problem);
+        }}
+      />
 
       <section className="std-form-section" id="asmt-people">
         <h2>참여자</h2>
@@ -282,7 +317,10 @@ export function AssessmentForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
-        <Link href={`/standards/${standardId}`} className="btn-secondary btn--sm">
+        <Link
+          href={`/standards/${standardId}`}
+          className="btn-secondary btn--sm"
+        >
           <X size={13} /> 취소
         </Link>
         <button type="submit" className="btn-primary" disabled={pending}>

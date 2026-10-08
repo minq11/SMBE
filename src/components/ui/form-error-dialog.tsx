@@ -43,11 +43,14 @@ export function FormErrorDialog({
   message,
   nonce,
   title = "저장하지 못했습니다",
+  onClose,
 }: {
   message?: string | null;
   nonce?: unknown;
   /** 저장이 아닌 일(폐기 등)이 막혔을 때는 그 일의 이름으로. */
   title?: string;
+  /** 확인을 누른 뒤 할 일 (문제의 칸으로 데려가기 등). */
+  onClose?: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   // 닫은 오류는 그 nonce 로 기억한다. 새 오류(새 nonce)는 다시 뜬다.
@@ -60,13 +63,19 @@ export function FormErrorDialog({
     if (!open && el.open) el.close();
   }, [open]);
   const close = () => setDismissed(nonce);
+  // 확인·Esc 모두 결국 dialog 의 close 이벤트로 온다. 그때는 창이 저장 단추로
+  // 포커스를 돌려준 뒤라, 여기서 다른 칸으로 포커스를 옮겨도 다시 빼앗기지 않는다.
+  const closed = () => {
+    close();
+    onClose?.();
+  };
   return (
     <dialog
       ref={ref}
       className="confirm-dialog form-error-dialog"
       role="alertdialog"
       aria-label={title}
-      onClose={close}
+      onClose={closed}
     >
       {open && (
         <div className="confirm-dialog-body">
