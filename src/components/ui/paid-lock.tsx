@@ -11,7 +11,11 @@ import { useToast } from "./toast";
  * 글자와 주소를 한 곳에 둬서 화면마다 달라지지 않게 한다.
  */
 export function MembershipLink() {
-  return <Link href="/billing">요금제 보기</Link>;
+  return (
+    <Link href="/billing" className="membership-link">
+      요금제 보기
+    </Link>
+  );
 }
 
 /**

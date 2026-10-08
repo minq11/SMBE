@@ -9075,6 +9075,17 @@ fieldset.form-field legend {
   transform: translate(-50%, 0);
   pointer-events: auto;
 }
+/* 멤버십 안내의 "요금제 보기". 어디에 놓이든 누를 수 있는 글자로 보여야 한다 —
+   도움말 창처럼 링크 모양이 따로 없는 자리에서는 이어지는 문장처럼 읽혔다.
+   토스트 안에서는 아래 .toast a 가 이긴다(어두운 바탕의 흰 글자). 본문 속 글자
+   링크라 44px 규칙의 예외다(헌법 4장). */
+.membership-link {
+  color: var(--brand-strong);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
 .toast a {
   display: inline-flex;
   align-items: center;
