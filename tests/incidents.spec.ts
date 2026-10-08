@@ -210,7 +210,7 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     await expect(page.getByRole("link", { name: /끼임 재해/ })).toBeVisible();
     await expect(page.locator(".row-list")).toContainText("할 일 4");
 
-    // 산업재해조사표: 무료면 안내, 유료면 우리 기록으로 채운 서식.
+    // 산업재해조사표: 무료면 안내, 멤버십이면 우리 기록으로 채운 서식.
     await page.goto(url);
     await page.getByRole("link", { name: "산업재해조사표" }).click();
     await expect(page).toHaveURL(/\/survey$/);
@@ -222,7 +222,7 @@ test("incidents: manager registers an injury, duties appear with deadlines, clos
     // 무료면 토스트만 잠깐 (헌법 5장).
     await page.getByRole("button", { name: /조사표 인쇄/ }).click();
     await expect(page.locator(".toast")).toContainText(
-      "산업재해조사표 인쇄는 유료 요금제에서",
+      "산업재해조사표 인쇄는 멤버십에 가입된 회사만",
     );
     await page.screenshot({
       path: test.info().outputPath("survey.png"),

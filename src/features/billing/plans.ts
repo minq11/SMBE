@@ -4,7 +4,7 @@
  * 기준 인원은 `companies.active_headcount` (현재 재직중인 ACTIVE 구성원, 관리자 포함)이며
  * 가입·퇴사 때마다 `refreshHeadcount()` 가 갱신한다.
  *
- * 기능은 세 구간이 모두 같다. 무료와 유료를 가르는 기준만 존재하므로
+ * 기능은 세 구간이 모두 같다. 무료와 멤버십을 가르는 기준만 존재하므로
  * 서버의 기능 게이트는 지금처럼 `pro_state !== 'FREE'` 하나로 충분하다.
  *
  * 금액은 **공급가(VAT 별도)** 로 둔다. 세금계산서에 공급가·부가세가 분리돼야 하므로
@@ -94,7 +94,7 @@ export function planForHeadcount(headcount: number): PaidPlan | null {
 }
 
 /**
- * 계약 인원을 다 쓴 상태인지. 유료 회사는 이 상태에서 인원 등록이 막힌다.
+ * 계약 인원을 다 쓴 상태인지. 멤버십 회사는 이 상태에서 인원 등록이 막힌다.
  * 무료 회사는 상한이 없으므로 항상 false — 무료는 인원이 아니라 기능이 제한된다.
  */
 export function seatsExhausted(

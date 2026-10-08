@@ -319,7 +319,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await expect(page.getByText("조건에 맞는 회차가 없습니다.")).toBeVisible();
     await page.getByRole("button", { name: "전체", exact: true }).click();
     await expect(logRow.first()).toBeVisible();
-    // 무료의 1주일 밖 회차는 잠긴 채 목록에 남고, 누르면 유료 안내가 잠깐 떴다
+    // 무료의 1주일 밖 회차는 잠긴 채 목록에 남고, 누르면 멤버십 안내가 잠깐 떴다
     // 사라진다 — 화면에 미리 써 두지 않는다 (헌법 5장).
     const oldSession = (
       await pool.query<{ id: string }>(
@@ -337,7 +337,7 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
     await expect(lockedRow.getByRole("link")).toHaveCount(0);
     // 카드 어디를 눌러도 안내가 뜬다 — 자물쇠 글자가 아니라 시각 줄을 누른다.
     await lockedRow.locator("p").click();
-    await expect(page.locator(".toast")).toContainText("유료 요금제");
+    await expect(page.locator(".toast")).toContainText("멤버십에 가입된 회사만");
     await expect(page).toHaveURL(/\/inspections$/);
     await page.screenshot({
       path: testInfo.outputPath("inspection-log-locked.png"),
@@ -380,10 +380,10 @@ test("worker patrol before TBM, manager resolves finding, next TBM shows correct
       fullPage: true,
     });
 
-    // 점검 모니터링 (I-04) — 유료 기능이라 무료 회사에는 안내만 뜬다.
+    // 점검 모니터링 (I-04) — 멤버십 기능이라 무료 회사에는 안내만 뜬다.
     await page.goto("/monitoring");
     await expect(
-      page.getByRole("heading", { name: "유료 요금제 기능입니다" }),
+      page.getByRole("heading", { name: "멤버십 기능입니다" }),
     ).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath("monitoring-free.png"),

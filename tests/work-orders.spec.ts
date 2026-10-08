@@ -270,7 +270,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     // 않는다 (헌법 5장). 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전
     // 클릭은 삼켜진다.
     const notice = page.locator(".toast").filter({
-      hasText: "지시서 인쇄(A4 한 장, QR 포함)는 유료 요금제에서",
+      hasText: "지시서 인쇄(A4 한 장, QR 포함)는 멤버십에 가입된 회사만",
     });
     await expect(async () => {
       await page
@@ -328,7 +328,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       path: testInfo.outputPath("work-order-issued.png"),
       fullPage: true,
     });
-    // 유료로 바꾸면 현장 게시용 A4 한 장이 생긴다. 인쇄물은 화면 문서 전체가
+    // 멤버십으로 바꾸면 현장 게시용 A4 한 장이 생긴다. 인쇄물은 화면 문서 전체가
     // 아니라 이 한 장이며, 어느 탭을 보고 있든 같은 것이 나간다.
     await pool.query(
       "UPDATE companies SET pro_state='PRO_VOLUNTARY',plan='BASIC',plan_started_at=now() WHERE id=$1",
@@ -484,7 +484,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       0,
     );
     // 취소 뒤 1주일이 지난 지시서는 무료 목록에서 빠지는 대신 잠긴 줄로 남고,
-    // 누르면 유료 토스트가 잠깐 뜬다 (헌법 5장). 주소는 그대로.
+    // 누르면 멤버십 토스트가 잠깐 뜬다 (헌법 5장). 주소는 그대로.
     const orderId = page.url().match(/\/work-orders\/([0-9a-f-]{36})/)![1];
     await pool.query(
       "UPDATE work_orders SET canceled_at=now()-interval '8 days' WHERE id=$1",
@@ -495,7 +495,7 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     const lockedRow = page.locator(".wo-row-locked").first();
     await expect(lockedRow.locator(".wo-table-lock")).toBeVisible();
     await lockedRow.locator('td[data-label="장소"]').click();
-    await expect(page.locator(".toast").first()).toContainText("유료 요금제");
+    await expect(page.locator(".toast").first()).toContainText("멤버십에 가입된 회사만");
     await expect(page).toHaveURL(/\/work-orders\?tab=all$/);
     await page.screenshot({ path: testInfo.outputPath("orders-locked.png") });
   } finally {

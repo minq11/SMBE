@@ -140,6 +140,18 @@ async function checkPublicCopy() {
   }
 }
 
+// 6장 — 돈 이야기는 "멤버십". 약관만 예외(처음 한 번 무엇인지 밝힌다).
+async function checkMembershipWord() {
+  for (const file of (await walk(join(root, "src"))).filter(
+    (f) => f.endsWith(".tsx") || f.endsWith(".ts"),
+  )) {
+    if (posix(file).startsWith("src/features/legal/")) continue;
+    const text = await readFile(file, "utf8");
+    const line = text.split("\n").findIndex((l) => l.includes("유료"));
+    if (line >= 0) fail("6장 멤버십", file, `${line + 1}행 "유료"`);
+  }
+}
+
 // 3장 — 상태 표시줄 색은 배경색과 같다. 세 곳이 같은 값이어야 한다.
 async function checkThemeColor() {
   const globals = await readFile(join(root, "src/app/globals.css"), "utf8");
@@ -270,6 +282,7 @@ await Promise.all([
   checkFonts(),
   checkButtons(),
   checkNavPending(),
+  checkMembershipWord(),
 ]);
 
 if (problems.length) {
@@ -279,5 +292,5 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(
-  "디자인 헌법 검사 통과 (입력칸 · loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴 · 단추 · 이동 신호)",
+  "디자인 헌법 검사 통과 (입력칸 · loading.tsx · 대화상자 · 오류 띠 · 색 토큰 · 면책 문구 · 상태 표시줄 색 · 글꼴 · 단추 · 이동 신호 · 멤버십)",
 );

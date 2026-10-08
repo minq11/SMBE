@@ -98,7 +98,7 @@ export function BoardEditor({
   postId: string;
   initial: BoardDoc;
   onChange: (doc: BoardDoc) => void;
-  /** 유료 회사만 사진·동영상. */
+  /** 멤버십 회사만 사진·동영상. */
   canAttach: boolean;
   /** 첨부 단추 옆 안내 (저장 공간 등). */
   attachHint?: string;
@@ -107,9 +107,9 @@ export function BoardEditor({
   const [error, setError] = useState<string | null>(null);
   /** 링크 입력 칸. 브라우저 prompt 대신 도구 막대 아래에 편다 (헌법 9장). */
   const [link, setLink] = useState<string | null>(null);
-  // 무료 회사의 사진·동영상 단추는 숨기지 않는다 — 누르면 유료 토스트 (헌법 5장).
+  // 무료 회사의 사진·동영상 단추는 숨기지 않는다 — 누르면 멤버십 토스트 (헌법 5장).
   const { block: blockAttach, toast: paidToast } = usePaidToast(
-    "사진·동영상 첨부는 유료 요금제에서 씁니다.",
+    "사진·동영상 첨부는 멤버십에 가입된 회사만 쓸 수 있습니다.",
   );
 
   const editor = useEditor({

@@ -136,8 +136,8 @@ export async function listOrders(
       actor.userId,
       access.pro_state !== "FREE",
     ];
-    // 잠긴 지시서도 목록에 남긴다 — 누르면 유료 안내가 뜬다. 건수만 남기면
-    // 무엇이 있는지 모른 채 "유료" 글만 읽게 된다.
+    // 잠긴 지시서도 목록에 남긴다 — 누르면 멤버십 안내가 뜬다. 건수만 남기면
+    // 무엇이 있는지 모른 채 "멤버십" 글만 읽게 된다.
     const { rows } = await client.query<OrderSummary>(
       base +
         ` SELECT id,name,display_status AS status,work_period_start::text AS start_date,

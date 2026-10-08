@@ -155,7 +155,7 @@ export default async function WorkOrdersPage({
                   <PaidLockRow
                     key={row.id}
                     className="wo-row-locked"
-                    message="지난 지시서는 유료 요금제에서 열립니다. 무료는 완료 뒤 1주일까지."
+                    message="지난 지시서는 멤버십에 가입된 회사만 열 수 있습니다. 무료는 완료 뒤 1주일까지."
                   >
                     {cells}
                   </PaidLockRow>

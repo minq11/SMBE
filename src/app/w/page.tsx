@@ -296,7 +296,7 @@ export default async function WorkerLinkPage({
               {data.lockedSessions.map((s) => (
                 <li className="link-session is-locked" key={s.id}>
                   <PaidLockButton
-                    message="지난 회차는 유료 요금제에서 열립니다."
+                    message="지난 회차는 멤버십에 가입된 회사만 열 수 있습니다."
                     link={false}
                   >
                     {s.work_date} · {at(s.starts_at)} ~ {at(s.ends_at)}

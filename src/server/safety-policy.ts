@@ -16,7 +16,7 @@ export async function readSafetyPolicy(
 ) {
   const access = await memberAccess(client, actor);
   if (print && access.pro_state === "FREE")
-    throw new WorkOrderError("방침·목표 인쇄는 유료 요금제에서 씁니다.");
+    throw new WorkOrderError("방침·목표 인쇄는 멤버십에 가입된 회사만 쓸 수 있습니다.");
   if (!yearSchema.safeParse(year).success)
     throw new WorkOrderError("연도를 확인하세요.");
   const { rows } = await client.query<SafetyPolicy>(

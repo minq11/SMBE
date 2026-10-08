@@ -45,7 +45,7 @@ export default async function MonitoringPage({
 
       {!data.paid ? (
         <section className="wo-section">
-          <h2>유료 요금제 기능입니다</h2>
+          <h2>멤버십 기능입니다</h2>
           <p className="wo-muted">
             오늘 누가 TBM 을 안 찍었고 어느 작업에 점검이 없는지, 한 화면에서.
           </p>

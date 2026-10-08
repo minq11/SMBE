@@ -419,7 +419,7 @@ export async function inspectionOverview(
     canAttach: access.pro_state !== "FREE",
     current,
     sessions: visible,
-    // 무료의 1주일 밖 회차. 목록 끝에 잠긴 줄로 남고, 누르면 유료 안내가 뜬다.
+    // 무료의 1주일 밖 회차. 목록 끝에 잠긴 줄로 남고, 누르면 멤버십 안내가 뜬다.
     lockedSessions: sessions
       .filter((s) => !visible.includes(s))
       .map((s) => ({
@@ -808,7 +808,7 @@ export async function companyInspectionLog(
   const free = access.pro_state === "FREE";
   const now = await databaseNow(client);
   // 무료는 최근 1주일만 본다 (기존 열람 제한과 같은 규칙). 그보다 오래된 회차는
-  // 목록에서 빼지 않고 잠근 채 둔다 — 누르면 유료 안내가 뜬다. 무엇이 있는지는
+  // 목록에서 빼지 않고 잠근 채 둔다 — 누르면 멤버십 안내가 뜬다. 무엇이 있는지는
   // 보여야 "열어 보고 싶다" 가 된다.
   const cutoff = free
     ? seoulToday(new Date(now.getTime() - 7 * 86400000))
@@ -906,7 +906,7 @@ export type MonitorView = {
  * 추이 그래프·재해율 통계는 넣지 않았다. 첫 화면이 답해야 하는 질문은 "누가
  * 아직 TBM 을 안 찍었나" 하나다.
  *
- * 유료 기능이다. 무료 회사에는 행을 돌려주지 않는다 — 다만 홈과 지시서 상세의
+ * 멤버십 기능이다. 무료 회사에는 행을 돌려주지 않는다 — 다만 홈과 지시서 상세의
  * 회차 상태는 무료에서도 그대로 보인다. 이 메뉴가 그것을 빼앗지 않는다.
  */
 export async function inspectionMonitor(

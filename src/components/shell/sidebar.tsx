@@ -305,7 +305,7 @@ export function Sidebar({
         </span>
         <span className="workspace-copy">
           <strong>{companyName ?? "우리 회사"}</strong>
-          <small>{tier} 요금제</small>
+          <small>{tier === "멤버십" ? "멤버십" : "무료 요금제"}</small>
         </span>
         <ChevronRight size={14} />
       </Link>

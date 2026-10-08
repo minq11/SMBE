@@ -103,7 +103,7 @@ async function verifyActor(
   const operatorOnGlobal = globalPost && Boolean(actor.operator);
   if (upload && !pro && !operatorOnGlobal)
     throw new AttachmentError(
-      "사진·동영상 첨부는 유료 요금제에서 이용할 수 있습니다.",
+      "사진·동영상 첨부는 멤버십에 가입된 회사만 쓸 수 있습니다.",
     );
   // 링크 방문자는 회사에서 어떤 역할이든 현장 작업자 권한으로만 다룬다.
   // 토큰은 배정 하나를 여는 열쇠이지 관리자 자격을 옮겨 오지 않는다.

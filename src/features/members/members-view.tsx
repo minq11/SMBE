@@ -154,7 +154,7 @@ export function MembersView({
 }
 
 /**
- * 유료 회사에만 계약 인원 현황을 보여준다. 다 쓰면 등록이 막히므로 미리 알린다.
+ * 멤버십 회사에만 계약 인원 현황을 보여준다. 다 쓰면 등록이 막히므로 미리 알린다.
  * 무료 회사에는 아무것도 띄우지 않는다 — 무료는 인원 제한 없이 기능만 제한된다.
  */
 function PlanNotice({ overview }: { overview: CompanyOverview }) {

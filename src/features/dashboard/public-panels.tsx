@@ -164,7 +164,7 @@ const FAQ: Array<{ q: string; a: string; href?: [string, string] }> = [
   },
   {
     q: "정말 무료인가요?",
-    a: "인원 제한 없이 무료입니다. 사진 첨부·문자 알림·출력물·통합 대시보드 같은 부가 기능이 필요해질 때 인원 구간으로 유료 전환합니다.",
+    a: "인원 제한 없이 무료입니다. 사진 첨부·문자 알림·출력물·통합 대시보드 같은 부가 기능이 필요해질 때 인원 구간에 맞춰 멤버십에 가입합니다.",
   },
   {
     q: "외국인 근로자도 쓸 수 있나요?",
@@ -250,9 +250,9 @@ export function PublicPanels() {
       >
         <div className="public-step-text" {...reveal("fade-up")}>
           <p className="public-kicker">요금</p>
-          <h2 id="public-price-h">무료로 시작, 필요할 때만 유료</h2>
+          <h2 id="public-price-h">무료로 시작, 필요할 때만 멤버십</h2>
           <p className="public-lead">
-            글자로 하는 일은 모두 무료, 인원 제한도 없습니다. 유료는 부가 기능이
+            글자로 하는 일은 모두 무료, 인원 제한도 없습니다. 멤버십은 부가 기능이
             필요할 때 인원 구간으로만 갈립니다.
           </p>
         </div>
@@ -267,7 +267,7 @@ export function PublicPanels() {
             회의
           </p>
           <p className="public-price-limit">
-            일부 기능 제한 — 사진 첨부·출력·문자 알림 등은 유료 (아래 안내)
+            일부 기능 제한 — 사진 첨부·출력·문자 알림 등은 멤버십 (아래 안내)
           </p>
         </div>
         <ul
@@ -296,12 +296,12 @@ export function PublicPanels() {
           className="public-law public-compare"
           {...reveal("fade-up", 300)}
         >
-          <caption>유료 기능 안내</caption>
+          <caption>멤버십 기능 안내</caption>
           <thead>
             <tr>
               <th scope="col">기능</th>
               <th scope="col">무료</th>
-              <th scope="col">유료</th>
+              <th scope="col">멤버십</th>
             </tr>
           </thead>
           <tbody>

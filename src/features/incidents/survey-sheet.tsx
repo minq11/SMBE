@@ -19,7 +19,7 @@ export type SurveyCompany = {
 /** 인쇄 / PDF 저장. 무료 요금제는 안내만. 지시서 출력물의 단추와 같은 모양. */
 export function SurveyPrintButton({ allowed }: { allowed: boolean }) {
   const { block, toast } = usePaidToast(
-    "산업재해조사표 인쇄는 유료 요금제에서 씁니다.",
+    "산업재해조사표 인쇄는 멤버십에 가입된 회사만 쓸 수 있습니다.",
   );
   return (
     <div className="wo-no-print">

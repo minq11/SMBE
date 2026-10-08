@@ -127,7 +127,7 @@ export default async function OrderDetailPage({
     { id: "risk", label: "위험성평가" },
     ...(d.ptwRequired ? [{ id: "permit", label: "허가서" }] : []),
   ];
-  // 출력물은 유료 기능이다. 무료 회사는 버튼을 눌렀을 때 안내로 막는다.
+  // 출력물은 멤버십 기능이다. 무료 회사는 버튼을 눌렀을 때 안내로 막는다.
   const canPrint = (session.membership?.pro_state ?? "FREE") !== "FREE";
   const panel = (key: string) => ({ id: key, className: "wo-section" });
   /**

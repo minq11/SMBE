@@ -205,13 +205,13 @@ test("preview renders without secrets and only shows preparation dialogs", async
     "일부 기능 제한",
   );
   await expect(page.locator(".public-compare caption")).toHaveText(
-    "유료 기능 안내",
+    "멤버십 기능 안내",
   );
-  // 무료·유료 차이는 요금제의 표 그대로.
+  // 무료·멤버십 차이는 요금제의 표 그대로.
   const compare = page.locator(".public-compare");
   await expect(compare).toContainText("사진 첨부");
   await expect(compare).toContainText("문자(SMS) 알림");
-  // ○·× 로 본다 — 기능마다 무료 ×, 유료 ○.
+  // ○·× 로 본다 — 기능마다 무료 ×, 멤버십 ○.
   await expect(compare.locator(".public-mark[data-on='true']")).toHaveCount(7);
   await expect(compare.locator(".public-mark[data-on='false']")).toHaveCount(7);
   const faq = page.locator(".public-faq");

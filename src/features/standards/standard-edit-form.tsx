@@ -260,7 +260,7 @@ export function StandardEditForm({
                     ) : (
                       <PaidLockButton
                         className="attach-uploader-lock"
-                        message="단계 사진 첨부는 유료 요금제에서 씁니다."
+                        message="단계 사진 첨부는 멤버십에 가입된 회사만 쓸 수 있습니다."
                       >
                         사진 붙이기
                       </PaidLockButton>

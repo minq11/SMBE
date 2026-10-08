@@ -72,7 +72,7 @@ test("annual policy writes, restores, copies without overwriting, worker reads a
     await expect(page.locator(".policy-document")).toContainText("홍대표");
     await page.getByRole("button", { name: "게시용 인쇄" }).click();
     await expect(
-      page.getByText("방침·목표 인쇄는 유료 요금제에서 씁니다.", {
+      page.getByText("방침·목표 인쇄는 멤버십에 가입된 회사만 쓸 수 있습니다.", {
         exact: false,
       }),
     ).toBeVisible();

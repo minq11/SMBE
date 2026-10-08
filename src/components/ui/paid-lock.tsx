@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { useToast } from "./toast";
 
 /**
- * 유료 기능에 막혔을 때의 토스트. 화면에 "유료 요금제에서 …" 문단을 써 두는
+ * 멤버십 기능에 막혔을 때의 토스트. 화면에 "멤버십에 가입된 회사만 …" 문단을 써 두는
  * 대신, 눌렀을 때 한 줄과 요금제 링크가 잠깐 뜬다 (헌법 5장).
  * `link=false` 는 요금제를 고를 수 없는 사람(작업자 링크 화면)용.
  */
@@ -47,7 +47,7 @@ export function PaidLockRow({
         className={className}
         role="button"
         tabIndex={0}
-        aria-label="지난 지시서 · 유료 요금제에서 열람"
+        aria-label="지난 지시서 · 멤버십 회사만 열람"
         onClick={block}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -63,7 +63,7 @@ export function PaidLockRow({
   );
 }
 
-/** 잠긴 것(지난 기록·사진 첨부)의 자리에 놓는 단추. 누르면 유료 토스트. */
+/** 잠긴 것(지난 기록·사진 첨부)의 자리에 놓는 단추. 누르면 멤버십 토스트. */
 export function PaidLockButton({
   message,
   link = true,

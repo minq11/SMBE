@@ -19,7 +19,7 @@ import "@/features/incidents/incidents.css";
 export const metadata = { title: "산업재해조사표 · 심플안전" };
 
 /**
- * 산업재해조사표 (별지 30호). 화면에서 채워진 칸을 확인하고 인쇄·PDF 로 낸다 (유료).
+ * 산업재해조사표 (별지 30호). 화면에서 채워진 칸을 확인하고 인쇄·PDF 로 낸다 (멤버십).
  * 기록에 없는 칸은 비워 두어 사장님이 마저 적는다.
  */
 export default async function SurveyPage({

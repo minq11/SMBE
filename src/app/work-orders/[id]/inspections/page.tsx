@@ -522,7 +522,7 @@ export default async function InspectionPage({
               <PaidLockButton
                 key={s.id}
                 className="insp-row is-locked"
-                message="지난 회차는 유료 요금제에서 열립니다. 무료는 최근 1주일까지."
+                message="지난 회차는 멤버십에 가입된 회사만 열 수 있습니다. 무료는 최근 1주일까지."
                 link={data.isManager}
               >
                 <strong>{dayLabel(s.work_date)}</strong>

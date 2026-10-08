@@ -10,7 +10,7 @@ import {
 } from "@/server/push";
 
 /**
- * 푸시 구독 저장·해지. 유료 회사의 구성원만 구독할 수 있다 — 무료 회사는 보낼
+ * 푸시 구독 저장·해지. 멤버십 회사의 구성원만 구독할 수 있다 — 무료 회사는 보낼
  * 알림이 없으니 권한 요청 창을 띄우지 않는다.
  */
 async function member() {
@@ -25,7 +25,7 @@ export async function pushSetupAction(): Promise<
   const s = await member();
   if (!s) return { available: false, reason: "로그인이 필요합니다." };
   if (s.membership!.pro_state === "FREE")
-    return { available: false, reason: "푸시 알림은 유료 요금제 기능입니다." };
+    return { available: false, reason: "푸시 알림은 멤버십 기능입니다." };
   const key = pushPublicKey();
   if (!pushConfigured() || !key)
     return {
@@ -41,7 +41,7 @@ export async function savePushSubscriptionAction(
   const s = await member();
   if (!s) return { ok: false, error: "로그인이 필요합니다." };
   if (s.membership!.pro_state === "FREE")
-    return { ok: false, error: "푸시 알림은 유료 요금제 기능입니다." };
+    return { ok: false, error: "푸시 알림은 멤버십 기능입니다." };
   const parsed = subscriptionSchema.safeParse(raw);
   if (!parsed.success)
     return { ok: false, error: "구독 정보가 올바르지 않습니다." };

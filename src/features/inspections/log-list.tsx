@@ -15,7 +15,7 @@ export type LogListRow = LogRow & { time: string };
 
 /**
  * 점검 기록 목록. 받은 회차를 칩으로 화면에서만 거르고 10건씩 넘긴다.
- * 잠긴 회차(무료의 1주일 밖)는 날짜·작업명만 보이고, 누르면 유료 안내가 잠깐 뜬다.
+ * 잠긴 회차(무료의 1주일 밖)는 날짜·작업명만 보이고, 누르면 멤버십 안내가 잠깐 뜬다.
  */
 export function InspectionLog({
   rows,
@@ -41,7 +41,7 @@ export function InspectionLog({
   const lockedTap = () =>
     show(
       <>
-        지난 기록은 유료 요금제에서 열립니다. 무료는 최근 1주일까지.{" "}
+        지난 기록은 멤버십에 가입된 회사만 열 수 있습니다. 무료는 최근 1주일까지.{" "}
         <Link href="/billing">요금제 보기</Link>
       </>,
     );

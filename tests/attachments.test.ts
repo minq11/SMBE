@@ -109,7 +109,7 @@ test("Free blocks uploads whatever the role", async () => {
   pro = "FREE";
   role = "WORKER";
   targetType = "work_order";
-  await assert.rejects(confirmUpload(actor, actor.userId), /유료/);
+  await assert.rejects(confirmUpload(actor, actor.userId), /멤버십/);
   assert.equal(writes.length, 0);
 });
 test("Free managers can list existing photos but cannot upload", async () => {
@@ -126,7 +126,7 @@ test("Free managers can list existing photos but cannot upload", async () => {
       mimeType: "image/png",
       sizeBytes: 100,
     }),
-    /유료/,
+    /멤버십/,
   );
 });
 test("link visitor stays inside the work order the token opens", async () => {
@@ -168,7 +168,7 @@ test("a Free company blocks the link visitor's upload too", async () => {
       mimeType: "image/png",
       sizeBytes: 100,
     }),
-    /유료/,
+    /멤버십/,
   );
 });
 test("unimplemented incident targets are rejected", async () => {

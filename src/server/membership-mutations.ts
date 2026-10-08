@@ -35,7 +35,7 @@ export async function refreshHeadcount(client: PoolClient, companyId: string) {
 }
 
 /**
- * 계약 인원을 다 쓴 유료 회사는 인원을 더 등록할 수 없다. 상향 결제가 등록의 조건이다.
+ * 계약 인원을 다 쓴 멤버십 회사는 인원을 더 등록할 수 없다. 상향 결제가 등록의 조건이다.
  * 무료 회사는 상한이 없다 — 무료는 인원이 아니라 기능이 제한된다.
  *
  * 반드시 lockCompany() 안에서 호출해야 한다. 동시에 두 명을 승인하면

@@ -41,7 +41,7 @@ export default async function BillingPage() {
     >
       <PageHeader
         title="요금제"
-        description="글로 쓰는 기능은 인원과 무관하게 무료. 유료는 아래 부가 기능이 필요할 때."
+        description="글로 쓰는 기능은 인원과 무관하게 무료. 멤버십은 아래 부가 기능이 필요할 때."
       />
       <BillingView overview={overview} />
     </AppShell>

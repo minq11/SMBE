@@ -180,13 +180,13 @@ export function CancelOrderButton({
   );
 }
 /**
- * 지시서 출력물(A4 한 장)은 유료 기능이다. 무료 회사에서는 버튼을 숨기지 않고
+ * 지시서 출력물(A4 한 장)은 멤버십 기능이다. 무료 회사에서는 버튼을 숨기지 않고
  * 눌렀을 때 안내한다 — 버튼이 없으면 "이 제품에는 출력이 없다" 로 읽히지만,
  * 안내가 뜨면 무엇을 얻는지 알고 결정할 수 있다.
  */
 export function PrintButton({ allowed = true }: { allowed?: boolean }) {
   const { block, toast } = usePaidToast(
-    "지시서 인쇄(A4 한 장, QR 포함)는 유료 요금제에서 씁니다.",
+    "지시서 인쇄(A4 한 장, QR 포함)는 멤버십에 가입된 회사만 쓸 수 있습니다.",
   );
   return (
     <div className="wo-no-print">

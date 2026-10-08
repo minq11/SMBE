@@ -44,7 +44,7 @@ export function DutyList({
   duties: Duty[];
   today: string;
   locked: boolean;
-  /** 유료 요금제 — 근로자 공유의 문자 공지. */
+  /** 멤버십 — 근로자 공유의 문자 공지. */
   paid: boolean;
   /** 수시 위험성평가로 가는 길 (표준서가 있을 때). */
   riskAssessmentHref: string | null;
@@ -101,7 +101,7 @@ function DutyRow({
         "문자 공지는 준비 중입니다. 지금은 공지사항·TBM 으로 알리세요."
       ) : (
         <>
-          문자 공지는 유료 요금제에서 씁니다.{" "}
+          문자 공지는 멤버십에 가입된 회사만 쓸 수 있습니다.{" "}
           <Link href="/billing">요금제 보기</Link>
         </>
       ),

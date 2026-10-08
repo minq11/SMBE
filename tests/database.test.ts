@@ -184,7 +184,7 @@ test("annual policy: year isolation, stale writes, tenant and worker permissions
   await transaction(c => saveSafetyPolicy(c, actor, { ...input, year: 2027, goals: "설비 점검" }));
   assert.deepEqual(await transaction(c => safetyPolicyYears(c, actor)), [2027, 2026]);
   assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026)))?.goals, "매일 TBM");
-  await assert.rejects(transaction(c => readSafetyPolicy(c, actor, 2026, true)), /유료/);
+  await assert.rejects(transaction(c => readSafetyPolicy(c, actor, 2026, true)), /멤버십/);
   await pool.query("UPDATE companies SET pro_state='PRO_VOLUNTARY', plan='PRO', plan_started_at=now() WHERE id=$1", [f.companyId]);
   assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026, true)))?.revision, 1);
   await transaction(c => saveSafetyPolicy(c, actor, { ...input, revision: 1, goals: "수정 목표" }));
@@ -950,7 +950,7 @@ test("inspection log: the company view counts each session and honours the free 
   assert.equal(sealed.tbm_done, 0);
   assert.equal(sealed.expected, 0);
   assert.equal(matchesChip(sealed, "missing", today), false);
-  // 유료로 올리면 같은 회차가 열린다.
+  // 멤버십으로 올리면 같은 회차가 열린다.
   await pool.query(
     "UPDATE companies SET pro_state='PRO_VOLUNTARY',plan='BASIC',plan_started_at=now() WHERE id=$1",
     [f.actor.companyId],
@@ -2018,7 +2018,7 @@ test("work order: old free records deny direct access, Pro allows access", async
     /최근 1주일/,
   );
   await pool.query(
-    // 유료 전환은 구간·결제 기준일을 함께 세팅해야 한다 (0012 제약).
+    // 멤버십 전환은 구간·결제 기준일을 함께 세팅해야 한다 (0012 제약).
     "UPDATE companies SET pro_state='PRO_VOLUNTARY', plan='BASIC', plan_started_at=now() WHERE id=$1",
     [actor.companyId],
   );

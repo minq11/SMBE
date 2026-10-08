@@ -107,7 +107,7 @@ export function StandardForm({
   criteria: RiskCriteria;
   members: Member[];
   returnHref?: string;
-  /** 유료면 저장 뒤 단계마다 사진을 붙일 수 있다. */
+  /** 멤버십이면 저장 뒤 단계마다 사진을 붙일 수 있다. */
   isPro: boolean;
   /** 위험요인 찾을 때 참고하는 우리 회사 기록 (사고·작업자 의견) */
   references?: AssessmentReferences;
@@ -445,7 +445,7 @@ export function StandardForm({
                     </p>
                   ) : (
                     <p>
-                      유료 요금제에서 단계마다 사진을 붙일 수 있습니다. 사진이
+                      멤버십에 가입된 회사는 단계마다 사진을 붙일 수 있습니다. 사진이
                       있으면 신입도 그대로 따라 합니다.
                     </p>
                   )}

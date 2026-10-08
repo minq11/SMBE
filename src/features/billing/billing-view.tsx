@@ -17,13 +17,13 @@ import {
 
 const TIER_LABEL: Record<CompanyOverview["pro_state"], string> = {
   FREE: "무료티어",
-  PRO_VOLUNTARY: "유료 이용 중",
-  PRO_MANDATORY: "유료 이용 중",
+  PRO_VOLUNTARY: "멤버십 이용 중",
+  PRO_MANDATORY: "멤버십 이용 중",
 };
 
 export function BillingView({ overview }: { overview: CompanyOverview }) {
   const isPro = overview.pro_state !== "FREE";
-  // 유료는 계약한 구간, 무료는 현재 인원이 속할 구간을 보여준다.
+  // 멤버십은 계약한 구간, 무료는 현재 인원이 속할 구간을 보여준다.
   const contracted = overview.plan;
   const current = planForHeadcount(overview.active_count);
   const cap = seatCapFor(contracted);
@@ -44,7 +44,7 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
             <p>
               인원 수 제한 없이 텍스트 기반 기능(표준서·지시서·PTW·TBM·점검)을
               모두 무료로 사용할 수 있습니다. 알림·사진·모바일 관리·전체 기록
-              조회가 필요해지면 유료로 전환해 주세요. 현재 인원{" "}
+              조회가 필요해지면 멤버십에 가입해 주세요. 현재 인원{" "}
               {overview.active_count}명은{" "}
               {current ? current.name + " 구간" : "개별 협의 대상"}입니다.
             </p>
@@ -63,11 +63,11 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
         </div>
       </section>
 
-      <section className="stack" aria-label="유료 전용 기능">
+      <section className="stack" aria-label="멤버십 전용 기능">
         <header className="billing-section-header">
-          <h2>유료로 사용할 수 있는 기능</h2>
+          <h2>멤버십으로 쓸 수 있는 기능</h2>
           <p>
-            아래 기능이 필요해지는 순간이 유료 전환 시점입니다. 세 구간 모두
+            아래 기능이 필요해지는 순간이 멤버십 가입 시점입니다. 세 구간 모두
             같은 기능을 제공하며 인원 범위만 다릅니다. 무료로도 안전관리 업무의
             뼈대는 그대로 사용할 수 있습니다.
           </p>
@@ -96,7 +96,7 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
                     <dd>{freeBehavior}</dd>
                   </div>
                   <div>
-                    <dt className="is-pro">유료</dt>
+                    <dt className="is-pro">멤버십</dt>
                     <dd>
                       <Check size={12} className="pro-feature-tick" />
                       {proBehavior}
@@ -183,7 +183,7 @@ export function BillingView({ overview }: { overview: CompanyOverview }) {
       </section>
 
       <p className="billing-fallback">
-        결제·청구 화면은 준비 중입니다. 유료 전환·계약 문의는{" "}
+        결제·청구 화면은 준비 중입니다. 멤버십 가입·계약 문의는{" "}
         <Link href="/contact">문의 폼</Link> 또는{" "}
         <a href="mailto:hi@smbe.net">hi@smbe.net</a> 으로 남겨 주세요.
       </p>

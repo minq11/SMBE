@@ -11,7 +11,7 @@ export function PolicyPrintLink({
   paid: boolean;
 }) {
   const { block, toast } = usePaidToast(
-    "방침·목표 인쇄는 유료 요금제에서 씁니다.",
+    "방침·목표 인쇄는 멤버십에 가입된 회사만 쓸 수 있습니다.",
   );
   return (
     <>

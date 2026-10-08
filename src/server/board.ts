@@ -75,7 +75,7 @@ export type SaveInput = {
 export type SaveResult = {
   id: string;
   kind: BoardKind;
-  /** 이번 저장으로 처음 발행됐고, 유료 회사라 푸시를 보내야 한다. */
+  /** 이번 저장으로 처음 발행됐고, 멤버십 회사라 푸시를 보내야 한다. */
   notify: { title: string; body: string } | null;
 };
 

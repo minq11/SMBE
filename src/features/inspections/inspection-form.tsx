@@ -35,7 +35,7 @@ export function InspectionForm({
     item_text: string;
     resolution: string | null;
   }>;
-  /** 유료 여부. 사진 첨부는 요금제만 가르고 역할은 보지 않는다. */
+  /** 멤버십 여부. 사진 첨부는 요금제만 가르고 역할은 보지 않는다. */
   canAttach?: boolean;
 }) {
   const [state, action, pending] = useActionState(
