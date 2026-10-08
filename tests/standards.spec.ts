@@ -120,13 +120,40 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await page.screenshot({ path: test.info().outputPath("ref-row.png") });
     await page.getByLabel("표준서명").fill("프레스 금형 교체");
     await page
-      .getByRole("button", { name: "표준서 저장 · 확정", exact: true })
+      .getByRole("button", { name: "저장하고 확정", exact: true })
       .click();
     const errorDialog = page.getByRole("alertdialog");
     await expect(errorDialog).toBeVisible();
     await expect(errorDialog).toContainText("작업 단계");
     await errorDialog.getByRole("button", { name: "확인" }).click();
     await expect(errorDialog).toBeHidden();
+    // 1-a) 초안 저장: 위험성평가 전에 멈춰도 서버에 남는다 (사장님 2026-10-08).
+    // 이름과 단계 하나만 적고 저장 → 목록 "작성 중" → 열면 채워진 폼으로 이어 쓴다.
+    await page
+      .getByPlaceholder("예: 전원 차단 후 잠금장치 걸기")
+      .fill("전원 차단");
+    await page.getByRole("button", { name: "초안 저장", exact: true }).click();
+    await expect(page).toHaveURL(/\/standards$/);
+    const draftRow = page.getByRole("link", { name: /프레스 금형 교체/ });
+    await expect(draftRow).toContainText("작성 중");
+    await page.screenshot({ path: testInfo.outputPath("draft-row.png") });
+    await draftRow.click();
+    await expect(page).toHaveURL(/\/standards\/new\?draft=[a-f0-9-]{36}$/);
+    const draftId = new URL(page.url()).searchParams.get("draft")!;
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "이어서 작성",
+    );
+    await expect(page.getByLabel("표준서명")).toHaveValue("프레스 금형 교체");
+    await expect(
+      page.getByPlaceholder("예: 전원 차단 후 잠금장치 걸기"),
+    ).toHaveValue("전원 차단");
+    await expect(
+      page.getByRole("button", { name: "초안 버리기" }),
+    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath("draft-continue.png"),
+      fullPage: true,
+    });
     // 구간 머리의 물음표 → 무엇·어떻게·왜 세 줄
     await page.getByRole("button", { name: "위험성평가 안내" }).click();
     await expect(page.locator("dialog.help-dialog[open]")).toContainText(
@@ -209,7 +236,7 @@ test("standard: create, edit, add a seeded assessment round", async ({
     // 아래쪽 칸이 비면 어느 칸인지 이름으로 말하고, 확인을 누르면 그 칸으로 간다.
     // (예전엔 zod 영문 "Too small" 만 떴다.)
     await page
-      .getByRole("button", { name: "표준서 저장 · 확정", exact: true })
+      .getByRole("button", { name: "저장하고 확정", exact: true })
       .click();
     await expect(errorDialog).toBeVisible();
     await expect(errorDialog).toContainText(
@@ -239,10 +266,20 @@ test("standard: create, edit, add a seeded assessment round", async ({
       .locator(".people-picker--dialog")
       .screenshot({ path: testInfo.outputPath("people-picked.png") });
     await page
-      .getByRole("button", { name: "표준서 저장 · 확정", exact: true })
+      .getByRole("button", { name: "저장하고 확정", exact: true })
       .click();
     await expect(page).toHaveURL(/\/standards\/[a-f0-9-]{36}$/);
     const id = new URL(page.url()).pathname.split("/")[2];
+    // 초안을 확정하면 같은 표준서가 그대로 확정된다 — 목록에 둘이 생기지 않는다.
+    expect(id).toBe(draftId);
+    {
+      const r = await pool.query(
+        `SELECT s.status, (SELECT count(*)::int FROM standard_revisions WHERE standard_id = s.id) AS revisions
+           FROM standards s WHERE s.id = $1`,
+        [id],
+      );
+      expect(r.rows[0]).toEqual({ status: "APPROVED", revisions: 1 });
+    }
     await expect(page.locator("#main")).toContainText("프레스 금형 교체");
     await expect(page.locator("#main")).toContainText("전원 차단");
     await expect(page.locator("#main")).toContainText("끼임");
@@ -590,6 +627,31 @@ test("standard: create, edit, add a seeded assessment round", async ({
       path: testInfo.outputPath("standard-detail-archived.png"),
       fullPage: true,
     });
+
+    // 6) 초안 버리기: 이름만 적은 초안을 열어 버리면 표준서째 사라진다.
+    await page.goto("/standards/new");
+    await page.getByRole("button", { name: "초안 저장", exact: true }).click();
+    await expect(errorDialog).toContainText("표준서명을 입력하세요.");
+    await errorDialog.getByRole("button", { name: "확인" }).click();
+    await expect(page.getByLabel("표준서명")).toBeFocused();
+    await page.getByLabel("표준서명").fill("버릴 초안");
+    await page.getByRole("button", { name: "초안 저장", exact: true }).click();
+    await expect(page).toHaveURL(/\/standards$/);
+    await page.getByRole("link", { name: /버릴 초안/ }).click();
+    await expect(page).toHaveURL(/\/standards\/new\?draft=/);
+    await page.getByRole("button", { name: "초안 버리기" }).click();
+    const confirmDialog = page.locator("dialog.confirm-dialog[open]");
+    await expect(confirmDialog).toContainText("버릴까요");
+    await confirmDialog.getByRole("button", { name: "버리기" }).click();
+    await expect(page).toHaveURL(/\/standards$/);
+    await expect(page.getByRole("link", { name: /버릴 초안/ })).toHaveCount(0);
+    {
+      const r = await pool.query(
+        "SELECT count(*)::int AS n FROM standards WHERE company_id = $1 AND name = '버릴 초안'",
+        [company],
+      );
+      expect(r.rows[0].n).toBe(0);
+    }
   } finally {
     await pool.end();
   }

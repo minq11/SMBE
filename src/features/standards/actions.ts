@@ -9,7 +9,10 @@ import {
   archiveStandard,
   assessmentRoundSchema,
   createStandardWithFirstAssessment,
+  discardStandardDraft,
   initialStandardSchema,
+  saveStandardDraft,
+  standardDraftSchema,
   standardEditSchema,
   updateRevisionDraft,
   startRevision,
@@ -64,6 +67,11 @@ function parsePayload(raw: FormDataEntryValue | null): unknown | null {
 // 1) 최초 생성 (표준서 + 최초평가)
 // -----------------------------------------------------------------------------
 
+/**
+ * 새 표준서 폼의 세 가지 일: `intent` 가 draft 면 초안 저장, discard 면 초안
+ * 버리기, 아니면 확정(표준서 + 최초평가). `standard_id` 가 있으면 작성 중 초안을
+ * 이어서 하는 것이다.
+ */
 export async function createStandardAction(
   _prev: StandardActionState,
   form: FormData,
@@ -74,8 +82,53 @@ export async function createStandardAction(
   } catch (e) {
     return { error: (e as Error).message };
   }
+  const draftIdRaw = form.get("standard_id");
+  const draftId =
+    typeof draftIdRaw === "string" && /^[0-9a-f-]{36}$/.test(draftIdRaw)
+      ? draftIdRaw
+      : undefined;
+  const intent = form.get("intent");
+
+  if (intent === "discard") {
+    if (!draftId) return { error: "잘못된 요청" };
+    try {
+      await discardStandardDraft({
+        companyId: context.companyId,
+        actorId: context.userId,
+        standardId: draftId,
+      });
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+    revalidatePath("/standards");
+    redirect("/standards");
+  }
+
   const raw = parsePayload(form.get("payload"));
   if (!raw) return { error: "잘못된 요청" };
+
+  if (intent === "draft") {
+    const parsedDraft = standardDraftSchema.safeParse(raw);
+    if (!parsedDraft.success) {
+      return {
+        error: parsedDraft.error.issues[0]?.message ?? "입력을 확인하세요.",
+      };
+    }
+    try {
+      await saveStandardDraft({
+        companyId: context.companyId,
+        actorId: context.userId,
+        standardId: draftId,
+        payload: parsedDraft.data,
+      });
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+    revalidatePath("/standards");
+    // 초안은 목록의 "작성 중" 줄로 돌아간다. 거기서 다시 열면 이어서 쓴다.
+    redirect("/standards");
+  }
+
   const parsed = initialStandardSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "입력을 확인하세요." };
@@ -92,6 +145,7 @@ export async function createStandardAction(
       actorDisplayName: context.displayName,
       payload: parsed.data,
       participantDisplayNames: nameMap,
+      standardId: draftId,
     });
     standardId = created.standardId;
   } catch (e) {

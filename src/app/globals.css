@@ -4100,6 +4100,10 @@ html[data-banner-hidden] .preview-banner {
   gap: 10px;
   padding-top: 4px;
 }
+/* 초안 버리기는 되돌리기 어려운 것이라 왼쪽에 떨어뜨린다 (헌법 5장). */
+.std-form-actions .std-discard {
+  margin-right: auto;
+}
 
 /* Detail */
 .std-detail-hero {
@@ -4966,6 +4970,23 @@ html[data-banner-hidden] .preview-banner {
   }
   .sticky-actions .btn-secondary {
     flex-shrink: 0;
+  }
+  /* 좁은 폰의 네 단추 줄(버리기·취소·초안 저장·저장하고 확정): 버리기는 휴지통만,
+     취소는 × 만 (지시서 편집의 삭제와 같다). 글자가 쪼개지는 것보다 낫다. */
+  .sticky-actions .std-discard-label,
+  .sticky-actions .std-cancel-label {
+    display: none;
+  }
+  .std-form-actions.sticky-actions .btn-primary,
+  .std-form-actions.sticky-actions .btn-secondary {
+    padding-inline: 12px;
+    white-space: nowrap;
+  }
+  /* 아이콘만 남은 단추도 누르는 넓이는 44px (헌법 1장). */
+  .std-form-actions.sticky-actions .std-discard,
+  .std-form-actions.sticky-actions .std-cancel {
+    min-width: 44px;
+    justify-content: center;
   }
 }
 

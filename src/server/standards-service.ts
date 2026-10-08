@@ -121,6 +121,28 @@ export const standardEditSchema = z.object({
 });
 export type StandardEditPayload = z.infer<typeof standardEditSchema>;
 
+// 초안 저장 페이로드: 표준서명만 있으면 된다. 나머지는 적은 만큼만.
+// 위험성평가는 초안에 없다 — 확정할 때 하는 일이다.
+export const standardDraftSchema = standardEditSchema.extend({
+  steps: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(),
+        text: z.string().trim().min(1, "작업 단계를 입력하세요.").max(500),
+      }),
+    )
+    .max(30),
+  checklist_tbm: z
+    .array(z.string().trim().min(1, "TBM 체크리스트를 입력하세요.").max(500))
+    .max(30),
+  checklist_during: z
+    .array(
+      z.string().trim().min(1, "작업 중 체크리스트를 입력하세요.").max(500),
+    )
+    .max(30),
+});
+export type StandardDraftPayload = z.infer<typeof standardDraftSchema>;
+
 // 위험성평가 회차 등록 페이로드
 export const assessmentRoundSchema = z.object({
   kind: z.enum(["FIRST", "PERIODIC", "AD_HOC", "CONTINUOUS"]),
@@ -637,38 +659,75 @@ export async function createStandardWithFirstAssessment(input: {
   actorDisplayName: string;
   payload: InitialStandardPayload;
   participantDisplayNames: Record<string, string>;
+  /** 초안(DRAFT 표준서)을 이어서 확정할 때 그 표준서. 없으면 새로 만든다. */
+  standardId?: string;
 }): Promise<{ standardId: string; assessmentId: string }> {
   const { companyId, actorId, payload, participantDisplayNames } = input;
   return withTransaction(async (client) => {
-    const std = await client.query<{ id: string }>(
-      `INSERT INTO standards
-         (company_id, name, ptw_required, status, created_by)
-       VALUES ($1, $2, $3, 'APPROVED', $4)
-       RETURNING id`,
-      [companyId, payload.name, payload.ptw_required, actorId],
-    );
-    const standardId = std.rows[0].id;
-    // 1판. 만든 사람이 곧 승인자다 (표준서 생성은 자기 승인).
-    const rev = await client.query<{ id: string }>(
-      `INSERT INTO standard_revisions
-         (standard_id, revision_no, status, name, ptw_required, created_by,
-          approved_by, approved_at, ppe, caution)
-       VALUES ($1, 1, 'APPROVED', $2, $3, $4, $4, now(), $5::text[], $6) RETURNING id`,
-      [
-        standardId,
-        payload.name,
-        payload.ptw_required,
-        actorId,
-        payload.ppe,
-        payload.caution,
-      ],
-    );
-    const revisionId = rev.rows[0].id;
-    await client.query(
-      "UPDATE standards SET current_revision_id = $2 WHERE id = $1",
-      [standardId, revisionId],
-    );
-    await writeRevisionBody(client, standardId, revisionId, payload, false);
+    let standardId: string;
+    let revisionId: string;
+    if (input.standardId) {
+      // 초안을 확정: 같은 표준서·같은 1판이 APPROVED 가 된다. 목록의 "작성 중"
+      // 줄이 그대로 "사용 가능" 줄이 되어 사장님이 다른 걸 찾지 않는다.
+      const draft = await lockDraftStandard(
+        client,
+        companyId,
+        input.standardId,
+      );
+      standardId = draft.standardId;
+      revisionId = draft.revisionId;
+      await client.query(
+        `UPDATE standards SET name = $2, ptw_required = $3, status = 'APPROVED',
+                current_revision_id = $4
+          WHERE id = $1`,
+        [standardId, payload.name, payload.ptw_required, revisionId],
+      );
+      await client.query(
+        `UPDATE standard_revisions
+            SET status = 'APPROVED', name = $2, ptw_required = $3, ppe = $4::text[],
+                caution = $5, approved_by = $6, approved_at = now()
+          WHERE id = $1`,
+        [
+          revisionId,
+          payload.name,
+          payload.ptw_required,
+          payload.ppe,
+          payload.caution,
+          actorId,
+        ],
+      );
+      await writeRevisionBody(client, standardId, revisionId, payload, true);
+    } else {
+      const std = await client.query<{ id: string }>(
+        `INSERT INTO standards
+           (company_id, name, ptw_required, status, created_by)
+         VALUES ($1, $2, $3, 'APPROVED', $4)
+         RETURNING id`,
+        [companyId, payload.name, payload.ptw_required, actorId],
+      );
+      standardId = std.rows[0].id;
+      // 1판. 만든 사람이 곧 승인자다 (표준서 생성은 자기 승인).
+      const rev = await client.query<{ id: string }>(
+        `INSERT INTO standard_revisions
+           (standard_id, revision_no, status, name, ptw_required, created_by,
+            approved_by, approved_at, ppe, caution)
+         VALUES ($1, 1, 'APPROVED', $2, $3, $4, $4, now(), $5::text[], $6) RETURNING id`,
+        [
+          standardId,
+          payload.name,
+          payload.ptw_required,
+          actorId,
+          payload.ppe,
+          payload.caution,
+        ],
+      );
+      revisionId = rev.rows[0].id;
+      await client.query(
+        "UPDATE standards SET current_revision_id = $2 WHERE id = $1",
+        [standardId, revisionId],
+      );
+      await writeRevisionBody(client, standardId, revisionId, payload, false);
+    }
 
     const assessmentId = await insertRiskAssessmentRound(client, {
       companyId,
@@ -699,16 +758,152 @@ export async function createStandardWithFirstAssessment(input: {
   });
 }
 
-/**
- * 표준서 편집 (버전 개념 없음, mutable).
- * 변경 이력은 audit_log 에 before/after 로 저장.
- */
 type Q = {
   query: <T = unknown>(
     text: string,
     params?: unknown[],
   ) => Promise<{ rows: T[]; rowCount?: number | null }>;
 };
+
+/** 작성 중(DRAFT) 표준서와 그 1판 초안을 잠근다. 아니면 던진다. */
+async function lockDraftStandard(
+  client: Q,
+  companyId: string,
+  standardId: string,
+): Promise<{ standardId: string; revisionId: string }> {
+  const std = await client.query<{ status: StandardStatus }>(
+    `SELECT status FROM standards WHERE id = $1 AND company_id = $2 FOR UPDATE`,
+    [standardId, companyId],
+  );
+  if (!std.rows[0]) throw new Error("표준서를 찾을 수 없습니다.");
+  if (std.rows[0].status !== "DRAFT")
+    throw new Error("이미 확정된 표준서입니다. 고치려면 개정을 시작하세요.");
+  const rev = await client.query<{ id: string }>(
+    `SELECT id FROM standard_revisions
+      WHERE standard_id = $1 AND status = 'DRAFT' FOR UPDATE`,
+    [standardId],
+  );
+  if (!rev.rows[0]) throw new Error("초안을 찾을 수 없습니다.");
+  return { standardId, revisionId: rev.rows[0].id };
+}
+
+/**
+ * 표준서 초안 저장. 처음이면 DRAFT 표준서 + 1판 초안을 만들고, 이미 초안이면 그
+ * 내용을 갈아 끼운다. 위험성평가는 없다 — 확정할 때 함께 등록한다 (사장님
+ * 2026-10-08: "그래도 임시저장은 하고 싶지 않을까").
+ */
+export async function saveStandardDraft(input: {
+  companyId: string;
+  actorId: string;
+  standardId?: string;
+  payload: StandardDraftPayload;
+}): Promise<{ standardId: string }> {
+  const { companyId, actorId, payload } = input;
+  return withTransaction(async (client) => {
+    if (input.standardId) {
+      const draft = await lockDraftStandard(
+        client,
+        companyId,
+        input.standardId,
+      );
+      await client.query(
+        "UPDATE standards SET name = $2, ptw_required = $3 WHERE id = $1",
+        [draft.standardId, payload.name, payload.ptw_required],
+      );
+      await client.query(
+        `UPDATE standard_revisions
+            SET name = $2, ptw_required = $3, ppe = $4::text[], caution = $5
+          WHERE id = $1`,
+        [
+          draft.revisionId,
+          payload.name,
+          payload.ptw_required,
+          payload.ppe,
+          payload.caution,
+        ],
+      );
+      await writeRevisionBody(
+        client,
+        draft.standardId,
+        draft.revisionId,
+        payload,
+        true,
+      );
+      return { standardId: draft.standardId };
+    }
+    const std = await client.query<{ id: string }>(
+      `INSERT INTO standards (company_id, name, ptw_required, status, created_by)
+       VALUES ($1, $2, $3, 'DRAFT', $4) RETURNING id`,
+      [companyId, payload.name, payload.ptw_required, actorId],
+    );
+    const standardId = std.rows[0].id;
+    const rev = await client.query<{ id: string }>(
+      `INSERT INTO standard_revisions
+         (standard_id, revision_no, status, name, ptw_required, created_by, ppe, caution)
+       VALUES ($1, 1, 'DRAFT', $2, $3, $4, $5::text[], $6) RETURNING id`,
+      [
+        standardId,
+        payload.name,
+        payload.ptw_required,
+        actorId,
+        payload.ppe,
+        payload.caution,
+      ],
+    );
+    await writeRevisionBody(client, standardId, rev.rows[0].id, payload, false);
+    await client.query(
+      `INSERT INTO audit_logs
+         (company_id, actor_id, action, target_type, target_id, path, after_json)
+       VALUES ($1, $2, 'STANDARD_DRAFT_CREATE', 'standard', $3, 'WEB', $4::jsonb)`,
+      [companyId, actorId, standardId, JSON.stringify({ name: payload.name })],
+    );
+    return { standardId };
+  });
+}
+
+/** 작성 중 표준서 초안 버리기. 확정된 적이 없으니 표준서 행째 지운다. */
+export async function discardStandardDraft(input: {
+  companyId: string;
+  actorId: string;
+  standardId: string;
+}): Promise<void> {
+  const { companyId, actorId, standardId } = input;
+  const orphanKeys = await withTransaction(async (client) => {
+    await lockDraftStandard(client, companyId, standardId);
+    const name = await client.query<{ name: string }>(
+      "SELECT name FROM standards WHERE id = $1",
+      [standardId],
+    );
+    const dropped = await dropDraft(client, standardId);
+    await client.query("DELETE FROM standards WHERE id = $1", [standardId]);
+    await client.query(
+      `INSERT INTO audit_logs
+         (company_id, actor_id, action, target_type, target_id, path, before_json)
+       VALUES ($1, $2, 'STANDARD_DRAFT_DISCARD', 'standard', $3, 'WEB', $4::jsonb)`,
+      [
+        companyId,
+        actorId,
+        standardId,
+        JSON.stringify({ name: name.rows[0]?.name ?? "" }),
+      ],
+    );
+    return dropped?.orphanKeys ?? [];
+  });
+  await deleteObjects(orphanKeys);
+}
+
+/** 이어서 작성할 초안. 작성 중(DRAFT) 표준서가 아니면 null. */
+export async function getStandardDraft(
+  companyId: string,
+  standardId: string,
+): Promise<StandardRevisionContent | null> {
+  const std = await queryOne<{ status: StandardStatus }>(
+    "SELECT status FROM standards WHERE id = $1 AND company_id = $2",
+    [standardId, companyId],
+  );
+  if (std?.status !== "DRAFT") return null;
+  return getRevisionContent(companyId, standardId, { status: "DRAFT" });
+}
 
 /**
  * 개정본의 단계·체크리스트를 payload 대로 맞춘다.

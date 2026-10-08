@@ -7,6 +7,7 @@ import Link from "next/link";
 import { MembershipLink } from "@/components/ui/paid-lock";
 import {
   ArrowLeft,
+  Check,
   Plus,
   Save,
   Trash2,
@@ -14,6 +15,7 @@ import {
   ListChecks,
   PenLine,
 } from "lucide-react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
@@ -78,21 +80,35 @@ type Draft = {
 
 type Member = { user_id: string; display_name: string; role: string };
 
-function blankDraft(): Draft {
+/** 서버에 저장된 작성 중 초안 (표준서 칸만 — 위험성평가는 확정할 때). */
+export type StandardDraftSeed = {
+  id: string;
+  name: string;
+  ptw_required: boolean;
+  ppe: string[];
+  caution: string;
+  steps: string[];
+  checklist_tbm: string[];
+  checklist_during: string[];
+};
+
+// 단계·체크리스트는 두 칸씩. 한 칸이면 "하나만 쓰면 되나" 로 읽힌다.
+const twoBlanks = (items: string[]) => (items.length ? items : ["", ""]);
+
+function blankDraft(seed?: StandardDraftSeed): Draft {
   const today = new Date(new Date().getTime() + 9 * 3600_000)
     .toISOString()
     .slice(0, 10);
   return {
-    name: "",
-    ptw_required: false,
-    ppe: [],
-    caution: "",
+    name: seed?.name ?? "",
+    ptw_required: seed?.ptw_required ?? false,
+    ppe: seed?.ppe ?? [],
+    caution: seed?.caution ?? "",
     performed_on: today,
     work_method: "",
-    // 단계·체크리스트는 두 칸씩. 한 칸이면 "하나만 쓰면 되나" 로 읽힌다.
-    steps: ["", ""],
-    checklist_tbm: ["", ""],
-    checklist_during: ["", ""],
+    steps: twoBlanks(seed?.steps ?? []),
+    checklist_tbm: twoBlanks(seed?.checklist_tbm ?? []),
+    checklist_during: twoBlanks(seed?.checklist_during ?? []),
     safety_info: { equipment: "", materials: "", environment: "", history: "" },
     risks: [
       {
@@ -114,6 +130,7 @@ export function StandardForm({
   criteria,
   members,
   returnHref,
+  draft: seed,
   isPro,
   references,
 }: {
@@ -121,22 +138,26 @@ export function StandardForm({
   criteria: RiskCriteria;
   members: Member[];
   returnHref?: string;
+  /** 작성 중 초안을 이어서 쓸 때. 저장·확정이 이 표준서를 고친다. */
+  draft?: StandardDraftSeed;
   /** 멤버십이면 저장 뒤 단계마다 사진을 붙일 수 있다. */
   isPro: boolean;
   /** 위험요인 찾을 때 참고하는 우리 회사 기록 (사고·작업자 의견) */
   references?: AssessmentReferences;
 }) {
-  const [draft, setDraft] = useState<Draft>(blankDraft);
+  const [draft, setDraft] = useState<Draft>(() => blankDraft(seed));
   const [state, formAction, pending] = useActionState<
     StandardActionState,
     FormData
   >(createStandardAction, undefined);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   // 미저장 입력은 이 기기에 보관했다가 다시 열면 묻는다 (헌법 5장).
   // 표준서는 작업 단계·체크리스트까지 한 화면에서 길게 쓰는 폼이라, 다른 메뉴에
   // 다녀오면 전부 빈칸이 되는 것이 가장 아픈 자리였다. 작업지시 폼과 같은 방식.
-  const BACKUP_KEY = "smbe.std-draft.new";
-  const empty = useMemo(() => JSON.stringify(blankDraft()), []);
+  // 서버 초안마다 보관본도 따로. 새 표준서 보관본이 다른 초안 위에 덮이지 않게.
+  const BACKUP_KEY = seed ? `smbe.std-draft.${seed.id}` : "smbe.std-draft.new";
+  const empty = useMemo(() => JSON.stringify(blankDraft(seed)), [seed]);
   const dirty = JSON.stringify(draft) !== empty;
   const [backup, setBackup] = useState<{ at: string; data: Draft } | null>(
     null,
@@ -318,12 +339,61 @@ export function StandardForm({
       },
     };
     const form = new FormData(e.target as HTMLFormElement);
+    form.set("intent", "confirm");
+    if (seed) form.set("standard_id", seed.id);
     form.set("payload", JSON.stringify(cleaned));
     // 저장이 막히면(검증 실패) 폼은 그대로 남으므로 보관본도 그대로 둔다.
     // 성공하면 다른 화면으로 넘어가며 이 컴포넌트가 사라진다 — 그때 보관본이
     // 남아 있으면 다음에 새 표준서를 쓸 때 지난 내용이 되살아난다.
     clearBackup();
     formAction(form);
+  };
+
+  // 초안 저장: 표준서명만 있으면 된다. 위험성평가 칸은 보내지 않는다.
+  const saveDraft = () => {
+    if (!draft.name.trim()) {
+      setProblem({
+        message: "표준서명을 입력하세요.",
+        find: (form) => form.querySelector<HTMLElement>("#std-name"),
+      });
+      return;
+    }
+    const payload = {
+      name: draft.name.trim(),
+      ptw_required: draft.ptw_required,
+      ppe: draft.ppe,
+      caution: draft.caution.trim(),
+      steps: draft.steps
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((text) => ({ text })),
+      checklist_tbm: draft.checklist_tbm.map((s) => s.trim()).filter(Boolean),
+      checklist_during: draft.checklist_during
+        .map((s) => s.trim())
+        .filter(Boolean),
+    };
+    const form = new FormData();
+    form.set("intent", "draft");
+    if (seed) form.set("standard_id", seed.id);
+    form.set("payload", JSON.stringify(payload));
+    clearBackup();
+    formAction(form);
+  };
+
+  const discardDraft = () => {
+    if (!seed) return;
+    void confirm(`작성 중인 표준서 '${seed.name}' 을 버릴까요?`, {
+      title: "초안 버리기",
+      confirmLabel: "버리기",
+      danger: true,
+    }).then((ok) => {
+      if (!ok) return;
+      const form = new FormData();
+      form.set("intent", "discard");
+      form.set("standard_id", seed.id);
+      clearBackup();
+      formAction(form);
+    });
   };
 
   return (
@@ -340,8 +410,9 @@ export function StandardForm({
         <ArrowLeft size={13} /> {returnHref ? "지시서 작성으로" : "표준서 목록"}
       </Link>
 
+      {confirmDialog}
       <header className="std-form-hero">
-        <h1>새 표준서 만들기</h1>
+        <h1>{seed ? "표준서 이어서 작성" : "새 표준서 만들기"}</h1>
         <p>
           작업방법 · 체크리스트 · 위험성평가를 한 번에 등록합니다. 저장하면 바로
           지시서에 쓸 수 있습니다. 나중에 바뀌면 상세 화면의 수정으로 고치고,
@@ -713,15 +784,37 @@ export function StandardForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
+        {seed && (
+          <button
+            type="button"
+            className="btn-secondary btn--sm std-discard"
+            data-tone="danger"
+            onClick={discardDraft}
+            disabled={pending}
+            aria-label="초안 버리기"
+          >
+            <Trash2 size={14} />{" "}
+            <span className="std-discard-label">버리기</span>
+          </button>
+        )}
         <Link
           href={returnHref ?? "/standards"}
-          className="btn-secondary btn--sm"
+          className="btn-secondary btn--sm std-cancel"
+          aria-label="취소"
         >
-          <X size={13} /> 취소
+          <X size={13} /> <span className="std-cancel-label">취소</span>
         </Link>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={saveDraft}
+          disabled={pending}
+        >
+          <Save size={14} /> {pending ? "저장 중..." : "초안 저장"}
+        </button>
         <button type="submit" className="btn-primary" disabled={pending}>
-          <Save size={14} />
-          {pending ? "저장 중..." : "표준서 저장 · 확정"}
+          <Check size={14} />
+          {pending ? "저장 중..." : "저장하고 확정"}
         </button>
       </div>
     </form>

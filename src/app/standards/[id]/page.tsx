@@ -39,6 +39,8 @@ export default async function StandardDetailPage({
     ),
   ]);
   if (!detail) notFound();
+  // 작성 중 표준서의 상세는 곧 이어서 쓰는 폼이다. 보여 줄 확정 판이 없다.
+  if (detail.status === "DRAFT") redirect(`/standards/new?draft=${id}`);
   const isPro = (proRow[0]?.pro_state ?? "FREE") !== "FREE";
 
   // 스텝 + 위험요인(before/after) 첨부 배치 조회

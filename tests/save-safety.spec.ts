@@ -30,9 +30,10 @@ function isolatedPool() {
 async function fixture(pool: Pool, page: Page) {
   const manager = randomUUID();
   const company = randomUUID();
-  await pool.query("INSERT INTO users(id,display_name) VALUES ($1,'저장 관리자')", [
-    manager,
-  ]);
+  await pool.query(
+    "INSERT INTO users(id,display_name) VALUES ($1,'저장 관리자')",
+    [manager],
+  );
   await pool.query(
     `INSERT INTO companies(id,name,business_type,company_code,initial_employee_size_band,
        current_employee_size_band,active_headcount,business_start_date,
@@ -159,14 +160,17 @@ test("같은 항목을 또 빠뜨리면 오류 창이 다시 뜬다 (표준서 �
     await page.getByLabel("표준서명").fill("오류 재표시 확인");
 
     const save = page.getByRole("button", {
-      name: "표준서 저장 · 확정",
+      name: "저장하고 확정",
       exact: true,
     });
     const dialog = page.getByRole("alertdialog");
 
     for (const attempt of [1, 2, 3]) {
       await save.click();
-      await expect(dialog, `${attempt}번째 시도에서 창이 떠야 한다`).toBeVisible();
+      await expect(
+        dialog,
+        `${attempt}번째 시도에서 창이 떠야 한다`,
+      ).toBeVisible();
       await dialog.getByRole("button", { name: "확인" }).click();
       await expect(dialog).toBeHidden();
     }
@@ -217,7 +221,10 @@ test("위험성평가 조치 기록도 같은 이유로 두 번 막히면 두 �
 
     for (const attempt of [1, 2, 3]) {
       await save.click();
-      await expect(dialog, `${attempt}번째 시도에서 창이 떠야 한다`).toBeVisible();
+      await expect(
+        dialog,
+        `${attempt}번째 시도에서 창이 떠야 한다`,
+      ).toBeVisible();
       await expect(dialog).toContainText("조치 후 위험성 수준");
       await dialog.getByRole("button", { name: "확인" }).click();
       await expect(dialog).toBeHidden();
@@ -276,7 +283,9 @@ test("로그인 계정에 메일이 없으면 회사 만들기에서 알림 메�
     await page.selectOption("#initial_employee_size_band", "UNDER_5");
     await page.locator("#business_start_date").fill("2026-01-01");
     await page.locator("#expected_annual_revenue_manwon").fill("10000");
-    await email.evaluate((el: HTMLInputElement) => el.removeAttribute("required"));
+    await email.evaluate((el: HTMLInputElement) =>
+      el.removeAttribute("required"),
+    );
     await page.getByRole("button", { name: "회사 만들기" }).click();
 
     const dialog = page.getByRole("alertdialog");
@@ -289,7 +298,9 @@ test("로그인 계정에 메일이 없으면 회사 만들기에서 알림 메�
     // 빈 폼을 보게 된다 (onSubmit 에서 기본 제출을 막는 이유).
     await expect(page.locator("#name")).toHaveValue("메일없는 회사");
     await expect(page.locator("#business_type")).toHaveValue("제조업");
-    await expect(page.locator("#business_start_date")).toHaveValue("2026-01-01");
+    await expect(page.locator("#business_start_date")).toHaveValue(
+      "2026-01-01",
+    );
     await expect(page.locator("#expected_annual_revenue_manwon")).toHaveValue(
       "10000",
     );
