@@ -285,10 +285,13 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
     expect(
       await drawer.evaluate((el) => el.scrollHeight > el.clientHeight),
     ).toBe(true);
-    // 요금제(이용·관리)로 가는 길은 맨 위 회사 카드 하나다 — 기준정보 메뉴에서는 뺐다.
-    await expect(drawer.locator('a[href="/billing"]')).toHaveCount(1);
-    await drawer.locator('a[href="/billing"]').click();
-    await expect(page).toHaveURL(/billing/);
+    // 맨 위 회사 카드는 회사 정보로 간다. 요금 안내는 그 화면 안의 글 링크로.
+    await drawer.locator("a.workspace-picker").click();
+    await expect(page).toHaveURL(/\/company$/);
+    await expect(page.getByRole("link", { name: "요금 안내" })).toHaveAttribute(
+      "href",
+      "/billing",
+    );
     await expect(page.locator("body")).not.toHaveClass(/sidebar-lock/);
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
     // 도움말은 실제 화면이다. 세 단계·자주 묻는 것·서비스 제공자가 한 장에.

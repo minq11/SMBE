@@ -33,14 +33,23 @@ import { logoutAction } from "@/features/auth/logout-action";
  * 메뉴에 있는 주소 그 자체면 구역의 첫 화면(☰), 그 아래 주소면 안쪽 화면(←)이고
  * 뒤로 갈 곳은 그 메뉴 주소다. 메뉴에 없는 주소(마이페이지 등)는 홈으로 돌아간다.
  */
+/**
+ * 메뉴에는 없지만 구역의 첫 화면인 주소. 회사 정보(`/company`)는 사이드바 맨 위 회사
+ * 카드가 연다 — 그 아래 수정 화면에서는 ← 가 회사 정보로 가야 한다.
+ */
+const EXTRA_ROOTS = ["/company"];
+
 export function navRoot(pathname: string): {
   isRoot: boolean;
   parentHref: string;
 } {
-  const hrefs = NAV.flatMap((n) => [
-    ...(n.href ? [n.href] : []),
-    ...(n.children ?? []).flatMap((c) => (c.href ? [c.href] : [])),
-  ]);
+  const hrefs = [
+    ...NAV.flatMap((n) => [
+      ...(n.href ? [n.href] : []),
+      ...(n.children ?? []).flatMap((c) => (c.href ? [c.href] : [])),
+    ]),
+    ...EXTRA_ROOTS,
+  ];
   if (hrefs.includes(pathname)) return { isRoot: true, parentHref: pathname };
   const parent = hrefs
     .filter((h) => h !== "/" && pathname.startsWith(h + "/"))
@@ -61,6 +70,7 @@ export type NavKey =
   | "monitoring"
   | "incident"
   | "company"
+  | "companyInfo"
   | "billing"
   | "profile"
   | "permits"
@@ -297,7 +307,7 @@ export function Sidebar({
         </Link>
       </div>
 
-      <Link href="/billing" className="workspace-picker" onClick={onClose}>
+      <Link href="/company" className="workspace-picker" onClick={onClose}>
         <span className="workspace-icon">
           <Building2 size={16} />
         </span>

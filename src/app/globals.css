@@ -7754,6 +7754,30 @@ fieldset.form-field legend {
 }
 
 /* 접는 구간 (평가 폼의 안전보건정보·판단 기준) */
+/* 회사 정보(/company). 회사코드는 참여할 때 그대로 치는 값이라 글자 사이를 띄운다. */
+.company-code {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.company-member-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.company-member-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+.company-member-list li span {
+  color: var(--ink-3);
+  font-size: 13px;
+}
 .std-fold {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);

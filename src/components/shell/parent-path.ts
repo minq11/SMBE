@@ -4,7 +4,6 @@ import { navRoot } from "./sidebar";
 const NO_PAGE = new Set([
   "/admin/companies",
   "/board",
-  "/company",
   "/invite",
   "/standards/*/assessments",
   "/standards/*/revisions",

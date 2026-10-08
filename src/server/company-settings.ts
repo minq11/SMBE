@@ -6,6 +6,10 @@ import {
   riskCriteriaSchema,
   type RiskCriteria,
 } from "../features/company/risk-criteria";
+import {
+  companyInfoSchema,
+  type SizeBand,
+} from "../features/company/company-info";
 
 /**
  * 회사의 위험성 수준 판단 기준.
@@ -124,4 +128,109 @@ export async function updateRiskCriteria(
     if (rowCount !== 1)
       throw new WorkOrderError("회사의 위험성 판단 기준을 찾을 수 없습니다.");
   }
+}
+
+/** 회사 정보 화면(`/company`)이 보여 주고 고치는 값. */
+export type CompanyInfo = {
+  name: string;
+  business_type: string;
+  initial_employee_size_band: SizeBand;
+  business_start_date: string;
+  expected_annual_revenue_manwon: number;
+  company_code: string;
+  /** 그사이 다른 관리자가 고쳤는지 가리는 값 (updated_at). */
+  version: string;
+};
+
+export async function readCompanyInfo(
+  client: PoolClient,
+  companyId: string,
+): Promise<CompanyInfo> {
+  const { rows } = await client.query<CompanyInfo>(
+    `SELECT name,
+            COALESCE(business_type, '') AS business_type,
+            initial_employee_size_band,
+            COALESCE(business_start_date::text, '') AS business_start_date,
+            expected_annual_revenue_manwon::float8 AS expected_annual_revenue_manwon,
+            company_code,
+            updated_at::text AS version
+       FROM companies
+      WHERE id = $1 AND withdrawn_at IS NULL`,
+    [companyId],
+  );
+  if (!rows[0]) throw new WorkOrderError("회사를 찾을 수 없습니다.");
+  return rows[0];
+}
+
+/**
+ * 회사 정보 고치기. **관리감독자만** — 회사 이름과 회사코드는 회사 전체에 걸리는 값이라
+ * 회사를 만든 자리(관리감독자)가 정한다. 역할은 부르는 쪽이 아니라 여기서 다시 본다.
+ *
+ * 회사코드를 바꾸면 옛 코드로는 더 이상 참여할 수 없다. 이미 소속된 사람에게는 영향이 없다.
+ */
+export async function updateCompanyInfo(
+  client: PoolClient,
+  actor: { companyId: string; userId: string },
+  raw: unknown,
+): Promise<void> {
+  const parsed = companyInfoSchema.safeParse(raw);
+  if (!parsed.success)
+    throw new WorkOrderError(
+      parsed.error.issues[0]?.message ?? "입력한 값을 확인하세요.",
+    );
+  const d = parsed.data;
+
+  const { rows: me } = await client.query<{ role: string }>(
+    `SELECT role FROM company_members
+      WHERE company_id = $1 AND user_id = $2
+        AND status = 'ACTIVE' AND left_at IS NULL`,
+    [actor.companyId, actor.userId],
+  );
+  if (me[0]?.role !== "MANAGER_SUPERVISOR")
+    throw new WorkOrderError("회사 정보는 관리감독자만 고칠 수 있습니다.");
+
+  const { rows } = await client.query<{ version: string }>(
+    "SELECT updated_at::text AS version FROM companies WHERE id = $1 AND withdrawn_at IS NULL FOR UPDATE",
+    [actor.companyId],
+  );
+  if (!rows[0]) throw new WorkOrderError("회사를 찾을 수 없습니다.");
+  if (rows[0].version !== d.version)
+    throw new WorkOrderError(
+      "다른 관리자가 그사이 회사 정보를 고쳤습니다. 새로고침한 뒤 다시 입력하세요.",
+    );
+
+  await client.query("SAVEPOINT company_info");
+  try {
+    await client.query(
+      `UPDATE companies
+          SET name = $2, business_type = $3, initial_employee_size_band = $4,
+              business_start_date = $5::date, expected_annual_revenue_manwon = $6,
+              company_code = $7
+        WHERE id = $1`,
+      [
+        actor.companyId,
+        d.name,
+        d.business_type,
+        d.initial_employee_size_band,
+        d.business_start_date,
+        d.expected_annual_revenue_manwon,
+        d.company_code,
+      ],
+    );
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+    if (code !== "23505") throw error;
+    await client.query("ROLLBACK TO SAVEPOINT company_info");
+    throw new WorkOrderError(
+      "이미 다른 회사가 쓰는 회사코드입니다. 다른 코드를 입력하세요.",
+    );
+  }
+  await client.query("RELEASE SAVEPOINT company_info");
+  // 무엇을 고쳤는지만 남긴다 — 값은 회사 화면에 그대로 있다.
+  await client.query(
+    `INSERT INTO audit_logs(company_id,actor_id,action,target_type,target_id,after_json)
+     VALUES($2,$1,'UPDATE_COMPANY','companies',$2,
+            '{"fields":["name","business_type","initial_employee_size_band","business_start_date","expected_annual_revenue_manwon","company_code"]}'::jsonb)`,
+    [actor.userId, actor.companyId],
+  );
 }

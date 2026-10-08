@@ -82,6 +82,8 @@ import {
 import {
   readRiskCriteria,
   updateRiskCriteria,
+  readCompanyInfo,
+  updateCompanyInfo,
 } from "../src/server/company-settings";
 
 // Deliberately never reads DATABASE_URL or dotenv: tests cannot touch Neon.
@@ -2376,4 +2378,88 @@ test("로그인 계정에 메일이 있으면 알림 받을 메일은 비울 수
   ).rows[0];
   assert.equal(after.contact_email, null);
   assert.equal(String(after.notify).includes("@"), true);
+});
+
+test("회사 정보: 관리감독자만 고치고, 회사코드는 겹치지 않으며, 동시에 고치면 뒤사람이 막힌다", async () => {
+  const a = await fixture();
+  const info = await transaction((c) => readCompanyInfo(c, a.companyId));
+  const input = {
+    name: "  심플제조  ",
+    business_type: "금속가공",
+    initial_employee_size_band: "FROM_5_TO_19",
+    business_start_date: "2025-03-01",
+    expected_annual_revenue_manwon: "120000",
+    company_code: "simple" + randomUUID().slice(0, 6).replaceAll("-", "a"),
+    version: info.version,
+  };
+
+  // 안전관리자·작업자는 못 고친다 (역할은 서버가 다시 본다).
+  for (const role of ["MANAGER_SAFETY", "WORKER"]) {
+    const other = await user();
+    await member(a.companyId, other, role);
+    await assert.rejects(
+      transaction((c) =>
+        updateCompanyInfo(c, { companyId: a.companyId, userId: other }, input),
+      ),
+      /관리감독자만/,
+    );
+  }
+
+  await transaction((c) =>
+    updateCompanyInfo(c, { companyId: a.companyId, userId: a.userId }, input),
+  );
+  const saved = await transaction((c) => readCompanyInfo(c, a.companyId));
+  assert.equal(saved.name, "심플제조");
+  assert.equal(saved.business_type, "금속가공");
+  assert.equal(saved.initial_employee_size_band, "FROM_5_TO_19");
+  assert.equal(saved.business_start_date, "2025-03-01");
+  assert.equal(saved.expected_annual_revenue_manwon, 120000);
+  // 소문자로 쳐도 대문자로 저장한다 (참여 화면도 대문자로 찾는다).
+  assert.equal(saved.company_code, input.company_code.toUpperCase());
+
+  // 같은 화면을 먼저 열어 둔 다른 관리자의 저장은 막힌다.
+  await assert.rejects(
+    transaction((c) =>
+      updateCompanyInfo(c, { companyId: a.companyId, userId: a.userId }, {
+        ...input,
+        name: "덮어쓰기",
+      }),
+    ),
+    /그사이/,
+  );
+
+  // 다른 회사가 쓰는 코드는 못 쓴다.
+  const b = await fixture();
+  const bInfo = await transaction((c) => readCompanyInfo(c, b.companyId));
+  await assert.rejects(
+    transaction((c) =>
+      updateCompanyInfo(c, { companyId: b.companyId, userId: b.userId }, {
+        ...input,
+        version: bInfo.version,
+      }),
+    ),
+    /이미 다른 회사가 쓰는 회사코드/,
+  );
+
+  // 형식이 틀린 코드는 못 쓴다.
+  for (const bad of ["AB12", "한글코드1234", "WITH-DASH12"]) {
+    await assert.rejects(
+      transaction((c) =>
+        updateCompanyInfo(c, { companyId: b.companyId, userId: b.userId }, {
+          ...input,
+          company_code: bad,
+          version: bInfo.version,
+        }),
+      ),
+      /영문과 숫자 6~16자/,
+    );
+  }
+
+  // 고친 사람과 회사가 기록에 남는다.
+  const audit = await pool.query(
+    "SELECT company_id, actor_id FROM audit_logs WHERE action='UPDATE_COMPANY' AND target_id=$1",
+    [a.companyId],
+  );
+  assert.equal(audit.rows.length, 1);
+  assert.equal(audit.rows[0].actor_id, a.userId);
 });
