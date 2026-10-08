@@ -285,9 +285,9 @@ test("mobile pages fit narrow screens and navigation stays usable", async ({
     expect(
       await drawer.evaluate((el) => el.scrollHeight > el.clientHeight),
     ).toBe(true);
-    // 기준정보는 접힌 채로 열린다. 펴야 그 안의 화면으로 갈 수 있다.
-    await drawer.getByRole("button", { name: "기준정보" }).click();
-    await drawer.getByRole("link", { name: "이용·관리" }).click();
+    // 요금제(이용·관리)로 가는 길은 맨 위 회사 카드 하나다 — 기준정보 메뉴에서는 뺐다.
+    await expect(drawer.locator('a[href="/billing"]')).toHaveCount(1);
+    await drawer.locator('a[href="/billing"]').click();
     await expect(page).toHaveURL(/billing/);
     await expect(page.locator("body")).not.toHaveClass(/sidebar-lock/);
     await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();

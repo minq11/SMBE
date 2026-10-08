@@ -7,6 +7,7 @@ import type { LogRow } from "@/server/inspection-service";
 import { ClientPager } from "@/components/ui/pager-client";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { useToast } from "@/components/ui/toast";
+import { MembershipLink } from "@/components/ui/paid-lock";
 import { pageOf } from "@/lib/paging";
 import { LOG_CHIPS, isDone, matchesChip, type LogChip } from "./log-filter";
 
@@ -42,7 +43,7 @@ export function InspectionLog({
     show(
       <>
         지난 기록은 멤버십에 가입된 회사만 열 수 있습니다. 무료는 최근 1주일까지.{" "}
-        <Link href="/billing">요금제 보기</Link>
+        <MembershipLink />
       </>,
     );
 

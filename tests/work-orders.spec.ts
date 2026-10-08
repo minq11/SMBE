@@ -496,6 +496,10 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     await expect(lockedRow.locator(".wo-table-lock")).toBeVisible();
     await lockedRow.locator('td[data-label="장소"]').click();
     await expect(page.locator(".toast").first()).toContainText("멤버십에 가입된 회사만");
+    // 멤버십 안내에는 언제나 이용·관리(요금제) 화면으로 가는 길이 붙는다.
+    await expect(
+      page.locator(".toast").first().getByRole("link", { name: "요금제 보기" }),
+    ).toHaveAttribute("href", "/billing");
     await expect(page).toHaveURL(/\/work-orders\?tab=all$/);
     await page.screenshot({ path: testInfo.outputPath("orders-locked.png") });
   } finally {

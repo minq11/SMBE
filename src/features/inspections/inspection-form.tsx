@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
 } from "react";
+import { WithMembershipLink } from "@/components/ui/paid-lock";
 import { useRouter } from "next/navigation";
 import { Camera, CheckCheck, CheckCircle2, MessageSquare, Save, X, ArrowRight } from "lucide-react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -364,7 +365,7 @@ export function InspectionForm({
         {uploadError && (
           <div className="inspection-upload-failed">
             <p role="alert" className="wo-error">
-              {uploadError}
+              <WithMembershipLink text={uploadError} />
             </p>
             <div className="inspection-upload-failed-actions">
               <button

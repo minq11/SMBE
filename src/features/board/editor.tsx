@@ -6,7 +6,7 @@ import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Heading2, Image as ImageIcon, Italic, Link2, List, ListOrdered, Loader2, Redo2, Underline, Undo2, Video, Check, X } from "lucide-react";
 import { uploadImage } from "@/features/attachments/upload";
-import { usePaidToast } from "@/components/ui/paid-lock";
+import { usePaidToast, WithMembershipLink } from "@/components/ui/paid-lock";
 import { attachmentUrl, type BoardDoc } from "./model";
 
 /**
@@ -371,7 +371,7 @@ export function BoardEditor({
           </span>
         ) : error ? (
           <span className="board-editor-status is-error" role="alert">
-            {error}
+            <WithMembershipLink text={error} />
           </span>
         ) : (
           <span className="board-editor-status">

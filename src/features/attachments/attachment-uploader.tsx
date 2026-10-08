@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { WithMembershipLink } from "@/components/ui/paid-lock";
 import { Camera, ImageUp, Loader2, Paperclip, X } from "lucide-react";
 import { type AttachmentTargetType } from "./actions";
 import { uploadImage, type UploadStage } from "./upload";
@@ -97,7 +98,7 @@ export function AttachmentUploader({
       </label>
       {error && (
         <p className="attach-uploader-error" role="alert">
-          <X size={13} /> {error}
+          <X size={13} /> <WithMembershipLink text={error} />
         </p>
       )}
       {!pending && !error && (

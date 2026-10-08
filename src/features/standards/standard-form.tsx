@@ -4,6 +4,7 @@ import { PeoplePickerDialog } from "@/components/ui/people-picker";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { MembershipLink } from "@/components/ui/paid-lock";
 import { ArrowLeft, Plus, Save, Trash2, X, ListChecks, PenLine } from "lucide-react";
 import { RiskItemCard } from "@/features/assessments/risk-item-card";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
@@ -446,7 +447,8 @@ export function StandardForm({
                   ) : (
                     <p>
                       멤버십에 가입된 회사는 단계마다 사진을 붙일 수 있습니다. 사진이
-                      있으면 신입도 그대로 따라 합니다.
+                      있으면 신입도 그대로 따라 합니다.{" "}
+                      <MembershipLink />
                     </p>
                   )}
                 </HelpDialog>

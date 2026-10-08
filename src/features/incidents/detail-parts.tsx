@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check, ChevronDown, CircleCheckBig, LockOpen, Square, SquareCheckBig, ArrowRight, RotateCcw, MessageSquare } from "lucide-react";
 import { FloatTextarea } from "@/components/ui/float-field";
 import { useToast } from "@/components/ui/toast";
+import { MembershipLink } from "@/components/ui/paid-lock";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { koDate } from "@/features/assessments/model";
@@ -102,7 +103,7 @@ function DutyRow({
       ) : (
         <>
           문자 공지는 멤버십에 가입된 회사만 쓸 수 있습니다.{" "}
-          <Link href="/billing">요금제 보기</Link>
+          <MembershipLink />
         </>
       ),
     );

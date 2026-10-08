@@ -215,9 +215,10 @@ test("own profile saves, membership exit preserves history, last supervisor prot
     await expect(
       companyGroup.getByRole("link", { name: "장소관리" }),
     ).toBeVisible();
+    // 이용·관리는 기준정보가 아니다 — 요금제로는 맨 위 회사 카드로 간다.
     await expect(
       companyGroup.getByRole("link", { name: "이용·관리" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(navigation.locator('a[href="/my-page"]')).toHaveCount(0);
     await companyGroup.getByRole("link", { name: "장소관리" }).click();
     await expect(page).toHaveURL(/\/company\/locations$/);
