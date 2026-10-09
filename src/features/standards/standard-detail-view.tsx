@@ -5,7 +5,17 @@ import { CautionBand, PpeList } from "./ppe-list";
 import { useTransition } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
-import { Archive, ArrowLeft, ArrowRight, CircleAlert, Pencil, Plus, ShieldCheck, PenLine, Check } from "lucide-react";
+import {
+  Archive,
+  ArrowLeft,
+  ArrowRight,
+  CircleAlert,
+  Pencil,
+  Plus,
+  ShieldCheck,
+  PenLine,
+  Check,
+} from "lucide-react";
 import {
   ASSESSMENT_KIND_LABEL,
   type StandardDetail,
@@ -173,7 +183,8 @@ export function StandardDetailView({
               </Link>
               <button
                 type="button"
-                className="btn-secondary btn--sm" data-tone="danger"
+                className="btn-secondary btn--sm"
+                data-tone="danger"
                 onClick={onArchive}
                 disabled={pending}
               >

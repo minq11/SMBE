@@ -7,7 +7,7 @@ import type { AssessmentReferences } from "@/server/assessment-references";
 import type { RiskCriteria } from "@/features/company/risk-criteria";
 import { useActionState, useState, useRef } from "react";
 import Link from "next/link";
-import { Plus, Save, X } from "lucide-react";
+import { ArrowLeft, Plus, Save } from "lucide-react";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
 import { checkAssessment, goToProblem, type DraftProblem } from "./draft-check";
 import { FloatField, FloatTextarea } from "@/components/ui/float-field";
@@ -157,6 +157,12 @@ export function AssessmentForm({
       onSubmit={handleSubmit}
       className="std-form"
     >
+      <Link
+        href={`/standards/${standardId}`}
+        className="text-button std-back-link"
+      >
+        <ArrowLeft size={13} /> 표준서 상세
+      </Link>
       <header className="std-form-hero">
         <h1>{standardName} · 위험성평가 다시하기</h1>
         <p>
@@ -317,12 +323,6 @@ export function AssessmentForm({
       </section>
 
       <div className="std-form-actions sticky-actions">
-        <Link
-          href={`/standards/${standardId}`}
-          className="btn-secondary btn--sm"
-        >
-          <X size={13} /> 취소
-        </Link>
         <button type="submit" className="btn-primary" disabled={pending}>
           <Save size={14} />
           {pending ? "저장 중…" : "위험성평가 저장"}

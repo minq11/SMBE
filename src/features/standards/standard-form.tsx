@@ -11,7 +11,6 @@ import {
   Plus,
   Save,
   Trash2,
-  X,
   ListChecks,
   PenLine,
 } from "lucide-react";
@@ -197,7 +196,7 @@ export function StandardForm({
     // state 가 깨어 있어야 한다: 저장이 막혀 오류가 돌아오면 폼은 그대로 남는데
     // 제출 때 보관본을 지웠으므로, 여기서 다시 보관해 두지 않으면 그 뒤에 나갈 때
     // 전부 날아간다.
-  }, [draft, dirty, state]);
+  }, [draft, dirty, state, BACKUP_KEY]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -349,7 +348,7 @@ export function StandardForm({
     formAction(form);
   };
 
-  // 초안 저장: 표준서명만 있으면 된다. 위험성평가 칸은 보내지 않는다.
+  // 임시저장: 표준서명만 있으면 된다. 위험성평가 칸은 보내지 않는다.
   const saveDraft = () => {
     if (!draft.name.trim()) {
       setProblem({
@@ -797,20 +796,13 @@ export function StandardForm({
             <span className="std-discard-label">버리기</span>
           </button>
         )}
-        <Link
-          href={returnHref ?? "/standards"}
-          className="btn-secondary btn--sm std-cancel"
-          aria-label="취소"
-        >
-          <X size={13} /> <span className="std-cancel-label">취소</span>
-        </Link>
         <button
           type="button"
           className="btn-secondary"
           onClick={saveDraft}
           disabled={pending}
         >
-          <Save size={14} /> {pending ? "저장 중..." : "초안 저장"}
+          <Save size={14} /> {pending ? "저장 중..." : "임시저장"}
         </button>
         <button type="submit" className="btn-primary" disabled={pending}>
           <Check size={14} />

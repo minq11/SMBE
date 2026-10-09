@@ -127,12 +127,12 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(errorDialog).toContainText("작업 단계");
     await errorDialog.getByRole("button", { name: "확인" }).click();
     await expect(errorDialog).toBeHidden();
-    // 1-a) 초안 저장: 위험성평가 전에 멈춰도 서버에 남는다 (사장님 2026-10-08).
+    // 1-a) 임시저장: 위험성평가 전에 멈춰도 서버에 남는다 (사장님 2026-10-08).
     // 이름과 단계 하나만 적고 저장 → 목록 "작성 중" → 열면 채워진 폼으로 이어 쓴다.
     await page
       .getByPlaceholder("예: 전원 차단 후 잠금장치 걸기")
       .fill("전원 차단");
-    await page.getByRole("button", { name: "초안 저장", exact: true }).click();
+    await page.getByRole("button", { name: "임시저장", exact: true }).click();
     await expect(page).toHaveURL(/\/standards$/);
     const draftRow = page.getByRole("link", { name: /프레스 금형 교체/ });
     await expect(draftRow).toContainText("작성 중");
@@ -354,8 +354,8 @@ test("standard: create, edit, add a seeded assessment round", async ({
       .locator("#std-steps input[placeholder='1단계']")
       .fill("전원 차단 후 잠금");
     await page.getByLabel("무엇을 왜 바꿨나요").fill("잠금장치 추가");
-    // 초안 저장은 상세로 돌아오고, 현재 판은 아직 1판이다.
-    await page.getByRole("button", { name: "초안 저장", exact: true }).click();
+    // 임시저장은 상세로 돌아오고, 현재 판은 아직 1판이다.
+    await page.getByRole("button", { name: "임시저장", exact: true }).click();
     await expect(page).toHaveURL(new RegExp("/standards/" + id + "$"));
     await expect(page.locator("#main")).toContainText("2판 개정 작성 중");
     await expect(page.locator("#main")).not.toContainText("전원 차단 후 잠금");
@@ -630,12 +630,12 @@ test("standard: create, edit, add a seeded assessment round", async ({
 
     // 6) 초안 버리기: 이름만 적은 초안을 열어 버리면 표준서째 사라진다.
     await page.goto("/standards/new");
-    await page.getByRole("button", { name: "초안 저장", exact: true }).click();
+    await page.getByRole("button", { name: "임시저장", exact: true }).click();
     await expect(errorDialog).toContainText("표준서명을 입력하세요.");
     await errorDialog.getByRole("button", { name: "확인" }).click();
     await expect(page.getByLabel("표준서명")).toBeFocused();
     await page.getByLabel("표준서명").fill("버릴 초안");
-    await page.getByRole("button", { name: "초안 저장", exact: true }).click();
+    await page.getByRole("button", { name: "임시저장", exact: true }).click();
     await expect(page).toHaveURL(/\/standards$/);
     await page.getByRole("link", { name: /버릴 초안/ }).click();
     await expect(page).toHaveURL(/\/standards\/new\?draft=/);
