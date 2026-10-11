@@ -6159,36 +6159,6 @@ fieldset.form-field legend {
   outline-offset: 2px;
 }
 
-/* 홈 화면에 추가 안내 (components/pwa/add-to-home-hint.tsx) */
-.a2hs {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 8px 12px 14px;
-  margin: 0 0 16px;
-  border: 1px solid var(--accent-soft);
-  background: var(--accent-soft);
-  border-radius: var(--radius);
-  font-size: 13px;
-  line-height: 1.7;
-}
-.a2hs p {
-  flex: 1;
-  margin: 0;
-}
-.a2hs svg {
-  vertical-align: -2px;
-}
-.a2hs > button {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  color: var(--ink-3);
-}
-
 /* 표준서 폼 구간 이동 (좁은 화면에서 위에 붙는다) */
 .jump-nav {
   display: flex;
@@ -7091,6 +7061,9 @@ fieldset.form-field legend {
   border-radius: 12px;
   padding: 14px 16px;
   background: #fff;
+}
+.link-session-future[role="button"] {
+  cursor: pointer;
 }
 .link-session.is-locked {
   padding: 0;

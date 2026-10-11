@@ -265,6 +265,25 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       const location = hop.headers()["location"];
       expect(location).not.toContain("0.0.0.0");
       expect(location.replace(/^https?:\/\/[^/]+/, "")).toBe("/w");
+      // 작업자 화면. 홈 화면 추가 안내는 없고, 예정 회차(내일)는 눌러도 열리지
+      // 않는 대신 "당일에 열립니다" 가 잠깐 뜬다 (사장님 2026-10-11).
+      await page.goto("/w");
+      await expect(page.locator("main.link-work h1")).toBeVisible();
+      await expect(page.locator(".a2hs")).toHaveCount(0);
+      const future = page.getByRole("button", { name: /예정 회차/ });
+      await expect(future).toContainText("예정");
+      const dayToast = page.locator(".toast").filter({
+        hasText: "당일에 열립니다",
+      });
+      await expect(async () => {
+        await future.click();
+        await expect(dayToast).toBeVisible({ timeout: 1000 });
+      }).toPass({ timeout: 15000 });
+      await expect(dayToast).toContainText(tomorrow);
+      await page.screenshot({
+        path: test.info().outputPath("worker-future-toast.png"),
+      });
+      await page.goto(`/work-orders/${issuedId}`);
     }
     // 무료 회사: 출력 버튼은 보이지만 눌러도 토스트만 잠깐 뜨고 출력물이 만들어지지
     // 않는다 (헌법 5장). 루트 loading.tsx 로 스트리밍되는 화면이라 하이드레이션 전
@@ -495,7 +514,9 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
     const lockedRow = page.locator(".wo-row-locked").first();
     await expect(lockedRow.locator(".wo-table-lock")).toBeVisible();
     await lockedRow.locator('td[data-label="장소"]').click();
-    await expect(page.locator(".toast").first()).toContainText("멤버십에 가입된 회사만");
+    await expect(page.locator(".toast").first()).toContainText(
+      "멤버십에 가입된 회사만",
+    );
     // 멤버십 안내에는 언제나 이용·관리(요금제) 화면으로 가는 길이 붙는다.
     await expect(
       page.locator(".toast").first().getByRole("link", { name: "요금제 보기" }),

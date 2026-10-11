@@ -7,7 +7,7 @@ import {
   Siren,
 } from "lucide-react";
 import { PaidLockButton } from "@/components/ui/paid-lock";
-import { AddToHomeHint } from "@/components/pwa/add-to-home-hint";
+import { FutureSession } from "@/features/inspections/future-session";
 import { NoticePopup } from "@/features/board/notice-popup";
 import { activePopupNotices } from "@/server/board";
 import { renderDoc } from "@/features/board/model";
@@ -114,7 +114,6 @@ export default async function WorkerLinkPage({
         </p>
         <h1>{data.order.name}</h1>
       </header>
-      <AddToHomeHint />
       {popups.length > 0 && <NoticePopup notices={popups} links={false} />}
 
       {query.saved === "1" && (
@@ -239,15 +238,12 @@ export default async function WorkerLinkPage({
                   (a) => a.userId === actor.userId,
                 );
                 const showActions = state.canInput && !canceled && rowAssigned;
-                return (
-                  <li
-                    key={s.id}
-                    className={
-                      "link-session link-session-" +
-                      state.state.toLowerCase() +
-                      (s.id === data.current?.id ? " is-current" : "")
-                    }
-                  >
+                const className =
+                  "link-session link-session-" +
+                  state.state.toLowerCase() +
+                  (s.id === data.current?.id ? " is-current" : "");
+                const body = (
+                  <>
                     <div className="link-session-head">
                       <strong>{s.work_date}</strong>
                       <span className="link-session-badge">
@@ -283,6 +279,20 @@ export default async function WorkerLinkPage({
                     {!rowAssigned && (
                       <p className="wo-muted">이 회차에 배정되지 않았습니다.</p>
                     )}
+                  </>
+                );
+                // 예정 회차는 눌러도 할 일이 없다 — 누르면 언제 열리는지 말해 준다.
+                return state.state === "FUTURE" ? (
+                  <FutureSession
+                    key={s.id}
+                    workDate={s.work_date}
+                    className={className}
+                  >
+                    {body}
+                  </FutureSession>
+                ) : (
+                  <li key={s.id} className={className}>
+                    {body}
                   </li>
                 );
               },
