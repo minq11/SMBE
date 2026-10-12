@@ -54,7 +54,11 @@ export async function findMissedWeeks(
   ).rows;
 }
 
-async function recipients(client: PoolClient, companyId: string) {
+/** 관리감독자·안전관리자의 메일. 반기 점검 알림도 같은 사람에게 간다. */
+export async function managerRecipients(
+  client: PoolClient,
+  companyId: string,
+) {
   return (
     await client.query<{ email: string; display_name: string }>(
       `SELECT COALESCE(u.contact_email, u.email) AS email, u.display_name
@@ -135,7 +139,7 @@ export async function sendMissedMeetingReminders(
     failed: 0,
   };
   for (const [companyId, entry] of byCompany) {
-    const people = await recipients(client, companyId);
+    const people = await managerRecipients(client, companyId);
     const message = body(entry.name, entry.weeks);
     for (const person of people) {
       const outcome = await sendEmail({

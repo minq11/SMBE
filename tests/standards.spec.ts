@@ -17,6 +17,8 @@ test("standard: create, edit, add a seeded assessment round", async ({
     process.env.SMBE_ORDER_UI_TESTS !== "1",
     "Run npm run test:orders-ui against isolated local PostgreSQL.",
   );
+  // 만들기 → 임시저장 → 확정 → 개정 → 회차 → 버리기까지 한 흐름이라 기본 30초에 닿는다.
+  test.slow();
   const schema = process.env.SMBE_ORDER_UI_SCHEMA ?? "";
   if (!/^orders_ui_[a-f0-9]{32}$/.test(schema))
     throw new Error("Invalid isolated test schema");
@@ -417,20 +419,12 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page).toHaveURL(new RegExp("/standards/" + id + "$"));
     await expect(page.locator("#main")).toContainText("회차 이력 (2건)");
 
-    // 4) 경영책임자 반기 점검 (중처법 시행령 4조 3호): 숫자를 보고 서명한다.
+    // 4) 경영책임자 반기 점검은 기준정보의 한 장으로 옮겼다 — 여기 카드는 거기로 보낸다.
     await page.goto("/assessments");
     const review = page.getByRole("region", { name: "경영책임자 반기 점검" });
-    await expect(review).toContainText("아직 점검 전");
-    await expect(review).toContainText("남은 조치");
-    await review.getByRole("button", { name: "점검 확인 서명" }).click();
-    await review.getByLabel("점검 의견 (선택)").fill("끼임 조치는 이달 안에");
-    await review.getByRole("button", { name: "서명", exact: true }).click();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "서명", exact: true })
-      .click();
-    await expect(review).toContainText("점검 완료");
-    await expect(review).toContainText("끼임 조치는 이달 안에");
+    await expect(
+      review.getByRole("link", { name: "반기 점검 열기" }),
+    ).toHaveAttribute("href", /\/company\/half-year-check/);
 
     // 5) 실시규정: 기본 문안이 있고 고쳐 저장된다.
     await page.goto("/company/criteria");

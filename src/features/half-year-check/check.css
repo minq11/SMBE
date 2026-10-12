@@ -1,0 +1,123 @@
+/* 반기 점검 — 문서 틀은 방침·목표(policy.css)를 그대로 쓰고 여기엔 더한 것만. */
+.hyc-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.hyc-facts > div {
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.hyc-facts dt {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.hyc-facts dd {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.hyc-facts .is-alert dd {
+  color: var(--danger);
+}
+.hyc-quotes {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.hyc-quotes span {
+  color: var(--ink-3);
+  margin-right: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hyc-duties {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.hyc-note {
+  margin-top: 12px;
+}
+.hyc-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+.hyc-period {
+  margin: 4px 0 0;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.hyc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+.hyc-table th,
+.hyc-table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: left;
+}
+.hyc-table td {
+  text-align: right;
+}
+.hyc-table td:last-child {
+  text-align: left;
+}
+.hyc-table small {
+  display: block;
+  color: var(--ink-3);
+}
+.hyc-supervisors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.hyc-supervisors > li {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+}
+.hyc-supervisor-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.hyc-supervisor-head small {
+  color: var(--ink-3);
+}
+@media (max-width: 600px) {
+  .hyc-table {
+    font-size: 13px;
+  }
+  .hyc-table th:nth-child(4),
+  .hyc-table td:nth-child(4) {
+    display: none;
+  }
+}
+@media print {
+  .hyc-facts > div {
+    border-color: var(--line);
+    background: none;
+  }
+}
+/* "2026년 하반기 · 확정" 이 잘리지 않게 — 방침의 연도 셀렉트보다 글이 길다. */
+.policy-year-form:has(#hyc-period) .float-field {
+  width: 220px;
+}

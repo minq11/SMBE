@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/server/session";
 import { withTransaction } from "@/server/db";
-import { recordHalfYearReview, recordRiskAction } from "@/server/assessments";
+import { recordRiskAction } from "@/server/assessments";
 import { WorkOrderError } from "@/features/work-orders/model";
 
 async function actor() {
@@ -45,21 +45,3 @@ export async function recordRiskActionAction(
 }
 
 /** 경영책임자 반기 점검 서명 (중처법 시행령 제4조 제3호). */
-export async function recordHalfYearReviewAction(
-  note: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  try {
-    const context = await actor();
-    await withTransaction((c) => recordHalfYearReview(c, context, note));
-    revalidatePath("/assessments");
-    return { ok: true };
-  } catch (error) {
-    return {
-      ok: false,
-      error:
-        error instanceof WorkOrderError
-          ? error.message
-          : "저장하지 못했습니다. 잠시 후 다시 시도하세요.",
-    };
-  }
-}

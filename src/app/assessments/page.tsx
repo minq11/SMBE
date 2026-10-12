@@ -2,12 +2,9 @@ import Link from "next/link";
 import { CircleAlert, Plus, ClipboardCheck } from "lucide-react";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
-import {
-  assessmentOverview,
-  listAssessments,
-  readHalfYearReview,
-} from "@/server/assessments";
-import { HalfYearReviewCard } from "@/features/assessments/half-year-review";
+import { assessmentOverview, listAssessments } from "@/server/assessments";
+import { halfYearCheckDue } from "@/server/half-year-check";
+import { HalfYearCheckCard } from "@/features/assessments/half-year-check-card";
 import { AppShell } from "@/components/shell/app-shell";
 import { tierOf } from "@/components/shell/tier";
 import { isCurrentUserOperator } from "@/server/operator";
@@ -24,10 +21,10 @@ export const metadata = { title: "위험성평가 · 심플안전" };
  */
 export default async function AssessmentsPage() {
   const { session, actor } = await workSession("/assessments", true);
-  const [overview, items, review, isOperator] = await Promise.all([
+  const [overview, items, due, isOperator] = await Promise.all([
     withTransaction((c) => assessmentOverview(c, actor)),
     withTransaction((c) => listAssessments(c, actor)),
-    withTransaction((c) => readHalfYearReview(c, actor)),
+    withTransaction((c) => halfYearCheckDue(c, actor.companyId)),
     isCurrentUserOperator(),
   ]);
   const year = new Date().getFullYear();
@@ -71,14 +68,17 @@ export default async function AssessmentsPage() {
         </div>
       </div>
 
-      <HalfYearReviewCard review={review} />
+      <HalfYearCheckCard due={due} />
 
       {(overview.needs_assessment.length > 0 ||
         overview.expiring_soon.length > 0) && (
-        <section className="asmt-section" aria-label="위험성평가가 필요한 표준서">
+        <section
+          className="asmt-section"
+          aria-label="위험성평가가 필요한 표준서"
+        >
           <h2>
-            <CircleAlert size={15} style={{ verticalAlign: "-2px" }} /> 위험성평가가
-            필요한 표준서
+            <CircleAlert size={15} style={{ verticalAlign: "-2px" }} />{" "}
+            위험성평가가 필요한 표준서
           </h2>
           <ul className="asmt-needs">
             {overview.needs_assessment.map((s) => (

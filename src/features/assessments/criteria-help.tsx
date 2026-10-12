@@ -17,8 +17,8 @@ export function CriteriaHelp({
       <CriteriaList criteria={criteria} />
       {snapshot ? (
         <p>
-          이 위험성평가를 만들 때의 기준입니다. 회사 기준을 나중에 바꿔도 이 위험성평가는
-          그대로입니다.
+          이 위험성평가를 만들 때의 기준입니다. 회사 기준을 나중에 바꿔도 이
+          위험성평가는 그대로입니다.
         </p>
       ) : (
         <p>

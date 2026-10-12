@@ -78,6 +78,7 @@ export type NavKey =
   | "criteria"
   | "manual"
   | "safetyPolicy"
+  | "halfYearCheck"
   | "notices"
   | "news"
   | "resources"
@@ -128,6 +129,12 @@ const NAV: ReadonlyArray<NavEntry> = [
         title: "중대재해 대응 절차",
         icon: TriangleAlert,
         href: "/company/incident-manual",
+      },
+      {
+        key: "halfYearCheck",
+        title: "반기 점검",
+        icon: ClipboardCheck,
+        href: "/company/half-year-check",
       },
     ],
   },

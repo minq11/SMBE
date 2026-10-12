@@ -276,6 +276,13 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
         hasText: "당일에 열립니다",
       });
       await expect(async () => {
+        // 오늘의 안전소식 팝업은 하이드레이션 뒤에 열린다 — 떠 있으면 닫고 누른다.
+        // 모달 뒤의 카드는 눌리지 않는다.
+        const popup = page.locator("dialog.notice-popup[open]");
+        if (await popup.count())
+          await popup
+            .getByRole("button", { name: "오늘 하루 안 보기" })
+            .click();
         await future.click();
         await expect(dayToast).toBeVisible({ timeout: 1000 });
       }).toPass({ timeout: 15000 });

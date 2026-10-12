@@ -8,10 +8,17 @@ import {
   assessmentOverview,
   listAssessments,
   readAssessment,
-  readHalfYearReview,
-  recordHalfYearReview,
   recordRiskAction,
 } from "../src/server/assessments";
+import {
+  halfYearCheckDue,
+  listHalfYearPeriods,
+  readHalfYearCheck,
+  saveHalfYearCheck,
+  sendHalfYearCheckReminders,
+} from "../src/server/half-year-check";
+import { EMPTY_NOTES, halfOf } from "../src/features/half-year-check/model";
+import { seoulToday } from "../src/features/work-orders/model";
 
 // Deliberately never reads DATABASE_URL or dotenv: tests cannot touch Neon.
 const schema = "asmt_" + randomUUID().replaceAll("-", "");
@@ -307,7 +314,7 @@ test("assessments: post-action 허용 불가 needs a follow-up and stays open (�
   assert.equal(detail.items[0].follow_up_measure, null);
 });
 
-test("assessments: half-year review records the numbers the boss signed off on", async () => {
+test("half-year check: facts from our records, draft then confirm, frozen and immutable", async () => {
   const { manager, worker } = await company();
   const std = await standard(manager.companyId, manager.userId, "프레스");
   await assessment(manager.companyId, manager.userId, {
@@ -315,25 +322,146 @@ test("assessments: half-year review records the numbers the boss signed off on",
     performedOn: daysAgo(1),
     items: [{ hazard: "끼임", allowable: false }],
   });
-  const before = await transaction((c) => readHalfYearReview(c, manager));
-  assert.equal(before.current, null);
-  assert.equal(before.stats.assessments, 1);
-  assert.equal(before.stats.actions_open, 1);
-  assert.equal(before.stats.standards_expired, 0);
-
+  const { year, half } = halfOf(seoulToday());
+  const before = await transaction((c) =>
+    readHalfYearCheck(c, manager, year, half),
+  );
+  assert.equal(before.status, "DRAFT");
+  assert.equal(before.facts.hazard.assessments, 1);
+  assert.equal(before.facts.hazard.actions_open, 1);
+  assert.equal(before.facts.hazard.standards_expired, 0);
+  assert.equal(before.facts.supervisors.length, 1);
+  assert.equal(before.facts.supervisors[0].name, "관리자");
+  assert.equal(before.facts.legal.policy_exists, false);
+  assert.equal(before.facts.legal.budget, null);
   await assert.rejects(
-    transaction((c) => recordHalfYearReview(c, worker, "")),
+    transaction((c) => readHalfYearCheck(c, worker, year, half)),
+    /권한/,
+  );
+
+  const input = {
+    year,
+    half,
+    notes: {
+      ...EMPTY_NOTES,
+      hazard: "끼임은 이달 안에",
+      manual_checked: true,
+      supervisors: { [manager.userId]: { rating: "GOOD", note: "" } },
+    },
+    representative: "",
+  };
+  // 임시저장은 대표자명 없이도 된다. 확정은 안 된다.
+  await transaction((c) => saveHalfYearCheck(c, manager, input, false));
+  let now = await transaction((c) => readHalfYearCheck(c, manager, year, half));
+  assert.equal(now.status, "DRAFT");
+  assert.equal(now.notes.hazard, "끼임은 이달 안에");
+  assert.equal(now.notes.supervisors[manager.userId].rating, "GOOD");
+  await assert.rejects(
+    transaction((c) => saveHalfYearCheck(c, manager, input, true)),
+    /대표자명/,
+  );
+  await assert.rejects(
+    transaction((c) => saveHalfYearCheck(c, worker, input, false)),
     /권한/,
   );
   await transaction((c) =>
-    recordHalfYearReview(c, manager, "남은 조치 1건은 이달 안에"),
+    saveHalfYearCheck(c, manager, { ...input, representative: "홍대표" }, true),
   );
-  const after = await transaction((c) => readHalfYearReview(c, manager));
-  assert.ok(after.current);
-  assert.equal(after.current!.note, "남은 조치 1건은 이달 안에");
-  assert.equal(after.current!.reviewed_by_name, "관리자");
-  assert.deepEqual(after.current!.stats, before.stats);
-  assert.equal(after.history.length, 1);
+  now = await transaction((c) => readHalfYearCheck(c, manager, year, half));
+  assert.equal(now.status, "CONFIRMED");
+  assert.equal(now.representative, "홍대표");
+  assert.equal(now.confirmedByName, "관리자");
+  assert.equal(now.confirmedOn, seoulToday());
+  assert.deepEqual(now.facts, before.facts);
+
+  // 확정 뒤 숫자가 바뀌어도 "그때 본 숫자" 는 그대로고, 고칠 수도 없다.
+  await assessment(manager.companyId, manager.userId, {
+    standardId: std,
+    performedOn: daysAgo(0),
+    items: [{ hazard: "소음", allowable: false }],
+  });
+  now = await transaction((c) => readHalfYearCheck(c, manager, year, half));
+  assert.equal(now.facts.hazard.assessments, 1);
+  await assert.rejects(
+    transaction((c) => saveHalfYearCheck(c, manager, input, false)),
+    /확정된 점검/,
+  );
+  // 아직 오지 않은 반기는 못 쓴다.
+  await assert.rejects(
+    transaction((c) =>
+      saveHalfYearCheck(
+        c,
+        manager,
+        { ...input, year: year + 1, half: 1 },
+        false,
+      ),
+    ),
+    /시작하지 않은/,
+  );
+  assert.deepEqual(await transaction((c) => listHalfYearPeriods(c, manager)), [
+    { year, half, status: "CONFIRMED" },
+  ]);
+
+  // 챙길 반기: 6·7월은 상반기, 12·1월은 하반기, 그 밖엔 없다.
+  const june = await transaction((c) =>
+    halfYearCheckDue(c, manager.companyId, `${year}-06-15`),
+  );
+  assert.deepEqual(june, {
+    year,
+    half: 1,
+    status: half === 1 ? "CONFIRMED" : "NONE",
+  });
+  assert.equal(
+    await transaction((c) =>
+      halfYearCheckDue(c, manager.companyId, `${year}-03-15`),
+    ),
+    null,
+  );
+  assert.deepEqual(
+    await transaction((c) =>
+      halfYearCheckDue(c, manager.companyId, `${year + 1}-01-10`),
+    ),
+    { year, half: 2, status: half === 2 ? "CONFIRMED" : "NONE" },
+  );
+
+  // 알림: 챙길 반기가 확정 전인 회사에 한 번만. 장부는 행의 reminded_at.
+  const other = await company();
+  const dec = new Date(`${year}-12-10T03:00:00Z`);
+  const first = await transaction((c) =>
+    sendHalfYearCheckReminders(c, { now: dec }),
+  );
+  assert.equal(first.period, `${year}년 하반기`);
+  const reminded = async (companyId: string) =>
+    (
+      await pool.query(
+        "SELECT reminded_at IS NOT NULL AS done FROM company_half_year_checks WHERE company_id=$1 AND year=$2 AND half=2",
+        [companyId, year],
+      )
+    ).rows[0]?.done ?? false;
+  assert.equal(await reminded(other.manager.companyId), true);
+  // 이미 확정한 반기는 알리지 않는다.
+  assert.equal(await reminded(manager.companyId), half === 2 ? false : true);
+  const again = await transaction((c) =>
+    sendHalfYearCheckReminders(c, { now: dec }),
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM company_half_year_checks WHERE company_id=$1",
+        [other.manager.companyId],
+      )
+    ).rows[0].n,
+    1,
+  );
+  assert.ok(again.companies < first.companies || first.companies === 0);
+  assert.equal(
+    await transaction((c) =>
+      sendHalfYearCheckReminders(c, {
+        now: new Date(`${year}-03-10T03:00:00Z`),
+      }),
+    ).then((r) => r.period),
+    null,
+  );
 });
 
 test("assessments: read detail and record action on an approved item", async () => {

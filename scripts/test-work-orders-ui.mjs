@@ -123,6 +123,7 @@ try {
           "tests/board.spec.ts",
           "tests/incidents.spec.ts",
           "tests/safety-policy.spec.ts",
+          "tests/half-year-check.spec.ts",
         ]),
     "--workers=1",
   ]);

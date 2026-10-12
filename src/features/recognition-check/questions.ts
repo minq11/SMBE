@@ -282,7 +282,7 @@ export const QUESTIONS: Question[] = [
       { key: "PA", label: "보통", detail: "형식적", score: 7 },
       { key: "OK", label: "우수", detail: "직접 참여·독려", score: 15 },
     ],
-    smbeHint: { href: "/assessments", label: "반기 이행 점검" },
+    smbeHint: { href: "/company/half-year-check", label: "반기 점검" },
   },
   {
     id: "III-1-3",

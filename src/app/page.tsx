@@ -7,6 +7,8 @@ import {
   type WorkerHome,
 } from "@/features/dashboard/dashboard";
 import { assessmentOverview } from "@/server/assessments";
+import { halfYearCheckDue } from "@/server/half-year-check";
+import { periodLabel } from "@/features/half-year-check/model";
 import { incidentOverview } from "@/server/incidents";
 import { getCurrentSession } from "@/server/session";
 import { isCurrentUserOperator } from "@/server/operator";
@@ -192,6 +194,17 @@ export default async function Home() {
               detail: "감소대책의 실제 조치를 적으세요.",
               count: `${asmt.open_action_count}건`,
               state: "조치 필요",
+            });
+          // 반기 마지막 달·그다음 달에 반기 점검이 확정 전이면 홈에서 바로 보인다.
+          const due = await halfYearCheckDue(client, actor.companyId, today);
+          if (due && due.status !== "CONFIRMED")
+            list.push({
+              href: `/company/half-year-check?year=${due.year}&half=${due.half}`,
+              title: "경영책임자 반기 점검",
+              detail: "우리 기록으로 채운 한 장을 확인하고 확정합니다.",
+              count: periodLabel(due.year, due.half),
+              state: due.status === "DRAFT" ? "작성 중" : "확정 전",
+              alert: true,
             });
           if (asmt.needs_assessment.length > 0)
             list.push({

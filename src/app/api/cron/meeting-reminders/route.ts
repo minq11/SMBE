@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { withTransaction } from "@/server/db";
 import { sendMissedMeetingReminders } from "@/server/safety-meeting-reminders";
+import { sendHalfYearCheckReminders } from "@/server/half-year-check";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,8 +34,10 @@ export async function POST(request: Request) {
       { status: 401, headers: { "Cache-Control": "no-store" } },
     );
 
-  const result = await withTransaction((client) =>
-    sendMissedMeetingReminders(client),
-  );
+  // 같은 주 1회 배치가 반기 점검 알림도 보낸다 (6·12월과 그다음 달, 반기당 한 통).
+  const result = await withTransaction(async (client) => ({
+    ...(await sendMissedMeetingReminders(client)),
+    halfYear: await sendHalfYearCheckReminders(client),
+  }));
   return Response.json(result, { headers: { "Cache-Control": "no-store" } });
 }

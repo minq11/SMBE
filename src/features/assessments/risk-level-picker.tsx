@@ -111,7 +111,11 @@ export function RiskLevelPicker({
   );
 }
 
-const LEVEL_KO: Record<RiskLevel, string> = { HIGH: "상", MID: "중", LOW: "하" };
+const LEVEL_KO: Record<RiskLevel, string> = {
+  HIGH: "상",
+  MID: "중",
+  LOW: "하",
+};
 
 /**
  * 허용 여부는 고르는 것이 아니라 수준과 회사 기준에서 나오는 결과다. 그래서 단추가

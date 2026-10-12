@@ -186,8 +186,7 @@ export function ReferencePanel({
                 ))}
               </ul>
             )}
-            <div className="law-dialog-actions">
-            </div>
+            <div className="law-dialog-actions"></div>
           </div>
         )}
       </dialog>
