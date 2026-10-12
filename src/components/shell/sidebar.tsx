@@ -24,6 +24,7 @@ import {
   TriangleAlert,
   X,
   type LucideIcon,
+  GraduationCap,
 } from "lucide-react";
 import { usePreview } from "./preview-dialog";
 import { logoutAction } from "@/features/auth/logout-action";
@@ -79,6 +80,7 @@ export type NavKey =
   | "manual"
   | "safetyPolicy"
   | "halfYearCheck"
+  | "training"
   | "notices"
   | "news"
   | "resources"
@@ -181,6 +183,12 @@ const NAV: ReadonlyArray<NavEntry> = [
         href: "/monitoring",
       },
     ],
+  },
+  {
+    key: "training",
+    title: "안전보건교육",
+    icon: GraduationCap,
+    href: "/training",
   },
   {
     key: "incident",

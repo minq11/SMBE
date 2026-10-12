@@ -267,6 +267,20 @@ test("manager authors, self-approves and issues; worker reads; copy resets; canc
       expect(location.replace(/^https?:\/\/[^/]+/, "")).toBe("/w");
       // 작업자 화면. 홈 화면 추가 안내는 없고, 예정 회차(내일)는 눌러도 열리지
       // 않는 대신 "당일에 열립니다" 가 잠깐 뜬다 (사장님 2026-10-11).
+      // 다른 spec 이 만든 안전소식 팝업(모든 회사에 뜬다)이 카드를 가리지 않게,
+      // 이 기기에서는 이미 "안 보기" 한 것으로 둔다.
+      const popupIds = (
+        await pool.query<{ id: string }>(
+          "SELECT id FROM board_posts WHERE popup AND status='PUBLISHED' AND deleted_at IS NULL",
+        )
+      ).rows.map((r) => r.id);
+      await page.addInitScript((ids: string[]) => {
+        for (const id of ids)
+          localStorage.setItem(
+            "smbe.notice-hide." + id,
+            String(Date.now() + 86_400_000),
+          );
+      }, popupIds);
       await page.goto("/w");
       await expect(page.locator("main.link-work h1")).toBeVisible();
       await expect(page.locator(".a2hs")).toHaveCount(0);

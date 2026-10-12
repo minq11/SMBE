@@ -118,6 +118,22 @@ export function LegalFacts({
               : "편성 없음"}
           </dd>
         </div>
+        {f.training && (
+          <>
+            <div>
+              <dt>이 반기 교육</dt>
+              <dd>{n(f.training.sessions)}회</dd>
+            </div>
+            <div className={f.training.regular_short > 0 ? "is-alert" : ""}>
+              <dt>정기교육 부족</dt>
+              <dd>{n(f.training.regular_short)}명</dd>
+            </div>
+            <div className={f.training.hire_missing > 0 ? "is-alert" : ""}>
+              <dt>채용 시 교육 필요</dt>
+              <dd>{n(f.training.hire_missing)}명</dd>
+            </div>
+          </>
+        )}
       </dl>
       <p className="hyc-duties">
         <strong>법정 선임·직책</strong>{" "}
@@ -223,7 +239,7 @@ export function HalfYearDocument({
         <Note text={notes.manual} />
       </section>
       <section>
-        <h3>5. 법령 이행 — 방침·예산·선임 (5조)</h3>
+        <h3>5. 법령 이행 — 방침·예산·선임·교육 (5조)</h3>
         <LegalFacts f={facts.legal} year={check.year} />
         <Note text={notes.legal} />
       </section>

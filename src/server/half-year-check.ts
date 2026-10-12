@@ -9,6 +9,7 @@ import { appOrigin } from "./config";
 import { WorkOrderError } from "../features/work-orders/model";
 import { seoulToday } from "../features/work-orders/model";
 import { budgetSchema, budgetTotals } from "../features/safety-policy/model";
+import { trainingFacts } from "./training";
 import {
   checkInputSchema,
   dueHalf,
@@ -154,6 +155,7 @@ export async function computeHalfYearFacts(
       has_contact: /0\d{1,2}-?\d{3,4}-?\d{4}/.test(manualText),
     },
     legal: {
+      training: await trainingFacts(client, companyId, year, half),
       policy_exists: Boolean(policy),
       budget:
         budget?.success && budget.data.items.length > 0

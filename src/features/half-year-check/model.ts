@@ -80,6 +80,12 @@ export type HalfYearFacts = {
     policy_exists: boolean;
     budget: { planned: number; spent: number; rate: number | null } | null;
     duties: Array<{ name: string; note: string }>;
+    /** 이 반기 교육 — 예전 기록(교육 기능 전)에는 없다. */
+    training?: {
+      sessions: number;
+      regular_short: number;
+      hire_missing: number;
+    };
   };
 };
 

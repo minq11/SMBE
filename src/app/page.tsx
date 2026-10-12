@@ -8,6 +8,7 @@ import {
 } from "@/features/dashboard/dashboard";
 import { assessmentOverview } from "@/server/assessments";
 import { halfYearCheckDue } from "@/server/half-year-check";
+import { trainingOverview } from "@/server/training";
 import { periodLabel } from "@/features/half-year-check/model";
 import { incidentOverview } from "@/server/incidents";
 import { getCurrentSession } from "@/server/session";
@@ -205,6 +206,20 @@ export default async function Home() {
               count: periodLabel(due.year, due.half),
               state: due.status === "DRAFT" ? "작성 중" : "확정 전",
               alert: true,
+            });
+          // 교육이 모자란 사람이 있으면 한 줄 — 감독관이 제일 먼저 찾는 서류다.
+          const training = await trainingOverview(client, actor, today);
+          const trainingCount =
+            training.regularShortCount +
+            training.hireMissingCount +
+            training.specialCheckCount;
+          if (trainingCount > 0)
+            list.push({
+              href: "/training",
+              title: "안전보건교육 필요",
+              detail: "채용 시·정기·특별 교육이 모자란 사람이 있습니다.",
+              count: `${trainingCount}명`,
+              state: "교육 필요",
             });
           if (asmt.needs_assessment.length > 0)
             list.push({

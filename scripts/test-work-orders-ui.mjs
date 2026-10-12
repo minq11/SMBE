@@ -124,6 +124,7 @@ try {
           "tests/incidents.spec.ts",
           "tests/safety-policy.spec.ts",
           "tests/half-year-check.spec.ts",
+          "tests/training.spec.ts",
         ]),
     "--workers=1",
   ]);

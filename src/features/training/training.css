@@ -1,0 +1,85 @@
+/* 안전보건교육 — 문서·폼 틀은 policy.css, 여기엔 더한 것만. */
+.training-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.training-head-row .float-field {
+  width: 190px;
+}
+.training-kinds {
+  flex-wrap: wrap;
+}
+.training-kind-hint {
+  margin: -8px 0 0;
+}
+.training-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.training-table th,
+.training-table td {
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: left;
+  vertical-align: top;
+}
+.training-table thead th {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.training-table td.is-alert {
+  color: var(--danger);
+  font-weight: 700;
+}
+.training-table small {
+  display: block;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.training-attendees {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.training-attendees li {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 14px;
+}
+.training-sign-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.training-sign-table th,
+.training-sign-table td {
+  border: 1px solid var(--line);
+  padding: 10px 8px;
+  text-align: left;
+}
+.training-sign-table td:last-child {
+  width: 30%;
+}
+@media (max-width: 600px) {
+  .training-col-role {
+    display: none;
+  }
+  .training-table {
+    font-size: 13px;
+  }
+}
+.training-list-title {
+  font-size: 17px;
+  margin: 8px 0 0;
+}

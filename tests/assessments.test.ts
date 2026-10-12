@@ -18,6 +18,15 @@ import {
   sendHalfYearCheckReminders,
 } from "../src/server/half-year-check";
 import { EMPTY_NOTES, halfOf } from "../src/features/half-year-check/model";
+import {
+  createTrainingSession,
+  deleteTrainingSession,
+  listTrainingSessions,
+  readTrainingSession,
+  trainingFacts,
+  trainingOverview,
+  updateTbmTrainingMinutes,
+} from "../src/server/training";
 import { seoulToday } from "../src/features/work-orders/model";
 
 // Deliberately never reads DATABASE_URL or dotenv: tests cannot touch Neon.
@@ -537,5 +546,126 @@ test("assessments: read detail and record action on an approved item", async () 
       }),
     ),
     /승인된 평가/,
+  );
+});
+
+test("training: sessions roll up per person, hire/regular needs are computed, delete and permissions", async () => {
+  const { manager, worker } = await company();
+  const { year, half } = halfOf(seoulToday());
+  let overview = await transaction((c) => trainingOverview(c, manager));
+  // 둘 다 오늘 들어왔으니 채용 시 교육이 필요하고, 정기교육은 0시간이다.
+  assert.equal(overview.hireMissingCount, 2);
+  assert.equal(overview.regularShortCount, 2);
+  const w = overview.people.find((p) => p.user_id === worker.userId)!;
+  assert.equal(w.regular_required, 12);
+  assert.equal(
+    overview.people.find((p) => p.user_id === manager.userId)!.regular_required,
+    8,
+  );
+
+  await assert.rejects(
+    transaction((c) => trainingOverview(c, worker)),
+    /권한/,
+  );
+  const base = {
+    kind: "REGULAR",
+    heldOn: seoulToday(),
+    hours: 4,
+    topic: "프레스 끼임 예방",
+    instructor: "김반장",
+    note: "",
+    attendeeIds: [worker.userId, manager.userId],
+  };
+  await assert.rejects(
+    transaction((c) =>
+      createTrainingSession(c, manager, { ...base, attendeeIds: [] }),
+    ),
+    /참석자/,
+  );
+  await assert.rejects(
+    transaction((c) =>
+      createTrainingSession(c, manager, { ...base, hours: 1.3 }),
+    ),
+    /0\.5 단위/,
+  );
+  await assert.rejects(
+    transaction((c) =>
+      createTrainingSession(c, manager, { ...base, heldOn: "2999-01-01" }),
+    ),
+    /오지 않은/,
+  );
+  await assert.rejects(
+    transaction((c) =>
+      createTrainingSession(c, manager, {
+        ...base,
+        attendeeIds: [randomUUID()],
+      }),
+    ),
+    /우리 회사 사람/,
+  );
+  const { id } = await transaction((c) =>
+    createTrainingSession(c, manager, base),
+  );
+  await transaction((c) =>
+    createTrainingSession(c, manager, {
+      ...base,
+      kind: "HIRE",
+      hours: 8,
+      topic: "입사 안전교육",
+      attendeeIds: [worker.userId],
+    }),
+  );
+  overview = await transaction((c) => trainingOverview(c, manager));
+  assert.equal(overview.sessionsThisHalf, 2);
+  assert.equal(overview.hireMissingCount, 1);
+  const w2 = overview.people.find((p) => p.user_id === worker.userId)!;
+  assert.equal(w2.hire, "DONE");
+  assert.equal(w2.regular_hours, 4);
+  assert.equal(w2.regular_short, 8);
+  // 관리자는 반기 8시간이라 4시간이면 4시간 부족.
+  assert.equal(
+    overview.people.find((p) => p.user_id === manager.userId)!.regular_short,
+    4,
+  );
+
+  const detail = await transaction((c) => readTrainingSession(c, manager, id));
+  assert.equal(detail?.attendees.length, 2);
+  assert.equal(detail?.created_by_name, "관리자");
+  assert.equal(
+    (await transaction((c) => listTrainingSessions(c, manager))).length,
+    2,
+  );
+  assert.deepEqual(
+    await transaction((c) => trainingFacts(c, manager.companyId, year, half)),
+    {
+      sessions: 2,
+      regular_short: 2,
+      hire_missing: 1,
+    },
+  );
+
+  // TBM 산입: 설정값만 바뀐다 (TBM 기록은 점검 쪽 테스트가 만든다).
+  await assert.rejects(
+    transaction((c) => updateTbmTrainingMinutes(c, manager, 7)),
+    /산입 시간/,
+  );
+  await transaction((c) => updateTbmTrainingMinutes(c, manager, 15));
+  assert.equal(
+    (await transaction((c) => trainingOverview(c, manager))).tbmMinutes,
+    15,
+  );
+
+  await assert.rejects(
+    transaction((c) => deleteTrainingSession(c, worker, id)),
+    /권한/,
+  );
+  await transaction((c) => deleteTrainingSession(c, manager, id));
+  assert.equal(
+    await transaction((c) => readTrainingSession(c, manager, id)),
+    null,
+  );
+  assert.equal(
+    (await transaction((c) => listTrainingSessions(c, manager))).length,
+    1,
   );
 });

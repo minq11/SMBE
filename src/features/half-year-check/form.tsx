@@ -220,8 +220,8 @@ export function HalfYearCheckForm({ check }: { check: HalfYearCheck }) {
               <dd>대응 절차 문서가 있고 비상연락처가 지금 사람·번호인지.</dd>
               <dt>적을 것</dt>
               <dd>
-                읽어 보고 점검함에 표시. 바뀐 게 있으면 기준정보의 대응
-                절차에서 고치고 여기 한 줄.
+                읽어 보고 점검함에 표시. 바뀐 게 있으면 기준정보의 대응 절차에서
+                고치고 여기 한 줄.
               </dd>
               <dt>왜</dt>
               <dd>시행령 4조 8호. 매뉴얼을 반기 1회 점검해야 합니다.</dd>
@@ -251,13 +251,13 @@ export function HalfYearCheckForm({ check }: { check: HalfYearCheck }) {
 
       <fieldset className="policy-card policy-fields" disabled={pending}>
         <div className="wo-section-head">
-          <h2>5. 법령 이행 — 방침·예산·선임</h2>
+          <h2>5. 법령 이행 — 방침·예산·선임·교육</h2>
           <HelpDialog title="법령 이행" variant="icon">
             <dl className="help-rows">
               <dt>무엇</dt>
               <dd>
                 올해 방침·목표, 안전보건 예산 편성·집행, 인원 비고에 적힌 법정
-                직책.
+                직책, 이 반기 교육 이수.
               </dd>
               <dt>적을 것</dt>
               <dd>
