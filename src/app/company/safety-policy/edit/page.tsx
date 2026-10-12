@@ -2,7 +2,11 @@ import { notFound } from "next/navigation";
 import { workSession } from "@/server/work-orders";
 import { withTransaction } from "@/server/db";
 import { readSafetyPolicy } from "@/server/safety-policy";
-import { DEFAULT_POLICY, selectedYear } from "@/features/safety-policy/model";
+import {
+  BUDGET_ITEM_DEFAULTS,
+  DEFAULT_POLICY,
+  selectedYear,
+} from "@/features/safety-policy/model";
 import { PolicyForm } from "@/features/safety-policy/form";
 import { PageHeader } from "@/components/ui/page-header";
 import { seoulToday } from "@/features/work-orders/model";
@@ -38,6 +42,11 @@ export default async function PolicyEditPage({
             goals: "",
             representative: "",
             establishedOn: seoulToday(),
+            // 예산 항목 네 줄은 비어 있는 채로 — 금액은 회사가 적는다.
+            budget: {
+              items: BUDGET_ITEM_DEFAULTS.map((name) => ({ name, planned: 0 })),
+              spent: [],
+            },
           }
         }
         previous={existing ? null : previous}

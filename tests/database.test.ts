@@ -191,6 +191,15 @@ test("annual policy: year isolation, stale writes, tenant and worker permissions
   assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026, true)))?.revision, 1);
   await transaction(c => saveSafetyPolicy(c, actor, { ...input, revision: 1, goals: "수정 목표" }));
   assert.equal((await transaction(c => readSafetyPolicy(c, actor, 2026)))?.revision, 2);
+  // 예산(시행령 4조 3호): 없으면 빈 채로, 있으면 항목·분기 집행이 그대로 돌아온다. 이름 없는 항목은 막는다.
+  assert.deepEqual((await transaction(c => readSafetyPolicy(c, actor, 2026)))?.budget, { items: [], spent: [] });
+  const budget = { items: [{ name: "보호구", planned: 120 }], spent: [{ quarter: 1, amount: 40, note: "안전화" }] };
+  await transaction(c => saveSafetyPolicy(c, actor, { ...input, revision: 2, budget }));
+  assert.deepEqual((await transaction(c => readSafetyPolicy(c, actor, 2026)))?.budget, budget);
+  await assert.rejects(
+    transaction(c => saveSafetyPolicy(c, actor, { ...input, revision: 3, budget: { items: [{ name: " ", planned: 1 }], spent: [] } })),
+    /예산 항목 이름/,
+  );
   const workerId = await user();
   await member(f.companyId, workerId);
   const workerActor = { companyId: f.companyId, userId: workerId };

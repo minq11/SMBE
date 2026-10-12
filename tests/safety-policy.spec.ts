@@ -54,11 +54,18 @@ test("annual policy writes, restores, copies without overwriting, worker reads a
     await login(manager);
     await page.goto("/company/safety-policy");
     await page.getByRole("link", { name: `${year}년 작성` }).click();
-    await expect(
-      page.getByLabel("안전보건 방침", { exact: true }),
-    ).toHaveValue(/최우선/);
+    await expect(page.getByLabel("안전보건 방침", { exact: true })).toHaveValue(
+      /최우선/,
+    );
     await page.getByLabel("연간 안전보건 목표").fill("TBM 매일 실시");
     await page.getByLabel("대표자명").fill("홍대표");
+    // 예산(시행령 4조 3호): 항목 네 줄이 미리 있고 금액은 만원. 1분기 집행 한 줄.
+    await expect(page.locator("#budget-name-0")).toHaveValue("보호구");
+    await page.locator("#budget-planned-0").fill("120");
+    await page.locator("#budget-planned-1").fill("300");
+    await page.getByRole("button", { name: "항목 4 삭제" }).click();
+    await page.locator("#budget-spent-1").fill("40");
+    await page.locator("#budget-note-1").fill("안전화 6켤레");
     await page.reload();
     await page
       .getByRole("button", { name: "이어서 작성", exact: true })
@@ -66,15 +73,34 @@ test("annual policy writes, restores, copies without overwriting, worker reads a
     await expect(page.getByLabel("연간 안전보건 목표")).toHaveValue(
       "TBM 매일 실시",
     );
-    await page.screenshot({ path: info.outputPath("policy-form.png") });
+    await expect(page.locator("#budget-planned-1")).toHaveValue("300");
+    await expect(page.locator("#budget-note-1")).toHaveValue("안전화 6켤레");
+    await page.screenshot({
+      path: info.outputPath("policy-form.png"),
+      fullPage: true,
+    });
+    // 좁은 화면은 본문이 안에서 스크롤되어 fullPage 가 뷰포트만 찍는다 — 예산 카드를 따로.
+    await page.locator("#policy-budget-head").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath("policy-budget-form.png") });
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`safety-policy\\?year=${year}$`));
     await expect(page.locator(".policy-document")).toContainText("홍대표");
+    const budgetTable = page.locator(".policy-budget-table");
+    await expect(budgetTable).toContainText("보호구");
+    await expect(budgetTable).toContainText("420");
+    await expect(page.locator(".policy-budget-rate")).toContainText(
+      "집행 40 만원 · 편성 대비 10%",
+    );
+    await budgetTable.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath("policy-budget-doc.png") });
     await page.getByRole("button", { name: "게시용 인쇄" }).click();
     await expect(
-      page.getByText("방침·목표 인쇄는 멤버십에 가입된 회사만 쓸 수 있습니다.", {
-        exact: false,
-      }),
+      page.getByText(
+        "방침·목표 인쇄는 멤버십에 가입된 회사만 쓸 수 있습니다.",
+        {
+          exact: false,
+        },
+      ),
     ).toBeVisible();
     await page.goto(`/company/safety-policy/print?year=${year}`);
     await expect(page).toHaveURL(new RegExp(`safety-policy\\?year=${year}$`));
@@ -84,6 +110,9 @@ test("annual policy writes, restores, copies without overwriting, worker reads a
     await expect(page.getByLabel("연간 안전보건 목표")).toHaveValue(
       "TBM 매일 실시",
     );
+    // 예산 항목·편성액은 따라오고 집행은 새해 것이라 비어 있다.
+    await expect(page.locator("#budget-planned-1")).toHaveValue("300");
+    await expect(page.locator("#budget-spent-1")).toHaveValue("");
     await page.getByLabel("연간 안전보건 목표").fill("위험요인 7일 안에 조치");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.locator(".policy-document")).toContainText(

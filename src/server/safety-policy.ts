@@ -20,7 +20,7 @@ export async function readSafetyPolicy(
   if (!yearSchema.safeParse(year).success)
     throw new WorkOrderError("연도를 확인하세요.");
   const { rows } = await client.query<SafetyPolicy>(
-    `SELECT year, revision, policy, goals, representative,
+    `SELECT year, revision, policy, goals, representative, budget,
       established_on::text AS "establishedOn", updated_at::text AS "updatedAt",
       updated_by::text AS "updatedBy" FROM company_safety_policies
       WHERE company_id=$1 AND year=$2`,
@@ -60,11 +60,12 @@ export async function saveSafetyPolicy(
     );
   await client.query(
     `INSERT INTO company_safety_policies
-      (company_id, year, policy, goals, representative, established_on, updated_by)
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      (company_id, year, policy, goals, representative, established_on, updated_by, budget)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)
       ON CONFLICT (company_id,year) DO UPDATE SET policy=EXCLUDED.policy,
         goals=EXCLUDED.goals, representative=EXCLUDED.representative,
         established_on=EXCLUDED.established_on, updated_by=EXCLUDED.updated_by,
+        budget=EXCLUDED.budget,
         updated_at=clock_timestamp(), revision=company_safety_policies.revision+1`,
     [
       actor.companyId,
@@ -74,6 +75,7 @@ export async function saveSafetyPolicy(
       input.representative,
       input.establishedOn,
       actor.userId,
+      JSON.stringify(input.budget),
     ],
   );
 }
