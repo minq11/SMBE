@@ -5,19 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Search } from "lucide-react";
 import type { CompanyListRow } from "@/server/admin";
+import { planName, seatCapFor } from "@/features/billing/plans";
 
-const SIZE_LABEL: Record<CompanyListRow["initial_employee_size_band"], string> = {
-  UNDER_5: "5인 미만",
-  FROM_5_TO_19: "5~19인",
-  FROM_20_TO_49: "20~49인",
-  FROM_50: "50인+",
-};
-
-const PRO_LABEL: Record<CompanyListRow["pro_state"], string> = {
-  FREE: "무료",
-  PRO_VOLUNTARY: "멤버십 (자발)",
-  PRO_MANDATORY: "멤버십 (한도초과)",
-};
+const SIZE_LABEL: Record<CompanyListRow["initial_employee_size_band"], string> =
+  {
+    UNDER_5: "5인 미만",
+    FROM_5_TO_19: "5~19인",
+    FROM_20_TO_49: "20~49인",
+    FROM_50: "50인+",
+  };
 
 export function CompaniesView({
   companies,
@@ -51,7 +47,11 @@ export function CompaniesView({
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <button type="submit" className="btn-secondary btn--sm" disabled={pending}>
+        <button
+          type="submit"
+          className="btn-secondary btn--sm"
+          disabled={pending}
+        >
           <Search size={14} />
           {pending ? "검색 중..." : "검색"}
         </button>
@@ -75,7 +75,6 @@ export function CompaniesView({
                 <th>업종</th>
                 <th>인원 (활성 / 대기)</th>
                 <th>규모</th>
-                <th>무료 한도</th>
                 <th>요금제</th>
                 <th>가입일</th>
                 <th>생성자</th>
@@ -99,13 +98,18 @@ export function CompaniesView({
                     )}
                   </td>
                   <td>{SIZE_LABEL[c.initial_employee_size_band]}</td>
-                  <td className="cell-num">
-                    {c.free_limit}
-                    {c.active_count > c.free_limit && (
-                      <span className="cell-warn"> 초과</span>
+                  <td>
+                    {c.pro_state === "FREE"
+                      ? "무료"
+                      : `멤버십 · ${planName(c.plan)}`}
+                    {seatCapFor(c.plan) !== null && (
+                      <span className="cell-dim"> ~{seatCapFor(c.plan)}인</span>
                     )}
+                    {seatCapFor(c.plan) !== null &&
+                      c.active_count >= seatCapFor(c.plan)! && (
+                        <span className="cell-warn"> 인원 소진</span>
+                      )}
                   </td>
-                  <td>{PRO_LABEL[c.pro_state]}</td>
                   <td className="cell-dim">
                     {new Date(c.created_at).toLocaleDateString("ko-KR")}
                   </td>

@@ -1,17 +1,15 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Save } from "lucide-react";
 import type { CompanyDetail } from "@/server/admin";
-import {
-  updateFreeLimitAction,
-  updatePlanAction,
-  type ActionState,
-} from "./actions";
+import { updatePlanAction, type ActionState } from "./actions";
 import { PAID_PLANS, seatCapFor, planName } from "@/features/billing/plans";
 import { FormErrorDialog } from "@/components/ui/form-error-dialog";
-import { FloatField, FloatSelect } from "@/components/ui/float-field";
+import { FloatSelect } from "@/components/ui/float-field";
+import { useToast } from "@/components/ui/toast";
 
 const SIZE_LABEL: Record<CompanyDetail["initial_employee_size_band"], string> =
   {
@@ -22,15 +20,20 @@ const SIZE_LABEL: Record<CompanyDetail["initial_employee_size_band"], string> =
   };
 
 export function CompanyDetailView({ company }: { company: CompanyDetail }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    updateFreeLimitAction,
-    undefined,
-  );
-  const [freeLimit, setFreeLimit] = useState(String(company.free_limit));
   const [planState, planFormAction, planPending] = useActionState<
     ActionState,
     FormData
   >(updatePlanAction, undefined);
+  const router = useRouter();
+  const { show, toast } = useToast();
+  // 바뀐 요금제는 이 화면의 숫자·태그에 바로 보여야 한다 — 저장 뒤 서버 데이터를 다시 받는다.
+  const shown = useRef<ActionState>(undefined);
+  useEffect(() => {
+    if (!planState?.message || shown.current === planState) return;
+    shown.current = planState;
+    show(planState.message);
+    router.refresh();
+  }, [planState, router, show]);
   const cap = seatCapFor(company.plan);
 
   return (
@@ -52,14 +55,7 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
       <dl className="meta-strip">
         <div>
           <dt>활성 인원</dt>
-          <dd>
-            {company.active_count}
-            {company.active_count > company.free_limit && (
-              <span className="meta-strip-tag meta-strip-tag--warn">
-                한도 초과
-              </span>
-            )}
-          </dd>
+          <dd>{company.active_count}</dd>
         </div>
         <div>
           <dt>승인 대기</dt>
@@ -72,7 +68,9 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
         <div>
           <dt>요금제</dt>
           <dd>
-            {planName(company.plan)}
+            {company.pro_state === "FREE"
+              ? "무료"
+              : `멤버십 · ${planName(company.plan)}`}
             {cap !== null && (
               <span className="cell-dim">
                 {" "}
@@ -86,18 +84,27 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
             )}
           </dd>
         </div>
+        {company.plan_started_at && (
+          <div>
+            <dt>결제 기준일</dt>
+            <dd>
+              {new Date(company.plan_started_at).toLocaleDateString("ko-KR")}
+            </dd>
+          </div>
+        )}
       </dl>
 
       <section className="admin-section">
         <h2>요금제 변경</h2>
         <p className="admin-section-note">
-          입금 확인 후 구간을 올립니다. 계약 인원을 모두 사용한 회사는 여기서
-          구간을 올려야 인원 등록이 다시 열립니다. 상향하면 결제 기준일이 오늘로
-          갱신됩니다.
+          입금 확인 후 구간을 올립니다. 무료는 인원 제한이 없고 기능만 다릅니다.
+          멤버십은 계약 구간의 인원을 다 쓰면 등록이 막히니 여기서 구간을
+          올립니다. 상향하면 결제 기준일이 오늘로 갱신됩니다.
         </p>
         <form action={planFormAction} className="admin-field-row">
           <input type="hidden" name="company_id" value={company.company_id} />
           <FloatSelect
+            key={company.plan ?? "FREE"}
             id="admin-plan"
             name="plan"
             label="구간"
@@ -117,11 +124,7 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
           </button>
         </form>
         <FormErrorDialog message={planState?.error} nonce={planState} />
-        {planState?.message && (
-          <p role="status" className="wo-muted">
-            {planState.message}
-          </p>
-        )}
+        {toast}
       </section>
 
       <section className="admin-section">
@@ -168,34 +171,6 @@ export function CompanyDetailView({ company }: { company: CompanyDetail }) {
             </dd>
           </div>
         </dl>
-      </section>
-
-      <section className="admin-section">
-        <h2>운영자 조정</h2>
-        <form action={formAction} className="admin-edit-form">
-          <input type="hidden" name="company_id" value={company.company_id} />
-          <div className="admin-field-row">
-            <FloatField
-              id="free_limit"
-              name="free_limit"
-              label="무료 인원 한도"
-              type="number"
-              min={0}
-              max={10000}
-              value={freeLimit}
-              onChange={(e) => setFreeLimit(e.target.value)}
-              disabled={pending}
-              note="기본 10명. 100인 이상 개별 협의 시 이 값으로 조정."
-              className="float-field--flush"
-            />
-            <button type="submit" className="btn-primary" disabled={pending}>
-              <Save size={13} />
-              {pending ? "저장 중..." : "저장"}
-            </button>
-          </div>
-          <FormErrorDialog message={state?.error} nonce={state} />
-          {state?.message && <div className="form-ok">{state.message}</div>}
-        </form>
       </section>
     </>
   );

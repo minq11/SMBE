@@ -12,9 +12,10 @@ export type CompanyListRow = {
   business_type: string | null;
   initial_employee_size_band: EmployeeSizeBand;
   current_employee_size_band: EmployeeSizeBand | null;
-  free_limit: number;
   pro_state: "FREE" | "PRO_VOLUNTARY" | "PRO_MANDATORY";
   plan: "BASIC" | "STANDARD" | "PRO" | "ENTERPRISE" | null;
+  /** 현재 구간의 결제 기준일. 무료면 null. */
+  plan_started_at: string | null;
   active_count: number;
   pending_count: number;
   created_at: string;
@@ -55,9 +56,9 @@ export async function listCompanies(input: {
             c.business_type,
             c.initial_employee_size_band,
             c.current_employee_size_band,
-            c.free_limit,
             c.pro_state,
             c.plan,
+            c.plan_started_at::text,
             (SELECT COUNT(*)::int FROM company_members m
               WHERE m.company_id = c.id
                 AND m.status = 'ACTIVE'
@@ -94,9 +95,9 @@ export async function getCompanyDetail(
             c.expected_annual_revenue_manwon,
             c.initial_employee_size_band,
             c.current_employee_size_band,
-            c.free_limit,
             c.pro_state,
             c.plan,
+            c.plan_started_at::text,
             c.withdrawn_at,
             c.created_at,
             u.display_name AS creator_name,

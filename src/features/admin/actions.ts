@@ -7,40 +7,6 @@ import { requireOperator } from "@/server/operator";
 
 export type ActionState = { error?: string; message?: string } | undefined;
 
-const updateFreeLimitSchema = z.object({
-  company_id: z.string().uuid(),
-  free_limit: z.coerce
-    .number({ error: "숫자를 입력하세요" })
-    .int("정수만 가능합니다")
-    .min(0, "0 이상")
-    .max(10000, "값이 너무 큽니다"),
-});
-
-export async function updateFreeLimitAction(
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  await requireOperator();
-
-  const parsed = updateFreeLimitSchema.safeParse({
-    company_id: formData.get("company_id"),
-    free_limit: formData.get("free_limit"),
-  });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "잘못된 값" };
-  }
-
-  await query("UPDATE companies SET free_limit = $2 WHERE id = $1", [
-    parsed.data.company_id,
-    parsed.data.free_limit,
-  ]);
-  revalidatePath("/admin");
-  revalidatePath(`/admin/companies/${parsed.data.company_id}`);
-  return {
-    message: `무료 인원 한도를 ${parsed.data.free_limit}명으로 변경했습니다.`,
-  };
-}
-
 const updatePlanSchema = z.object({
   company_id: z.string().uuid(),
   plan: z.enum(["FREE", "BASIC", "STANDARD", "PRO", "ENTERPRISE"]),
@@ -50,7 +16,8 @@ const updatePlanSchema = z.object({
  * 운영자가 회사의 계약 구간을 바꾼다.
  *
  * 결제(PG)가 아직 없으므로 입금 확인 후 운영자가 직접 올린다. 계약 인원을 다 쓴
- * 회사는 여기서 구간을 올려야 인원 등록이 다시 열린다.
+ * 회사는 여기서 구간을 올려야 인원 등록이 다시 열린다. 무료는 인원 제한이 없다 —
+ * 무료는 인원이 아니라 기능이 제한된다 (features/billing/plans.ts).
  *
  * 상향 시 **그날이 새 결제 기준일**이 되므로 `plan_started_at` 을 함께 갱신한다.
  */
@@ -83,10 +50,9 @@ export async function updatePlanAction(
       [company_id, plan],
     );
   }
-  revalidatePath("/admin");
-  revalidatePath(`/admin/companies/${company_id}`);
-  revalidatePath("/billing");
-  revalidatePath("/company/members");
+  // 요금제는 사이드바 회사 카드·멤버십 잠금·인원 등록까지 모든 화면이 읽는다.
+  // 운영자 화면만이 아니라 전부 새로 그린다.
+  revalidatePath("/", "layout");
   return {
     message:
       plan === "FREE"
