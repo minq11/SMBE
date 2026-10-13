@@ -5,6 +5,8 @@ import { z } from "zod";
 import { withTransaction } from "@/server/db";
 import { workSession } from "@/server/work-orders";
 import { readAssessment } from "@/server/assessments";
+import { listAttachments } from "@/server/attachments";
+import type { AttachmentMap } from "@/features/standards/standard-detail-view";
 import { AppShell } from "@/components/shell/app-shell";
 import { tierOf } from "@/components/shell/tier";
 import { isCurrentUserOperator } from "@/server/operator";
@@ -35,6 +37,14 @@ export default async function AssessmentPage({
     isCurrentUserOperator(),
   ]);
   if (!detail) notFound();
+  // 조치 기록 사진 (조치 전·후). 멤버십이면 붙이고, 무료는 있는 것만 본다.
+  const isPro = session.membership?.pro_state !== "FREE";
+  const before: AttachmentMap = {};
+  const after: AttachmentMap = {};
+  for (const item of detail.items) {
+    before[item.id] = await listAttachments(actor, "risk_item_before", item.id);
+    after[item.id] = await listAttachments(actor, "risk_item_after", item.id);
+  }
 
   return (
     <AppShell
@@ -121,7 +131,14 @@ export default async function AssessmentPage({
           {detail.open_action_count > 0 &&
             `· 조치 ${detail.open_action_count}건 남음`}
         </h2>
-        <AssessmentItems detail={detail} canRecord />
+        <AssessmentItems
+          detail={detail}
+          canRecord
+          isPro={isPro}
+          before={before}
+          after={after}
+          invalidatePath={`/assessments/${id}`}
+        />
       </section>
 
       <section className="asmt-section" aria-label="사전조사 안전보건정보">

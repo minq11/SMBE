@@ -471,3 +471,28 @@
     min-height: 44px;
   }
 }
+
+/* 조치 전·후 사진 — 조치 기록 아래 두 칸. 좁은 폰은 한 칸씩. */
+.asmt-photos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line-soft);
+}
+.asmt-photos-col {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.asmt-photos-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+@media (max-width: 600px) {
+  .asmt-photos {
+    grid-template-columns: 1fr;
+  }
+}

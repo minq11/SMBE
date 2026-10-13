@@ -2,6 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { Check, ChevronDown, Save, X } from "lucide-react";
+import {
+  AttachmentList,
+  type AttachmentItem,
+} from "@/features/attachments/attachment-list";
+import { AttachmentUploader } from "@/features/attachments/attachment-uploader";
+import { PaidLockButton } from "@/components/ui/paid-lock";
 import type {
   AssessmentDetail,
   AssessmentItemDetail,
@@ -23,12 +29,23 @@ import {
  * 위험요인·대책과 조치 이행. 계획(감소대책·담당·예정일)과 실제(조치·완료일·조치 후
  * 수준)를 나란히 둔다. 허용 불가로 판정된 항목은 조치를 적기 전까지 "조치 필요".
  */
+type PhotoMap = Record<string, AttachmentItem[]>;
+
 export function AssessmentItems({
   detail,
   canRecord,
+  isPro = false,
+  before = {},
+  after = {},
+  invalidatePath,
 }: {
   detail: AssessmentDetail;
   canRecord: boolean;
+  /** 멤버십이면 조치 전·후 사진을 붙인다. 무료는 누르면 안내만. */
+  isPro?: boolean;
+  before?: PhotoMap;
+  after?: PhotoMap;
+  invalidatePath?: string;
 }) {
   return (
     <ol className="asmt-items">
@@ -72,6 +89,16 @@ export function AssessmentItems({
               assessmentId={detail.id}
               canRecord={canRecord && detail.status === "APPROVED"}
               criteria={detail.criteria}
+              photos={
+                canRecord && invalidatePath
+                  ? {
+                      isPro,
+                      before: before[item.id] ?? [],
+                      after: after[item.id] ?? [],
+                      invalidatePath,
+                    }
+                  : undefined
+              }
             />
           )}
         </li>
@@ -80,17 +107,27 @@ export function AssessmentItems({
   );
 }
 
+type Photos = {
+  isPro: boolean;
+  before: AttachmentItem[];
+  after: AttachmentItem[];
+  invalidatePath: string;
+};
+
 function ActionBlock({
   item,
   assessmentId,
   canRecord,
   criteria,
+  photos,
 }: {
   item: AssessmentItemDetail;
   assessmentId: string;
   canRecord: boolean;
   /** 이 평가에 복사된 판단 기준. 조치 후 수준도 같은 기준으로 고른다. */
   criteria: RiskCriteria;
+  /** 조치 전·후 사진. 없으면 사진 줄을 그리지 않는다 (지시서 안 미리보기 등). */
+  photos?: Photos;
 }) {
   const done = Boolean(item.actual_completion_date);
   const [open, setOpen] = useState(false);
@@ -167,6 +204,24 @@ function ActionBlock({
       {stillOpen && item.follow_up_measure && !open && (
         <p className="asmt-action-text">추가 대책: {item.follow_up_measure}</p>
       )}
+      {photos && (
+        <div className="asmt-photos">
+          <RiskPhotos
+            title="조치 전"
+            kind="risk_item_before"
+            items={photos.before}
+            itemId={item.id}
+            photos={photos}
+          />
+          <RiskPhotos
+            title="조치 후"
+            kind="risk_item_after"
+            items={photos.after}
+            itemId={item.id}
+            photos={photos}
+          />
+        </div>
+      )}
       {open && (
         <div className="asmt-action-form">
           <FloatTextarea
@@ -231,6 +286,53 @@ function ActionBlock({
             </button>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 조치 전·후 사진 한 칸. 멤버십은 붙이고 지운다. 무료는 "사진 추가" 를 누르면
+ * 멤버십 안내가 잠깐 뜬다 — 미리 써 두지 않는다 (헌법 5장). 있는 사진은 누구나 본다.
+ */
+function RiskPhotos({
+  title,
+  kind,
+  items,
+  itemId,
+  photos,
+}: {
+  title: string;
+  kind: "risk_item_before" | "risk_item_after";
+  items: AttachmentItem[];
+  itemId: string;
+  photos: Photos;
+}) {
+  return (
+    <div className="asmt-photos-col">
+      <span className="asmt-photos-title">{title}</span>
+      {items.length > 0 && (
+        <AttachmentList
+          items={items}
+          invalidatePath={photos.invalidatePath}
+          canDelete={photos.isPro}
+          compact
+        />
+      )}
+      {photos.isPro ? (
+        <AttachmentUploader
+          targetType={kind}
+          targetId={itemId}
+          invalidatePath={photos.invalidatePath}
+          label="사진 추가"
+        />
+      ) : (
+        <PaidLockButton
+          className="attach-uploader-lock"
+          message="조치 사진 첨부는 멤버십에 가입된 회사만 쓸 수 있습니다."
+        >
+          사진 추가
+        </PaidLockButton>
       )}
     </div>
   );

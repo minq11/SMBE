@@ -314,6 +314,30 @@ test("standard: create, edit, add a seeded assessment round", async ({
     await expect(page.locator("#main .criteria-list")).toContainText(
       "병원 치료가 필요한 부상",
     );
+    // 조치 기록의 조치 전·후 사진: 무료는 누르면 멤버십 안내만, 멤버십은 올리는 칸.
+    const photos = page.locator(".asmt-photos").first();
+    await expect(photos).toContainText("조치 전");
+    await photos.getByRole("button", { name: "사진 추가" }).first().click();
+    await expect(page.locator('.toast[data-open="true"]')).toContainText(
+      "조치 사진 첨부는 멤버십에 가입된 회사만",
+    );
+    await expect(photos.locator(".attach-uploader-cta")).toHaveCount(0);
+    await pool.query(
+      "UPDATE companies SET pro_state='PRO_VOLUNTARY', plan='BASIC', plan_started_at=now() WHERE id=$1",
+      [company],
+    );
+    await page.reload();
+    await expect(photos.locator(".attach-uploader-cta")).toHaveCount(2);
+    await expect(photos.locator("input[type=file]")).toHaveCount(2);
+    await photos.scrollIntoViewIfNeeded();
+    await page
+      .locator(".asmt-item")
+      .first()
+      .screenshot({ path: testInfo.outputPath("assessment-photos.png") });
+    await pool.query(
+      "UPDATE companies SET pro_state='FREE', plan=NULL, plan_started_at=NULL WHERE id=$1",
+      [company],
+    );
     // 출처는 이름표 줄이다: 표준서 이름과 몇 회차 개정본인지.
     const origin = page.locator(".asmt-origin");
     await expect(origin).toContainText("표준서");
