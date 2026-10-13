@@ -73,9 +73,16 @@ npm run check:connections
 ```
 
 Neon에는 `SELECT 1`, S3에는 `HeadBucket`만 실행합니다. 테이블 생성이나 파일 업로드는 하지 않습니다.
-S3는 퍼블릭 액세스 차단을 켜고 `infra/s3-policy.example.json`의 버킷 이름을 교체해 진단 계정에 적용합니다.
-현재는 업로드 API가 없으므로 PutObject 권한이나 CORS 설정이 필요하지 않습니다.
-두 서비스의 실제 연결은 본인 자격증명 입력 후 확인해야 합니다.
+
+S3 버킷은 이렇게 준비합니다.
+
+1. 비공개 버킷을 만들고 **퍼블릭 액세스 차단**을 켭니다. 사진은 서명된 URL 로만 오갑니다.
+2. IAM 사용자를 만들고 `infra/s3-policy.example.json` 의 버킷 이름을 바꿔 붙입니다
+   (`ListBucket` 은 연결 진단, `PutObject`/`GetObject`/`DeleteObject` 는 첨부 사진).
+3. 버킷 **CORS** 에 `infra/s3-cors.example.json` 을 넣고 도메인을 바꿉니다. 사진은 브라우저가
+   서명된 URL 로 S3 에 직접 `PUT` 하므로 CORS 가 없으면 업로드가 막힙니다.
+4. `.env` 에 `AWS_REGION` · `S3_BUCKET` · `AWS_ACCESS_KEY_ID` · `AWS_SECRET_ACCESS_KEY` 를
+   넣고 `npm run check:connections` (운영: `node scripts/container-readiness.mjs`) 로 확인합니다.
 
 ## API
 
