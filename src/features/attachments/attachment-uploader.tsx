@@ -71,11 +71,12 @@ export function AttachmentUploader({
   return (
     <div className="attach-uploader">
       <label className="attach-uploader-cta">
+        {/* capture 를 두면 폰이 카메라로 바로 들어간다. 빼면 OS 가 카메라·앨범·파일
+            중에 고르게 한다 (사장님 2026-10-13). */}
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           multiple
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
           disabled={pending}

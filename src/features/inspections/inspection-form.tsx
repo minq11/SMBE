@@ -276,7 +276,6 @@ export function InspectionForm({
                   <input
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     multiple
                     hidden
                     disabled={pending}
